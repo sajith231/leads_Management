@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Public Upload</title>
+  <style>
+    /* --------------  SAME STYLES AS BEFORE  -------------- */
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:#f5f7fa;padding:20px;line-height:1.6}
+    .container{max-width:600px;margin:0 auto;background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.08);padding:32px}
+    h2{font-size:24px;font-weight:600;color:#1a202c;margin-bottom:24px}
+    .form-group{margin-bottom:20px;position:relative}
+    label{display:block;font-size:14px;font-weight:600;color:#374151;margin-bottom:8px}
+    input[type=text],textarea,input[type=file],select{width:100%;padding:10px 14px;font-size:14px;border:1px solid #d1d5db;border-radius:8px;transition:border-color .2s;font-family:inherit;background-color:#fff}
+    input[type=text]:focus,textarea:focus,input[type=file]:focus,select:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+    textarea{resize:vertical;min-height:80px}
+    .optional{color:#9ca3af;font-weight:400;font-size:13px}
+    .required{color:#ef4444}
+    .btn-submit{width:100%;padding:12px 24px;font-size:15px;font-weight:600;color:#fff;background:#3b82f6;border:none;border-radius:8px;cursor:pointer;transition:background .2s;margin-top:8px}
+    .btn-submit:hover{background:#2563eb}
+    .btn-submit:active{background:#1d4ed8}
+    .btn-submit:disabled{background:#9ca3af;cursor:not-allowed}
+    .message{padding:12px 16px;border-radius:8px;margin-bottom:20px;font-size:14px}
+    .message-success{background:#d1fae5;color:#065f46;border:1px solid #a7f3d0}
+    .message-error{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
+    .message ul{margin-left:20px}
+    .help-text{font-size:13px;color:#6b7280;margin-top:6px}
+
+    /* --------------  DROPDOWN STYLES  -------------- */
+    .dropdown-container{position:relative}
+    .dropdown-input{width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px}
+    .dropdown-list{position:absolute;top:100%;left:0;right:0;max-height:300px;overflow-y:auto;background:#fff;border:1px solid #d1d5db;border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,.1);z-index:1000;display:none;margin-top:4px}
+    .dropdown-list.show{display:block}
+    .dropdown-item{padding:12px 14px;cursor:pointer;border-bottom:1px solid #f3f4f6;transition:background-color .15s}
+    .dropdown-item:hover{background-color:#f3f4f6}
+    .dropdown-item:last-child{border-bottom:none}
+    .dropdown-item small{color:#6b7280;font-size:12px;display:block;margin-top:2px}
+    .loading-indicator,.no-results{padding:12px 14px;text-align:center;color:#6b7280;font-style:italic;font-size:13px}
+    .results-count{padding:8px 14px;background-color:#f9fafb;border-bottom:1px solid #e5e7eb;font-size:12px;color:#6b7280;text-align:center}
+
+    /* --------------  UPLOAD-PROGRESS STYLES  -------------- */
+    .upload-progress-container{display:none;margin:20px 0;background:#f8fafc;border-radius:8px;padding:20px;border:1px solid #e2e8f0}
+    .upload-progress-container.active{display:block;animation:fadeIn .3s ease}
+    .upload-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
+    .upload-title{font-weight:600;color:#1e293b;font-size:16px}
+    .upload-percentage{font-weight:600;color:#3b82f6;font-size:16px}
+    .progress-bar-container{height:10px;background:#e2e8f0;border-radius:5px;overflow:hidden;margin-bottom:15px}
+    .progress-bar{height:100%;background:linear-gradient(90deg,#3b82f6,#60a5fa);border-radius:5px;width:0%;transition:width .3s ease}
+    .upload-details{display:flex;justify-content:space-between;font-size:13px;color:#64748b}
+    .file-name{font-weight:500;color:#334155;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70%}
+    .file-size{font-weight:500;color:#475569}
+    .upload-status{display:flex;align-items:center;justify-content:center;margin-top:10px;font-size:13px;color:#64748b}
+    .upload-spinner{display:inline-block;width:16px;height:16px;border:2px solid #e2e8f0;border-top-color:#3b82f6;border-radius:50%;animation:spin 1s linear infinite;margin-right:8px}
+    .upload-success{color:#10b981;font-weight:500;display:none}
+    .upload-error{color:#ef4444;font-weight:500;display:none}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+
+    /* --------------  OVERLAY  -------------- */
+    .upload-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,.8);z-index:1000;justify-content:center;align-items:center}
+    .upload-overlay.active{display:flex}
+    .overlay-content{text-align:center;background:#fff;padding:30px;border-radius:12px;box-shadow:0 10px 25px rgba(0,0,0,.1);max-width:400px;width:90%}
+    .overlay-spinner{width:50px;height:50px;border:4px solid #e2e8f0;border-top-color:#3b82f6;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 20px}
+    .overlay-text{font-size:16px;color:#334155;font-weight:500}
+
+    /* --------------  BIGGER / BOLDER TOGGLE LINK  -------------- */
+    .toggle-mode{font-size:16px;font-weight:600;color:#3b82f6;cursor:pointer;text-decoration:underline;margin-top:6px;display:inline-block}
+  </style>
+</head>
+<body>
+  <!-- ----------  PROGRESS OVERLAY  ---------- -->
+  <div class="upload-overlay" id="uploadOverlay">
+    <div class="overlay-content">
+      <div class="overlay-spinner"></div>
+      <div class="overlay-text" id="overlayText">Uploading your file…</div>
+    </div>
+  </div>
+
+  <!-- ----------  FORM CONTAINER  ---------- -->
+  <div class="container">
+    <h2>Public Upload</h2>
+
+    {% if message %}
+      <div class="message message-success">{{ message }}</div>
+    {% endif %}
+    {% if errors %}
+      <div class="message message-error">
+        <ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+      </div>
+    {% endif %}
+
+    <!-- ----------  PROGRESS BAR  ---------- -->
+    <div class="upload-progress-container" id="uploadProgress">
+      <div class="upload-header">
+        <div class="upload-title">Uploading…</div>
+        <div class="upload-percentage" id="uploadPercentage">0%</div>
+      </div>
+      <div class="progress-bar-container">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      <div class="upload-details">
+        <div class="file-name" id="uploadFileName"></div>
+        <div class="file-size" id="uploadFileSize"></div>
+      </div>
+      <div class="upload-status">
+        <div class="upload-spinner" id="uploadSpinner"></div>
+        <span id="uploadStatusText">Processing upload…</span>
+        <div class="upload-success" id="uploadSuccess">✓ Upload completed successfully!</div>
+        <div class="upload-error" id="uploadError"></div>
+      </div>
+    </div>
+
+    <!-- ----------  FORM  ---------- -->
+    <form method="post" enctype="multipart/form-data" novalidate id="uploadForm">
+      {% csrf_token %}
+
+      <!-- ***  CLIENT NAME – PLAIN TEXT  *** -->
+      <div class="form-group">
+        <label for="client_name_manual">Client Name (type manually) <span class="required">*</span></label>
+        <input type="text"
+               id="client_name_manual"
+               name="client_name_manual"
+               placeholder="Type client name">
+        <span class="toggle-mode" id="switchToDropdown">or search from list ▼</span>
+      </div>
+
+      <!-- ***  CLIENT NAME – DROPDOWN SEARCH  *** -->
+      <div class="form-group" id="dropdownGroup" style="display:none">
+        <label for="client_search">Client Name (search) <span class="required">*</span></label>
+        <div class="dropdown-container">
+          <input type="text"
+                 id="client_search"
+                 class="dropdown-input"
+                 placeholder="Start typing to search clients…"
+                 autocomplete="off">
+          <div class="dropdown-list" id="client_dropdown">
+            <div class="loading-indicator" id="loading_indicator">Loading clients…</div>
+          </div>
+        </div>
+        <input type="hidden" id="client_code"  name="client_code">
+        <input type="hidden" id="client_branch" name="client_branch">
+        <span class="toggle-mode" id="switchToManual">or type manually ▲</span>
+      </div>
+
+      <!-- Hidden field that actually sends the chosen name -->
+      <input type="hidden" id="final_client_name" name="client_name" required>
+
+      <div class="form-group">
+        <label for="provided_name">File Name <span class="optional">(optional)</span></label>
+        <input id="provided_name" name="provided_name" type="text" placeholder="Custom file name">
+      </div>
+
+      <div class="form-group">
+        <label for="description">Description <span class="optional">(optional)</span></label>
+        <textarea id="description" name="description" placeholder="Brief description of the file"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="file">Select File <span class="required">*</span></label>
+        <input id="file" name="file" type="file" required>
+        <p class="help-text">Accepted formats: All file types</p>
+      </div>
+
+      <button class="btn-submit" type="submit" id="submit_btn">Upload File</button>
+    </form>
+  </div>
+
+  <!-- ----------  JS  ---------- -->
+  <script>
+    /* --------------  HELPERS  -------------- */
+    const $ = id => document.getElementById(id);
+    function formatFileSize(b){
+      if(!b)return'0 Bytes';const k=1024,s=['Bytes','KB','MB','GB'],
+      i=Math.floor(Math.log(b)/Math.log(k));
+      return parseFloat((b/Math.pow(k,i)).toFixed(2))+' '+s[i];
+    }
+
+    /* --------------  TOGGLE BETWEEN MANUAL / DROPDOWN  -------------- */
+    const manualGroup   = $('client_name_manual').closest('.form-group');
+    const dropdownGroup = $('dropdownGroup');
+    const finalInput    = $('final_client_name');
+
+    $('switchToDropdown').addEventListener('click', () => {
+      manualGroup.style.display = 'none';
+      dropdownGroup.style.display = 'block';
+      $('client_search').focus();
+      syncFinalValue();
+    });
+    $('switchToManual').addEventListener('click', () => {
+      dropdownGroup.style.display = 'none';
+      manualGroup.style.display = 'block';
+      $('client_name_manual').focus();
+      syncFinalValue();
+    });
+
+    function syncFinalValue(){
+      // whichever is visible wins
+      if(dropdownGroup.style.display === 'none'){
+        finalInput.value = $('client_name_manual').value.trim();
+      }else{
+        finalInput.value = $('client_search').value.trim();
+      }
+    }
+    $('client_name_manual').addEventListener('input', syncFinalValue);
+    $('client_search').addEventListener('input', syncFinalValue);
+
+    /* --------------  DROPDOWN LOGIC (UNCHANGED)  -------------- */
+    let allClients=[],debounceTimer,isLoadingClients=false;
+    async function loadClients(){
+      if(isLoadingClients)return;
+      isLoadingClients=true;
+      const loadingIndicator=$('loading_indicator');
+      const clientDropdown=$('client_dropdown');
+      try{
+        loadingIndicator.style.display='block';
+        const resp=await fetch(window.location.origin+'/public_folder/get-clients/',{method:'GET',headers:{'Accept':'application/json'}});
+        if(!resp.ok) throw new Error('HTTP '+resp.status);
+        const data=await resp.json();
+        if(Array.isArray(data)){
+          allClients=data.sort((a,b)=>a.name?.toLowerCase().localeCompare(b.name?.toLowerCase()));
+          displayClients(allClients);
+        }
+      }catch(e){
+        clientDropdown.innerHTML='<div class="no-results">Could not load clients</div>';
+        clientDropdown.classList.add('show');
+      }finally{isLoadingClients=false;}
+    }
+    function displayClients(list){
+      const dd=$('client_dropdown');
+      if(!list.length){dd.innerHTML='<div class="no-results">No matching clients</div>';dd.classList.add('show');return;}
+      let html=`<div class="results-count">Showing ${list.length} client(s)</div>`;
+      list.forEach(c=>{
+        const name=c.name||'Unknown',code=c.code?` (${c.code})`:'',branch=c.branch?`<small>${c.branch}</small>`:'';
+        html+=`<div class="dropdown-item" data-name="${escapeHtml(name)}" data-code="${escapeHtml(c.code||'')}" data-branch="${escapeHtml(c.branch||'')}">${escapeHtml(name)}${escapeHtml(code)}${branch}</div>`;
+      });
+      dd.innerHTML=html; dd.classList.add('show');
+      dd.querySelectorAll('.dropdown-item').forEach(item=>{
+        item.addEventListener('click',()=>{
+          $('client_search').value=item.dataset.name;
+          $('client_code').value=item.dataset.code;
+          $('client_branch').value=item.dataset.branch;
+          dd.classList.remove('show');
+          syncFinalValue();
+        });
+      });
+    }
+    function searchClients(term){
+      const dd=$('client_dropdown');
+      if(term.length<2){dd.classList.remove('show');return;}
+      if(!allClients.length){loadClients();return;}
+      const t=term.toLowerCase();
+      const filtered=allClients.filter(c=>(c.name&&c.name.toLowerCase().includes(t))||(c.code&&c.code.toLowerCase().includes(t))||(c.branch&&c.branch.toLowerCase().includes(t)));
+      displayClients(filtered);
+    }
+    function debounceSearch(){clearTimeout(debounceTimer);debounceTimer=setTimeout(()=>searchClients($('client_search').value.trim()),300);}
+    function escapeHtml(text){
+      const div=document.createElement('div');
+      div.textContent=text;
+      return div.innerHTML;
+    }
+
+    /* --------------  HOOK DROPDOWN EVENTS  -------------- */
+    $('client_search').addEventListener('input',()=>{debounceSearch(); syncFinalValue();});
+    $('client_search').addEventListener('focus',()=>{if($('client_search').value.trim()===''&&allClients.length)displayClients(allClients);});
+    document.addEventListener('click',e=>{
+      if(!$('client_search').contains(e.target)&&!$('client_dropdown').contains(e.target))$('client_dropdown').classList.remove('show');
+    });
+
+    /* --------------  UPLOAD WITH PROGRESS  -------------- */
+    let isUploading=false;
+    $('uploadForm').addEventListener('submit',function(e){
+      e.preventDefault();
+      if(isUploading)return;
+      if(!finalInput.value.trim()){alert('Please enter or select a client name');return;}
+      if(!$('file').files.length){alert('Please select a file');return;}
+
+      const file=$('file').files[0];
+      const fd=new FormData(this);
+      const xhr=new XMLHttpRequest();
+
+      $('uploadProgress').classList.add('active');
+      $('uploadOverlay').classList.add('active');
+      $('uploadFileName').textContent=file.name;
+      $('uploadFileSize').textContent=formatFileSize(file.size);
+      $('submit_btn').disabled=true;
+      $('submit_btn').textContent='Uploading…';
+      isUploading=true;
+
+      xhr.upload.addEventListener('progress',e=>{
+        if(e.lengthComputable){
+          const p=Math.round((e.loaded/e.total)*100);
+          $('uploadPercentage').textContent=p+'%';
+          $('progressBar').style.width=p+'%';
+          $('overlayText').textContent=`Uploading… ${p}%`;
+        }
+      });
+      xhr.addEventListener('load',()=>{
+        if(xhr.status>=200&&xhr.status<300){
+          $('uploadSpinner').style.display='none';
+          $('uploadStatusText').style.display='none';
+          $('uploadSuccess').style.display='block';
+          $('overlayText').textContent='Upload completed!';
+          setTimeout(()=>window.location.reload(),1200);
+        }else{
+          throw new Error('Server error '+xhr.status);
+        }
+      });
+      xhr.addEventListener('error',()=>{throw new Error('Network error');});
+      xhr.open('POST',window.location.pathname,true);
+      xhr.setRequestHeader('X-Requested-With','XMLHttpRequest');
+      xhr.send(fd);
+    });
+
+    /* --------------  INIT  -------------- */
+    window.addEventListener('DOMContentLoaded',()=>{
+      loadClients();               // prefetch clients for dropdown
+      syncFinalValue();            // set initial hidden value
+    });
+  </script>
+</body>
+</html>

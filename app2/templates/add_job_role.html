@@ -1,0 +1,84 @@
+<!-- add_job_role.html -->
+
+{% extends 'base.html' %}
+
+{% block title %}{% if role %}Edit{% else %}Add{% endif %} Job Role{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 30px auto;">
+    <h2>{% if role %}Edit{% else %}Add{% endif %} Job Role</h2>
+    <form method="POST" style="background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        {% csrf_token %}
+        
+        <label>Department:</label>
+        <select name="department" required style="width: 100%; padding: 10px; margin-bottom: 15px;">
+            <option value="">-- Select Department --</option>
+            {% for dept in departments %}
+                <option value="{{ dept.id }}" {% if role and role.department.id == dept.id %}selected{% endif %}>{{ dept.name }}</option>
+            {% endfor %}
+        </select>
+
+        <label>Job Title:</label>
+        <input type="text" name="title" required value="{{ role.title|default_if_none:'' }}" 
+               style="width: 100%; padding: 10px; margin-bottom: 15px;">
+
+        <div id="descriptionContainer">
+            {% if role %}
+                {% for description in role.descriptions.all %}
+                    <div class="descriptionRow">
+                        <input type="text" name="heading" value="{{ description.heading }}" placeholder="Heading" style="width: 48%; padding: 10px; margin-bottom: 15px;">
+                        <textarea name="description" rows="4" placeholder="Description" style="width: 48%; padding: 10px; margin-bottom: 15px;">{{ description.description }}</textarea>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="descriptionRow">
+                    <input type="text" name="heading" placeholder="Heading" style="width: 48%; padding: 10px; margin-bottom: 15px;">
+                    <textarea name="description" rows="4" placeholder="Description" style="width: 48%; padding: 10px; margin-bottom: 15px;">1. </textarea>
+                </div>
+            {% endif %}
+        </div>
+
+        <button type="button" id="addDescription" style="margin-bottom: 15px; padding: 10px 16px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            <i class="fas fa-plus"></i> Add Heading
+        </button>
+
+        <button type="submit" style="margin-top: 15px; padding: 10px 16px; background-color: #007bff; color: white; border: none; border-radius: 4px;">
+            {% if role %}<i class="fas fa-save"></i> Update{% else %}<i class="fas fa-plus"></i> Add{% endif %}
+        </button>
+    </form>
+</div>
+
+<script>
+function handleAutoNumbering(textarea) {
+    textarea.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();  // Stop default new line
+            const lines = textarea.value.split('\n');
+            const nextLineNumber = lines.length + 1;
+            textarea.value += `\n${nextLineNumber}. `;
+        }
+    });
+}
+
+// Apply to existing description fields
+document.querySelectorAll('textarea[name="description"]').forEach(handleAutoNumbering);
+
+// Single event listener for adding new description rows
+document.getElementById('addDescription').addEventListener('click', function () {
+    const container = document.getElementById('descriptionContainer');
+    const newRow = document.createElement('div');
+    newRow.className = 'descriptionRow';
+
+    newRow.innerHTML = `
+        <input type="text" name="heading" placeholder="Heading" style="width: 48%; padding: 10px; margin-bottom: 15px;">
+        <textarea name="description" rows="4" placeholder="Description" style="width: 48%; padding: 10px; margin-bottom: 15px;">1. </textarea>
+    `;
+
+    container.appendChild(newRow);
+
+    // Enable auto-numbering on the new textarea
+    handleAutoNumbering(newRow.querySelector('textarea'));
+});
+</script>
+
+{% endblock %}

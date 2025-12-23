@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% block content %}
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<div class="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 md:p-6">
+    <div class=" mx-auto bg-white bg-opacity-90 rounded-2xl shadow-xl md:p-8">
+        <div>
+            <a href="{% url 'project_management' %}">
+                <button class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300">
+                    <i class="fa-solid fa-arrow-left"></i> BackBack
+                </button>
+            </a>
+            <h2 class="text-3xl font-semibold text-gray-800 mb-6 text-center">Add New Project</h2>
+        </div>
+
+        <form method="POST" class="space-y-5">
+            {% csrf_token %}
+            <div>
+                <label class="block font-medium text-gray-700">Project Name:</label>
+                <input type="text" name="project_name" required class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div>
+                <label class="block font-medium text-gray-700">Languages:</label>
+                <input type="text" name="languages" required class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+
+            <div>
+                <label class="block font-medium text-gray-700">Technologies:</label>
+                <input type="text" name="technologies" required class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+
+            <div>
+                <label class="block font-medium text-gray-700">Notes:</label>
+                {{ form.media }}  <!-- Add CKEditor's required media -->
+                <textarea name="notes" id="id_notes" required class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg"></textarea>
+            </div>
+
+            <div>
+                <label class="block font-medium text-gray-700">Database Name:</label>
+                <input type="text" name="database_name" required class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+
+            <div>
+                <label class="block font-medium text-gray-700">Domain Name:</label>
+                <input type="text" name="domain_name" required class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+
+            <div>
+                <label class="block font-medium text-gray-700">Domain Platform:</label>
+                <input type="text" name="domain_platform" required class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+
+            <div>
+                <label class="block font-medium text-gray-700">GitHub Link:</label>
+                <input type="url" name="github_link" required class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+
+            <div>
+                <label class="block font-medium text-gray-700">Assigned Person:</label>
+                <select name="assigned_person" required class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg">
+                    <option value="">-- Select Person --</option>
+                    {% for employee in employees %}
+                        <option value="{{ employee.id }}">{{ employee.name }} ({{ employee.user.userid }})</option>
+                    {% endfor %}
+                </select>             
+            </div>
+
+            <div>
+                <label class="block font-medium text-gray-700">Client:</label>
+                <input type="text" name="client" required class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+
+            <div>
+                <label class="block font-medium text-gray-700">Project Status:</label>
+                <select name="project_status" required class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg">
+                    <option value="Active" selected>Active</option>
+                    <option value="On Hold">On Hold</option>
+                    <option value="Cancel">Cancel</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Inactive">Inactive</option>
+                    <option value="Finish">Finish</option>
+                </select>
+            </div>
+            
+
+            <div>
+                <label class="block font-medium text-gray-700">Project Type:</label>
+                <select name="project_type" required class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg">
+                    <option value="">Select</option>
+                    <option value="Website">Website</option>
+                    <option value="Web Application">Web Application</option>
+                    <option value="Mobile Application">Mobile Application</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block font-medium text-gray-700">Project Duration:</label>
+                <input type="text" name="project_duration" required class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+            <div>
+                <label class="block font-medium text-gray-700">Project Deadline:</label>
+                <input type="date" name="deadline" class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+
+
+            <div class="text-center pt-4">
+                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-300">
+                    Save
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- CKEditor initialization script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ckeditor/4.17.2/ckeditor.js"></script>
+<script>
+    CKEDITOR.replace('id_notes', {
+        toolbar: [
+            { name: 'basicstyles', items: ['Bold', 'Italic', 'Underline', 'Strike'] },
+            { name: 'paragraph', items: ['NumberedList', 'BulletedList'] },
+            { name: 'styles', items: ['Styles', 'Format'] }
+        ],
+        height: 200
+    });
+</script>
+{% endblock %}

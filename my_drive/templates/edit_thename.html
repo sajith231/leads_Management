@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block content %}
+{% load static %}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+  body {
+    background: #f9fafb;
+    color: #1f2937;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+
+  .page-wrap {
+    max-width: 700px;
+    margin: 80px auto;
+    padding: 24px;
+  }
+
+  .edit-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    padding: 30px 40px;
+  }
+
+  .edit-card h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0a2f94;
+    text-align: center;
+    margin-bottom: 25px;
+  }
+
+  .edit-form label {
+    font-weight: 600;
+    color: #374151;
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .edit-form input[type="text"] {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 15px;
+    color: #111827;
+    margin-bottom: 20px;
+    transition: all 0.2s;
+  }
+
+  .edit-form input[type="text"]:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+  }
+
+  .btn-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  .btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+  }
+
+  .btn:hover { transform: translateY(-1px); }
+
+  .btn-cancel {
+    background: #e5e7eb;
+    color: #111827;
+  }
+  .btn-cancel:hover { background: #d1d5db; }
+
+  .btn-save {
+    background: #2563eb;
+    color: #fff;
+  }
+  .btn-save:hover { background: #1d4ed8; }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    color: #2563eb;
+    font-weight: 600;
+    margin-bottom: 20px;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: #1d4ed8; }
+  .back-link i { margin-right: 6px; }
+</style>
+
+<div class="page-wrap">
+  <a href="{% url 'drive_detail' file.folder.id %}" class="back-link">
+    <i class="fa-solid fa-arrow-left"></i> Back to Folder
+  </a>
+
+  <div class="edit-card">
+    <h2>Rename File</h2>
+
+    <form method="POST" class="edit-form">
+      {% csrf_token %}
+      <label for="file_name">New File Name:</label>
+      <input
+        type="text"
+        id="file_name"
+        name="file_name"
+        value="{{ file.file_name }}"
+        required
+      >
+
+      <div class="btn-row">
+        <a href="{% url 'drive_detail' file.folder.id %}" class="btn btn-cancel">Cancel</a>
+        <button type="submit" class="btn btn-save">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

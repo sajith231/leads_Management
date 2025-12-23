@@ -1,0 +1,157 @@
+{# business_type.html #}
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    @media (max-width: 768px) {
+        .allbody{
+            margin-top: 15%;
+
+        }}
+        
+</style>
+<div class="allbody">
+<div class="container mt-4">
+    <div style="overflow: hidden;"><div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 style="margin-left: 40%;">Business Types</h2>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#businessTypeModal">
+            Add New
+        </button>
+    </div></div>
+
+    <div style="overflow: scroll;"><table class="table table-striped">
+        <thead>
+            <tr>
+                <th>No</th>
+                <th>Business Type Name</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for business_type in business_types %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ business_type.name|upper }}</td>
+                <td>
+                    <button class="btn btn-sm btn-warning edit-btn" 
+                            data-id="{{ business_type.id }}"
+                            data-name="{{ business_type.name }}"
+                            data-bs-toggle="modal" 
+                            data-bs-target="#businessTypeModal">
+                        Edit
+                    </button>
+                    <button class="btn btn-sm btn-danger delete-btn" 
+                            data-id="{{ business_type.id }}">
+                        Delete
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table></div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="businessTypeModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">Add Business Type</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="businessTypeForm">
+                        {% csrf_token %}
+                        <input type="hidden" id="businessTypeId">
+                        <div class="mb-3">
+                            <label for="businessTypeName" class="form-label">Business Type Name</label>
+                            <input type="text" class="form-control" id="businessTypeName" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="saveButton">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('businessTypeModal');
+    const form = document.getElementById('businessTypeForm');
+    const saveButton = document.getElementById('saveButton');
+    const modalTitle = document.getElementById('modalTitle');
+
+    // Edit button click handler
+    document.querySelectorAll('.edit-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const id = this.dataset.id;
+            const name = this.dataset.name;
+            document.getElementById('businessTypeId').value = id;
+            document.getElementById('businessTypeName').value = name;
+            modalTitle.textContent = 'Edit Business Type';
+        });
+    });
+
+    // Modal reset on close
+    modal.addEventListener('hidden.bs.modal', function() {
+        form.reset();
+        document.getElementById('businessTypeId').value = '';
+        modalTitle.textContent = 'Add Business Type';
+    });
+
+    // Save button click handler
+    saveButton.addEventListener('click', function() {
+        const id = document.getElementById('businessTypeId').value;
+        const name = document.getElementById('businessTypeName').value;
+        const url = id ? `/business-type/${id}/update/` : '/business-type/create/';
+        const method = id ? 'PUT' : 'POST';
+
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({ name: name })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        });
+    });
+
+    // Delete button click handler
+    document.querySelectorAll('.delete-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            if (confirm('Are you sure you want to delete this business type?')) {
+                const id = this.dataset.id;
+                fetch(`/business-type/${id}/delete/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

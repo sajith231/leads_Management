@@ -1,0 +1,3626 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ action }} Purchase Order{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="page-header">
+        <h1 class="page-title">{{ action }} Purchase Order</h1>
+        <a href="{% url 'purchase_order:po_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
+    </div>
+
+    <div class="form-container">
+        <form method="POST" id="poForm">
+    {% csrf_token %}
+
+    <div class="po-grid-layout">
+
+        <!-- LEFT SIDE: PO INFORMATION + TOTALS -->
+        <div class="po-left">
+
+            <!-- Purchase Order Information -->
+            <div class="form-section po-info-section">
+                <h3 class="section-title">
+                    <i class="fas fa-file-invoice"></i> Purchase Order Information
+                </h3>
+
+                <br>
+
+                <!-- Row 1: PO Number | Reference Number -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="po_number">PO Number</label>
+                        <input type="text" id="po_number" name="po_number"
+                            value="{{ po.po_number|default:auto_po_number }}" readonly class="form-control"
+                            style="background: #f8f9fa; font-weight: 600;">
+                        <small class="help-text">Auto-generated</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reference_number">Reference Number</label>
+                        <input type="text" id="reference_number" name="reference_number"
+                            value="{{ po.reference_number|default:'' }}" class="form-control"
+                            placeholder="Quotation/Reference">
+                    </div>
+                </div>
+
+                <!-- Row 2: PO Date | Delivery Date -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="po_date">PO Date <span class="required">*</span></label>
+                        <input type="date" id="po_date" name="po_date"
+                            value="{% if po.po_date %}{{ po.po_date|date:'Y-m-d' }}{% else %}{{ today }}{% endif %}"
+                            required class="form-control">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="delivery_date">Delivery Date <span class="required">*</span></label>
+                        <input type="date" id="delivery_date" name="delivery_date"
+                            value="{% if po.delivery_date %}{{ po.delivery_date|date:'Y-m-d' }}{% else %}{{ today }}{% endif %}"
+                            required class="form-control">
+                    </div>
+                </div>
+
+                <!-- Row 3: Department (full width) -->
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label for="department">Buyer Department <span class="required">*</span></label>
+                        <div class="department-searchable-wrapper">
+                            <div class="searchable-dropdown">
+                                <input type="text" id="department_search_input"
+                                    class="form-control searchable-input"
+                                    placeholder="Type to search or click to select..." autocomplete="off">
+                                <span class="dropdown-arrow"><i class="fas fa-chevron-down"></i></span>
+                                <div class="dropdown-list"></div>
+                            </div>
+                            <input type="hidden" id="department" name="department" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 4: Supplier (full width) -->
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label for="supplier">Supplier <span class="required">*</span></label>
+                        <div class="supplier-with-button">
+                            <div class="supplier-searchable-wrapper">
+                                <div class="searchable-dropdown">
+                                    <input type="text" id="supplier_search_input"
+                                        class="form-control searchable-input"
+                                        placeholder="Type to search or click to select..." autocomplete="off">
+                                    <span class="dropdown-arrow"><i class="fas fa-chevron-down"></i></span>
+                                    <div class="dropdown-list"></div>
+                                </div>
+                                <input type="hidden" id="supplier" name="supplier" required>
+                            </div>
+                            <button type="button" id="viewSupplierHistory" class="btn-view-supplier" title="View Supplier History">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 5: Payment Terms (full width) -->
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label for="payment_terms">Payment Terms <span class="required">*</span></label>
+                        <select id="payment_terms" name="payment_terms" required class="form-control">
+                            {% for value, label in payment_terms %}
+                                <option value="{{ value }}" {% if po.payment_terms == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Client Details Toggle -->
+                <div class="form-row client-calc-row">
+                    <div class="form-group full-width">
+                        <div class="toggle-header">
+                            <label>Client Details <span class="required">*</span></label>
+                            <div class="toggle-switch">
+                                <input type="checkbox" id="clientModeToggle" class="toggle-input" onchange="toggleClientMode()">
+                                <label for="clientModeToggle" class="toggle-label">
+                                    <span class="toggle-text toggle-text-new">New</span>
+                                    <span class="toggle-slider"></span>
+                                    <span class="toggle-text toggle-text-exist">Exist</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="selectClientContainer" class="client-input-container">
+                            <div class="searchable-dropdown">
+                                <input type="text" id="client_search_input"
+                                    class="form-control searchable-input"
+                                    placeholder="Type to search..." autocomplete="off"
+                                    onclick="toggleClientDropdown()" oninput="filterClients(this.value)">
+                                <span class="dropdown-arrow" onclick="toggleClientDropdown()"><i class="fas fa-chevron-down"></i></span>
+                                <div id="client_dropdown_list" class="dropdown-list" style="display: none;">
+                                    <div class="dropdown-item" data-value="">-- Select Client --</div>
+                                </div>
+                            </div>
+                            
+                            <small class="help-text" id="clientLoadingText" style="display:none;">
+                                <i class="fas fa-spinner fa-spin"></i> Loading...
+                            </small>
+                            <small class="help-text" id="clientErrorText" style="display:none; color: #e74c3c;">
+                            </small>
+                            <small class="help-text" id="clientSelectedText" style="color: green; display:none;">
+                                <i class="fas fa-check-circle"></i> <span id="selectedClientName"></span>
+                            </small>
+                        </div>
+
+                        <div id="manualClientContainer" class="client-input-container" style="display:none;">
+                            <input type="text" id="client_manual_input" class="form-control"
+                                placeholder="Enter client name" maxlength="255">
+                        </div>
+
+                        <input type="hidden" id="client_details" name="client_details" required>
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label for="notes">Notes</label>
+                        <input type="text" id="notes" name="notes" value="{{ po.notes|default:'' }}"
+                            class="form-control" placeholder="Additional notes">
+                    </div>
+                </div>
+                <!-- ACTION BUTTONS UNCHANGED -->
+                <div class="form-actions text-right mt-4">
+                    <a href="{% url 'purchase_order:po_list' %}" class="btn btn-secondary">Close</a>
+                    <button type="button" class="btn btn-warning" id="resetFormBtn">Refresh</button>
+                    <button type="submit" class="btn btn-primary">{% if action == 'Create' %} Save {% else %} Update {% endif %}</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN ORDER ITEMS -->
+        <div class="po-right">
+            <div class="section-header">
+                <h3 class="section-title"><i class="fas fa-list"></i> Order Items</h3>
+                <div class="header-controls">
+                    <div class="form-group compact-group">
+                        <label for="status">Status <span class="required">*</span></label>
+                        <select id="status" name="status" required class="form-control compact-select">
+                            {% for value, label in status_choices %}
+                                <option value="{{ value }}" {% if po.status == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group compact-group">
+                        <label for="calculation_method">
+                            Calculation Method <span class="required">*</span>
+                        </label>
+                        <select id="calculation_method" name="calculation_method" required class="form-control compact-select" onchange="handleCalculationMethodChange()">
+                            {% for value, label in calculation_methods %}
+                                <option value="{{ value }}" {% if po.calculation_method == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <button type="button" class="btn btn-success" onclick="addItemRow()"><i class="fas fa-plus"></i> Add Item</button>
+                </div>
+            </div>
+
+            <div class="items-scroll-wrapper">
+                <table class="line-items-table" id="itemsTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 25%;">Item</th>
+                            <th style="width: 8%;">Qty</th>
+                            <th style="width: 10%;">Entry Rate <span class="required">*</span></th>
+                            <th style="width: 10%;">Sales Price (MRP)</th>
+                            <th style="width: 10%;">Unit Price</th>
+                            <th style="width: 10%;">Item Cost</th>
+                            <th style="width: 10%;">Margin</th>
+                            <th style="width: 8%;">Discount</th>
+                            <th style="width: 70px; min-width: 70px;">Tax %</th>
+                            <th style="width: 15%;">Entry Total</th>
+                            <th style="width: 8%;">Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="itemsTableBody">
+                    {% if po and po.po_items.all %}
+                        {% for po_item in po.po_items.all %}
+                            <tr class="item-row" id="row_{{ forloop.counter }}">
+                                <!-- Keep your existing row structure here -->
+                                <td style="overflow: visible; position: relative;">
+                                    <div class="item-searchable-wrapper">
+                                        <div class="searchable-dropdown">
+                                            <input 
+                                                type="text"
+                                                class="form-control searchable-input item-input"
+                                                placeholder="Type to search..."
+                                                autocomplete="off"
+                                                value="{{ po_item.item.name }}"
+                                            >
+                                            <span class="dropdown-arrow">
+                                                <i class="fas fa-chevron-down"></i>
+                                            </span>
+                                            <div class="dropdown-list"></div>
+                                        </div>
+                                        <input type="hidden" name="item_id[]" class="hidden-item-id" value="{{ po_item.item.id }}" required>
+                                    </div>
+                                </td>
+                                <td>
+                                    <input type="number" step="1" class="quantity"
+                                        name="quantity[]" value="{{ po_item.quantity }}"
+                                        onchange="calculateEntryTotal({{ forloop.counter }})" required>
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" class="entry-rate"
+                                        name="entry_rate[]" value="{{ po_item.entry_rate }}"
+                                        onchange="handleEntryRateChange({{ forloop.counter }})" required>
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" class="sales-price"
+                                        name="sales_price[]" value="{{ po_item.sales_price }}"
+                                        oninput="calculateMargin({{ forloop.counter }})">
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" class="unit-price"
+                                        name="unit_price[]" value="{{ po_item.unit_price }}" readonly>
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" class="item-cost numeric-input readonly-field"
+                                        name="item_cost[]" value="{{ po_item.item_cost }}" readonly 
+                                        style="text-align: right; font-weight: 600; color: #2c3e50; background: #f8f9fa;">
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" class="margin numeric-input readonly-field"
+                                        name="margin[]" value="{{ po_item.margin }}" readonly 
+                                        style="text-align: right; font-weight: 600; color: #27ae60; background: #f0fff4;">
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" class="discount"
+                                        name="discount[]" value="{{ po_item.discount }}"
+                                        onchange="calculateEntryTotal({{ forloop.counter }})">
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" class="tax-percent readonly-field numeric-input"
+                                        name="tax_percent[]" value="{{ po_item.tax|floatformat:2 }}"
+                                        onchange="calculateEntryTotal({{ forloop.counter }})" readonly
+                                        style="text-align: right; background: #f8f9fa;">
+                                </td>
+                                <td>
+                                    <input type="text" class="line-total" value="₹{{ po_item.entry_total }}" readonly>
+                                </td>
+                                <td>
+                                    <div style="display: flex; gap: 5px; align-items: center;">
+                                        <button type="button" class="btn-view-item" title="View Item History" onclick="viewItemHistory(this)">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button type="button" class="btn-remove" onclick="removeRow({{ forloop.counter }})">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% endif %}
+                    </tbody>
+                </table>
+                
+                <!-- ✅ PAGINATION CONTROLS -->
+                <div class="pagination-container">
+                    <div class="pagination-info">
+                        <span id="rowCountDisplay">Showing 0-0 of 0 items</span>
+                    </div>
+                    <div class="pagination-controls">
+                        <button type="button" class="pagination-btn" id="firstPageBtn" onclick="goToPage(1)" title="First Page">
+                            <i class="fas fa-angle-double-left"></i>
+                        </button>
+                        <button type="button" class="pagination-btn" id="prevPageBtn" onclick="previousPage()" title="Previous Page">
+                            <i class="fas fa-angle-left"></i>
+                        </button>
+                        <span class="pagination-page-info">
+                            Page <span id="currentPageDisplay">1</span> of <span id="totalPagesDisplay">1</span>
+                        </span>
+                        <button type="button" class="pagination-btn" id="nextPageBtn" onclick="nextPage()" title="Next Page">
+                            <i class="fas fa-angle-right"></i>
+                        </button>
+                        <button type="button" class="pagination-btn" id="lastPageBtn" onclick="goToLastPage()" title="Last Page">
+                            <i class="fas fa-angle-double-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- ✅ TOTALS MOVED HERE -->
+            <div class="totals-section" style="margin-top: 15px;">
+                <div class="totals-container">
+                    <div class="total-row"><span class="total-label">Subtotal:</span><span class="total-value" id="subtotalDisplay">₹0.00</span></div>
+                    <div class="total-row"><span class="total-label">Total Tax:</span><span class="total-value" id="taxDisplay">₹0.00</span></div>
+                    <div class="total-row grand-total"><span class="total-label">Grand Total:</span><span class="total-value" id="grandTotalDisplay">₹0.00</span></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</form>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmationModal" class="confirmation-modal">
+        <div class="confirmation-content">
+            <div class="confirmation-header">
+                <i class="fas fa-question-circle"></i>
+                <h2 id="confirmationTitle">Confirm Action</h2>
+            </div>
+            <div class="confirmation-body">
+                <p id="confirmationMessage">Are you sure you want to proceed?</p>
+            </div>
+            <div class="confirmation-footer">
+                <button type="button" class="btn-cancel" onclick="closeConfirmationModal()">Cancel</button>
+                <button type="button" class="btn-confirm" id="confirmButton">
+                    <i class="fas fa-check"></i> Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loader Overlay -->
+    <div id="loaderOverlay" class="loader-overlay">
+        <div class="loader-content">
+            <div class="loader-spinner"></div>
+            <div class="loader-text" id="loaderText">Processing...</div>
+        </div>
+    </div>
+
+    <!-- Success Message -->
+    <div id="successMessage" class="success-message">
+        <div class="success-icon">
+            <i class="fas fa-check"></i>
+        </div>
+        <div class="success-text" id="successText">Success!</div>
+        <div class="success-subtext" id="successSubtext">Operation completed successfully</div>
+    </div>
+
+    <div id="supplierHistoryModal" class="confirmation-modal">
+        <div class="confirmation-content" style="max-width: 1100px;">
+            <div class="confirmation-header" style="background: #6f42c1;">
+            <i class="fas fa-history"></i>
+            <h2>Supplier Purchase History</h2>
+            </div>
+            <div class="confirmation-body" style="max-height: 450px; overflow-y: auto;">
+                <!-- 🔎 Supplier history search -->
+                <div class="history-searchbar">
+                    <input
+                    type="text"
+                    id="supplierHistorySearch"
+                    class="history-search-input"
+                    placeholder="Search PO no, date, item, client, qty, rate, total..."
+                    autocomplete="off">
+                    <button type="button" class="history-clear-btn" data-target="#supplierHistorySearch">×</button>
+                </div>
+
+                <table id="supplierHistoryTable" class="styled-table">
+                <thead>
+                <tr>
+                    <th>PO Number</th>
+                    <th>Date</th>
+                    <th>Item</th>
+                    <th>Client</th>
+                    <th>Quantity</th>
+                    <th>Rate</th>
+                    <th>Total</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr><td colspan="7" class="no-data">Loading...</td></tr>
+                </tbody>
+            </table>
+            </div>
+            <div class="confirmation-footer">
+            <button type="button" class="btn-cancel" onclick="closeSupplierHistory()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="itemHistoryModal" class="confirmation-modal">
+        <div class="confirmation-content" style="max-width: 900px;">
+            <div class="confirmation-header" style="background:  #6f42c1;">
+            <i class="fas fa-history"></i>
+            <h2>Item Purchase History</h2>
+            </div>
+            <div class="confirmation-body" style="max-height: 450px; overflow-y: auto;">
+                <!-- 🔎 Item history search -->
+                <div class="history-searchbar">
+                    <input
+                    type="text"
+                    id="itemHistorySearch"
+                    class="history-search-input"
+                    placeholder="Search PO no, date, supplier, qty, rate, total..."
+                    autocomplete="off">
+                    <button type="button" class="history-clear-btn" data-target="#itemHistorySearch">×</button>
+                </div>
+
+                <table id="itemHistoryTable" class="styled-table">
+                <thead>
+                <tr>
+                    <th>PO Number</th>
+                    <th>Date</th>
+                    <th>Supplier</th>
+                    <th>Quantity</th>
+                    <th>Rate</th>
+                    <th>Total</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr><td colspan="6" class="no-data">Loading...</td></tr>
+                </tbody>
+            </table>
+            </div>
+            <div class="confirmation-footer">
+               <button type="button" class="btn-cancel" onclick="closeItemHistory()">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ==================== BASE LAYOUT ==================== */
+.content-wrapper {
+    padding: 20px;
+    max-width: 100%;
+    margin: 0;
+    width: 100%;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.page-title {
+    font-size: 28px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+}
+
+/* ==================== BUTTONS ==================== */
+.btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary { background: #3498db; color: white; }
+.btn-primary:hover { background: #2980b9; }
+.btn-secondary { background: #95a5a6; color: white; }
+.btn-secondary:hover { background: #7f8c8d; }
+.btn-success { background: #27ae60; color: white; }
+.btn-success:hover { background: #229954; }
+.btn-warning { background: #f39c12; color: white; }
+.btn-warning:hover { background: #e67e22; }
+
+.btn-remove {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+.btn-remove:hover { background: #c0392b; }
+
+/* ==================== FORM CONTAINER ==================== */
+.form-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 20px;
+    max-width: 100%;
+}
+
+.form-section {
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #ecf0f1;
+}
+
+/* ✅ ADD THIS NEW STYLE */
+.form-section.po-info-section {
+    background: linear-gradient(135deg, #d0ddebff 100%);
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.header-controls {
+    display: flex;
+    align-items: flex-end;
+    gap: 15px;
+}
+
+.compact-group {
+    margin-bottom: 0;
+}
+
+.compact-group label {
+    font-size: 12px;
+    margin-bottom: 5px;
+    white-space: nowrap;
+}
+
+.compact-select {
+    min-width: 180px;
+    padding: 8px 12px;
+    font-size: 13px;
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* ==================== FORM ELEMENTS ==================== */
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+label {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.required { color: #e74c3c; }
+
+.form-control {
+    padding: 12px 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    font-size: 15px;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.help-text {
+    font-size: 12px;
+    color: #7f8c8d;
+    margin-top: 5px;
+}
+
+#calculationMethodHelp {
+    padding: 8px 12px;
+    background: #f0f8ff;
+    border-left: 4px solid #3498db;
+    border-radius: 4px;
+    margin-top: 8px;
+    display: block;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: flex-end;
+    padding-top: 20px;
+}
+
+/* ==================== GRID LAYOUT ==================== */
+.po-grid-layout {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 15px;
+    max-width: 100%;
+    width: 100%;
+}
+
+.po-left {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 380px;
+}
+
+.po-right {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-width: 0;
+}
+
+/* ==================== TOTALS SECTION ==================== */
+.totals-section {
+    background: linear-gradient(135deg, #E3F2FD 100%);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.totals-container {
+    max-width: 100%;
+    margin-left: auto;
+}
+
+.total-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 15px;
+}
+
+.total-row.grand-total {
+    border-top: 2px solid rgba(255, 255, 255, 0.37);
+    margin-top: 10px;
+    padding-top: 15px;
+    font-size: 18px;
+}
+
+.total-label { font-weight: 600; }
+.total-value { font-weight: 700; }
+
+/* ==================== TABLE STYLES ==================== */
+.items-scroll-wrapper {
+    max-height: calc(100vh - 300px);
+    overflow-y: auto;
+    overflow-x: auto;
+    width: 100%;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+
+.line-items-table {
+    width: 100%;
+    min-width: 1600px;
+    table-layout: auto !important;
+}
+
+.line-items-table thead {
+    background: #34495e;
+    color: white;
+}
+
+.line-items-table th {
+    padding: 12px 10px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.line-items-table td {
+    padding: 10px;
+    border-bottom: 1px solid #ecf0f1;
+    position: relative !important;
+    overflow: visible !important;
+}
+
+.line-items-table input, .line-items-table select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 13px;
+}
+
+.line-items-table input[readonly] {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #27ae60;
+}
+
+/* Column widths */
+.line-items-table th:nth-child(1), .line-items-table td:nth-child(1) { width: 180px; }
+.line-items-table th:nth-child(2), .line-items-table td:nth-child(2) { width: 70px; }
+.line-items-table th:nth-child(3), .line-items-table td:nth-child(3) { width: 90px; }
+.line-items-table th:nth-child(4), .line-items-table td:nth-child(4) { width: 90px; }
+.line-items-table th:nth-child(5), .line-items-table td:nth-child(5) { width: 90px; }
+.line-items-table th:nth-child(6), .line-items-table td:nth-child(6) { width: 90px; }
+.line-items-table th:nth-child(7), .line-items-table td:nth-child(7) { width: 90px; }
+.line-items-table th:nth-child(8), .line-items-table td:nth-child(8) { width: 80px; }
+.line-items-table th:nth-child(9), .line-items-table td:nth-child(9) { width: 95px !important; min-width: 95px !important; display: table-cell !important; }
+.line-items-table th:nth-child(10), .line-items-table td:nth-child(10) { width: 80px; }
+.line-items-table th:nth-child(11), .line-items-table td:nth-child(11) { width: 70px; }
+
+/* Numeric alignment */
+.numeric-input, .quantity, .line-total, .entry-rate, .unit-price, .sales-price, .discount, .tax-percent {
+    text-align: right !important;
+}
+
+/* ==================== DROPDOWN STYLES ==================== */
+.searchable-dropdown {
+    position: relative;
+    width: 100%;
+}
+
+.searchable-input {
+    padding-right: 40px !important;
+    cursor: text;
+}
+
+.dropdown-arrow {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #7f8c8d;
+    pointer-events: auto;
+    z-index: 2;
+    padding: 5px;
+}
+
+.dropdown-arrow:hover { color: #3498db; }
+
+.dropdown-list {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0;
+    right: auto; /* ✅ Changed from 0 */
+    min-width: 100%; /* ✅ At least as wide as input */
+    width: max-content; /* ✅ Expands to content width */
+    max-width: 500px; /* ✅ Maximum width cap */
+    max-height: 400px;
+    overflow-y: auto;
+    overflow-x: hidden; /* ✅ No horizontal scroll */
+    background: white;
+    border: 2px solid #3498db;
+    border-radius: 0 0 6px 6px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    z-index: 9999;
+    display: none;
+    pointer-events: auto;
+    user-select: none;
+    white-space: normal; /* ✅ Allow text wrapping */
+}
+
+.dropdown-list.show { display: block !important; }
+
+.dropdown-item {
+    padding: 12px 15px;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-size: 14px;
+    color: #2c3e50;
+    border-bottom: 1px solid #f0f0f0;
+    background: white;
+    white-space: normal; /* ✅ Allow text wrapping */
+    word-wrap: break-word; /* ✅ Break long words */
+}
+
+.dropdown-item:hover { background: #ecf0f1; }
+.dropdown-item.selected { background: #e3f2fd; font-weight: 500; }
+.dropdown-item:last-child { border-bottom: none; }
+
+/* ==================== ITEM DROPDOWN ==================== */
+.item-searchable-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    z-index: 100;
+}
+
+.item-searchable-wrapper .searchable-dropdown {
+    flex: 1;
+    position: relative;
+    z-index: 101;
+}
+
+.item-searchable-wrapper .searchable-input {
+    width: 100%;
+    padding: 8px 30px 8px 10px !important;
+    font-size: 13px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 6px;
+    background: white;
+    transition: all 0.2s ease;
+}
+
+.item-searchable-wrapper .searchable-input:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    outline: none;
+}
+
+.item-searchable-wrapper .dropdown-arrow {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6b7280;
+    cursor: pointer;
+    pointer-events: auto;
+    z-index: 2;
+    padding: 5px;
+}
+
+/* ✅ Supplier & Department dropdown */
+.supplier-searchable-wrapper .dropdown-list,
+.department-searchable-wrapper .dropdown-list {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0;
+    right: 0;
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+    background: white;
+    border: 2px solid #3498db;
+    border-radius: 0 0 6px 6px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    z-index: 9999;
+    display: none;
+}
+
+/* ✅ Item dropdown - FIXED WIDTH */
+.item-searchable-wrapper .dropdown-list {
+    position: absolute !important;
+    top: calc(100% + 2px) !important;
+    left: 0 !important;
+    right: auto !important;
+    width: 480px !important;  /* Match Item column width */
+    min-width: 180px !important;
+    max-width: 180px !important;
+    max-height: 280px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    background: white !important;
+    border: 2px solid #3498db !important;
+    border-radius: 0 0 6px 6px !important;
+    z-index: 9999 !important;
+    display: none;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25) !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+}
+
+
+/* ==================== TOGGLE SWITCH STYLES ==================== */
+.toggle-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.toggle-switch {
+    display: flex;
+    align-items: center;
+}
+
+.toggle-input {
+    display: none;
+}
+
+.toggle-label {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    width: 140px;
+    height: 36px;
+    background: #f0f0f0;
+    border-radius: 18px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    padding: 4px;
+    border: 2px solid #e0e0e0;
+}
+
+.toggle-slider {
+    position: absolute;
+    width: 50%;
+    height: calc(100% - 8px);
+    background: #104f99;
+    border-radius: 14px;
+    transition: all 0.3s ease;
+    left: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.toggle-input:checked + .toggle-label .toggle-slider {
+    left: calc(50% - 2px);
+}
+
+.toggle-text {
+    position: relative;
+    width: 50%;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 1;
+    transition: color 0.3s ease;
+}
+
+.toggle-text-new {
+    color: white;
+}
+
+.toggle-text-exist {
+    color: #666;
+}
+
+.toggle-input:checked + .toggle-label .toggle-text-new {
+    color: #666;
+}
+
+.toggle-input:checked + .toggle-label .toggle-text-exist {
+    color: white;
+}
+
+.toggle-label:hover {
+    border-color: #104f99;
+}
+
+#client_manual_input {
+    border: 2px dashed #ceecffff;
+    background: #f0f8ff;
+}
+
+#client_manual_input:focus {
+    border-style: solid;
+    background: white;
+}
+
+/* ==================== PURPLE EYE BUTTONS ==================== */
+.btn-view-supplier, .btn-view-item {
+    background-color: #6f42c1;
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 14px;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.btn-view-supplier:hover, .btn-view-item:hover {
+    background-color: #5a32a3;
+    transform: scale(1.1);
+}
+
+/* ==================== MODALS ==================== */
+.confirmation-modal {
+    display: none;
+    position: fixed;
+    z-index: 9998;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.confirmation-modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.confirmation-content {
+    background-color: white;
+    padding: 0;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.confirmation-header {
+    padding: 25px 30px;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.confirmation-body { padding: 30px; }
+
+.confirmation-footer {
+    padding: 20px 30px;
+    background: #f8f9fa;
+    border-radius: 0 0 12px 12px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.btn-confirm {
+    background: #3498db;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-confirm:hover { background: #2980b9; }
+
+.btn-cancel {
+    background: #95a5a6;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-cancel:hover { background: #7f8c8d; }
+
+/* Loader */
+.loader-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+}
+
+.loader-overlay.active { display: flex; }
+
+.loader-content {
+    background: white;
+    padding: 40px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.loader-spinner {
+    width: 60px;
+    height: 60px;
+    border: 6px solid #f3f3f3;
+    border-top: 6px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Success Message */
+.success-message {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 40px 60px;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    z-index: 10000;
+    text-align: center;
+}
+
+.success-message.active { display: block; }
+
+.success-icon {
+    width: 80px;
+    height: 80px;
+    background: #27ae60;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+}
+
+/* ==================== HISTORY TABLES ==================== */
+.styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.styled-table thead tr {
+    background-color: #6f42c1;
+    color: #ffffff;
+    text-align: left;
+}
+
+.styled-table th, .styled-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #dddddd;
+}
+
+.styled-table td:nth-child(5), .styled-table td:nth-child(6), .styled-table td:nth-child(7) {
+    text-align: right;
+}
+
+.styled-table tbody tr:nth-of-type(even) { background-color: #f3f3f3; }
+.styled-table tbody tr:hover { background-color: #ede7f6; }
+
+.no-data {
+    text-align: center;
+    padding: 20px;
+    font-style: italic;
+    color: #666;
+}
+
+/* History search */
+.history-searchbar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin: 0 12px 12px 12px;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
+
+.history-search-input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.history-search-input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, .1);
+}
+
+.history-clear-btn {
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 50%;
+    background: #e74c3c;
+    color: #fff;
+    font-size: 18px;
+    cursor: pointer;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.history-clear-btn:hover { background: #c0392b; }
+
+/* ==================== OVERFLOW FIXES ==================== */
+.form-section, .form-container, .content-wrapper, .form-row, .form-group, .client-calc-row {
+    overflow: visible !important;
+}
+
+.item-searchable-wrapper .dropdown-list .dropdown-item {
+    padding: 12px 15px !important;
+    line-height: 1.4 !important;
+    word-wrap: break-word !important;
+    white-space: normal !important;
+}
+
+.item-searchable-wrapper .dropdown-list .dropdown-item {
+    font-size: 13px !important;
+}
+
+/* ==================== PAGINATION STYLES ==================== */
+.pagination-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border-top: 2px solid #e9ecef;
+    border-radius: 0 0 8px 8px;
+}
+
+.pagination-info {
+    font-size: 14px;
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pagination-btn {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: #2980b9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+}
+
+.pagination-btn:disabled {
+    background: #bdc3c7;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.pagination-page-info {
+    font-size: 14px;
+    color: #2c3e50;
+    font-weight: 500;
+    padding: 0 10px;
+}
+
+#currentPageDisplay, #totalPagesDisplay {
+    font-weight: 700;
+    color: #3498db;
+}
+
+/* Update items wrapper to accommodate pagination */
+.items-scroll-wrapper {
+    max-height: calc(100vh - 350px);
+    overflow-y: auto;
+    overflow-x: auto;
+    width: 100%;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+}
+
+.line-items-table {
+    flex: 1;
+}
+
+.btn-view-item, .btn-remove {
+    flex-shrink: 0;
+}
+
+/* ==================== SUPPLIER WITH BUTTON LAYOUT ==================== */
+.supplier-with-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.supplier-searchable-wrapper {
+    flex: 1;
+    position: relative;
+}
+
+.btn-view-supplier {
+    flex-shrink: 0;
+    align-self: flex-start;
+    margin-top: 0;
+}
+
+/* ==================== TABLE ROW OVERFLOW FIX ==================== */
+.line-items-table tbody tr {
+    position: relative;
+    z-index: 1;
+}
+
+.line-items-table tbody tr td {
+    overflow: visible !important;
+    position: static !important;
+}
+
+/* Increase z-index when dropdown is active */
+.line-items-table tbody tr:has(.dropdown-list.show) {
+    z-index: 1000 !important;
+    position: relative;
+}
+
+/* ✅ CRITICAL: Item cell must allow overflow */
+.line-items-table tbody tr td:first-child {
+    overflow: visible !important;
+    position: relative !important;
+    z-index: 100;
+}
+
+/* ✅ Table wrapper should not clip */
+.items-scroll-wrapper {
+    overflow: visible !important; /* Change from auto/hidden */
+}
+
+/* ✅ If you need scrolling for the table body only */
+.items-scroll-wrapper {
+    position: relative;
+}
+
+.line-items-table tbody {
+    display: block;
+    max-height: calc(100vh - 400px);
+    overflow-y: auto;
+}
+
+.line-items-table thead,
+.line-items-table tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+}
+
+.line-items-table thead {
+    width: calc(100% - 17px); /* Account for scrollbar */
+}
+
+/* ✅ Force dropdown outside table constraints */
+.item-searchable-wrapper .dropdown-list {
+    position: fixed !important; /* Changed from absolute */
+    top: auto !important;
+    left: auto !important;
+    /* JavaScript will calculate the exact position */
+}
+
+.line-items-table {
+    overflow: visible !important;
+}
+
+.items-scroll-wrapper {
+    overflow: visible !important;
+}
+
+</style>
+
+<script>
+// ==================== GLOBAL VARIABLES ====================
+
+// Items data from Django
+const items = [
+    {% for item in items %}
+    {
+        id: {{ item.id }},
+        name: "{{ item.name|escapejs }}",
+        unit: "{{ item.unit_of_measure|escapejs }}",
+        price: {{ item.purchase_price }},
+        tax: {{ item.tax_percentage }},
+        mrp: {{ item.mrp }}
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+
+let rowCounter = {% if po.po_items.all %}{{ po.po_items.count }}{% else %}0{% endif %};
+let allClients = [];
+let dropdownVisible = false;
+let clientMode = 'select';
+const PREFILLED_CLIENT = "{{ po.client_details|escapejs|default:'' }}";
+
+console.log('Items loaded:', items.length);
+
+// ==================== UTILITY FUNCTIONS ====================
+
+function loadDepartmentInfo() {
+    const deptSelect = document.getElementById('department');
+    if (!deptSelect) return;
+    
+    const selectedOption = deptSelect.options[deptSelect.selectedIndex];
+    if (selectedOption && selectedOption.value) {
+        console.log('Department selected:', selectedOption.text);
+    }
+}
+
+// ==================== INITIALIZATION ====================
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Form initializing...');
+    
+    // Set dates
+    const today = new Date().toISOString().split('T')[0];
+    const poDateInput = document.getElementById('po_date');
+    const deliveryDateInput = document.getElementById('delivery_date');
+    
+    if (poDateInput && !poDateInput.value) poDateInput.value = today;
+    if (deliveryDateInput && !deliveryDateInput.value) deliveryDateInput.value = today;
+    
+    // Initialize department
+    const deptSelect = document.getElementById('department');
+    if (deptSelect) {
+        if (deptSelect.value) loadDepartmentInfo();
+        deptSelect.addEventListener('change', loadDepartmentInfo);
+    }
+    
+    // ✅ CRITICAL: Initialize ALL existing item rows
+    console.log('Initializing item dropdowns...');
+    initializeAllItemDropdowns();
+    
+    // Initialize other components
+    loadClientsFromAPI();
+    handleCalculationMethodChange();
+    updateTotals();
+
+    // ✅ FIX: Recalculate all existing rows on page load
+    // ✅ FIX: Recalculate all existing rows on page load
+{% if po and po.po_items.all %}
+console.log('Recalculating existing PO items...');
+const existingRows = document.querySelectorAll('#itemsTableBody tr');
+existingRows.forEach((row, index) => {
+    const rowId = index + 1;
+    console.log('Recalculating row:', rowId);
+    
+    // ✅ ENSURE TAX FIELD IS VISIBLE AND HAS VALUE
+    const taxField = row.querySelector('.tax-percent');
+    if (taxField && !taxField.value) {
+        taxField.value = '18.00'; // Default tax
+    }
+    console.log('Tax % for row', rowId, ':', taxField?.value);
+    
+    // Recalculate entry rate to set unit price
+    handleEntryRateChange(rowId);
+    
+    // Recalculate totals
+    calculateEntryTotal(rowId);
+    
+    // Recalculate margin
+    calculateMargin(rowId);
+});
+
+// Final total update
+updateTotals();
+console.log('All rows recalculated');
+{% endif %}
+
+    // Date validation
+    if (deliveryDateInput) {
+        deliveryDateInput.addEventListener('change', function() {
+            const poDate = poDateInput.value;
+            if (poDate && this.value && new Date(this.value) < new Date(poDate)) {
+                alert('Delivery date cannot be before PO date');
+                this.value = '';
+            }
+        });
+    }
+    
+    // Add first row if empty
+    {% if action == 'Create' %}
+    const tbody = document.getElementById('itemsTableBody');
+    if (tbody && tbody.children.length === 0) {
+        addItemRow();
+    }
+    {% endif %}
+
+    // Recalculate margin when sales price changes
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('sales-price')) {
+            const row = e.target.closest('tr');
+            if (row) calculateItemCost(row);
+        }
+    });
+    // ==================== PREFILL CLIENT ON EDIT ====================
+    if (typeof PREFILLED_CLIENT !== 'undefined' && PREFILLED_CLIENT.trim() !== "") {
+        const clientHidden = document.getElementById("client_details");
+        const clientInput = document.getElementById("client_search_input");
+        const clientSelected = document.getElementById("clientSelectedText");
+        const selectedNameSpan = document.getElementById("selectedClientName");
+        const toggle = document.getElementById("clientModeToggle");
+
+        clientHidden.value = PREFILLED_CLIENT;
+        if (clientInput) clientInput.value = PREFILLED_CLIENT;
+        if (selectedNameSpan) selectedNameSpan.textContent = PREFILLED_CLIENT;
+        if (clientSelected) clientSelected.style.display = "block";
+
+        // stay on select mode (Exist)
+        if (toggle) toggle.checked = true;
+        switchClientMode("select");
+    }
+
+    // If manual client was used previously
+    if (typeof PREFILLED_CLIENT !== 'undefined' && !allClients.includes(PREFILLED_CLIENT)) {
+        const toggle = document.getElementById("clientModeToggle");
+        if (toggle) toggle.checked = false;
+        switchClientMode("manual");
+        document.getElementById("client_manual_input").value = PREFILLED_CLIENT;
+        document.getElementById("client_details").value = PREFILLED_CLIENT;
+    }
+});
+
+
+function handleCalculationMethodChange() {
+    const methodSelect = document.getElementById('calculation_method');
+    const description = document.getElementById('methodDescription');
+    
+    if (!methodSelect || !description) return;
+    
+    const method = methodSelect.value;
+    
+    if (method === 'PLUS_TAX') {
+        description.innerHTML = '<strong>Plus Tax:</strong> Tax will be added on top of base price';
+        description.style.color = '#27ae60';
+    } else if (method === 'REVERSE_TAX') {
+        description.innerHTML = '<strong>Reverse Tax:</strong> Tax is extracted from inclusive price';
+        description.style.color = '#e67e22';
+    }
+    
+    const rows = document.querySelectorAll('#itemsTableBody tr');
+    rows.forEach((row) => {
+        const rowId = row.id.split('_')[1];
+        if (rowId) calculateEntryTotal(parseInt(rowId));
+    });
+}
+
+function handleEntryRateChange(rowId) {
+    const row = document.getElementById(`row_${rowId}`);
+    if (!row) return;
+
+    const entryRate = parseFloat(row.querySelector('.entry-rate').value) || 0;
+    const taxPercent = parseFloat(row.querySelector('.tax-percent').value) || 0;
+    const unitPriceInput = row.querySelector('.unit-price');
+    
+    const method = document.getElementById('calculation_method').value;
+    
+    if (method === 'PLUS_TAX') {
+        unitPriceInput.value = entryRate.toFixed(2);
+    } else {
+        const exclusivePrice = (entryRate / (100 + taxPercent)) * 100;
+        unitPriceInput.value = exclusivePrice.toFixed(2);
+    }
+    
+    calculateEntryTotal(rowId);
+}
+
+function calculateEntryTotal(rowId) {
+    const row = document.getElementById(`row_${rowId}`);
+    if (!row) return;
+
+    const qty = parseFloat(row.querySelector('.quantity').value) || 0;
+    const unitPrice = parseFloat(row.querySelector('.unit-price').value) || 0;
+    const taxPercent = parseFloat(row.querySelector('.tax-percent').value) || 0;
+    const discount = parseFloat(row.querySelector('.discount').value) || 0;
+    
+    const taxableValue = (qty * unitPrice) - discount;
+    const taxAmount = taxableValue * (taxPercent / 100);
+    const entryTotal = taxableValue + taxAmount;
+
+    const entryTotalField = row.querySelector('.line-total') || row.querySelector('.entry-total');
+    if (entryTotalField) {
+        entryTotalField.value = `₹${entryTotal.toFixed(2)}`;
+    }
+
+    calculateItemCost(row);
+    updateTotals();
+}
+
+function calculateItemCost(row) {
+    const qty = parseFloat(row.querySelector('.quantity').value) || 0;
+    const entryTotalField = row.querySelector('.line-total') || row.querySelector('.entry-total');
+    const itemCostField = row.querySelector('.item-cost');
+    const salesPriceField = row.querySelector('.sales-price');
+    const marginField = row.querySelector('.margin');
+
+    if (!entryTotalField || !itemCostField) return;
+
+    const entryTotal = parseFloat(entryTotalField.value.replace(/[₹,]/g, '')) || 0;
+    const salesPrice = parseFloat(salesPriceField?.value) || 0;
+
+    // Calculate Item Cost
+    if (qty > 0) {
+        const cost = entryTotal / qty;
+        itemCostField.value = cost.toFixed(2);
+        
+        // ✅ Calculate Margin (Sales Price - Item Cost)
+        if (marginField) {
+            const margin = salesPrice - cost;
+            marginField.value = margin.toFixed(2);
+        }
+    } else {
+        itemCostField.value = "0.00";
+        if (marginField) marginField.value = "0.00";
+    }
+}
+
+function calculateMargin(rowIdOrInput) {
+    let row;
+    
+    // Handle both row ID and input element
+    if (typeof rowIdOrInput === 'number') {
+        row = document.getElementById(`row_${rowIdOrInput}`);
+    } else if (rowIdOrInput instanceof HTMLElement) {
+        row = rowIdOrInput.closest('tr');
+    } else {
+        return;
+    }
+    
+    if (!row) return;
+    
+    const salesPriceField = row.querySelector('.sales-price');
+    const itemCostField = row.querySelector('.item-cost');
+    const marginField = row.querySelector('.margin');
+    
+    if (!salesPriceField || !itemCostField || !marginField) return;
+    
+    const salesPrice = parseFloat(salesPriceField.value) || 0;
+    const itemCost = parseFloat(itemCostField.value) || 0;
+    
+    const margin = salesPrice - itemCost;
+    marginField.value = margin.toFixed(2);
+}
+
+function updateTotals() {
+    let subtotal = 0;
+    let totalTax = 0;
+
+    const rows = document.querySelectorAll('#itemsTableBody tr');
+    rows.forEach(row => {
+        const qty = parseFloat(row.querySelector('.quantity')?.value) || 0;
+        const unitPrice = parseFloat(row.querySelector('.unit-price')?.value) || 0;
+        const discount = parseFloat(row.querySelector('.discount')?.value) || 0;
+        const taxPercent = parseFloat(row.querySelector('.tax-percent')?.value) || 0;
+
+        const taxableValue = (qty * unitPrice) - discount;
+        const taxAmount = taxableValue * (taxPercent / 100);
+
+        subtotal += taxableValue;
+        totalTax += taxAmount;
+    });
+
+    const grandTotal = subtotal + totalTax;
+
+    const subtotalDisplay = document.getElementById('subtotalDisplay');
+    const taxDisplay = document.getElementById('taxDisplay');
+    const grandTotalDisplay = document.getElementById('grandTotalDisplay');
+
+    if (subtotalDisplay) subtotalDisplay.textContent = `₹${subtotal.toFixed(2)}`;
+    if (taxDisplay) taxDisplay.textContent = `₹${totalTax.toFixed(2)}`;
+    if (grandTotalDisplay) grandTotalDisplay.textContent = `₹${grandTotal.toFixed(2)}`;
+}
+
+function loadDepartmentInfo() {
+    const deptSelect = document.getElementById('department');
+    if (!deptSelect) return;
+    
+    const selectedOption = deptSelect.options[deptSelect.selectedIndex];
+    if (selectedOption && selectedOption.value) {
+        console.log('Department selected:', selectedOption.text);
+    }
+}
+// ==================== LINE ITEM FUNCTIONS ====================
+
+function addItemRow() {
+    rowCounter++;
+    const tbody = document.getElementById('itemsTableBody');
+    const row = document.createElement('tr');
+    row.id = `row_${rowCounter}`;
+    
+    row.innerHTML = `
+        <td style="overflow: visible; position: relative;">
+            <div class="item-searchable-wrapper">
+                <div class="searchable-dropdown">
+                    <input 
+                        type="text"
+                        class="form-control searchable-input item-input"
+                        placeholder="Type to search or click to select..."
+                        autocomplete="off"
+                    >
+                    <span class="dropdown-arrow">
+                        <i class="fas fa-chevron-down"></i>
+                    </span>
+                    <div class="dropdown-list"></div>
+                </div>
+                <input type="hidden" name="item_id[]" class="hidden-item-id" required>
+            </div>
+        </td>
+        <td>
+            <input type="number" name="quantity[]" class="quantity" step="1" min="1" value="1" onchange="calculateEntryTotal(${rowCounter})" required>
+        </td>
+        <td>
+            <input type="number" name="entry_rate[]" class="entry-rate" step="0.01" min="0" value="0.00" onchange="handleEntryRateChange(${rowCounter})" required placeholder="Enter price">
+        </td>
+        <td>
+            <input type="number" name="sales_price[]" class="sales-price" step="0.01" min="0" value="0.00" title="Editable Sales Price (MRP)" oninput="calculateMargin(${rowCounter})">
+        </td>
+        <td>
+            <input type="number" name="unit_price[]" class="unit-price readonly-field" step="0.01" min="0" value="0" readonly title="Auto-calculated" required>
+        </td>
+        <td>
+            <input type="number" name="item_cost[]" class="item-cost numeric-input readonly-field" step="0.01" min="0" value="0.00" readonly style="text-align: right; font-weight: 600; color: #2c3e50; background: #f8f9fa;" title="Auto-calculated as Entry Total ÷ Quantity">
+        </td>
+        <td>
+            <input type="number" 
+                name="margin[]" 
+                class="margin numeric-input readonly-field" 
+                step="0.01" 
+                value="0.00" 
+                readonly 
+                style="text-align: right; font-weight: 600; color: #000000ff; background: #ffffffff;"
+                title="Auto-calculated as Sales Price - Item Cost">
+        </td>
+        <td>
+            <input type="number" name="discount[]" class="discount" step="0.01" min="0" value="0" onchange="calculateEntryTotal(${rowCounter})">
+        </td>
+        <td>
+            <input type="number" name="tax_percent[]" class="tax-percent readonly-field" step="0.01" min="0" max="100" value="18" onchange="calculateEntryTotal(${rowCounter})" readonly>
+        </td>
+        <td>
+            <input type="text" class="line-total" value="₹0.00" readonly>
+        </td>
+        <td>
+            <button type="button" class="btn-remove" onclick="removeRow(${rowCounter})">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>
+    `;
+    
+    tbody.appendChild(row);
+    
+    // Initialize new row's dropdown
+    const newRow = tbody.lastElementChild;
+    const input = newRow.querySelector('.item-input');
+    const arrow = newRow.querySelector('.dropdown-arrow');
+    
+    if (input) {
+        input.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleItemDropdown(this);
+        });
+        
+        input.addEventListener('input', function() {
+            filterItems(this);
+        });
+    }
+    
+    if (arrow) {
+        arrow.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleItemDropdown(this.previousElementSibling);
+        });
+    }
+    
+    console.log('New row added:', rowCounter);
+}
+
+function removeRow(rowId) {
+    const row = document.getElementById(`row_${rowId}`);
+    if (row) {
+        row.remove();
+        updateTotals();
+    }
+}
+
+function updateItemPrice(selectElement, rowId) {
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    const price = selectedOption.getAttribute('data-price') || 0;
+    const tax = selectedOption.getAttribute('data-tax') || 18;
+    const mrp = selectedOption.getAttribute('data-mrp') || 0;
+    
+    const row = document.getElementById(`row_${rowId}`);
+    const priceInput = row.querySelector('.unit-price');
+    const taxInput = row.querySelector('.tax-percent');
+    const entryRateInput = row.querySelector('.entry-rate');
+    const salesPriceInput = row.querySelector('.sales-price');
+    
+    priceInput.value = parseFloat(price).toFixed(2);
+    taxInput.value = parseFloat(tax).toFixed(2);
+    
+    if (entryRateInput) {
+        entryRateInput.value = parseFloat(price).toFixed(2);
+    }
+    
+    // Auto-fill Sales Price from MRP
+    if (salesPriceInput) {
+        salesPriceInput.value = parseFloat(mrp).toFixed(2);
+    }
+    
+    priceInput.setAttribute('readonly', true);
+    taxInput.setAttribute('readonly', true);
+    
+    calculateEntryTotal(rowId);
+    calculateItemCost(row);  // ✅ This will now also calculate margin
+}
+
+function calculateEntryTotal(rowId) {
+    const row = document.getElementById(`row_${rowId}`);
+    if (!row) return;
+
+    const qty = parseFloat(row.querySelector('.quantity').value) || 0;
+    const unitPrice = parseFloat(row.querySelector('.unit-price').value) || 0;
+    const taxPercent = parseFloat(row.querySelector('.tax-percent').value) || 0;
+    const discount = parseFloat(row.querySelector('.discount').value) || 0;
+    
+    const taxableValue = (qty * unitPrice) - discount;
+    const taxAmount = taxableValue * (taxPercent / 100);
+    const entryTotal = taxableValue + taxAmount;
+
+    const entryTotalField = row.querySelector('.line-total') || row.querySelector('.entry-total');
+    if (entryTotalField) {
+        entryTotalField.value = `₹${entryTotal.toFixed(2)}`;
+    }
+
+    // ✅ ADD THIS - calculate item cost (Entry Total ÷ Qty)
+    calculateItemCost(row);
+
+    // ✅ Keep existing total update
+    updateTotals();
+}
+
+function updateTotals() {
+    let subtotal = 0;
+    let totalTax = 0;
+
+    const rows = document.querySelectorAll('#itemsTableBody tr');
+    rows.forEach(row => {
+        const qty = parseFloat(row.querySelector('.quantity').value) || 0;
+        const unitPrice = parseFloat(row.querySelector('.unit-price').value) || 0;
+        const discount = parseFloat(row.querySelector('.discount').value) || 0;
+        const taxPercent = parseFloat(row.querySelector('.tax-percent').value) || 0;
+
+        // Recalculate per-row totals safely
+        const taxableValue = (qty * unitPrice) - discount;
+        const taxAmount = taxableValue * (taxPercent / 100);
+        const rowTotal = taxableValue + taxAmount;
+
+        subtotal += taxableValue;
+        totalTax += taxAmount;
+    });
+
+    const grandTotal = subtotal + totalTax;
+
+    // ✅ Update display
+    document.getElementById('subtotalDisplay').textContent = `₹${subtotal.toFixed(2)}`;
+    document.getElementById('taxDisplay').textContent = `₹${totalTax.toFixed(2)}`;
+    document.getElementById('grandTotalDisplay').textContent = `₹${grandTotal.toFixed(2)}`;
+}
+
+function removeRow(rowId) {
+    const row = document.getElementById(`row_${rowId}`);
+    if (row) {
+        row.remove();
+        updateTotals();
+    }
+}
+
+// ==================== CLIENT API FUNCTIONS (FINAL CLEAN VERSION) ====================
+
+
+function loadClientsFromAPI() {
+    const searchInput = document.getElementById('client_search_input');
+
+    if (!searchInput) {
+        console.error('Client search input not found');
+        return;
+    }
+
+    console.log('Loading clients from API...');
+    searchInput.disabled = true;
+    searchInput.placeholder = 'Loading clients...';
+
+    const apiUrl = "{% url 'purchase_order:get_clients_api' %}";
+
+    fetch(apiUrl)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('API Response:', data);
+            searchInput.disabled = false;
+            searchInput.placeholder = 'Type to search or click to select...';
+
+            let clients = Array.isArray(data) ? data :
+                          data.results ? data.results :
+                          data.data ? data.data : [];
+
+            console.log('Clients loaded:', clients.length);
+            allClients = clients;
+            
+            if (clients.length > 0) {
+                populateClientDropdown(allClients);
+            } else {
+                console.warn('No clients returned from API');
+            }
+        })
+        .catch(err => {
+            console.error('Error loading clients:', err);
+            searchInput.disabled = false;
+            searchInput.placeholder = 'Error loading clients - Type manually';
+        });
+}
+
+function populateClientDropdown(clients) {
+    const dropdownList = document.getElementById('client_dropdown_list');
+    if (!dropdownList) {
+        console.error('Client dropdown list not found');
+        return;
+    }
+
+    console.log('Populating dropdown with', clients.length, 'clients');
+    dropdownList.innerHTML = '';
+
+    if (!clients || clients.length === 0) {
+        const noResults = document.createElement('div');
+        noResults.className = 'dropdown-item no-results';
+        noResults.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: #999;">
+                <i class="fas fa-search"></i><br>
+                No clients available
+            </div>
+        `;
+        dropdownList.appendChild(noResults);
+        return;
+    }
+
+    clients.forEach(client => {
+        const item = document.createElement('div');
+        item.className = 'dropdown-item';
+        
+        const displayName = client.display_name || client.name;
+        const originalName = client.name;
+        const location = client.place || client.city || "";
+
+        item.innerHTML = `
+            <div class="client-dropdown-item" style="padding: 5px 0;">
+                <div class="client-name" style="font-weight: 500; color: #2c3e50;">
+                    ${originalName}
+                </div>
+                ${location ? `
+                    <div class="client-location" style="font-size: 12px; color: #7f8c8d; margin-top: 3px;">
+                        <i class="fas fa-map-marker-alt"></i> ${location}
+                    </div>
+                ` : ""}
+            </div>
+        `;
+
+        // Use mousedown to prevent input blur
+        item.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Client selected:', displayName);
+            selectClient(displayName, originalName);
+        });
+
+        item.addEventListener('mouseenter', function() {
+            this.style.background = '#ecf0f1';
+        });
+
+        item.addEventListener('mouseleave', function() {
+            this.style.background = 'white';
+        });
+
+        dropdownList.appendChild(item);
+    });
+
+    console.log('Dropdown populated successfully');
+}
+
+function filterClients(searchTerm) {
+    const dropdownList = document.getElementById('client_dropdown_list');
+    if (!dropdownList) return;
+
+    console.log('Filtering clients with term:', searchTerm);
+
+    // Show dropdown when typing
+    if (!dropdownVisible) {
+        dropdownVisible = true;
+        dropdownList.style.display = 'block';
+        dropdownList.classList.add('show');
+    }
+
+    const query = searchTerm.toLowerCase().trim();
+    const items = dropdownList.querySelectorAll('.dropdown-item:not(.no-results)');
+
+    let visibleCount = 0;
+    items.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        const matches = text.includes(query);
+        item.style.display = matches ? 'block' : 'none';
+        if (matches) visibleCount++;
+    });
+
+    console.log(`Filtered: ${visibleCount} items visible`);
+
+    // Show "no results" if nothing matches
+    let noResultsDiv = dropdownList.querySelector('.no-results');
+    if (visibleCount === 0 && query.length > 0) {
+        if (!noResultsDiv) {
+            noResultsDiv = document.createElement('div');
+            noResultsDiv.className = 'dropdown-item no-results';
+            noResultsDiv.innerHTML = `
+                <div style="text-align: center; padding: 20px; color: #999;">
+                    <i class="fas fa-search"></i><br>
+                    No clients found matching "${searchTerm}"
+                </div>
+            `;
+            dropdownList.appendChild(noResultsDiv);
+        }
+    } else if (noResultsDiv) {
+        noResultsDiv.remove();
+    }
+}
+
+function toggleClientDropdown() {
+    const dropdownList = document.getElementById('client_dropdown_list');
+    const searchInput = document.getElementById('client_search_input');
+    
+    if (!dropdownList || !searchInput) {
+        console.error('Dropdown elements not found');
+        return;
+    }
+
+    console.log('Toggling dropdown. Current visible:', dropdownVisible);
+
+    // Close other dropdowns first
+    document.querySelectorAll('.dropdown-list').forEach(list => {
+        if (list !== dropdownList && list.classList.contains('show')) {
+            list.classList.remove('show');
+            list.style.display = 'none';
+        }
+    });
+
+    // Toggle current dropdown
+    dropdownVisible = !dropdownVisible;
+    
+    if (dropdownVisible) {
+        // Force show with inline styles
+        dropdownList.style.cssText = `
+            display: block !important;
+            position: absolute !important;
+            top: 100% !important;
+            left: 0 !important;
+            right: 0 !important;
+            max-height: 300px !important;
+            overflow-y: auto !important;
+            background: white !important;
+            border: 2px solid #3498db !important;
+            border-top: none !important;
+            border-radius: 0 0 6px 6px !important;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.25) !important;
+            z-index: 99999 !important;
+            margin-top: -2px !important;
+        `;
+        dropdownList.classList.add('show');
+        console.log('Dropdown opened');
+        
+        // If no clients loaded yet, try loading
+        if (allClients.length === 0) {
+            console.log('No clients loaded, attempting to load...');
+            loadClientsFromAPI();
+        }
+    } else {
+        dropdownList.style.display = 'none';
+        dropdownList.classList.remove('show');
+        console.log('Dropdown closed');
+    }
+}
+
+function selectClient(displayName, originalName) {
+    const searchInput = document.getElementById('client_search_input');
+    const hiddenInput = document.getElementById('client_details');
+    const dropdownList = document.getElementById('client_dropdown_list');
+    const selectedText = document.getElementById('clientSelectedText');
+    const selectedNameSpan = document.getElementById('selectedClientName');
+
+    console.log('Selecting client:', displayName, '(', originalName, ')');
+
+    if (searchInput) {
+        searchInput.value = displayName;
+        searchInput.classList.add('has-value');
+    }
+    
+    if (hiddenInput) {
+        hiddenInput.value = originalName;
+    }
+
+    if (selectedText && selectedNameSpan) {
+        selectedNameSpan.textContent = displayName;
+        selectedText.style.display = 'block';
+    }
+
+    // Hide dropdown
+    if (dropdownList) {
+        dropdownList.style.display = 'none';
+        dropdownList.classList.remove('show');
+    }
+    
+    dropdownVisible = false;
+    console.log('Client selected successfully');
+}
+
+function toggleClientMode() {
+    const toggle = document.getElementById('clientModeToggle');
+    const selectContainer = document.getElementById('selectClientContainer');
+    const manualContainer = document.getElementById('manualClientContainer');
+    const clientDetails = document.getElementById('client_details');
+
+    if (toggle.checked) {
+        // Exist mode (checked)
+        selectContainer.style.display = 'block';
+        manualContainer.style.display = 'none';
+        clientMode = 'select';
+        console.log('Switched to Exist mode (select)');
+    } else {
+        // New mode (unchecked)
+        selectContainer.style.display = 'none';
+        manualContainer.style.display = 'block';
+        clientMode = 'manual';
+        console.log('Switched to New mode (manual)');
+        
+        // Clear selection when switching to manual
+        const manualInput = document.getElementById('client_manual_input');
+        if (manualInput) {
+            clientDetails.value = manualInput.value.trim();
+        }
+    }
+}
+
+function switchClientMode(mode) {
+    console.log('Switching client mode to:', mode);
+    clientMode = mode;
+
+    const selectContainer = document.getElementById('selectClientContainer');
+    const manualContainer = document.getElementById('manualClientContainer');
+    const toggle = document.getElementById('clientModeToggle');
+
+    if (mode === 'select') {
+        selectContainer.style.display = 'block';
+        manualContainer.style.display = 'none';
+        if (toggle) toggle.checked = true;
+    } else {
+        selectContainer.style.display = 'none';
+        manualContainer.style.display = 'block';
+        if (toggle) toggle.checked = false;
+    }
+}
+
+// Initialize client dropdown on page load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Initializing client dropdown...');
+    
+    const searchInput = document.getElementById('client_search_input');
+    const dropdown = document.getElementById('client_dropdown_list');
+    const arrow = document.querySelector('#selectClientContainer .dropdown-arrow');
+    const manualInput = document.getElementById('client_manual_input');
+
+    // Load clients from API
+    loadClientsFromAPI();
+
+    // Setup event listeners
+    if (searchInput) {
+        // Click to toggle dropdown
+        searchInput.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleClientDropdown();
+        });
+
+        // Type to filter
+        searchInput.addEventListener('input', function() {
+            filterClients(this.value);
+        });
+
+        // Prevent blur from closing dropdown immediately
+        searchInput.addEventListener('blur', function() {
+            // Delay closing to allow click events to fire
+            setTimeout(() => {
+                if (!document.activeElement || 
+                    !document.activeElement.closest('#client_dropdown_list')) {
+                    if (dropdownVisible) {
+                        toggleClientDropdown();
+                    }
+                }
+            }, 200);
+        });
+    }
+
+    if (arrow) {
+        arrow.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleClientDropdown();
+        });
+    }
+
+    // Manual input handler
+    if (manualInput) {
+        manualInput.addEventListener('input', function() {
+            const clientDetails = document.getElementById('client_details');
+            if (clientDetails) {
+                clientDetails.value = this.value.trim();
+            }
+        });
+    }
+
+    // Close dropdown on outside click
+    document.addEventListener('click', function(event) {
+        const selectContainer = document.getElementById('selectClientContainer');
+        if (selectContainer && !selectContainer.contains(event.target)) {
+            if (dropdownVisible) {
+                const dropdownList = document.getElementById('client_dropdown_list');
+                if (dropdownList) {
+                    dropdownList.style.display = 'none';
+                    dropdownList.classList.remove('show');
+                }
+                dropdownVisible = false;
+            }
+        }
+    });
+
+    console.log('Client dropdown initialization complete');
+});
+
+// ==================== CONFIRMATION & LOADER FUNCTIONS ====================
+
+function showConfirmationModal(title, message, onConfirm) {
+    const modal = document.getElementById('confirmationModal');
+    const titleElement = document.getElementById('confirmationTitle');
+    const messageElement = document.getElementById('confirmationMessage');
+    const confirmButton = document.getElementById('confirmButton');
+    
+    if (!modal) return;
+    
+    if (titleElement) titleElement.textContent = title;
+    if (messageElement) messageElement.textContent = message;
+    
+    confirmCallback = onConfirm;
+    
+    modal.classList.add('active');
+    
+    if (confirmButton) {
+        confirmButton.onclick = function() {
+            closeConfirmationModal();
+            if (confirmCallback) {
+                confirmCallback();
+            }
+        };
+    }
+}
+
+function closeConfirmationModal() {
+    const modal = document.getElementById('confirmationModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+    confirmCallback = null;
+}
+
+function showLoader(text = 'Processing...') {
+    const loader = document.getElementById('loaderOverlay');
+    const loaderText = document.getElementById('loaderText');
+    
+    if (loaderText) loaderText.textContent = text;
+    if (loader) loader.classList.add('active');
+}
+
+function hideLoader() {
+    const loader = document.getElementById('loaderOverlay');
+    if (loader) loader.classList.remove('active');
+}
+
+function showSuccessMessage(title, subtitle, redirectUrl = null, delay = 2000) {
+    const successMsg = document.getElementById('successMessage');
+    const successText = document.getElementById('successText');
+    const successSubtext = document.getElementById('successSubtext');
+    
+    if (!successMsg) return;
+    
+    if (successText) successText.textContent = title;
+    if (successSubtext) successSubtext.textContent = subtitle;
+    
+    successMsg.classList.add('active');
+    
+    setTimeout(() => {
+        successMsg.classList.remove('active');
+        if (redirectUrl) {
+            window.location.href = redirectUrl;
+        }
+    }, delay);
+}
+
+// ==================== SIMPLE FORM SUBMISSION (EMERGENCY FIX) ====================
+
+document.getElementById('poForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Quick validation
+    const rows = document.querySelectorAll('#itemsTableBody tr');
+    if (rows.length === 0) {
+        alert('Please add at least one item!');
+        return false;
+    }
+    
+    // ✅ ADD THIS: Validate all items are selected
+    let allItemsSelected = true;
+    rows.forEach(row => {
+        const hiddenItemId = row.querySelector('.hidden-item-id');
+        if (!hiddenItemId || !hiddenItemId.value) {
+            allItemsSelected = false;
+        }
+    });
+    
+    if (!allItemsSelected) {
+        alert('Please select an item for all rows!');
+        return false;
+    }
+    
+    const clientDetails = document.getElementById('client_details');
+    if (!clientDetails || !clientDetails.value) {
+        alert('Please select a client!');
+        return false;
+    }
+    
+    // Show simple confirmation
+    if (confirm('Are you sure you want to submit this Purchase Order?')) {
+        const loader = document.getElementById('loaderOverlay');
+        if (loader) loader.classList.add('active');
+        this.submit();
+    }
+    
+    return false;
+});
+
+// Manual input handler
+const manualInput = document.getElementById('client_manual_input');
+if (manualInput) {
+    manualInput.addEventListener('input', function() {
+        const clientDetails = document.getElementById('client_details');
+        if (clientDetails) {
+            clientDetails.value = this.value.trim();
+        }
+    });
+}
+
+// Close dropdown on outside click
+document.addEventListener('click', function(event) {
+    const dropdown = document.querySelector('.searchable-dropdown');
+    if (dropdown && !dropdown.contains(event.target)) {
+        const dropdownList = document.getElementById('client_dropdown_list');
+        if (dropdownList) {
+            dropdownList.style.display = 'none';
+            dropdownVisible = false;
+        }
+    }
+});
+
+// Close modal on Escape
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeConfirmationModal();
+    }
+});
+
+// Close modal on outside click
+window.addEventListener('click', function(event) {
+    const modal = document.getElementById('confirmationModal');
+    if (event.target === modal) {
+        closeConfirmationModal();
+    }
+});
+
+// ==================== RESET FORM FUNCTION ====================
+
+const resetFormBtn = document.getElementById('resetFormBtn');
+if (resetFormBtn) {
+    resetFormBtn.addEventListener('click', function() {
+        if (!confirm('Are you sure you want to reset the form? All entered data will be lost.')) {
+            return;
+        }
+        
+        const form = document.getElementById('poForm');
+        form.reset();
+        
+        const today = new Date().toISOString().split('T')[0];
+        const poDateInput = document.getElementById('po_date');
+        const deliveryDateInput = document.getElementById('delivery_date');
+        
+        if (poDateInput) poDateInput.value = today;
+        if (deliveryDateInput) deliveryDateInput.value = today;
+        
+        const tbody = document.getElementById('itemsTableBody');
+        tbody.innerHTML = '';
+        rowCounter = 0;
+        
+        addItemRow();
+        
+        const clientSearchInput = document.getElementById('client_search_input');
+        const clientManualInput = document.getElementById('client_manual_input');
+        const clientDetailsInput = document.getElementById('client_details');
+        
+        if (clientSearchInput) clientSearchInput.value = '';
+        if (clientManualInput) clientManualInput.value = '';
+        if (clientDetailsInput) clientDetailsInput.value = '';
+        
+        switchClientMode('select');
+        
+        const dropdownList = document.getElementById('client_dropdown_list');
+        if (dropdownList) {
+            dropdownList.style.display = 'none';
+            dropdownVisible = false;
+        }
+        
+        updateTotals();
+        handleCalculationMethodChange();
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        const pageTitle = document.querySelector('.page-title');
+        if (pageTitle) {
+            const originalText = pageTitle.textContent;
+            pageTitle.textContent = '✓ Form Reset Successfully';
+            pageTitle.style.color = '#27ae60';
+            
+            setTimeout(() => {
+                pageTitle.textContent = originalText;
+                pageTitle.style.color = '#2c3e50';
+            }, 2000);
+        }
+    });
+}
+
+// ==================== SUPPLIER HISTORY POPUP ====================
+document.getElementById("viewSupplierHistory").addEventListener("click", async () => {
+  const supplierId = document.getElementById("supplier").value;
+  const tableBody = document.querySelector("#supplierHistoryTable tbody");
+  tableBody.innerHTML = `<tr><td colspan="6" class="no-data">Loading...</td></tr>`;
+
+  if (!supplierId) {
+    alert("Please select a supplier first.");
+    return;
+  }
+
+  try {
+    const response = await fetch(`/po/supplier-history/${supplierId}/`);
+    const data = await response.json();
+
+    if (data.history && data.history.length > 0) {
+        tableBody.innerHTML = data.history
+            .map(
+            (row) => `
+                <tr>
+                <td>${row.po_number}</td>
+                <td>${row.date}</td>
+                <td>${row.item_name}</td>
+                <td>${row.client_details || '—'}</td>
+                <td>${row.quantity || '-'}</td>
+                <td>${row.rate}</td>
+                <td>${row.total || '-'}</td>
+                </tr>`
+            )
+        .join("");
+    } else {
+        tableBody.innerHTML = `<tr><td colspan="7" class="no-data">No purchase history found.</td></tr>`;
+    }
+
+    document.getElementById("supplierHistoryModal").classList.add("active");
+  } catch (error) {
+    tableBody.innerHTML = `<tr><td colspan="6" class="no-data">Error loading history.</td></tr>`;
+    console.error("Error fetching supplier history:", error);
+  }
+});
+
+function closeSupplierHistory() {
+  document.getElementById("supplierHistoryModal").classList.remove("active");
+}
+
+// ==================== ITEM HISTORY POPUP ====================
+function initializeAllItemDropdowns() {
+    document.querySelectorAll('#itemsTableBody tr').forEach(row => {
+        const input = row.querySelector('.item-input');
+        const arrow = row.querySelector('.dropdown-arrow');
+        
+        if (input) {
+            // Remove any existing listeners
+            input.replaceWith(input.cloneNode(true));
+            const newInput = row.querySelector('.item-input');
+            
+            // Click to open
+            newInput.addEventListener('click', function(e) {
+                e.stopPropagation();
+                console.log('Input clicked');
+                toggleItemDropdown(this);
+            });
+            
+            // Type to filter
+            newInput.addEventListener('input', function(e) {
+                console.log('Input changed:', this.value);
+                filterItems(this);
+            });
+            
+            // Prevent dropdown from closing on focus
+            newInput.addEventListener('focus', function(e) {
+                console.log('Input focused');
+            });
+        }
+        
+        if (arrow) {
+            arrow.replaceWith(arrow.cloneNode(true));
+            const newArrow = row.querySelector('.dropdown-arrow');
+            
+            newArrow.addEventListener('click', function(e) {
+                e.stopPropagation();
+                console.log('Arrow clicked');
+                const inputElement = this.previousElementSibling;
+                toggleItemDropdown(inputElement);
+            });
+        }
+        
+        const rowId = row.id.split('_')[1];
+        if (rowId) rowCounter = Math.max(rowCounter, parseInt(rowId));
+    });
+    
+    console.log('Item dropdowns initialized, rowCounter:', rowCounter);
+}
+
+// ==================== ITEM HISTORY POPUP ====================
+
+async function viewItemHistory(button) {
+    const row = button.closest('tr');
+    const hiddenItemId = row.querySelector('.hidden-item-id');
+    const itemId = hiddenItemId ? hiddenItemId.value : null;
+    
+    const tableBody = document.querySelector("#itemHistoryTable tbody");
+    tableBody.innerHTML = `<tr><td colspan="6" class="no-data">Loading...</td></tr>`;
+
+    if (!itemId) {
+        alert("Please select an item first.");
+        return;
+    }
+
+    try {
+        const response = await fetch(`/po/item-history/${itemId}/`);
+        const data = await response.json();
+
+        if (data.history && data.history.length > 0) {
+            tableBody.innerHTML = data.history
+                .map(
+                    (row) => `
+                        <tr>
+                            <td>${row.po_number}</td>
+                            <td>${row.date}</td>
+                            <td>${row.supplier_name}</td>
+                            <td>${row.quantity || '-'}</td>
+                            <td>${row.rate}</td>
+                            <td>${row.total || '-'}</td>
+                        </tr>`
+                )
+                .join("");
+        } else {
+            tableBody.innerHTML = `<tr><td colspan="6" class="no-data">No purchase history found for this item.</td></tr>`;
+        }
+
+        document.getElementById("itemHistoryModal").classList.add("active");
+    } catch (error) {
+        tableBody.innerHTML = `<tr><td colspan="6" class="no-data">Error loading history.</td></tr>`;
+        console.error("Error fetching item history:", error);
+    }
+}
+
+function closeItemHistory() {
+    document.getElementById("itemHistoryModal").classList.remove("active");
+}
+
+// Close modals on Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeConfirmationModal();
+        closeSupplierHistory();
+        closeItemHistory();
+    }
+});
+
+// Close modals on outside click
+window.addEventListener('click', function(event) {
+    const confirmModal = document.getElementById('confirmationModal');
+    const supplierModal = document.getElementById('supplierHistoryModal');
+    const itemModal = document.getElementById('itemHistoryModal');
+    
+    if (event.target === confirmModal) closeConfirmationModal();
+    if (event.target === supplierModal) closeSupplierHistory();
+    if (event.target === itemModal) closeItemHistory();
+});
+
+// ==================== ITEM SEARCHABLE DROPDOWN (COMPLETE FIX) ====================
+
+function toggleItemDropdown(input) {
+    console.log('=== toggleItemDropdown called ===');
+    
+    const wrapper = input.closest('.searchable-dropdown');
+    if (!wrapper) {
+        console.error('Wrapper not found');
+        return;
+    }
+    
+    const dropdown = wrapper.querySelector('.dropdown-list');
+    if (!dropdown) {
+        console.error('Dropdown not found');
+        return;
+    }
+    
+    console.log('Current dropdown display:', dropdown.style.display);
+    console.log('Current dropdown class:', dropdown.className);
+    
+    // Close other dropdowns
+    document.querySelectorAll('.dropdown-list').forEach(list => {
+        if (list !== dropdown) {
+            list.classList.remove('show');
+            list.style.display = 'none';
+        }
+    });
+    
+    // Toggle current
+    const isShowing = dropdown.classList.contains('show');
+    console.log('Is currently showing:', isShowing);
+    
+    if (isShowing) {
+        dropdown.classList.remove('show');
+        dropdown.style.display = 'none';
+        console.log('Hiding dropdown');
+    } else {
+        populateItemDropdown(input, items);
+        dropdown.classList.add('show');
+        dropdown.style.display = 'block';
+        console.log('Showing dropdown - display:', dropdown.style.display);
+    }
+}
+
+// Filter items as user types
+function filterItems(input) {
+    const query = input.value.trim().toLowerCase();
+    console.log('=== filterItems called with query:', query, '===');
+    
+    const wrapper = input.closest('.searchable-dropdown');
+    const dropdown = wrapper.querySelector('.dropdown-list');
+    
+    // Always show dropdown when typing
+    if (!dropdown.classList.contains('show')) {
+        dropdown.classList.add('show');
+        dropdown.style.display = 'block';
+        console.log('Dropdown was hidden, now showing');
+    }
+    
+    const filteredItems = items.filter(item =>
+        item.name.toLowerCase().includes(query) ||
+        item.unit.toLowerCase().includes(query)
+    );
+    
+    console.log('Filtered', filteredItems.length, 'items');
+    populateItemDropdown(input, filteredItems);
+}
+
+// Populate dropdown with items
+function populateItemDropdown(input, itemsList) {
+    const wrapper = input.closest('.searchable-dropdown');
+    const dropdown = wrapper.querySelector('.dropdown-list');
+    
+    const rect = input.getBoundingClientRect();
+    
+    // ✅ Use fixed positioning relative to viewport
+    dropdown.style.cssText = `
+        position: fixed !important;
+        top: ${rect.bottom + window.scrollY + 2}px !important;
+        left: ${rect.left + window.scrollX}px !important;
+        width: 480px !important;
+        max-height: 280px !important;
+        overflow-y: auto !important;
+        background: white !important;
+        border: 2px solid #3498db !important;
+        border-radius: 6px !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.4) !important;
+        z-index: 9999 !important;
+        display: block !important;
+    `;
+    
+    dropdown.innerHTML = '';
+    
+    if (!itemsList || itemsList.length === 0) {
+        dropdown.innerHTML = `
+            <div style="padding: 20px; text-align: center; color: #999;">
+                <i class="fas fa-search"></i><br>
+                No items found
+            </div>
+        `;
+        console.log('No items to display');
+        return;
+    }
+    
+    itemsList.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'dropdown-item';
+        
+        div.style.cssText = `
+            padding: 10px 12px !important;
+            cursor: pointer !important;
+            border-bottom: 1px solid #f0f0f0 !important;
+            background: white !important;
+            display: block !important;
+            position: relative !important;
+        `;
+        
+        div.innerHTML = `
+            <div style="font-weight: 500; color: #1f2937; font-size: 13px;">
+                ${item.name} - ${item.unit}
+            </div>
+            <div style="font-size: 11px; color: #6b7280; margin-top: 2px;">
+                Price: ₹${parseFloat(item.price).toFixed(2)} | 
+                Tax: ${item.tax}% | 
+                MRP: ₹${parseFloat(item.mrp).toFixed(2)}
+            </div>
+        `;
+        
+        div.dataset.id = item.id;
+        div.dataset.price = item.price;
+        div.dataset.tax = item.tax;
+        div.dataset.mrp = item.mrp;
+        div.dataset.name = item.name;
+        div.dataset.unit = item.unit;
+        
+        // ✅ Use click instead of mousedown
+        div.addEventListener('click', function(e) {
+            e.stopPropagation();
+            console.log('Item clicked:', item.name);
+            selectItemOption(this, input);
+        });
+        
+        div.addEventListener('mouseenter', function() {
+            this.style.background = '#f5f5f5';
+        });
+        
+        div.addEventListener('mouseleave', function() {
+            this.style.background = 'white';
+        });
+        
+        dropdown.appendChild(div);
+        console.log('Added item', index + 1, ':', item.name);
+    });
+    
+    console.log('Dropdown populated. Final display:', dropdown.style.display);
+    console.log('Dropdown position:', dropdown.style.top, dropdown.style.left);
+}
+
+// Select item from dropdown
+function selectItemOption(option, input) {
+    console.log('=== selectItemOption called ===');
+    
+    const row = input.closest('tr');
+    const rowId = row.id.split('_')[1];
+    
+    const displayText = option.dataset.name;
+    input.value = displayText;
+    input.classList.add('has-value');
+    
+    const hiddenInput = row.querySelector('.hidden-item-id');
+    if (hiddenInput) {
+        hiddenInput.value = option.dataset.id;
+        console.log('Set item ID:', option.dataset.id);
+    }
+    
+    // Auto-fill prices
+    const price = parseFloat(option.dataset.price) || 0;
+    const tax = parseFloat(option.dataset.tax) || 0;
+    const mrp = parseFloat(option.dataset.mrp) || 0;
+    
+    const entryRateInput = row.querySelector('.entry-rate');
+    const unitPriceInput = row.querySelector('.unit-price');
+    const salesPriceInput = row.querySelector('.sales-price');
+    const taxInput = row.querySelector('.tax-percent');
+    
+    if (entryRateInput) entryRateInput.value = price.toFixed(2);
+    if (unitPriceInput) unitPriceInput.value = price.toFixed(2);
+    if (salesPriceInput) salesPriceInput.value = mrp.toFixed(2);
+    if (taxInput) taxInput.value = tax.toFixed(2);
+    
+    if (rowId) handleEntryRateChange(parseInt(rowId));
+    
+    // Hide dropdown
+    const dropdown = input.closest('.searchable-dropdown').querySelector('.dropdown-list');
+    dropdown.classList.remove('show');
+    dropdown.style.display = 'none';
+    
+    console.log('Item selection complete');
+
+    input.blur();
+}
+
+// ==================== CLOSE DROPDOWNS ON OUTSIDE CLICK ====================
+
+document.addEventListener('click', function(e) {
+    // Check if the click is inside any dropdown-related element
+    const isDropdownClick = e.target.closest('.dropdown-list');
+    const isWrapperClick = e.target.closest('.item-searchable-wrapper, .supplier-searchable-wrapper, .department-searchable-wrapper');
+    const isInputClick = e.target.closest('.searchable-input, .item-input, .dropdown-arrow');
+    
+    // If clicked outside all dropdown-related elements, close all dropdowns
+    if (!isDropdownClick && !isWrapperClick && !isInputClick) {
+        document.querySelectorAll('.dropdown-list').forEach(list => {
+            list.classList.remove('show');
+            list.style.display = 'none';
+        });
+        
+        // Remove active states
+        document.querySelectorAll('.supplier-searchable-wrapper, .department-searchable-wrapper').forEach(wrapper => {
+            wrapper.classList.remove('active');
+        });
+    }
+});
+
+// ==================== SCROLL/RESIZE HANDLERS ====================
+
+window.addEventListener('scroll', function() {
+    document.querySelectorAll('.dropdown-list.show').forEach(dropdown => {
+        const wrapper = dropdown.closest('.searchable-dropdown');
+        if (!wrapper) return;
+        
+        const input = wrapper.querySelector('.item-input');
+        if (!input) return;
+        
+        const rect = input.getBoundingClientRect();
+        dropdown.style.top = (rect.bottom + 2) + 'px';
+        dropdown.style.left = rect.left + 'px';
+    });
+}, true);
+
+window.addEventListener('resize', function() {
+    document.querySelectorAll('.dropdown-list.show').forEach(dropdown => {
+        const wrapper = dropdown.closest('.searchable-dropdown');
+        if (!wrapper) return;
+        
+        const input = wrapper.querySelector('.item-input');
+        if (!input) return;
+        
+        const rect = input.getBoundingClientRect();
+        dropdown.style.top = (rect.bottom + 2) + 'px';
+        dropdown.style.left = rect.left + 'px';
+        dropdown.style.width = Math.max(rect.width, 300) + 'px';
+    });
+});
+
+// ==================== UPDATED addItemRow FUNCTION ====================
+
+function addItemRow() {
+    rowCounter++;
+    const tbody = document.getElementById('itemsTableBody');
+    const row = document.createElement('tr');
+    row.id = `row_${rowCounter}`;
+    
+    row.innerHTML = `
+        <td style="overflow: visible; position: relative;">
+            <div class="item-searchable-wrapper">
+                <div class="searchable-dropdown">
+                    <input 
+                        type="text"
+                        class="form-control searchable-input item-input"
+                        placeholder="Type to search or click to select..."
+                        autocomplete="off"
+                    >
+                    <span class="dropdown-arrow">
+                        <i class="fas fa-chevron-down"></i>
+                    </span>
+                    <div class="dropdown-list"></div>
+                </div>
+                <input type="hidden" name="item_id[]" class="hidden-item-id" required>
+            </div>
+        </td>
+        <td>
+            <input type="number" name="quantity[]" class="quantity" step="1" min="1" value="1" onchange="calculateEntryTotal(${rowCounter})" required>
+        </td>
+        <td>
+            <input type="number" name="entry_rate[]" class="entry-rate" step="0.01" min="0" 
+                value="0.00" onchange="handleEntryRateChange(${rowCounter})" required 
+                placeholder="Enter price">
+        </td>
+        <td>
+            <input type="number" name="sales_price[]" class="sales-price" step="0.01" min="0" value="0.00" 
+                title="Editable Sales Price (MRP)">
+        </td>
+        <td>
+            <input type="number" name="unit_price[]" class="unit-price readonly-field" step="0.01" min="0" value="0" 
+                readonly title="Auto-calculated" required>
+        </td>
+        <td>
+            <input type="number" 
+                name="item_cost[]" 
+                class="item-cost numeric-input readonly-field" 
+                step="0.01" 
+                min="0" 
+                value="0.00" 
+                readonly 
+                style="text-align: right; font-weight: 600; color: #2c3e50; background: #f8f9fa;"
+                title="Auto-calculated as Entry Total ÷ Quantity">
+        </td>
+        <td>
+            <input type="number" name="margin[]" class="margin numeric-input readonly-field" step="0.01" value="0.00" readonly style="text-align: right; font-weight: 600; color: #27ae60; background: #f0fff4;" title="Auto-calculated as Sales Price - Item Cost">
+        </td>
+        <td>
+            <input type="number" name="discount[]" class="discount" step="0.01" min="0" value="0" onchange="calculateEntryTotal(${rowCounter})">
+        </td>
+        <td>
+            <input type="number" name="tax_percent[]" class="tax-percent readonly-field" step="0.01" min="0" max="100" value="18" 
+                onchange="calculateEntryTotal(${rowCounter})" readonly>
+        </td>
+        <td>
+            <input type="text" class="line-total" value="₹0.00" readonly>
+        </td>
+        <td>
+            <div style="display: flex; gap: 5px; align-items: center;">
+                <button type="button" class="btn-view-item" title="View Item History" onclick="viewItemHistory(this)">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button type="button" class="btn-remove" onclick="removeRow(${rowCounter})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </td>
+    `;
+    
+    tbody.appendChild(row);
+    
+    // ✅ ADD EVENT LISTENERS AFTER ROW IS ADDED
+    const newInput = row.querySelector('.item-input');
+    const newArrow = row.querySelector('.dropdown-arrow');
+    
+    // Input click - open dropdown
+    newInput.addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleItemDropdown(this);
+    });
+    
+    // Input typing - filter items
+    newInput.addEventListener('input', function() {
+        filterItems(this);
+    });
+    
+    // Arrow click - toggle dropdown
+    newArrow.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const input = this.previousElementSibling;
+        toggleItemDropdown(input);
+    });
+}
+
+// ==================== REPOSITION DROPDOWN ON SCROLL/RESIZE ====================
+
+// ✅ Reposition dropdowns on scroll
+
+window.addEventListener('scroll', function() {
+    document.querySelectorAll('.dropdown-list.show').forEach(dropdown => {
+        const wrapper = dropdown.closest('.searchable-dropdown');
+        if (!wrapper) return;
+        
+        const input = wrapper.querySelector('.item-input');
+        if (!input) return;
+        
+        const rect = input.getBoundingClientRect();
+        
+        // Update fixed position based on new scroll position
+        dropdown.style.top = (rect.bottom + window.scrollY + 2) + 'px';
+        dropdown.style.left = (rect.left + window.scrollX) + 'px';
+    });
+}, true);
+
+// ✅ Reposition dropdowns on window resize
+window.addEventListener('resize', function() {
+    document.querySelectorAll('.dropdown-list.show').forEach(dropdown => {
+        const wrapper = dropdown.closest('.searchable-dropdown');
+        if (!wrapper) return;
+        
+        const input = wrapper.querySelector('.item-input');
+        if (!input) return;
+        
+        const rect = input.getBoundingClientRect();
+        
+        dropdown.style.top = (rect.bottom + 2) + 'px';
+        dropdown.style.left = rect.left + 'px';
+        dropdown.style.width = rect.width + 'px';
+    });
+});
+
+// ✅ Close dropdown on scroll (alternative - if repositioning feels janky)
+/*
+window.addEventListener('scroll', function() {
+    document.querySelectorAll('.dropdown-list.show').forEach(dropdown => {
+        dropdown.classList.remove('show');
+        dropdown.style.display = 'none';
+    });
+}, true);
+*/
+
+// ==================== SUPPLIER & DEPARTMENT SEARCHABLE DROPDOWNS ====================
+
+// Data arrays
+const suppliers = [
+    {% for s in suppliers %}
+    {
+        id: {{ s.id }},
+        name: "{{ s.name|escapejs }}",
+        city: "{{ s.city|escapejs }}",
+        display: "{{ s.name|escapejs }} - {{ s.city|escapejs }}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+
+const departments = [
+    {% for d in departments %}
+    {
+        id: {{ d.id }},
+        name: "{{ d.name|escapejs }}",
+        city: "{{ d.city|escapejs }}",
+        address: "{{ d.address|escapejs }}",
+        state: "{{ d.state|escapejs }}",
+        pincode: "{{ d.pincode|escapejs }}",
+        gst: "{{ d.gst_number|escapejs }}",
+        display: "{{ d.name|escapejs }} - {{ d.city|escapejs }}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+
+// Initialize both on page load
+function initializeSupplierAndDepartmentDropdowns() {
+    initializeSupplierDropdown();
+    initializeDepartmentDropdown();
+}
+
+// ==================== SUPPLIER DROPDOWN ====================
+
+function initializeSupplierDropdown() {
+    const input = document.getElementById('supplier_search_input');
+    const arrow = input.nextElementSibling;
+    const hiddenInput = document.getElementById('supplier');
+
+    // Prefill if editing
+    {% if po.supplier.id %}
+    const prefilledSupplier = suppliers.find(s => s.id === {{ po.supplier.id }});
+    if (prefilledSupplier) {
+        input.value = prefilledSupplier.display;
+        input.classList.add('has-value');
+        hiddenInput.value = prefilledSupplier.id;
+    }
+    {% endif %}
+
+    input.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleSupplierDropdown();
+    });
+
+    input.addEventListener('input', () => {
+        filterSupplierDropdown(input.value);
+    });
+
+    arrow.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleSupplierDropdown();
+    });
+}
+
+function toggleSupplierDropdown() {
+    const wrapper = document.querySelector('.supplier-searchable-wrapper');
+    const dropdown = wrapper.querySelector('.dropdown-list');
+
+    // Close all other dropdowns before toggling
+    document.querySelectorAll('.dropdown-list.show').forEach(list => {
+        if (list !== dropdown) {
+            list.classList.remove('show');
+            list.closest('.supplier-searchable-wrapper, .department-searchable-wrapper')?.classList.remove('active');
+        }
+    });
+
+    const isVisible = dropdown.classList.contains('show');
+
+    if (isVisible) {
+        dropdown.classList.remove('show');
+        wrapper.classList.remove('active');
+    } else {
+        populateSupplierDropdown(suppliers);
+        dropdown.classList.add('show');
+        wrapper.classList.add('active'); // ✅ brings this above others
+    }
+}
+
+function filterSupplierDropdown(query) {
+    const filtered = suppliers.filter(s =>
+        s.name.toLowerCase().includes(query.toLowerCase()) ||
+        s.city.toLowerCase().includes(query.toLowerCase())
+    );
+    populateSupplierDropdown(filtered);
+}
+
+function populateSupplierDropdown(suppliersList) {
+    const wrapper = document.querySelector('.supplier-searchable-wrapper');
+    const dropdown = wrapper.querySelector('.dropdown-list');
+    dropdown.innerHTML = '';
+
+    if (!suppliersList.length) {
+        dropdown.innerHTML = `<div class="dropdown-item no-results">No suppliers found</div>`;
+        return;
+    }
+
+    suppliersList.forEach(supplier => {
+        const div = document.createElement('div');
+        div.className = 'dropdown-item';
+        div.textContent = supplier.display;
+        div.dataset.id = supplier.id;
+        div.dataset.name = supplier.name;
+        div.dataset.display = supplier.display;
+
+        div.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            selectSupplier(div);
+        });
+
+        dropdown.appendChild(div);
+    });
+}
+
+function selectSupplier(option) {
+    const input = document.getElementById('supplier_search_input');
+    const hiddenInput = document.getElementById('supplier');
+    const wrapper = document.querySelector('.supplier-searchable-wrapper');
+    const dropdown = wrapper.querySelector('.dropdown-list');
+
+    input.value = option.dataset.display;
+    input.classList.add('has-value');
+    hiddenInput.value = option.dataset.id;
+    dropdown.classList.remove('show');
+    wrapper.classList.remove('active');
+}
+
+
+// ==================== DEPARTMENT DROPDOWN ====================
+
+function initializeDepartmentDropdown() {
+    const input = document.getElementById('department_search_input');
+    const arrow = input.nextElementSibling;
+    const hiddenInput = document.getElementById('department');
+
+    {% if po.department.id %}
+    const prefilledDept = departments.find(d => d.id === {{ po.department.id }});
+    if (prefilledDept) {
+        input.value = prefilledDept.display;
+        input.classList.add('has-value');
+        hiddenInput.value = prefilledDept.id;
+    }
+    {% endif %}
+
+    input.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleDepartmentDropdown();
+    });
+
+    input.addEventListener('input', () => {
+        filterDepartmentDropdown(input.value);
+    });
+
+    arrow.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleDepartmentDropdown();
+    });
+}
+
+function toggleDepartmentDropdown() {
+    const wrapper = document.querySelector('.department-searchable-wrapper');
+    const dropdown = wrapper.querySelector('.dropdown-list');
+
+    // Close all others before toggling
+    document.querySelectorAll('.dropdown-list.show').forEach(list => {
+        if (list !== dropdown) {
+            list.classList.remove('show');
+            list.closest('.supplier-searchable-wrapper, .department-searchable-wrapper')?.classList.remove('active');
+        }
+    });
+
+    const isVisible = dropdown.classList.contains('show');
+
+    if (isVisible) {
+        dropdown.classList.remove('show');
+        wrapper.classList.remove('active');
+    } else {
+        populateDepartmentDropdown(departments);
+        dropdown.classList.add('show');
+        wrapper.classList.add('active'); // ✅ keeps this above supplier
+    }
+}
+
+function filterDepartmentDropdown(query) {
+    const filtered = departments.filter(d =>
+        d.name.toLowerCase().includes(query.toLowerCase()) ||
+        d.city.toLowerCase().includes(query.toLowerCase())
+    );
+    populateDepartmentDropdown(filtered);
+}
+
+function populateDepartmentDropdown(departmentsList) {
+    const wrapper = document.querySelector('.department-searchable-wrapper');
+    const dropdown = wrapper.querySelector('.dropdown-list');
+    dropdown.innerHTML = '';
+
+    if (!departmentsList.length) {
+        dropdown.innerHTML = `<div class="dropdown-item no-results">No departments found</div>`;
+        return;
+    }
+
+    departmentsList.forEach(dept => {
+        const div = document.createElement('div');
+        div.className = 'dropdown-item';
+        div.textContent = dept.display;
+        div.dataset.id = dept.id;
+        div.dataset.name = dept.name;
+        div.dataset.display = dept.display;
+
+        div.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            selectDepartment(div);
+        });
+
+        dropdown.appendChild(div);
+    });
+}
+
+function selectDepartment(option) {
+    const input = document.getElementById('department_search_input');
+    const hiddenInput = document.getElementById('department');
+    const wrapper = document.querySelector('.department-searchable-wrapper');
+    const dropdown = wrapper.querySelector('.dropdown-list');
+
+    input.value = option.dataset.display;
+    input.classList.add('has-value');
+    hiddenInput.value = option.dataset.id;
+    dropdown.classList.remove('show');
+    wrapper.classList.remove('active');
+    loadDepartmentInfo();
+}
+
+// ==================== INITIALIZE ON PAGE LOAD ====================
+document.addEventListener('DOMContentLoaded', () => {
+    initializeSupplierAndDepartmentDropdowns();
+});
+
+(function(){
+  // Generic row filter
+  function filterTable(inputEl, tableSelector){
+    const q = (inputEl.value || '').toLowerCase().trim();
+    const tbody = document.querySelector(tableSelector + ' tbody');
+    if(!tbody) return;
+
+    let anyVisible = false;
+    [...tbody.rows].forEach((tr, idx) => {
+      // skip loader row
+      if(tr.classList.contains('no-data-row')) return;
+      const txt = tr.textContent.toLowerCase();
+      const hit = txt.indexOf(q) !== -1;
+      tr.style.display = hit ? '' : 'none';
+      if (hit) anyVisible = true;
+    });
+
+    // If nothing matches, show a single "No results" row
+    let noRow = tbody.querySelector('.no-results-row');
+    if(!anyVisible){
+      if(!noRow){
+        noRow = document.createElement('tr');
+        noRow.className = 'no-results-row';
+        const cols = document.querySelectorAll(tableSelector + ' thead th').length;
+        noRow.innerHTML = `<td colspan="${cols}" class="no-data">No matching records</td>`;
+        tbody.appendChild(noRow);
+      }
+    }else if(noRow){
+      noRow.remove();
+    }
+  }
+
+  // Wire search inputs when modals open (tables are filled by AJAX)
+  function wireSearch(inputSel, tableSel){
+    const input = document.querySelector(inputSel);
+    if(!input) return;
+    // Debounce to avoid hammering DOM on fast typing
+    let t;
+    input.addEventListener('input', function(){
+      clearTimeout(t);
+      t = setTimeout(() => filterTable(input, tableSel), 200);
+    });
+
+    // Clear button
+    document.querySelectorAll('.history-clear-btn').forEach(btn=>{
+      btn.addEventListener('click', function(){
+        const target = document.querySelector(this.getAttribute('data-target'));
+        if(target){
+          target.value = '';
+          filterTable(target, tableSel);
+          target.focus();
+        }
+      });
+    });
+  }
+
+  // Hook for Supplier popup
+  wireSearch('#supplierHistorySearch', '#supplierHistoryTable');
+  // Hook for Item popup
+  wireSearch('#itemHistorySearch', '#itemHistoryTable');
+
+  // Optional: re-apply filter after AJAX loads data
+  function reapplyAfterAjax(){
+    const s1 = document.querySelector('#supplierHistorySearch');
+    if(s1) filterTable(s1, '#supplierHistoryTable');
+    const s2 = document.querySelector('#itemHistorySearch');
+    if(s2) filterTable(s2, '#itemHistoryTable');
+  }
+  // If your AJAX functions already exist, call reapplyAfterAjax() right after you replace tbody HTML.
+
+  // Example: after your fetch success for supplier history, do:
+  // tableBody.innerHTML = builtHtml; reapplyAfterAjax();
+
+})();
+
+// ==================== PAGINATION VARIABLES ====================
+let currentPage = 1;
+const itemsPerPage = 8;
+let totalPages = 1;
+
+// ==================== PAGINATION FUNCTIONS ====================
+
+function updatePagination() {
+    const tbody = document.getElementById('itemsTableBody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    const totalItems = rows.length;
+    
+    // Calculate total pages
+    totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+    
+    // Ensure current page is valid
+    if (currentPage > totalPages) {
+        currentPage = totalPages;
+    }
+    if (currentPage < 1) {
+        currentPage = 1;
+    }
+    
+    // Calculate start and end indices
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+    
+    // Show/hide rows based on current page
+    rows.forEach((row, index) => {
+        if (index >= startIndex && index < endIndex) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    // Update pagination display
+    document.getElementById('currentPageDisplay').textContent = currentPage;
+    document.getElementById('totalPagesDisplay').textContent = totalPages;
+    
+    // Update row count display
+    const displayStart = totalItems === 0 ? 0 : startIndex + 1;
+    const displayEnd = endIndex;
+    document.getElementById('rowCountDisplay').textContent = 
+        `Showing ${displayStart}-${displayEnd} of ${totalItems} items`;
+    
+    // Update button states
+    const firstPageBtn = document.getElementById('firstPageBtn');
+    const prevPageBtn = document.getElementById('prevPageBtn');
+    const nextPageBtn = document.getElementById('nextPageBtn');
+    const lastPageBtn = document.getElementById('lastPageBtn');
+    
+    if (firstPageBtn) firstPageBtn.disabled = (currentPage === 1);
+    if (prevPageBtn) prevPageBtn.disabled = (currentPage === 1);
+    if (nextPageBtn) nextPageBtn.disabled = (currentPage === totalPages);
+    if (lastPageBtn) lastPageBtn.disabled = (currentPage === totalPages);
+}
+
+function goToPage(pageNumber) {
+    currentPage = pageNumber;
+    updatePagination();
+}
+
+function nextPage() {
+    if (currentPage < totalPages) {
+        currentPage++;
+        updatePagination();
+    }
+}
+
+function previousPage() {
+    if (currentPage > 1) {
+        currentPage--;
+        updatePagination();
+    }
+}
+
+function goToLastPage() {
+    currentPage = totalPages;
+    updatePagination();
+}
+
+// ==================== UPDATE addItemRow FUNCTION ====================
+
+// Update your existing addItemRow function to call updatePagination at the end:
+function addItemRow() {
+    rowCounter++;
+    const tbody = document.getElementById('itemsTableBody');
+    const row = document.createElement('tr');
+    row.id = `row_${rowCounter}`;
+    
+    row.innerHTML = `
+        <td style="overflow: visible; position: relative;">
+            <div class="item-searchable-wrapper">
+                <div class="searchable-dropdown">
+                    <input 
+                        type="text"
+                        class="form-control searchable-input item-input"
+                        placeholder="Type to search or click to select..."
+                        autocomplete="off"
+                    >
+                    <span class="dropdown-arrow">
+                        <i class="fas fa-chevron-down"></i>
+                    </span>
+                    <div class="dropdown-list"></div>
+                </div>
+                <input type="hidden" name="item_id[]" class="hidden-item-id" required>
+            </div>
+        </td>
+        <td>
+            <input type="number" name="quantity[]" class="quantity" step="1" min="1" value="1" onchange="calculateEntryTotal(${rowCounter})" required>
+        </td>
+        <td>
+            <input type="number" name="entry_rate[]" class="entry-rate" step="0.01" min="0" value="0.00" onchange="handleEntryRateChange(${rowCounter})" required placeholder="Enter price">
+        </td>
+        <td>
+            <input type="number" name="sales_price[]" class="sales-price" step="0.01" min="0" value="0.00" title="Editable Sales Price (MRP)" oninput="calculateMargin(${rowCounter})">
+        </td>
+        <td>
+            <input type="number" name="unit_price[]" class="unit-price readonly-field" step="0.01" min="0" value="0" readonly title="Auto-calculated" required>
+        </td>
+        <td>
+            <input type="number" name="item_cost[]" class="item-cost numeric-input readonly-field" step="0.01" min="0" value="0.00" readonly style="text-align: right; font-weight: 600; color: #2c3e50; background: #f8f9fa;" title="Auto-calculated as Entry Total ÷ Quantity">
+        </td>
+        <td>
+            <input type="number" 
+                name="margin[]" 
+                class="margin numeric-input readonly-field" 
+                step="0.01" 
+                value="0.00" 
+                readonly 
+                style="text-align: right; font-weight: 600; color: #000000ff; background: #ffffffff;"
+                title="Auto-calculated as Sales Price - Item Cost">
+        </td>
+        <td>
+            <input type="number" name="discount[]" class="discount" step="0.01" min="0" value="0" onchange="calculateEntryTotal(${rowCounter})">
+        </td>
+        <td>
+            <input type="number" name="tax_percent[]" class="tax-percent readonly-field" step="0.01" min="0" max="100" value="18" onchange="calculateEntryTotal(${rowCounter})" readonly>
+        </td>
+        <td>
+            <input type="text" class="line-total" value="₹0.00" readonly>
+        </td>
+        <td>
+            <button type="button" class="btn-view-item" title="View Item History" onclick="viewItemHistory(this)">
+                <i class="fas fa-eye"></i>
+            </button>
+            <button type="button" class="btn-remove" onclick="removeRow(${rowCounter})">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>
+    `;
+    
+    tbody.appendChild(row);
+    
+    // Initialize new row's dropdown
+    const newInput = row.querySelector('.item-input');
+    const newArrow = row.querySelector('.dropdown-arrow');
+    
+    if (newInput) {
+        newInput.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleItemDropdown(this);
+        });
+        
+        newInput.addEventListener('input', function() {
+            filterItems(this);
+        });
+    }
+    
+    if (arrow) {
+        newArrow.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const input = this.previousElementSibling;
+            toggleItemDropdown(input);
+        });
+    }
+    
+    console.log('New row added:', rowCounter);
+    
+    // ✅ UPDATE PAGINATION AFTER ADDING ROW
+    updatePagination();
+    
+    // ✅ GO TO LAST PAGE TO SHOW NEW ROW
+    goToLastPage();
+}
+
+// ==================== UPDATE removeRow FUNCTION ====================
+
+function removeRow(rowId) {
+    const row = document.getElementById(`row_${rowId}`);
+    if (row) {
+        row.remove();
+        updateTotals();
+        
+        // ✅ UPDATE PAGINATION AFTER REMOVING ROW
+        updatePagination();
+    }
+}
+
+// ==================== INITIALIZE PAGINATION ON PAGE LOAD ====================
+
+// Add to your existing DOMContentLoaded event listener:
+document.addEventListener('DOMContentLoaded', function() {
+    // ... your existing initialization code ...
+    
+    // ✅ Initialize pagination
+    updatePagination();
+    
+    console.log('Pagination initialized');
+});
+
+</script>
+{% endblock %}

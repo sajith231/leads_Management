@@ -1,0 +1,1657 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="icon" type="image/png" href="{% static 'images/sysmaclogo.png' %}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <title>Administration Management</title>
+    
+    <style>
+        th {
+            text-transform: capitalize;
+            font-weight: 500;
+        }
+
+        td, th {
+            white-space: nowrap;
+        }
+
+        * {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        
+        /* Main sidebar styling */
+        .sidebar {
+            width: 255px;
+            height: 100vh;
+            position: fixed;
+            background: linear-gradient(rgb(0, 0, 0), rgb(1, 0, 31));
+            padding-top: 20px;
+            transition: transform 0.3s ease-in-out;
+            z-index: 1000;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #ccc #333;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .sidebar a {
+            color: #ddd;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            border-radius: 5px;
+            margin: 5px 15px;
+            padding: 10px 15px;
+        }
+
+        .sidebar a:hover {
+            color: #fff;
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .sidebar a .fas {
+            margin-right: 10px;
+            font-size: 1.1em;
+            width: 20px;
+            text-align: center;
+        }
+
+        .submenu {
+            display: none;
+            flex-direction: column;
+            margin-left: 20px;
+            border-left: 2px solid rgba(255, 255, 255, 0.2);
+            padding-left: 10px;
+        }
+
+        .submenu a {
+            color: #ccc;
+            font-size: 0.95em;
+            margin: 3px 0;
+            padding: 8px 15px;
+        }
+
+        .submenu a:hover {
+            color: #fff;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .mainmenu {
+            cursor: pointer;
+            padding: 12px 15px;
+            margin: 5px 15px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            color: white;
+        }
+
+        .mainmenu:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .mainmenu span {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Mobile menu toggle button */
+        .hamburger {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 15px;
+            z-index: 1001;
+            background: linear-gradient(rgb(0, 0, 0), rgb(1, 0, 31));
+            border: none;
+            cursor: pointer;
+            padding: 12px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .hamburger:hover {
+            background: linear-gradient(rgb(0, 0, 0), rgb(1, 0, 31));
+        }
+
+        .hamburger span {
+            display: block;
+            width: 25px;
+            height: 3px;
+            background-color: white;
+            margin: 4px 0;
+            transition: 0.3s;
+        }
+
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -5px);
+        }
+
+        /* Content area */
+        .content {
+            margin-left: 255px;
+            padding: 20px;
+            transition: margin-left 0.3s ease;
+        }
+
+        /* Mobile styles */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+                padding-top: 70px;
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .content {
+                margin-left: 0;
+            }
+
+            .hamburger {
+                display: block;
+            }
+
+            /* Mobile menu specific styles */
+            .mainmenu {
+                padding: 15px;
+                margin: 5px 10px;
+            }
+
+            .submenu {
+                margin-left: 15px;
+                padding-left: 15px;
+            }
+
+            .submenu a {
+                padding: 10px 15px;
+            }
+        }
+
+        /* User popup styles */
+        .user-popup {
+            width: 250px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            padding: 15px;
+            position: absolute;
+            top: 60px;
+            right: 10px;
+            display: none;
+            z-index: 1000;
+            border: 1px solid #eee;
+        }
+
+        .user-popup.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-credentials {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .user-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .user-fallback {
+            font-size: 40px;
+            color: #666;
+        }
+
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            background: #dc3545;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 15px;
+            transition: background 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: #c82333;
+        }
+
+        .username {
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        /* Reminder badge */
+        .reminder-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: #ff3547;
+            color: white;
+            border-radius: 50%;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: bold;
+            min-width: 1.5rem;
+            text-align: center;
+        }
+
+        .reminder-link {
+            position: relative;
+        }
+
+        /* Information center */
+        .information_center {
+            
+           font-size: 13px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .information_center:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .information_center a {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            
+        }
+
+        .information_center i {
+            font-size: 1.1em;
+        }
+
+        .information_center span {
+            font-weight: 500;
+        }
+        
+    </style>
+</head>
+
+<body>
+    <!-- User Profile Area -->
+    <div style="position: absolute; top: 10px; right: 10px; z-index: 1000;">
+        {% if user.is_authenticated %}
+            <div class="user-credentials" onclick="toggleUserPopup()">
+                {% if user_image %}
+                    <img src="{{ user_image }}" alt="Profile Image" class="user-img">
+                {% else %}
+                    <i class="fas fa-user-circle user-fallback"></i>
+                {% endif %}
+            </div>
+        {% endif %}
+        
+        <!-- User Popup -->
+        <div id="userPopup" class="user-popup">
+            {% if not request.user.is_superuser %}
+            <div style="text-align: right;">
+                <a href="{% url 'edit_profile' %}" style="color: #666;">
+                    <i class="fas fa-edit" style="cursor: pointer;" title="Edit Profile"></i>
+                </a>
+            </div>
+            {% endif %}
+
+            <div style="text-align: center; margin: 10px 0;">
+                {% if user_image %}
+                    <img src="{{ user_image }}" alt="Profile Image" class="user-img" style="width: 60px; height: 60px;">
+                {% endif %}
+                <div class="username">Hello, {{ user_name }}</div>
+            </div>
+            
+            <a href="{% url 'logout' %}" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span style="margin-left: 8px;">Logout</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Mobile Menu Toggle -->
+    <button class="hamburger" onclick="toggleSidebar()">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+
+    <!-- Sidebar Navigation -->
+    <div class="sidebar">
+        {% if 'Administration' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+            <!-- Admin/Superuser Sidebar -->
+            <div class="mainmenu" onclick="toggleAdminMenu()">
+                <span>
+                    <i class="fas fa-tools"></i>
+                    <span>Administration</span>
+                </span>
+            </div>
+    
+            <div id="admin-menu" class="submenu">
+                {% if 'agent_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'agent_list' %}"><i class="fas fa-binoculars"></i> Address Book</a>
+                {% endif %}
+                {% if 'credential_management' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'credential_management' %}">
+                    <i class="fas fa-key"></i> Credential Management
+                </a>
+                {% endif %}                                      
+                {% if 'document_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'document_list' %}"><i class="fas fa-scroll"></i> Documentations</a>
+                {% endif %}
+                {% if 'reminders' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'reminders' %}" class="reminder-link">
+                    <i class="fas fa-bell"></i> Reminders
+                    {% if active_reminders_count > 0 %}
+                        <span class="reminder-badge">{{ active_reminders_count }}</span>
+                    {% endif %}
+                </a>
+                {% endif %}
+                {% if 'sim_management' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                 <a href="{% url 'sim_management' %}"><i class="fas fa-sim-card"></i> SIM Management</a>
+                {% endif %}
+
+            </div>
+    
+            <!-- HR Menu -->
+            {% if 'HR' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+            <div class="mainmenu" onclick="toggleHRMenu()">
+                <span>
+                    <i class="fas fa-users-cog"></i>
+                    <span>HR</span>
+                </span>
+            </div>
+    
+            <div id="hr-menu" class="submenu">
+                 {% if 'job_roles' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'job_roles' %}">
+                    <i class="fas fa-briefcase"></i> Duties and Responsibility
+                </a>
+                {% endif %}
+                {% if 'cv_management' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'cv_management' %}"><i class="fas fa-file-contract"></i> CV Management</a>
+                {% endif %}
+                {% if 'interview_management' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'interview_management' %}"><i class="fas fa-user-tie"></i> Interview Management</a>
+                {% endif %}
+                {% if 'make_offer_letter' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'make_offer_letter' %}"><i class="fas fa-file-signature"></i> Offer Letter</a>
+                {% endif %}
+                {% if 'employee_management' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'employee_management' %}"><i class="fas fa-users"></i> Employee Management</a>
+                {% endif %}
+                {% if 'attendance' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'attendance' %}"><i class="fas fa-user-check"></i> Attendance</a>
+                {% endif %}
+                {% if 'make_salary_certificate' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'make_salary_certificate' %}"><i class="fas fa-file-invoice-dollar"></i> Salary Certificate</a>
+                {% endif %}
+                {% if 'make_experience_certificate' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'make_experience_certificate' %}"><i class="fas fa-award"></i> Experience Certificate</a>
+                {% endif %}
+            </div>
+            {% endif %}
+    
+            <!-- Marketing Menu -->
+            {% if 'Marketing' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+            <div class="mainmenu" onclick="toggleMarketingMenu()">
+                <span>
+                    <i class="fas fa-bullhorn"></i>
+                    <span>Marketing</span>
+                </span>
+            </div>
+    
+            <div id="marketing-menu" class="submenu">
+                {% if 'all_leads' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <!-- <a href="{% url 'all_leads' %}"><i class="fas fa-user"></i> Leads</a> -->
+                {% endif %}
+
+                   {% if 'lead_form' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                        <a href="{% url 'app5:lead' %}">
+                            <i class="fas fa-id-card"></i> Lead Form
+                        </a>
+                        {% endif %}
+
+                        {% if 'lead_reports' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                        <a href="{% url 'app5:lead_report' %}">
+                            <i class="fas fa-file-alt"></i> Lead Reports
+                        </a>
+                    {% endif %}
+                        <a href="{% url 'campaigning_list' %}">
+                            <i class="fas fa-bullhorn"></i> Campaign
+                        </a>
+
+            </div>
+            {% endif %}
+
+           
+
+
+    
+            <!-- Services Menu -->
+            {% if 'Services' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+            <div class="mainmenu" onclick="toggleServicesMenu()">
+                <span>
+                    <i class="fas fa-wrench"></i>
+                    <span>Services</span>
+                </span>
+            </div>
+    
+            <div id="services-menu" class="submenu">
+                {% if 'service_log' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'servicelog_list' %}"><i class="fas fa-book"></i> Service Log</a>
+                {% endif %}
+                {% if 'my_assigned_service_logs' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                    <a href="{% url 'my_assigned_service_logs' %}">
+                        <i class="fas fa-user"></i> My Assigned Service Logs
+                    </a>
+                {% endif %}
+                {% if 'assign_service_logs' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                    <a href="{% url 'assign_service_logs' %}">
+                        <i class="fas fa-edit"></i> Assign Service Logs
+                    </a>
+                {% endif %}
+                {% if 'service_entry' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'service_entry' %}"><i class="fas fa-plus-circle"></i> Logs</a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Project Menu -->
+            <div class="mainmenu" onclick="toggleProjectMenu()">
+                <span>
+                    <i class="fas fa-project-diagram"></i>
+                    <span>Projects</span>
+                </span>
+            </div>
+            
+            <div id="project-menu" class="submenu">
+                <a href="{% url 'project_work' %}"><i class="fa-solid fa-people-roof"></i> Project Management</a>
+                {% if 'daily_task_admin' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'daily_task_admin' %}"><i class="fa-solid fa-tasks"></i> Daily Task</a>
+                {% endif %}
+            </div>
+
+            {% if 'information_center' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+            <div class="information_center">
+                <a href="{% url 'information_center' %}">
+                    <i class="fas fa-photo-video"></i>
+                    <span>IMC Connect</span>
+                </a>
+                
+            </div>
+            {% endif %}
+
+            <!-- Planet Menu -->
+{% if 'feeder_list' in allowed_menus or 'show_clients' in allowed_menus or 'key_request_list' in allowed_menus or 'collections_list' in allowed_menus or request.session.user_level == 'admin' or 'image_capture' in allowed_menus or 'purchase_order' in allowed_menus or user.is_superuser %}
+<div class="mainmenu" onclick="togglePlanetMenu()">
+    <span>
+        <i class="fas fa-globe"></i>
+        <span>Planet</span>
+    </span>
+</div>
+
+<div id="planet-menu" class="submenu">
+    {% if 'show_clients' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'show_clients' %}"><i class="fas fa-users"></i> Clients</a>
+    {% endif %}
+
+    {% if 'feeder_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'feeder_list' %}"><i class="fas fa-tools" style="margin-left: 5px;"></i> Feeder</a>
+    {% endif %}
+
+    {% if 'license_type' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'license_type' %}">
+        <i class="fas fa-clipboard-check" style="margin-right: 5px;"></i>
+        License Key
+    </a>
+    {% endif %}
+
+    {% if 'key_request_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'key_request_list' %}">
+        <i class="fas fa-file-signature" style="margin-right: 5px;"></i>
+        Key Request
+    </a>
+    {% endif %}
+
+    {% if 'collections_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'collections_list' %}">
+        <i class="fas fa-coins" style="margin-right: 5px;"></i>
+        Collections
+    </a>
+    {% endif %}
+    
+
+    
+
+{% if 'image_capture' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<a href="{% url 'index' %}">
+  <i class="fas fa-camera" style="margin-right: 5px;"></i>
+  Image Capture
+</a>
+{% endif %}
+
+{% if 'purchase_order' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<a href="{% url 'purchase_order:po_list' %}">
+  <i class="fas fa-file-invoice" style="margin-right: 5px;"></i>
+  Purchase Order
+</a>
+{% endif %}
+
+{% if 'wallet_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<a href="{% url 'wallet_list' %}">
+  <i class="fas fa-wallet" style="margin-right: 5px;"></i>
+  Wallet
+</a>
+{% endif %}
+
+{% if 'software_update' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<a href="{% url 'software_update' %}">
+ <i class="fas fa-sync-alt" style="margin-right: 5px;"></i>
+  Software Updation
+</a>
+{% endif %}
+</div>
+{% endif %}
+
+<!-- Vehicle Management - Standalone Main Menu with Submenu -->
+{% if 'fuel_management' in allowed_menus or 'vehicle_list' in allowed_menus or 'fuel_monitoring' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<div class="mainmenu" onclick="toggleVehicleMenu()">
+    <span>
+        <i class="fas fa-car"></i>
+        <span>Vehicle Management</span>
+    </span>
+</div>
+
+<div id="vehicle-menu" class="submenu">
+    
+    {% if 'fuel_management' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'fuel_management' %}">
+        <i class="fas fa-gas-pump"></i> Fuel Management
+    </a>
+    {% endif %}
+    
+    {% if 'fuel_monitoring' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'fuel_monitoring' %}">
+        <i class="fas fa-chart-line"></i> Vehicle Ledger
+    </a>
+    {% endif %}
+      <!-- Replace 'vehicle_challan' with your actual url name -->
+    <a href="{% url 'vehicle_details' %}">
+    <i class="fa-solid fa-car" style="margin-right: 8px;"></i> Vehicle challan
+</a>
+
+
+    <a href="{% url 'claims_list' %}">
+        <i class="fas fa-briefcase"></i> Claims
+    </a>
+</div>
+{% endif %}
+
+<!-- IMC Drive - Standalone Main Menu -->
+{% if 'drive_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<div class="information_center">
+    <a href="{% url 'drive_list' %}">
+        <i class="fas fa-folder"></i>
+        <span>IMC Drive</span>
+    </a>
+</div>
+{% endif %}
+
+{% if 'drive_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<div class="information_center">
+    <a href="{% url 'public_list' %}">
+        <i class="fas fa-folder"></i>
+        <span>Public Folder</span>
+    </a>
+</div>
+{% endif %}
+
+
+<div class="mainmenu" onclick="toggleSysmacMenu()">
+    <span>
+        <i class="fas fa-microchip"></i>
+        <span>Sysmac</span>
+    </span>
+</div>
+
+<div id="sysmac-menu" class="submenu">
+<a href="{% url 'app5:jobcard_list' %}">
+    <i class="fas fa-id-card"></i> Job Card
+</a>
+<a href="{% url 'app5:jobcard_assign_table' %}">
+    <i class="fas fa-id-card"></i> Assigned Job
+</a>
+<a href="{% url 'app5:job_technician_accept' %}">
+    <i class="fas fa-id-card-alt"></i> My Job
+</a>
+
+<a href="{% url 'app5:warranty_ticket_list' %}">
+  <i class="fas fa-file-contract"></i> Warranty Item
+</a>
+
+
+<a href="{% url 'app5:service_billing_list' %}">
+  <i class="fas fa-file-contract"></i>Service Billing
+</a>
+
+</div>
+
+{% if 'all_customers' in allowed_menus or 'socialmedia_all_projects' in allowed_menus or 'socialmedia_project_assignments' in allowed_menus or 'socialmedia_all_tasks' in allowed_menus or 'user_socialmedia_project_assignments' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<div class="mainmenu" onclick="toggleSocialMediaMenu()">
+    <span>
+        <i class="fas fa-share-alt"></i>
+        <span>Social Media</span>
+    </span>
+</div>
+
+<div id="social-media-menu" class="submenu">
+    {% if 'all_customers' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'all_customers' %}"><i class="fas fa-users"></i> Customer Master</a>
+    {% endif %}
+    {% if 'socialmedia_all_tasks' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'socialmedia_all_tasks' %}"><i class="fas fa-tasks"></i> Task Master</a>
+    {% endif %}
+    {% if 'socialmedia_all_projects' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'socialmedia_all_projects' %}"><i class="fas fa-project-diagram"></i> Projects</a>
+    {% endif %}
+    {% if 'socialmedia_project_assignments' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'socialmedia_project_assignments' %}"><i class="fas fa-clipboard"></i> Projects Assign</a>
+    {% endif %}
+    
+    {% if 'user_socialmedia_project_assignments' in allowed_menus and user.is_authenticated %}
+    <a href="{% url 'user_socialmedia_project_assignments' %}">
+        <i class="fas fa-user-check"></i> Your Assignments
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Debters Menu -->
+{% if 'debtors1_list' in allowed_menus or 'imc1_list' in allowed_menus or 'imc2_list' in allowed_menus or 'sysmac_info_list' in allowed_menus or 'dq_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<div class="mainmenu" onclick="toggleDebtersMenu()">
+    <span>
+        <i class="fas fa-money-bill-wave"></i>
+        <span style="font-size: 14px;">Accounts</span>
+    </span>
+</div>
+
+<div id="debters-menu" class="submenu">
+        <a href="{% url 'debtors1_list' %}">
+    <i class="fas fa-file-invoice-dollar"></i> SYSMAC COMPUTERS-1
+</a>
+ <a href="{% url 'sysmac_info_list'%}">
+    <i class="fas fa-money-check"></i> SYSMAC-INFO
+</a>
+
+    <a href="{% url 'imc1_list'%}">
+    <i class="fas fa-coins"></i> IMCB LLP
+</a> 
+
+<a href="{% url 'imc2_list'%}">
+    <i class="fas fa-hand-holding-usd"></i> IMC
+</a>
+
+ <a href="{% url 'dq_list'%}">
+    <i class="	fas fa-credit-card"></i> DQ
+</a>
+
+</div>
+{% endif %}
+
+<div class="mainmenu" onclick="toggleUserMenu()">
+    <span>
+        <i class="fas fa-user-cog"></i>
+        <span style="font-size: 14px;">User Management</span>
+    </span>
+</div>
+
+<!-- USER MANAGEMENT SUBMENU -->
+<div id="user-menu" class="submenu">
+
+    <!-- Superadmin Section -->
+    {% if request.user.is_superuser %}
+    <a href="{% url 'users_table' %}">
+        <i class="fas fa-user-plus"></i> Add User
+    </a>
+
+    <a href="{% url 'user_menu_control' %}">
+        <i class="fas fa-sliders-h"></i> User Control
+    </a>
+    {% endif %}
+
+    <!-- Normal User Section -->
+    {% if request.user.is_authenticated and not request.user.is_superuser %}
+    <a href="{% url 'users_table' %}">
+        <i class="fas fa-user-plus"></i> Add User
+    </a>
+
+    <a href="{% url 'user_menu_control' %}">
+        <i class="fas fa-user-shield"></i> User Control
+    </a>
+    {% endif %}
+</div>
+<div class="mainmenu" onclick="toggleMasterMenu()">
+    <span>
+        <i class="fas fa-cogs"></i>
+        <span>Master</span>
+    </span>
+</div>
+
+<div id="master-menu" class="submenu">
+    <!-- Company Submenu -->
+    <div class="mainmenu" onclick="toggleCompanyMenu()" style="margin-left: 0; padding-left: 10px;">
+        <span style="font-size: 0.95em;">
+            <i class="fas fa-building"></i>
+            <span>Company</span>
+        </span>
+    </div>
+    <div id="company-menu" class="submenu" style="margin-left: 20px;">
+        <a href="{% url 'vehicle_list' %}"><i class="fas fa-list-alt"></i> Vehicle Master</a>
+        <a href="{% url 'all_districts' %}"><i class="fas fa-map"></i> District</a>
+       <!-- Change this line to match the new URL name -->
+       <a href="{% url 'app5:state_master_list' %}"><i class="fas fa-city"></i> State</a>
+
+
+        <a href="{% url 'all_areas' %}"><i class="fas fa-map-marker-alt"></i> Area</a>
+        <a href="{% url 'all_locations' %}"><i class="fas fa-chart-area"></i> Location</a>
+        <a href="{% url 'all_branches' %}"><i class="fas fa-code-branch"></i> Offices\Locations</a>
+        <!-- <a href="{% url 'users_table' %}"><i class="fas fa-users"></i> Users</a> -->
+        <a href="{% url 'purchase_order:department_list' %}"><i class="fas fa-sitemap"></i> Department</a>
+    </div>
+
+    <!-- Business Submenu -->
+    <div class="mainmenu" onclick="toggleBusinessMenu()" style="margin-left: 0; padding-left: 10px;">
+        <span style="font-size: 0.95em;">
+            <i class="fas fa-briefcase"></i>
+            <span>Business</span>
+        </span>
+    </div>
+    <div id="business-menu" class="submenu" style="margin-left: 20px;">
+        <a href="{% url 'reminder_type' %}"><i class="fas fa-bell"></i> Reminder Type</a>
+        <a href="{% url 'job_titles' %}"><i class="fas fa-id-card"></i> Job Title</a>
+        <a href="{% url 'all_department' %}"><i class="fas fa-layer-group"></i> Job Category</a>
+        <a href="{% url 'business_type_list' %}"><i class="fas fa-binoculars"></i> Business Type</a>
+        <a href="{% url 'app5:business_nature_list' %}"><i class="fas fa-globe"></i> Business Nature</a>
+        <a href="{% url 'app5:reference_list' %}"><i class="fa-solid fa-link"></i>&nbsp;&nbsp;Reference From</a>
+        <a href="{% url 'all_requirements' %}"><i class="fas fa-tasks"></i> Requirements</a>
+    </div>
+
+    <!-- Planet Submenu -->
+    <div class="mainmenu" onclick="toggleNewPlanetMenu()" style="margin-left: 0; padding-left: 10px;">
+        <span style="font-size: 0.95em;">
+            <i class="fas fa-globe"></i>
+            <span>Planet</span>
+        </span>
+    </div>
+    <div id="new-planet-menu" class="submenu" style="margin-left: 20px;">
+        <a href="{% url 'purchase_order:item_list' %}"><i class="fas fa-boxes"></i> Item Master</a>
+        <a href="{% url 'purchase_order:supplier_list' %}"><i class="fas fa-truck"></i> Suppliers</a>
+        <a href="{% url 'all_complaints' %}"><i class="fas fa-bug"></i> Complaints</a>
+        <a href="{% url 'software_table' %}"><i class="fas fa-puzzle-piece"></i> Softwares</a>
+        <a href="{% url 'all_hardwares' %}"><i class="fas fa-desktop"></i> Hardware</a>
+    </div>
+</div>
+
+    
+            
+            
+
+        {% else %}
+            <!-- Regular User Sidebar - Only show allowed menus -->
+            {% if 'agent_list' in allowed_menus or 'credential_management' in allowed_menus or 'document_list' in allowed_menus or 'reminders' in allowed_menus or 'sim_management' in allowed_menus %}
+            <div class="mainmenu" onclick="toggleAdminMenu()">
+                <span>
+                    <i class="fas fa-tools"></i>
+                    <span>Administration</span>
+                </span>
+            </div>
+    
+            <div id="admin-menu" class="submenu">
+                {% if 'agent_list' in allowed_menus %}
+                <a href="{% url 'agent_list' %}"><i class="fas fa-binoculars"></i> Address Book</a>
+                {% endif %}
+                {% if 'credential_management' in allowed_menus %}
+                <a href="{% url 'credential_management' %}"><i class="fas fa-key"></i> Credential Management</a>
+                {% endif %}
+                {% if 'document_list' in allowed_menus %}
+                <a href="{% url 'document_list' %}"><i class="fas fa-scroll"></i> Documentations</a>
+                {% endif %}
+                {% if 'reminders' in allowed_menus %}
+                <a href="{% url 'reminders' %}" class="reminder-link">
+                    <i class="fas fa-bell"></i> Reminders
+                    {% if active_reminders_count > 0 %}
+                        <span class="reminder-badge">{{ active_reminders_count }}</span>
+                    {% endif %}
+                </a>
+                {% endif %}
+                {% if 'sim_management' in allowed_menus %}
+                 <a href="{% url 'sim_management' %}"><i class="fas fa-sim-card"></i> SIM Management</a>
+                {% endif %}
+
+
+            </div>
+            {% endif %}
+            
+
+            {% if 'cv_management' in allowed_menus or 'interview_management' in allowed_menus or 'make_offer_letter' in allowed_menus or 'employee_management' in allowed_menus or 'attendance' in allowed_menus or 'make_salary_certificate' in allowed_menus or 'make_experience_certificate' in allowed_menus or 'attendance_user' in allowed_menus %}
+            <!-- HR Menu -->
+            <div class="mainmenu" onclick="toggleHRMenu()">
+                <span>
+                    <i class="fas fa-users-cog"></i>
+                    <span>HR</span>
+                </span>
+            </div>
+            
+    
+            <div id="hr-menu" class="submenu">
+                {% if 'job_roles' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'job_roles' %}">
+                    <i class="fas fa-briefcase"></i> Duties and Responsibility
+                </a>
+                {% endif %}
+                {% if 'cv_management' in allowed_menus %}
+                <a href="{% url 'cv_management' %}"><i class="fas fa-file-contract"></i> CV Management</a>
+                {% endif %}
+                {% if 'interview_management' in allowed_menus %}
+                <a href="{% url 'interview_management' %}"><i class="fas fa-user-tie"></i> Interview Management</a>
+                {% endif %}
+                {% if 'make_offer_letter' in allowed_menus %}
+                <a href="{% url 'make_offer_letter' %}"><i class="fas fa-file-signature"></i> Offer Letter</a>
+                {% endif %}
+                {% if 'employee_management' in allowed_menus %}
+                <a href="{% url 'employee_management' %}"><i class="fas fa-users"></i> Employee Management</a>
+                {% endif %}
+                {% if 'attendance' in allowed_menus %}
+                <a href="{% url 'attendance' %}"><i class="fas fa-user-check"></i> Attendance</a>
+                {% endif %}
+                {% if 'attendance_user' in allowed_menus %}
+                <a href="{% url 'attendance_user' %}"><i class="fas fa-user-clock"></i> Punch in / Punch out</a>
+                {% endif %}
+                {% if 'make_salary_certificate' in allowed_menus %}
+                <a href="{% url 'make_salary_certificate' %}"><i class="fas fa-file-invoice-dollar"></i> Salary Certificate</a>
+                {% endif %}
+                {% if 'make_experience_certificate' in allowed_menus %}
+                <a href="{% url 'make_experience_certificate' %}"><i class="fas fa-award"></i> Experience Certificate</a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% if 'all_leads' in allowed_menus or 'user_dashboard' in allowed_menus %}
+            <div class="mainmenu" onclick="toggleMarketingMenu()">
+                <span>
+                    <i class="fas fa-bullhorn"></i>
+                    <span>Marketing</span>
+                </span>
+            </div>
+            
+            <div id="marketing-menu" class="submenu">
+                {% if 'all_leads' in allowed_menus %}
+                <!-- <a href="{% url 'all_leads' %}"><i class="fas fa-user"></i> Leads</a> -->
+                {% endif %}
+                {% if 'user_dashboard' in allowed_menus %}
+                <a href="{% url 'user_dashboard' %}"><i class="fas fa-user"></i> Leads</a>
+                {% endif %}
+
+            {% if 'lead_form' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'app5:lead' %}">
+        <i class="fas fa-id-card"></i> Lead Form
+    </a>
+    {% endif %}
+
+    {% if 'lead_reports' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'app5:lead_report' %}">
+        <i class="fas fa-folder-open"></i> Lead Report
+    </a>
+    {% endif %}
+
+    {% if 'lead_assign_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'app5:lead_assign_list' %}">
+        <i class="fas fa-user"></i> Assigned Leads
+    </a>
+    {% endif %}
+    <a href="{% url 'campaigning_list' %}">
+        <i class="fas fa-bullhorn"></i> Campaign
+    </a>
+
+            </div>
+
+            {% endif %}
+
+         
+
+
+            {% if 'service_log' in allowed_menus or 'service_entry' in allowed_menus or 'user_service_entry' in allowed_menus or 'user_service_log' in allowed_menus %}
+            <!-- Services Menu -->
+            <div class="mainmenu" onclick="toggleServicesMenu()">
+                <span>
+                    <i class="fas fa-wrench"></i>
+                    <span>Services</span>
+                </span>
+            </div>
+    
+            <div id="services-menu" class="submenu">
+                {% if 'service_log' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'servicelog_list' %}"><i class="fas fa-book"></i> Service Log</a>
+                {% endif %}
+                {% if 'service_entry' in allowed_menus %}
+                <a href="{% url 'service_entry' %}"><i class="fas fa-plus-circle"></i> Logs</a>
+                {% endif %}
+                {% if 'assign_service_logs' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                    <a href="{% url 'assign_service_logs' %}">
+                        <i class="fas fa-edit"></i> Assign Service Logs
+                    </a>
+                {% endif %}
+
+                {% if 'my_assigned_service_logs' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                    <a href="{% url 'my_assigned_service_logs' %}">
+                        <i class="fas fa-user"></i> My Assigned Service Logs
+                    </a>
+                {% endif %}
+                {% if 'user_service_log' in allowed_menus %}
+                <a href="{% url 'user_service_log' %}"><i class="fas fa-book"></i>Service Log</a>
+                {% endif %}
+                {% if 'user_service_entry' in allowed_menus %}
+                <a href="{% url 'user_service_entry' %}"><i class="fas fa-plus-circle"></i> Logs</a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            
+
+            <!-- Project Menu for regular users -->
+            {% if 'project_work' in allowed_menus or 'user_projects' in allowed_menus %}
+            <div class="mainmenu" onclick="toggleProjectMenu()">
+                <span>
+                    <i class="fas fa-project-diagram"></i>
+                    <span>Projects</span>
+                </span>
+            </div>
+
+            <div id="project-menu" class="submenu">
+                {% if 'project_work' in allowed_menus %}
+                <a href="{% url 'project_work' %}"><i class="fa-solid fa-people-roof"></i> Project Management</a>
+                {% endif %}
+                {% if 'user_projects' in allowed_menus %}
+                <a href="{% url 'user_projects' %}"><i class="fa-solid fa-diagram-project"></i> Project Works</a>
+                {% endif %}
+                {% if 'daily_task_user' in allowed_menus %}
+                    <a href="{% url 'daily_task_user' %}">
+                        <i class="fa-solid fa-tasks"></i> Daily Task
+                    </a>
+                {% endif %}
+                {% if 'daily_task_admin' in allowed_menus %}
+                    <a href="{% url 'daily_task_admin' %}"><i class="fa-solid fa-tasks"></i> Daily Task Admin</a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            
+            
+            {% if 'information_center' in allowed_menus %}
+            <div class="information_center">
+                <a href="{% url 'information_center' %}">
+                    <i class="fas fa-photo-video"></i>
+                    <span>IMC Connect</span>
+                </a>
+            </div>
+            {% endif %}
+
+{% if 'feeder_list' in allowed_menus or 'show_clients' in allowed_menus or 'key_request_list' in allowed_menus or 'collections_list' in allowed_menus or request.session.user_level == 'admin' or 'image_capture' in allowed_menus or 'purchase_order' in allowed_menus or user.is_superuser %}
+<div class="mainmenu" onclick="togglePlanetMenu()">
+    <span>
+        <i class="fas fa-globe"></i>
+        <span>Planet</span>
+    </span>
+</div>
+
+<div id="planet-menu" class="submenu">
+    {% if 'show_clients' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'show_clients' %}"><i class="fas fa-users"></i> Clients</a>
+    {% endif %}
+
+    {% if 'feeder_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'feeder_list' %}"><i class="fas fa-tools" style="margin-left: 5px;"></i> Feeder</a>
+    {% endif %}
+
+    {% if 'license_type' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'license_type' %}">
+        <i class="fas fa-clipboard-check" style="margin-right: 5px;"></i>
+        License Key
+    </a>
+    {% endif %}
+    {% if 'key_request_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'key_request_list' %}">
+        <i class="fas fa-file-signature" style="margin-right: 5px;"></i>
+        Key Request
+    </a>
+    {% endif %}
+    <!-- {% if 'key_request' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'key_request' %}">
+        <i class="fas fa-plus-circle" style="margin-right: 5px;"></i>
+        Add Key Request
+    </a>
+    {% endif %} -->
+    {% if 'collections_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'collections_list' %}">
+        <i class="fas fa-coins" style="margin-right: 5px;"></i>
+        Collections
+    </a>
+    {% endif %}
+    {% if 'fuel_management' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'fuel_management' %}">
+        <i class="fas fa-gas-pump" style="margin-right: 5px;"></i>
+        Fuel Management
+    </a>
+    
+    
+   
+{% endif %}
+{% if 'image_capture' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<a href="{% url 'index' %}">
+  <i class="fas fa-camera" style="margin-right: 5px;"></i>
+  Image Capture
+</a>
+{% endif %}
+
+{% if 'purchase_order' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<a href="{% url 'purchase_order:po_list' %}">
+  <i class="fas fa-file-invoice" style="margin-right: 5px;"></i>
+  Purchase Order
+</a>
+{% endif %}
+{% if 'wallet' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<a href="{% url 'wallet_list' %}">
+  <i class="fas fa-wallet" style="margin-right: 5px;"></i>
+  Wallet
+</a>
+{% endif %}
+{% if 'software_update' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<a href="{% url 'software_update' %}">
+  <i class="fas fa-sync-alt" style="margin-right: 5px;"></i>
+  Software Updation
+</a>
+{% endif %}
+</div>
+{% endif %}
+
+<!-- Vehicle Management - Standalone Main Menu for Regular Users with Submenu -->
+{% if 'fuel_management' in allowed_menus or 'vehicle_list' in allowed_menus or 'fuel_monitoring' in allowed_menus %}
+<div class="mainmenu" onclick="toggleVehicleMenu()">
+    <span>
+        <i class="fas fa-car"></i>
+        <span>Vehicle Management</span>
+    </span>
+</div>
+
+<div id="vehicle-menu" class="submenu">
+    
+    
+    
+    
+    {% if 'fuel_management' in allowed_menus %}
+    <a href="{% url 'fuel_management' %}">
+        <i class="fas fa-gas-pump"></i> Fuel Management
+    </a>
+    {% endif %}
+    
+    {% if 'fuel_monitoring' in allowed_menus %}
+    <a href="{% url 'fuel_monitoring' %}">
+        <i class="fas fa-chart-line"></i> Vehicle Ledger
+    </a>
+    {% endif %}
+    
+    <!-- <- replace 'vehicle_challan' with the actual url name for challan -->
+   <a href="{% url 'vehicle_details' %}" class="menu-item">
+    <i class="fa-solid fa-car"></i> Vehicle challan
+</a>
+
+
+    <a href="{% url 'claims_list' %}">
+        <i class="fas fa-briefcase"></i> Claims
+    </a>
+</div>
+{% endif %}
+
+<!-- IMC Drive - Standalone Main Menu for Regular Users -->
+{% if 'drive_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<div class="information_center">
+    <a href="{% url 'drive_list' %}">
+        <i class="fas fa-folder"></i>
+        <span>IMC Drive</span>
+    </a>
+</div>
+{% endif %}
+
+{% if 'drive_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<div class="information_center">
+    <a href="{% url 'public_list' %}">
+        <i class="fas fa-folder"></i>
+        <span>Public Folder</span>
+    </a>
+</div>
+{% endif %}
+
+
+<!-- Fixed SYSMAC Menu Section for base.html -->
+{% if 'item_list' in allowed_menus or 'app5:jobcard_list' in allowed_menus or 'app5:jobcard_assign_table' in allowed_menus %}
+<div class="mainmenu" onclick="toggleSysmacMenu()">
+    <span>
+        <i class="fas fa-microchip"></i>
+        <span>Sysmac</span>
+    </span>
+</div>
+
+<div id="sysmac-menu" class="submenu">
+    {% if 'item_list' in allowed_menus %}
+    <!-- <a href="{% url 'item_list' %}">
+        <i class="fas fa-users"></i> Stand By
+    </a> -->
+    {% endif %}
+    
+    {% if 'app5:jobcard_list' in allowed_menus %}
+    <a href="{% url 'app5:jobcard_list' %}">
+        <i class="fas fa-id-card"></i> Job Card
+    </a>
+    {% endif %}
+    
+    {% if 'app5:jobcard_assign_table' in allowed_menus %}
+    <a href="{% url 'app5:jobcard_assign_table' %}">
+        <i class="fas fa-id-card-alt"></i> Assigned Job
+    </a>
+    {% endif %}
+    <a href="{% url 'app5:job_technician_accept' %}">
+    <i class="fas fa-id-card-alt"></i> My Job
+</a>
+
+<a href="{% url 'app5:warranty_ticket_list' %}">
+  <i class="fas fa-file-contract"></i> Warranty Item
+</a>
+
+<a href="{% url 'app5:service_billing_list' %}">
+  <i class="fas fa-file-contract"></i>Service Billing
+</a>
+
+</div>
+{% endif %}
+
+            
+
+
+
+            <!-- Social Media Menu - Simplified Version -->
+{% if 'all_customers' in allowed_menus or 'socialmedia_all_projects' in allowed_menus or 'socialmedia_project_assignments' in allowed_menus or 'socialmedia_all_tasks' in allowed_menus or 'user_socialmedia_project_assignments' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<div class="mainmenu" onclick="toggleSocialMediaMenu()">
+    <span>
+        <i class="fas fa-share-alt"></i>
+        <span>Social Media</span>
+    </span>
+</div>
+
+<div id="social-media-menu" class="submenu">
+    {% if 'all_customers' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'all_customers' %}"><i class="fas fa-users"></i> Customer Master</a>
+    {% endif %}
+    {% if 'socialmedia_all_tasks' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'socialmedia_all_tasks' %}"><i class="fas fa-tasks"></i> Task Master</a>
+    {% endif %}
+    {% if 'socialmedia_all_projects' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'socialmedia_all_projects' %}"><i class="fas fa-project-diagram"></i> Projects</a>
+    {% endif %}
+    {% if 'socialmedia_project_assignments' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'socialmedia_project_assignments' %}"><i class="fas fa-clipboard"></i> Projects Assign</a>
+    {% endif %}
+    {% if 'user_socialmedia_project_assignments' in allowed_menus and user.is_authenticated %}
+    <a href="{% url 'user_socialmedia_project_assignments' %}">
+        <i class="fas fa-user-check"></i> Your Assignments
+    </a>
+    {% endif %}
+    
+
+</div>
+{% endif %}
+
+
+
+<!-- ACCOUNTS Menu (Debtors) -->
+{% if 'debtors1_list' in allowed_menus or 'imc1_list' in allowed_menus or 'imc2_list' in allowed_menus or 'sysmac_info_list' in allowed_menus or 'dq_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <div class="mainmenu" onclick="toggleDebtersMenu()">
+        <span>
+            <i class="fas fa-money-bill-wave"></i>
+            <span style="font-size: 14px;">Accounts</span>
+        </span>
+    </div>
+
+    <div id="debters-menu" class="submenu">
+        {% if 'debtors1_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        <a href="{% url 'debtors1_list' %}">
+            <i class="fas fa-file-invoice-dollar"></i> SYSMAC COMPUTERS-1
+        </a>
+        {% endif %}
+
+        {% if 'imc1_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        <a href="{% url 'imc1_list' %}">
+            <i class="fas fa-coins"></i> IMCB LLP
+        </a>
+        {% endif %}
+
+        {% if 'imc2_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        <a href="{% url 'imc2_list' %}">
+            <i class="fas fa-hand-holding-usd"></i> IMC
+        </a>
+        {% endif %}
+
+        {% if 'sysmac_info_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        <a href="{% url 'sysmac_info_list' %}">
+            <i class="fas fa-money-check"></i> SYSMAC-INFO
+        </a>
+        {% endif %}
+
+        {% if 'dq_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        <a href="{% url 'dq_list' %}">
+            <i class="fas fa-credit-card"></i> DQ
+        </a>
+        {% endif %}
+    </div>
+{% endif %}
+
+{% if request.user.is_superuser or 'users_table' in allowed_menus or 'add_user' in allowed_menus or 'user_menu_control' in allowed_menus %}
+<div class="mainmenu" onclick="toggleUserMenu()">
+    <span>
+        <i class="fas fa-user-cog"></i>
+        <span>User Management</span>
+    </span>
+</div>
+
+<div id="user-menu" class="submenu">
+    {% if request.user.is_superuser %}
+        <a href="{% url 'users_table' %}">
+            <i class="fas fa-users"></i> Users List
+        </a>
+        <a href="{% url 'add_user' %}">
+            <i class="fas fa-user-plus"></i> Add User
+        </a>
+        <a href="{% url 'user_menu_control' %}">
+            <i class="fas fa-sliders-h"></i> User Control
+        </a>
+    {% elif request.user.is_authenticated %}
+        {% if 'users_table' in allowed_menus %}
+        <a href="{% url 'users_table' %}">
+            <i class="fas fa-users"></i> Users List
+        </a>
+        
+        <a href="{% url 'user_menu_control' %}">
+            <i class="fas fa-sliders-h"></i> User Control
+        </a>
+        {% endif %}
+    {% endif %}
+</div>
+{% endif %}
+
+{% if 'all_districts' in allowed_menus or 'all_areas' in allowed_menus or 'all_locations' in allowed_menus or 'all_branches' in allowed_menus or 'users_table' in allowed_menus or 'department_list' in allowed_menus or 'reminder_type' in allowed_menus or 'job_titles' in allowed_menus or 'all_department' in allowed_menus or 'business_type_list' in allowed_menus or 'all_requirements' in allowed_menus or 'item_list' in allowed_menus or 'supplier_list' in allowed_menus or 'all_complaints' in allowed_menus or 'software_table' in allowed_menus or 'all_hardwares' in allowed_menus %}
+<div class="mainmenu" onclick="toggleMasterMenu()">
+    <span>
+        <i class="fas fa-cogs"></i>
+        <span>Master</span>
+    </span>
+</div>
+
+<div id="master-menu" class="submenu">
+    <!-- Company Submenu -->
+    {% if 'all_districts' in allowed_menus or 'all_areas' in allowed_menus or 'all_locations' in allowed_menus or 'all_branches' in allowed_menus or 'department_list' in allowed_menus %}
+    <div class="mainmenu" onclick="toggleCompanyMenu()" style="margin-left: 0; padding-left: 10px;">
+        <span style="font-size: 0.95em;">
+            <i class="fas fa-building"></i>
+            <span>Company</span>
+        </span>
+    </div>
+    <div id="company-menu" class="submenu" style="margin-left: 20px;">
+        {% if 'vehicle_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        <a href="{% url 'vehicle_list' %}"><i class="fas fa-list-alt"></i> Vehicle Master</a>
+        {% endif %}
+        {% if 'all_districts' in allowed_menus %}
+        <a href="{% url 'all_districts' %}"><i class="fas fa-map"></i> District</a>
+        {% endif %}
+        {% if 'all_areas' in allowed_menus %}
+        <a href="{% url 'all_areas' %}"><i class="fas fa-map-marker-alt"></i> Area</a>
+        {% endif %}
+        {% if 'all_locations' in allowed_menus %}
+        <a href="{% url 'all_locations' %}"><i class="fas fa-chart-area"></i> Location</a>
+        {% endif %}
+        {% if 'all_branches' in allowed_menus %}
+        <a href="{% url 'all_branches' %}"><i class="fas fa-code-branch"></i> Offices/Locations</a>
+        {% endif %}
+        {% if 'department_list' in allowed_menus %}
+        <a href="{% url 'purchase_order:department_list' %}"><i class="fas fa-sitemap"></i> Department</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Business Submenu -->
+    {% if 'reminder_type' in allowed_menus or 'job_titles' in allowed_menus or 'all_department' in allowed_menus or 'business_type_list' in allowed_menus or 'all_requirements' in allowed_menus %}
+    <div class="mainmenu" onclick="toggleBusinessMenu()" style="margin-left: 0; padding-left: 10px;">
+        <span style="font-size: 0.95em;">
+            <i class="fas fa-briefcase"></i>
+            <span>Business</span>
+        </span>
+    </div>
+    <div id="business-menu" class="submenu" style="margin-left: 20px;">
+        {% if 'reminder_type' in allowed_menus %}
+        <a href="{% url 'reminder_type' %}"><i class="fas fa-bell"></i> Reminder Type</a>
+        {% endif %}
+        {% if 'job_titles' in allowed_menus %}
+        <a href="{% url 'job_titles' %}"><i class="fas fa-id-card"></i> Job Title</a>
+        {% endif %}
+        {% if 'all_department' in allowed_menus %}
+        <a href="{% url 'all_department' %}"><i class="fas fa-layer-group"></i> Job Category</a>
+        {% endif %}
+        {% if 'business_type_list' in allowed_menus %}
+        <a href="{% url 'business_type_list' %}"><i class="fas fa-binoculars"></i> Business Type</a>
+        {% endif %}
+        {% if 'all_requirements' in allowed_menus %}
+        <a href="{% url 'all_requirements' %}"><i class="fas fa-tasks"></i> Requirements</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Planet Submenu (Styled like your screenshot) -->
+    {% if 'item_list' in allowed_menus or 'supplier_list' in allowed_menus or 'all_complaints' in allowed_menus or 'software_table' in allowed_menus or 'all_hardwares' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <div class="mainmenu" onclick="toggleNewPlanetMenu()" style="margin-left: 0; padding-left: 10px;">
+        <span style="font-size: 0.95em;">
+            <i class="fas fa-globe"></i>
+            <span>Planet</span>
+        </span>
+    </div>
+
+    <div id="new-planet-menu" class="submenu" style="margin-left: 20px; border-left: 1px solid rgba(255,255,255,0.08); padding-left: 12px;">
+        {% if 'item_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        <a href="{% url 'purchase_order:item_list' %}"><i class="fas fa-boxes"></i> Item Master</a>
+        {% endif %}
+
+        {% if 'supplier_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        <a href="{% url 'purchase_order:supplier_list' %}"><i class="fas fa-truck"></i> Suppliers</a>
+        {% endif %}
+
+        {% if 'all_complaints' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        <a href="{% url 'all_complaints' %}"><i class="fas fa-bug"></i> Complaints</a>
+        {% endif %}
+
+        {% if 'software_table' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        <a href="{% url 'software_table' %}"><i class="fas fa-puzzle-piece"></i> Softwares</a>
+        {% endif %}
+
+        {% if 'all_hardwares' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        <a href="{% url 'all_hardwares' %}"><i class="fas fa-desktop"></i> Hardware</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+            {% endif %}
+        
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="{% static 'js/scripts.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+
+    <script>
+        // Toggle sidebar on mobile
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const hamburger = document.querySelector('.hamburger');
+            sidebar.classList.toggle('active');
+            hamburger.classList.toggle('active');
+            
+            // Add overlay when sidebar is active
+            if (sidebar.classList.contains('active')) {
+                createOverlay();
+            } else {
+                removeOverlay();
+            }
+        }
+
+        // Create overlay when sidebar is open
+        function createOverlay() {
+            const overlay = document.createElement('div');
+            overlay.id = 'sidebar-overlay';
+            overlay.style.position = 'fixed';
+            overlay.style.top = '0';
+            overlay.style.left = '0';
+            overlay.style.width = '100%';
+            overlay.style.height = '100%';
+            overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+            overlay.style.zIndex = '999';
+            overlay.style.backdropFilter = 'blur(2px)';
+            overlay.onclick = toggleSidebar;
+            document.body.appendChild(overlay);
+        }
+
+        // Remove overlay when sidebar is closed
+        function removeOverlay() {
+            const overlay = document.getElementById('sidebar-overlay');
+            if (overlay) {
+                overlay.remove();
+            }
+        }
+
+        // Menu toggle functions
+        function toggleAdminMenu() {
+            toggleMenu('admin-menu');
+        }
+
+        function toggleHRMenu() {
+            toggleMenu('hr-menu');
+        }
+        function togglePlanetMenu() {
+            toggleMenu('planet-menu');
+        }
+
+        function toggleMarketingMenu() {
+            toggleMenu('marketing-menu');
+        }
+
+        function toggleServicesMenu() {
+            toggleMenu('services-menu');
+        }
+
+        function toggleProjectMenu() {
+            toggleMenu('project-menu');
+        }
+
+        function toggleMasterMenu() {
+            toggleMenu('master-menu');
+        }
+
+        function toggleVehicleMenu() {
+            toggleMenu('vehicle-menu');
+        }
+
+        function toggleMenu(menuId) {
+            const menu = document.getElementById(menuId);
+            if (menu.style.display === 'block') {
+                menu.style.display = 'none';
+            } else {
+                // Close other menus
+                document.querySelectorAll('.submenu').forEach(submenu => {
+                    if (submenu.id !== menuId) {
+                        submenu.style.display = 'none';
+                    }
+                });
+                menu.style.display = 'block';
+            }
+        }
+
+        // User popup toggle
+        function toggleUserPopup() {
+            const popup = document.getElementById('userPopup');
+            popup.classList.toggle('active');
+        }
+
+        // Close popup when clicking outside
+        document.addEventListener('click', function(event) {
+            const popup = document.getElementById('userPopup');
+            const userCredentials = document.querySelector('.user-credentials');
+            
+            if (!userCredentials.contains(event.target) && !popup.contains(event.target)) {
+                popup.classList.remove('active');
+            }
+        });
+
+        // Close sidebar when clicking a link (mobile)
+        document.querySelectorAll('.sidebar a').forEach(item => {
+            item.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                    toggleSidebar();
+                }
+            });
+        });
+
+        // Auto-close submenus when clicking outside (desktop)
+        document.addEventListener('click', function(event) {
+            if (window.innerWidth > 768) {
+                const isClickInsideMenu = event.target.closest('.mainmenu') || 
+                                         event.target.closest('.submenu');
+                
+                if (!isClickInsideMenu) {
+                    document.querySelectorAll('.submenu').forEach(menu => {
+                        menu.style.display = 'none';
+                    });
+                }
+            }
+        });
+
+        
+function toggleDebtersMenu() {
+    toggleMenu('debters-menu');
+}
+function toggleSocialMediaMenu() {
+    toggleMenu('social-media-menu');
+}
+
+
+function toggleSysmacMenu() {
+    toggleMenu('sysmac-menu');
+}
+function toggleCompanyMenu() { toggleMenu('company-menu'); }
+function toggleBusinessMenu() { toggleMenu('business-menu'); }
+function toggleNewPlanetMenu() { toggleMenu('new-planet-menu'); }
+    </script>
+
+  <script>
+function toggleMasterMenu() {
+    const menu = document.getElementById('master-menu');
+    if (menu.style.display === 'flex' || menu.style.display === 'block') {
+        menu.style.display = 'none';
+        // Also close all nested submenus
+        document.getElementById('company-menu').style.display = 'none';
+        document.getElementById('business-menu').style.display = 'none';
+        document.getElementById('new-planet-menu').style.display = 'none';
+    } else {
+        // Close other main menus
+        document.querySelectorAll('.submenu').forEach(submenu => {
+            if (submenu.id !== 'master-menu') {
+                submenu.style.display = 'none';
+            }
+        });
+        menu.style.display = 'flex';
+    }
+}
+
+// Updated toggle functions for nested menus
+function toggleCompanyMenu() {
+    const menu = document.getElementById('company-menu');
+    if (menu.style.display === 'flex' || menu.style.display === 'block') {
+        menu.style.display = 'none';
+    } else {
+        menu.style.display = 'flex';
+    }
+    // Prevent event from bubbling up
+    event.stopPropagation();
+}
+
+function toggleBusinessMenu() {
+    const menu = document.getElementById('business-menu');
+    if (menu.style.display === 'flex' || menu.style.display === 'block') {
+        menu.style.display = 'none';
+    } else {
+        menu.style.display = 'flex';
+    }
+    event.stopPropagation();
+}
+
+function toggleNewPlanetMenu() {
+    const menu = document.getElementById('new-planet-menu');
+    if (menu.style.display === 'flex' || menu.style.display === 'block') {
+        menu.style.display = 'none';
+    } else {
+        menu.style.display = 'flex';
+    }
+    event.stopPropagation();
+}
+</script>
+<script>
+function toggleUserMenu() {
+    toggleMenu('user-menu');
+}
+
+</script>
+</body>
+</html>
