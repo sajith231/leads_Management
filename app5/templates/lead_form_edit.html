@@ -136,6 +136,45 @@
             transition: 0.2s ease-in-out;
         }
 
+        /* ========================================
+   SELECTED LEAD HIGHLIGHTING
+   ======================================== */
+.lead-item.selected {
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb) !important;
+    border-left: 5px solid #2575fc !important;
+    transform: translateX(5px);
+    box-shadow: 0 4px 15px rgba(37, 117, 252, 0.3) !important;
+    transition: all 0.3s ease;
+}
+
+.lead-item.selected .lead-name {
+    color: #1565c0;
+    font-weight: 700;
+}
+
+.lead-item.selected .lead-avatar {
+    background: linear-gradient(135deg, #2575fc, #6a11cb);
+    color: white;
+    font-weight: bold;
+}
+
+.lead-item.selected::before {
+    content: "✓";
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    background: #4CAF50;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+}
+
         .status-select:focus {
             border-color: #0a57d1;
             background: white;
@@ -1122,6 +1161,44 @@
             flex: 1;
             min-width: 0;
         }
+        /* ========================================
+   SELECTED LEAD HIGHLIGHTING
+   ======================================== */
+.lead-item.selected {
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb) !important;
+    border-left: 5px solid #2575fc !important;
+    transform: translateX(5px);
+    box-shadow: 0 4px 15px rgba(37, 117, 252, 0.3) !important;
+    transition: all 0.3s ease;
+}
+
+.lead-item.selected .lead-name {
+    color: #1565c0;
+    font-weight: 700;
+}
+
+.lead-item.selected .lead-avatar {
+    background: linear-gradient(135deg, #2575fc, #6a11cb);
+    color: white;
+    font-weight: bold;
+}
+
+.lead-item.selected::before {
+    content: "✓";
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    background: #4CAF50;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+}
         
         .lead-priority-indicator {
             font-size: 12px;
@@ -2111,33 +2188,37 @@
                     </div>
                     
                     <!-- Navigation Menu -->
-                    <div class="form-navigation">
-                        <ul class="nav-menu">
-                            <li class="nav-item">
-                                <a href="#communication-details" class="nav-link active">
-                                    <i class="fas fa-phone-alt"></i>
-                                    Edit Lead
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="{% url 'app5:requirements_list' %}" class="nav-link">
-                                    <i class="fas fa-clipboard-list"></i>
-                                    Requirements
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="{% url 'app5:event_form' %}" class="nav-link">
-                                    <i class="fas fa-briefcase"></i>
-                                    Event
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="{% url 'app5:quotation_list' %}" class="nav-link">
-                                    <i class="fas fa-briefcase"></i> Quotation
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
+                    <!-- ========================================
+     NAVIGATION MENU
+     ======================================== -->
+<div class="form-navigation">
+    <ul class="nav-menu">
+        <li class="nav-item">
+            <a href="{% url 'app5:lead' %}" class="nav-link">
+                <i class="fas fa-phone-alt"></i>
+                Lead Form
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{% url 'app5:requirements_list' %}" class="nav-link">
+                <i class="fas fa-clipboard-list"></i>
+                Requirements
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{% url 'app5:event_form' %}" class="nav-link">
+                <i class="fas fa-calendar"></i>
+                Event
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{% url 'app5:quotation_form' %}" class="nav-link">
+                <i class="fas fa-file-invoice-dollar"></i>
+                Quotation
+            </a>
+        </li>
+    </ul>
+</div>
                     
                     <div class="form-body">
                         <form id="customerForm" method="POST" action="{% url 'app5:lead_edit' lead_id=lead_data.id|default:0 %}">
@@ -4452,5 +4533,614 @@
         });
 
     </script>
+
+   <script>
+(function() {
+    'use strict';
+    
+    const CONFIG = {
+        STORAGE_KEY: 'selectedLeadData',
+        LEAD_ID_PARAM: 'lead_id',
+        AUTO_LOAD_DELAY: 300
+    };
+    
+    function saveLeadToStorage(leadData) {
+        try {
+            localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(leadData));
+            console.log('✅ Lead saved:', leadData.ownerName);
+            return true;
+        } catch (error) {
+            console.error('❌ Error saving lead:', error);
+            return false;
+        }
+    }
+    
+    function getLeadFromStorage() {
+        try {
+            const data = localStorage.getItem(CONFIG.STORAGE_KEY);
+            return data ? JSON.parse(data) : null;
+        } catch (error) {
+            console.error('❌ Error reading lead:', error);
+            return null;
+        }
+    }
+    
+    function getLeadIdFromURL() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(CONFIG.LEAD_ID_PARAM);
+    }
+    
+    function enhanceNavigationLinks(leadId) {
+        if (!leadId) return;
+        
+        document.querySelectorAll('.nav-link[href*="requirements"], .nav-link[href*="quotation"], .nav-link[href*="event"]').forEach(link => {
+            const href = link.getAttribute('href');
+            if (href && !href.includes('#') && !href.includes('lead_id=')) {
+                const separator = href.includes('?') ? '&' : '?';
+                link.setAttribute('href', `${href}${separator}lead_id=${leadId}`);
+                console.log('🔗 Link updated:', link.textContent.trim());
+            }
+        });
+    }
+    
+    function enhanceLeadSelection() {
+        document.querySelectorAll('.lead-item').forEach(item => {
+            const newItem = item.cloneNode(true);
+            item.parentNode.replaceChild(newItem, item);
+            
+            newItem.addEventListener('click', function(e) {
+                if (e.defaultPrevented) return;
+                
+                const leadId = this.getAttribute('data-id');
+                if (!leadId) return;
+                
+                console.log('🎯 Lead clicked:', leadId);
+                
+                const leadData = {
+                    id: leadId,
+                    ownerName: this.querySelector('.lead-name')?.textContent || '',
+                    phoneNo: this.querySelector('.lead-phone')?.textContent || '',
+                    ticket_number: this.querySelector('.lead-ticket')?.textContent || '',
+                    status: this.querySelector('.lead-status')?.textContent?.replace('Status: ', '') || '',
+                    priority: this.querySelector('.lead-priority-indicator')?.textContent?.trim() || ''
+                };
+                
+                saveLeadToStorage(leadData);
+                enhanceNavigationLinks(leadId);
+                
+                if (typeof window.populateFormWithLead === 'function') {
+                    window.populateFormWithLead(leadData);
+                }
+                
+                // For requirements page - use existing ticket selection function
+                if (typeof window.selectTicketFromDirectory === 'function') {
+                    window.selectTicketFromDirectory(leadData);
+                }
+                
+                // For quotation page - use existing lead selection function  
+                if (typeof window.handleLeadSelection === 'function' && this.classList.contains('lead-item')) {
+                    window.handleLeadSelection(this);
+                }
+                
+                document.querySelectorAll('.lead-item').forEach(i => i.classList.remove('selected'));
+                this.classList.add('selected');
+            });
+        });
+        
+        console.log('✅ Lead selection enhanced');
+    }
+    
+    function autoLoadLead() {
+        const urlLeadId = getLeadIdFromURL();
+        
+        if (urlLeadId) {
+            console.log('🔄 Loading from URL:', urlLeadId);
+            const leadItem = document.querySelector(`.lead-item[data-id="${urlLeadId}"]`);
+            if (leadItem) {
+                setTimeout(() => {
+                    leadItem.click();
+                    leadItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, CONFIG.AUTO_LOAD_DELAY);
+                return;
+            }
+        }
+        
+        const storedLead = getLeadFromStorage();
+        if (storedLead && storedLead.id) {
+            console.log('🔄 Loading from storage:', storedLead.ownerName);
+            const leadItem = document.querySelector(`.lead-item[data-id="${storedLead.id}"]`);
+            if (leadItem) {
+                setTimeout(() => {
+                    leadItem.click();
+                }, CONFIG.AUTO_LOAD_DELAY);
+            } else {
+                console.log('📋 Lead not in directory, using stored data');
+                if (typeof window.populateFormWithLead === 'function') {
+                    window.populateFormWithLead(storedLead);
+                }
+                enhanceNavigationLinks(storedLead.id);
+            }
+        }
+    }
+    
+    function init() {
+        console.log('🚀 Navigation System Starting...');
+        
+        enhanceLeadSelection();
+        
+        const path = window.location.pathname;
+        if (path.includes('lead') || path.includes('form') || 
+            path.includes('requirement') || path.includes('quotation')) {
+            autoLoadLead();
+        }
+        
+        console.log('✅ Navigation System Ready');
+    }
+    
+    window.clearLeadSelection = function() {
+        try {
+            localStorage.removeItem(CONFIG.STORAGE_KEY);
+            document.querySelectorAll('.lead-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            console.log('🧹 Lead selection cleared');
+        } catch (error) {
+            console.error('Error clearing selection:', error);
+        }
+    };
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+    
+})();
+</script> 
+<script>
+(function() {
+    'use strict';
+    
+    const CONFIG = {
+        STORAGE_KEY: 'selectedLeadData',
+        LEAD_ID_PARAM: 'lead_id',
+        AUTO_LOAD_DELAY: 300
+    };
+    
+    function saveLeadToStorage(leadData) {
+        try {
+            localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(leadData));
+            console.log('✅ Lead saved:', leadData.ownerName);
+            return true;
+        } catch (error) {
+            console.error('❌ Error saving lead:', error);
+            return false;
+        }
+    }
+    
+    function getLeadFromStorage() {
+        try {
+            const data = localStorage.getItem(CONFIG.STORAGE_KEY);
+            return data ? JSON.parse(data) : null;
+        } catch (error) {
+            console.error('❌ Error reading lead:', error);
+            return null;
+        }
+    }
+    
+    function getLeadIdFromURL() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(CONFIG.LEAD_ID_PARAM);
+    }
+    
+    function enhanceNavigationLinks(leadId) {
+        if (!leadId) return;
+        
+        document.querySelectorAll('.nav-link[href*="requirements"], .nav-link[href*="quotation"], .nav-link[href*="event"]').forEach(link => {
+            const href = link.getAttribute('href');
+            if (href && !href.includes('#') && !href.includes('lead_id=')) {
+                const separator = href.includes('?') ? '&' : '?';
+                link.setAttribute('href', `${href}${separator}lead_id=${leadId}`);
+                console.log('🔗 Link updated:', link.textContent.trim());
+            }
+        });
+    }
+    
+    function enhanceLeadSelection() {
+        document.querySelectorAll('.lead-item').forEach(item => {
+            const newItem = item.cloneNode(true);
+            item.parentNode.replaceChild(newItem, item);
+            
+            newItem.addEventListener('click', function(e) {
+                if (e.defaultPrevented) return;
+                
+                const leadId = this.getAttribute('data-id');
+                if (!leadId) return;
+                
+                console.log('🎯 Lead clicked:', leadId);
+                
+                const leadData = {
+                    id: leadId,
+                    ownerName: this.querySelector('.lead-name')?.textContent || '',
+                    phoneNo: this.querySelector('.lead-phone')?.textContent || '',
+                    ticket_number: this.querySelector('.lead-ticket')?.textContent || '',
+                    status: this.querySelector('.lead-status')?.textContent?.replace('Status: ', '') || '',
+                    priority: this.querySelector('.lead-priority-indicator')?.textContent?.trim() || ''
+                };
+                
+                saveLeadToStorage(leadData);
+                enhanceNavigationLinks(leadId);
+                
+                if (typeof window.populateFormWithLead === 'function') {
+                    window.populateFormWithLead(leadData);
+                }
+                
+                // For requirements page - use existing ticket selection function
+                if (typeof window.selectTicketFromDirectory === 'function') {
+                    window.selectTicketFromDirectory(leadData);
+                }
+                
+                // For quotation page - use existing lead selection function  
+                if (typeof window.handleLeadSelection === 'function' && this.classList.contains('lead-item')) {
+                    window.handleLeadSelection(this);
+                }
+                
+                document.querySelectorAll('.lead-item').forEach(i => i.classList.remove('selected'));
+                this.classList.add('selected');
+            });
+        });
+        
+        console.log('✅ Lead selection enhanced');
+    }
+    
+    function autoLoadLead() {
+        const urlLeadId = getLeadIdFromURL();
+        
+        if (urlLeadId) {
+            console.log('🔄 Loading from URL:', urlLeadId);
+            const leadItem = document.querySelector(`.lead-item[data-id="${urlLeadId}"]`);
+            if (leadItem) {
+                setTimeout(() => {
+                    leadItem.click();
+                    leadItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, CONFIG.AUTO_LOAD_DELAY);
+                return;
+            }
+        }
+        
+        const storedLead = getLeadFromStorage();
+        if (storedLead && storedLead.id) {
+            console.log('🔄 Loading from storage:', storedLead.ownerName);
+            const leadItem = document.querySelector(`.lead-item[data-id="${storedLead.id}"]`);
+            if (leadItem) {
+                setTimeout(() => {
+                    leadItem.click();
+                }, CONFIG.AUTO_LOAD_DELAY);
+            } else {
+                console.log('📋 Lead not in directory, using stored data');
+                if (typeof window.populateFormWithLead === 'function') {
+                    window.populateFormWithLead(storedLead);
+                }
+                enhanceNavigationLinks(storedLead.id);
+            }
+        }
+    }
+    
+    function init() {
+        console.log('🚀 Navigation System Starting...');
+        
+        enhanceLeadSelection();
+        
+        const path = window.location.pathname;
+        if (path.includes('lead') || path.includes('form') || 
+            path.includes('requirement') || path.includes('quotation')) {
+            autoLoadLead();
+        }
+        
+        console.log('✅ Navigation System Ready');
+    }
+    
+    window.clearLeadSelection = function() {
+        try {
+            localStorage.removeItem(CONFIG.STORAGE_KEY);
+            document.querySelectorAll('.lead-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            console.log('🧹 Lead selection cleared');
+        } catch (error) {
+            console.error('Error clearing selection:', error);
+        }
+    };
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+    
+})();
+
+(function() {
+    'use strict';
+    
+    // =====================================================
+    // CONFIGURATION
+    // =====================================================
+    const CONFIG = {
+        STORAGE_KEY: 'selectedLeadData',
+        SELECTED_LEAD_ID_KEY: 'selectedLeadId',
+        AUTO_LOAD_DELAY: 300
+    };
+    
+    // =====================================================
+    // STORAGE FUNCTIONS
+    // =====================================================
+    
+    function saveSelectedLeadId(leadId) {
+        try {
+            localStorage.setItem(CONFIG.SELECTED_LEAD_ID_KEY, leadId);
+            console.log('✅ Selected Lead ID saved:', leadId);
+            return true;
+        } catch (error) {
+            console.error('❌ Error saving lead ID:', error);
+            return false;
+        }
+    }
+    
+    function getSelectedLeadId() {
+        try {
+            return localStorage.getItem(CONFIG.SELECTED_LEAD_ID_KEY);
+        } catch (error) {
+            console.error('❌ Error getting lead ID:', error);
+            return null;
+        }
+    }
+    
+    function saveLeadToStorage(leadData) {
+        try {
+            const enrichedData = {
+                ...leadData,
+                timestamp: Date.now(),
+                sourcePage: window.location.pathname
+            };
+            localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(enrichedData));
+            saveSelectedLeadId(leadData.id);
+            console.log('✅ Lead data saved:', leadData.ownerName || leadData.name);
+            return true;
+        } catch (error) {
+            console.error('❌ Error saving lead:', error);
+            return false;
+        }
+    }
+    
+    function getLeadFromStorage() {
+        try {
+            const data = localStorage.getItem(CONFIG.STORAGE_KEY);
+            return data ? JSON.parse(data) : null;
+        } catch (error) {
+            console.error('❌ Error reading lead:', error);
+            return null;
+        }
+    }
+    
+    // =====================================================
+    // LEAD HIGHLIGHTING FUNCTIONS
+    // =====================================================
+    
+    function highlightLeadInDirectory(leadId) {
+        if (!leadId) return false;
+        
+        // Remove all previous selections
+        document.querySelectorAll('.lead-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+        
+        // Find and highlight the current lead
+        const leadItem = document.querySelector(`.lead-item[data-id="${leadId}"]`);
+        
+        if (leadItem) {
+            leadItem.classList.add('selected');
+            
+            // Scroll into view
+            setTimeout(() => {
+                leadItem.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center' 
+                });
+            }, 100);
+            
+            console.log('✅ Lead highlighted in directory:', leadId);
+            return true;
+        }
+        
+        console.log('⚠️ Lead not found in directory:', leadId);
+        return false;
+    }
+    
+    // =====================================================
+    // LEAD SELECTION ENHANCEMENT
+    // =====================================================
+    
+    function enhanceLeadSelection() {
+        const leadItems = document.querySelectorAll('.lead-item[data-id]');
+        
+        leadItems.forEach(item => {
+            // Clone to remove existing listeners
+            const newItem = item.cloneNode(true);
+            item.parentNode.replaceChild(newItem, item);
+            
+            newItem.addEventListener('click', function(e) {
+                // Don't interfere with button clicks
+                if (e.target.tagName === 'BUTTON' || 
+                    e.target.closest('button')) {
+                    return;
+                }
+                
+                if (e.defaultPrevented) return;
+                
+                const leadId = this.getAttribute('data-id');
+                if (!leadId) return;
+                
+                // Gather lead data
+                const leadData = {
+                    id: leadId,
+                    ownerName: this.querySelector('.lead-name')?.textContent.trim() || '',
+                    phoneNo: this.querySelector('.lead-phone')?.textContent.trim() || '',
+                    ticket_number: this.querySelector('.lead-ticket')?.textContent.trim() || '',
+                    status: this.querySelector('.lead-status')?.textContent.replace('Status: ', '').trim() || '',
+                    priority: this.getAttribute('data-priority') || ''
+                };
+                
+                console.log('🎯 Lead clicked:', leadData);
+                
+                // Save to storage
+                saveLeadToStorage(leadData);
+                
+                // Highlight in directory
+                highlightLeadInDirectory(leadId);
+                
+                // Navigate to edit page
+                const currentPath = window.location.pathname;
+                
+                if (currentPath.includes('lead') && !currentPath.includes('edit')) {
+                    // On lead_form.html - redirect to edit page
+                    console.log('📄 Redirecting to edit page...');
+                    window.location.href = `/app5/lead/${leadId}/edit/`;
+                } else if (currentPath.includes('edit')) {
+                    // On lead_form_edit.html - reload with new lead
+                    console.log('📝 Loading new lead in edit page...');
+                    window.location.href = `/app5/lead/${leadId}/edit/`;
+                }
+            });
+        });
+        
+        console.log(`✅ Enhanced ${leadItems.length} lead items`);
+    }
+    
+    // =====================================================
+    // AUTO-HIGHLIGHT ON PAGE LOAD
+    // =====================================================
+    
+    function autoHighlightSelectedLead() {
+        // Get the current editing lead ID from the page (for edit page)
+        const currentLeadIdField = document.querySelector('input[name="lead_id"]');
+        let currentEditingLeadId = null;
+        
+        if (currentLeadIdField) {
+            currentEditingLeadId = currentLeadIdField.value;
+        }
+        
+        // Priority 1: If we're on edit page, use the current editing lead
+        if (currentEditingLeadId) {
+            console.log('📝 Edit page - highlighting current lead:', currentEditingLeadId);
+            saveSelectedLeadId(currentEditingLeadId);
+            
+            setTimeout(() => {
+                highlightLeadInDirectory(currentEditingLeadId);
+            }, CONFIG.AUTO_LOAD_DELAY);
+            
+            return true;
+        }
+        
+        // Priority 2: Use stored lead ID
+        const storedLeadId = getSelectedLeadId();
+        
+        if (storedLeadId) {
+            console.log('💾 Storage - highlighting lead:', storedLeadId);
+            
+            setTimeout(() => {
+                highlightLeadInDirectory(storedLeadId);
+            }, CONFIG.AUTO_LOAD_DELAY);
+            
+            return true;
+        }
+        
+        console.log('ℹ️ No lead to highlight');
+        return false;
+    }
+    
+    // =====================================================
+    // NAVIGATION LINK ENHANCEMENT
+    // =====================================================
+    
+    function enhanceNavigationLinks(leadId) {
+        if (!leadId) return;
+        
+        document.querySelectorAll('.nav-link[href*="requirements"], .nav-link[href*="quotation"], .nav-link[href*="event"]').forEach(link => {
+            const href = link.getAttribute('href');
+            if (href && !href.includes('#') && !href.includes('lead_id=')) {
+                const separator = href.includes('?') ? '&' : '?';
+                link.setAttribute('href', `${href}${separator}lead_id=${leadId}`);
+            }
+        });
+    }
+    
+    // =====================================================
+    // INITIALIZATION
+    // =====================================================
+    
+    function init() {
+        console.log('🚀 Universal Lead Selection System Starting...');
+        console.log('📍 Current page:', window.location.pathname);
+        
+        // Enhance all lead items in directory
+        enhanceLeadSelection();
+        
+        // Auto-highlight the selected lead
+        autoHighlightSelectedLead();
+        
+        // Get current or stored lead ID for navigation enhancement
+        const currentLeadIdField = document.querySelector('input[name="lead_id"]');
+        const leadId = currentLeadIdField ? currentLeadIdField.value : getSelectedLeadId();
+        
+        if (leadId) {
+            enhanceNavigationLinks(leadId);
+        }
+        
+        console.log('✅ Universal Lead Selection System Ready');
+    }
+    
+    // =====================================================
+    // GLOBAL API
+    // =====================================================
+    
+    window.leadSelection = {
+        save: saveLeadToStorage,
+        load: getLeadFromStorage,
+        highlight: highlightLeadInDirectory,
+        getCurrentLeadId: getSelectedLeadId,
+        refresh: enhanceLeadSelection
+    };
+    
+    // =====================================================
+    // START
+    // =====================================================
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+    
+})();
+
+// =====================================================
+// HELPER FUNCTION: Clear Selection
+// =====================================================
+function clearLeadSelection() {
+    try {
+        localStorage.removeItem('selectedLeadId');
+        localStorage.removeItem('selectedLeadData');
+        
+        document.querySelectorAll('.lead-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+        
+        console.log('🗑️ Lead selection cleared');
+    } catch (error) {
+        console.error('Error clearing selection:', error);
+    }
+}
+</script>
 </body>
 </html>

@@ -93,6 +93,7 @@ urlpatterns = [
    path('api/lead/<int:lead_id>/', views.lead_detail_api, name='lead_detail_api'),
    path('requirements-list/', views.requirement_list, name='requirement_list'),
    path('requirements/save/', views.requirement_form, name='requirement_form'),
+   
    # Lead Assignment URLs
     path('lead-assign-list/', views.lead_assign_list_view, name='lead_assign_list'),
     path('assign-lead/', views.assign_lead_view, name='assign_lead'),
@@ -103,6 +104,7 @@ urlpatterns = [
     path('requirements/save/', views.requirement_form, name='requirement_form'),
     path('edit-requirement/<int:lead_id>/', views.edit_requirement, name='edit_requirement'),
     path('update-requirement/<int:lead_id>/', views.update_requirement, name='update_requirement'),
+    
 
     # your lead form view (adjust if function name differs)
     path('lead/', views.lead_form_view, name='lead'),
@@ -132,6 +134,7 @@ urlpatterns = [
     path('quotation/edit/<int:quotation_id>/', views.edit_quotation, name='quotation_edit'),
     path('quotation/<int:pk>/update/', views.update_quotation, name='quotation_update'),
     path('quotation/download/<int:quotation_id>/', views.download_quotation, name='download_quotation'),
+    
 
     
     path('state/', views.state_list, name='state_master_list'),  # Changed to state_master_list

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Job Card List{% endblock %}
+{% block title %}Edit Job Card{% endblock %}
 
 {% block content %}
     <meta charset="UTF-8">
@@ -39,17 +39,17 @@
             margin-bottom: 12px;
         }
         .customer-section {
-        background: #ede088;
-        border-radius: 8px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-        margin-bottom: 12px;
-        border: 1px solid #e22525;
-    }
-    .customer-section h3 {
-        margin-bottom: 8px;
-        font-size: 20px;
-        color:black;
-}
+            background: #ede088;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            margin-bottom: 12px;
+            border: 1px solid #e22525;
+        }
+        .customer-section h3 {
+            margin-bottom: 8px;
+            font-size: 20px;
+            color:black;
+        }
         .customer-row {
             display: flex;
             gap: 8px;
@@ -107,37 +107,37 @@
             resize: vertical;
         }
         .item-block {
-        border: 2px solid #253123;
-        border-radius: 12px;
-        margin-bottom: 15px;
-        background: #e1fad4;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        position: relative;
-    }
-    .item-block h3 {
-        margin-bottom: 8px;
-        color: black;
-        font-size: 20px;
-        padding-bottom: 6px;
-        border-bottom: 1px solid #e9ecef;
-    }
+            border: 2px solid #253123;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            background: #e1fad4;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            position: relative;
+        }
+        .item-block h3 {
+            margin-bottom: 8px;
+            color: black;
+            font-size: 20px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #e9ecef;
+        }
 
         .complaint-section {
-        background: #eccfdcd4;
-        border-radius: 10px;
-        margin: 10px 0;
-        border: 1px solid #c81919;
-        position: relative;
-    }
-    .complaint-section h3 {
-        margin-bottom: 10px;
-        text-align: center;
-        color: black;
-        font-size: 20px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
+            background: #eccfdcd4;
+            border-radius: 10px;
+            margin: 10px 0;
+            border: 1px solid #c81919;
+            position: relative;
+        }
+        .complaint-section h3 {
+            margin-bottom: 10px;
+            text-align: center;
+            color: black;
+            font-size: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
         .serial-config-row {
             display: flex;
@@ -588,7 +588,8 @@
             border: 1px solid #ced4da;
             font-size: 13px;
         }
-         .btn-update {
+        
+        .btn-update {
             display: block;
             margin: 15px auto;
             padding: 10px 25px;
@@ -607,6 +608,35 @@
         .btn-update:disabled {
             background: #6c757d;
             cursor: not-allowed;
+        }
+
+        /* NEW: Section/Device Category Styles */
+        .device-category-select {
+            width: 100%;
+            padding: 7px 8px;
+            font-size: 13px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            background: #fafafa;
+            outline: none;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .device-category-select:focus {
+            border-color: #28a745;
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+        }
+
+        /* NEW: Item select with optgroups */
+        .item-select optgroup {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .item-select option {
+            padding-left: 20px;
         }
 
         @media (max-width: 768px) {
@@ -695,17 +725,37 @@
                         </select>
                     </div>
                     
-                    <!-- Selected Item Display -->
-                   
+                    <h3>Item Details</h3>
 
                     <div class="form-inline">
+                        <!-- NEW: Device Category Field -->
+                        <div class="form-group">
+                            <label>Section *</label>
+                            <select name="device_category[]" class="device-category-select" required onchange="filterItemsByCategory(this, {{ forloop.counter0 }})" id="category-{{ forloop.counter0 }}">
+                                <option value="">Select Section</option>
+                                <option value="GENERAL" {% if item.device_category == 'GENERAL' %}selected{% endif %}>General</option>
+                                <option value="HARDWARE" {% if item.device_category == 'HARDWARE' %}selected{% endif %}>Hardware</option>
+                                <option value="SOFTWARE" {% if item.device_category == 'SOFTWARE' %}selected{% endif %}>Softwares</option>
+                                <option value="PAPER_ROLLS" {% if item.device_category == 'PAPER_ROLLS' %}selected{% endif %}>Paper Rolls</option>
+                            </select>
+                        </div>
+
                         <div class="form-group">
                             <label>Select Item *</label>
-                           <div class="selected-item-detail">
-                                <label>Item Name</label>
-                                <span>{{ item.name }}</span>
-                                <input type="hidden" name="items[]" value="{{ item.name }}">
-                            </div>
+                            <select name="items[]" class="item-select" id="items-{{ forloop.counter0 }}" required>
+                                <option value="">-- Select Item --</option>
+                                {% for section, section_items in items_by_section.items %}
+                                    <optgroup label="{{ section }}" data-section="{{ section|slugify }}">
+                                        {% for section_item in section_items %}
+                                            <option value="{{ section_item.name }}" 
+                                                    data-section="{{ section|slugify }}"
+                                                    {% if section_item.name == item.name %}selected{% endif %}>
+                                                {{ section_item.name }}
+                                            </option>
+                                        {% endfor %}
+                                    </optgroup>
+                                {% endfor %}
+                            </select>
                         </div>
 
                         <div class="form-group">
@@ -820,6 +870,47 @@
         {% endfor %}
         {% endfor %}
 
+        // NEW: Function to filter items by section
+        function filterItemsByCategory(categorySelect, itemIndex) {
+            const selectedCategory = categorySelect.value;
+            const itemSelect = document.getElementById(`items-${itemIndex}`);
+            const allOptions = itemSelect.querySelectorAll('option');
+            const allOptgroups = itemSelect.querySelectorAll('optgroup');
+            
+            // Hide all optgroups first
+            allOptgroups.forEach(optgroup => {
+                optgroup.style.display = 'none';
+            });
+            
+            // Show the "Select Item" option
+            const defaultOption = itemSelect.querySelector('option[value=""]');
+            if (defaultOption) {
+                defaultOption.style.display = '';
+            }
+            
+            if (selectedCategory) {
+                // Show only the optgroup that matches the selected section
+                const sectionSlug = selectedCategory.toLowerCase().replace(/_/g, '-');
+                const matchingOptgroup = itemSelect.querySelector(`optgroup[data-section="${sectionSlug}"]`);
+                
+                if (matchingOptgroup) {
+                    matchingOptgroup.style.display = '';
+                    // Show all options within this optgroup
+                    matchingOptgroup.querySelectorAll('option').forEach(option => {
+                        option.style.display = '';
+                    });
+                }
+            } else {
+                // If no section selected, show all optgroups
+                allOptgroups.forEach(optgroup => {
+                    optgroup.style.display = '';
+                    optgroup.querySelectorAll('option').forEach(option => {
+                        option.style.display = '';
+                    });
+                });
+            }
+        }
+
         function setStatus(itemIndex, status) {
             const dropdown = document.getElementById(`status-dropdown-${itemIndex}`);
             
@@ -906,18 +997,6 @@
             renderComplaints(itemIndex);
         }
         
-        function toggleItemFields(select, index) {
-            const fields = document.getElementById(`item-fields-${index}`);
-            fields.style.display = select.value ? 'block' : 'none';
-            
-            // Update the selected item display
-            const selectedItemDisplay = document.querySelector(`#item-${index} .selected-item-display`);
-            if (selectedItemDisplay) {
-                selectedItemDisplay.querySelector('h4').textContent = 'Selected Item: ' + select.value;
-                selectedItemDisplay.querySelector('.selected-item-details .selected-item-detail:first-child span').textContent = select.value;
-            }
-        }
-        
         function addItem() {
             const index = itemCount;
             const container = document.getElementById('itemsContainer');
@@ -936,23 +1015,32 @@
                         </select>
                     </div>
                     
-                    <!-- Selected Item Display -->
-                    
-                    
+                    <h3>Item Details</h3>
 
                     <div class="form-inline">
+                        <!-- NEW: Device Category Field -->
+                        <div class="form-group">
+                            <label>Section *</label>
+                            <select name="device_category[]" class="device-category-select" required onchange="filterItemsByCategory(this, ${index})" id="category-${index}">
+                                <option value="">Select Section</option>
+                                <option value="GENERAL">General</option>
+                                <option value="HARDWARE">Hardware</option>
+                                <option value="SOFTWARE">Softwares</option>
+                                <option value="PAPER_ROLLS">Paper Rolls</option>
+                            </select>
+                        </div>
+
                         <div class="form-group">
                             <label>Select Item *</label>
-                            <select name="items[]" onchange="toggleItemFields(this, ${index})" required>
-                                <option value="">Select Item</option>
-                                <option value="Mouse">Mouse</option>
-                                <option value="Keyboard">Keyboard</option>
-                                <option value="CPU">CPU</option>
-                                <option value="Laptop">Laptop</option>
-                                <option value="Desktop">Desktop</option>
-                                <option value="Printer">Printer</option>
-                                <option value="Monitor">Monitor</option>
-                                <option value="Other">Other</option>
+                            <select name="items[]" class="item-select" id="items-${index}" required>
+                                <option value="">-- Select Item --</option>
+                                {% for section, items in items_by_section.items %}
+                                    <optgroup label="{{ section }}" data-section="{{ section|slugify }}">
+                                        {% for item in items %}
+                                            <option value="{{ item.name }}" data-section="{{ section|slugify }}">{{ item.name }}</option>
+                                        {% endfor %}
+                                    </optgroup>
+                                {% endfor %}
                             </select>
                         </div>
 
@@ -1003,6 +1091,14 @@
             `;
 
             container.insertAdjacentHTML('beforeend', html);
+            
+            // Initialize section filtering for the new item
+            const newCategorySelect = document.querySelector(`#category-${index}`);
+            if (newCategorySelect) {
+                // Apply filtering based on selected section
+                filterItemsByCategory(newCategorySelect, index);
+            }
+            
             // Initialize complaint data for new item
             complaintData[index] = [{number: 1, text: '', id: 0}];
             renderComplaints(index);
@@ -1029,9 +1125,15 @@
                     statusDropdown.id = `status-dropdown-${newIndex}`;
                 }
                 
-                const itemSelect = block.querySelector('select[name="items[]"]');
+                const categorySelect = block.querySelector('.device-category-select');
+                if (categorySelect) {
+                    categorySelect.id = `category-${newIndex}`;
+                    categorySelect.setAttribute("onchange", `filterItemsByCategory(this, ${newIndex})`);
+                }
+                
+                const itemSelect = block.querySelector('.item-select');
                 if (itemSelect) {
-                    itemSelect.setAttribute("onchange", `toggleItemFields(this, ${newIndex})`);
+                    itemSelect.id = `items-${newIndex}`;
                 }
                 
                 const hiddenSection = block.querySelector(".hidden-section");
@@ -1073,6 +1175,11 @@
                 // Re-render complaints for this item
                 if (complaintData[newIndex]) {
                     renderComplaints(newIndex);
+                }
+                
+                // Re-apply section filtering
+                if (categorySelect && itemSelect) {
+                    filterItemsByCategory(categorySelect, newIndex);
                 }
             });
             
@@ -1259,6 +1366,14 @@
             renderComplaints({{ forloop.counter0 }});
             {% endfor %}
 
+            // Initialize section filtering for existing items
+            {% for item in items %}
+            const categorySelect{{ forloop.counter0 }} = document.getElementById('category-{{ forloop.counter0 }}');
+            if (categorySelect{{ forloop.counter0 }}) {
+                filterItemsByCategory(categorySelect{{ forloop.counter0 }}, {{ forloop.counter0 }});
+            }
+            {% endfor %}
+
             console.log('✅ Edit form initialized with {{ items|length }} existing items');
         });
 
@@ -1290,16 +1405,29 @@
             const itemBlocks = document.querySelectorAll('.item-block');
             itemBlocks.forEach((block, index) => {
                 const itemSelect = block.querySelector('select[name="items[]"]');
-                const itemName = block.querySelector('.selected-item-detail span');
+                const categorySelect = block.querySelector('select[name="device_category[]"]');
                 
-                // Check if it's an existing item (with span) or new item (with select)
-                if ((itemSelect && itemSelect.value) || (itemName && itemName.textContent)) {
-                    const itemNameValue = itemSelect ? itemSelect.value : itemName.textContent;
+                // Check section selection
+                if (categorySelect && !categorySelect.value) {
+                    alert('Please select a section for all items.');
+                    hasErrors = true;
+                    categorySelect.focus();
+                }
+                
+                // Check item selection
+                if (itemSelect && !itemSelect.value) {
+                    alert('Please select an item for all items.');
+                    hasErrors = true;
+                    itemSelect.focus();
+                }
+                
+                // Check complaints if item is selected
+                if (itemSelect && itemSelect.value) {
                     const complaintsInputs = block.querySelectorAll(`input[name="complaints-${index}[]"]`);
                     const hasValidComplaint = Array.from(complaintsInputs).some(input => input.value.trim() !== '');
                     
                     if (!hasValidComplaint) {
-                        alert(`Item "${itemNameValue}" must have at least one complaint description.`);
+                        alert(`Item "${itemSelect.value}" must have at least one complaint description.`);
                         hasErrors = true;
                     }
                 }

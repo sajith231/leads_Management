@@ -869,6 +869,36 @@
             color: #666;
             margin-top: 2px;
         }
+        
+        /* Add this for section dropdown */
+        .section-tag {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-right: 5px;
+        }
+        
+        .select2-results__option .section-tag {
+            margin-right: 8px;
+        }
+        
+        .select2-results__option[aria-selected="true"] {
+            background-color: #e3f2fd;
+        }
+        
+        .select2-results__option--highlighted[aria-selected] {
+            background-color: #4a6fdc;
+            color: white;
+        }
+        
+        .select2-results__option--highlighted[aria-selected] .section-tag {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -1024,10 +1054,11 @@
                             </button>
                         </div>
                         
-                        <!-- Items Table -->
+                        <!-- Items Table - UPDATED ORDER -->
                         <table class="items-table">
                             <thead>
                                 <tr>
+                                    <th width="12%">Section</th>
                                     <th width="25%">Item Description</th>
                                     <th width="8%">Qty</th>
                                     <th width="10%">Entry Rate (₹)</th>
@@ -1036,12 +1067,19 @@
                                     <th width="8%">Disc (%)</th>
                                     <th width="8%">Tax (%)</th>
                                     <th width="12%">Total (₹)</th>
-                                    <th width="9%">Action</th>
+                                    <th width="7%">Action</th>
                                 </tr>
                             </thead>
                             <tbody id="items-body">
                                 {% for item in quotation_items %}
                                 <tr data-item-id="{{ item.id }}">
+                                    <!-- SECTION FIRST -->
+                                    <td>
+                                        <select class="item-section" name="section[]" onchange="updateItemOptions(this)" {% if item.item.section %}data-original-section="{{ item.item.section }}"{% endif %}>
+                                            <option value="">-- Select Section --</option>
+                                        </select>
+                                    </td>
+                                    <!-- ITEM DESCRIPTION SECOND -->
                                     <td>
                                         <select class="item-desc" name="item_id[]" onchange="loadItemDetails(this)" required>
                                             <option value="">-- Select Item --</option>
@@ -1268,77 +1306,138 @@
             }
         }
         
-        // Function to populate item dropdown with enhanced display
-        function populateItemDropdown(selectElement, selectedItemId = null) {
+        // Function to get unique sections from all items
+        function getAvailableSections() {
+            const sections = new Set();
+            purchaseOrderItems.forEach(item => {
+                if (item.section) {
+                    sections.add(item.section);
+                }
+            });
+            return Array.from(sections).sort();
+        }
+        
+        // Function to update section dropdown options
+        function updateSectionDropdown(dropdown, selectedSection = null) {
+            const sections = getAvailableSections();
+            const $dropdown = $(dropdown);
+            
             // Clear existing options
-            $(selectElement).empty();
+            $dropdown.empty();
             
             // Add default option
-            $(selectElement).append($('<option>', {
+            $dropdown.append($('<option>', {
+                value: '',
+                text: '-- Select Section --'
+            }));
+            
+            // Add all available sections
+            sections.forEach(section => {
+                const option = $('<option>', {
+                    value: section,
+                    text: section
+                });
+                
+                if (selectedSection && section === selectedSection) {
+                    option.attr('selected', true);
+                }
+                
+                $dropdown.append(option);
+            });
+            
+            // Initialize Select2 for section dropdown
+            $dropdown.select2({
+                placeholder: "Select Section",
+                allowClear: true,
+                width: '100%'
+            });
+        }
+        
+        // Function to update item dropdown based on selected section
+        function updateItemOptions(sectionSelect) {
+            const $sectionSelect = $(sectionSelect);
+            const row = $sectionSelect.closest('tr');
+            const itemSelect = row.find('.item-desc');
+            const selectedSection = $sectionSelect.val();
+            
+            // Clear existing options
+            itemSelect.empty();
+            itemSelect.append($('<option>', {
                 value: '',
                 text: '-- Select Item --'
             }));
             
-            // Group items by section
-            const itemsBySection = {};
-            purchaseOrderItems.forEach(item => {
-                if (!itemsBySection[item.section]) {
-                    itemsBySection[item.section] = [];
-                }
-                itemsBySection[item.section].push(item);
-            });
-            
-            // Add items grouped by section
-            Object.keys(itemsBySection).forEach(section => {
-                // Add section as option group
-                $(selectElement).append($('<optgroup>', {
-                    label: section
-                }));
-                
-                // Add items in this section
-                itemsBySection[section].forEach(item => {
-                    const isSelected = selectedItemId && selectedItemId == item.id;
-                    const option = $('<option>', {
-                        value: item.id,
-                        text: item.name
-                    });
-                    
-                    if (isSelected) {
-                        option.attr('selected', true);
-                    }
-                    
-                    // Add data attributes
-                    option.data('item-data', {
-                        id: item.id,
-                        name: item.name,
-                        description: item.description,
-                        unit: item.unit_of_measure,
-                        mrp: item.mrp,
-                        purchase_price: item.purchase_price,
-                        cost: item.cost,
-                        tax: item.tax_percentage,
-                        hsn_code: item.hsn_code,
-                        section: item.section,
-                        department: item.department
-                    });
-                    
-                    $(selectElement).find('optgroup[label="' + section + '"]').append(option);
+            if (!selectedSection) {
+                // Disable the item dropdown if no section selected
+                itemSelect.select2({
+                    placeholder: "Select Section First",
+                    allowClear: true,
+                    width: '100%',
+                    disabled: true
                 });
+                return;
+            }
+            
+            // Filter items by selected section
+            const filteredItems = purchaseOrderItems.filter(item => item.section === selectedSection);
+            
+            if (filteredItems.length === 0) {
+                // No items in this section
+                itemSelect.select2({
+                    placeholder: "No items in this section",
+                    allowClear: true,
+                    width: '100%',
+                    disabled: false
+                });
+                return;
+            }
+            
+            // Add filtered items to dropdown
+            filteredItems.forEach(item => {
+                const option = $('<option>', {
+                    value: item.id,
+                    text: item.name
+                });
+                
+                // Check if this was the originally selected item
+                const originalItemId = row.find('.original-item-id').val();
+                if (originalItemId && originalItemId == item.id) {
+                    option.attr('selected', true);
+                }
+                
+                // Add data attributes
+                option.data('item-data', {
+                    id: item.id,
+                    name: item.name,
+                    description: item.description,
+                    unit: item.unit_of_measure,
+                    mrp: item.mrp,
+                    purchase_price: item.purchase_price,
+                    cost: item.cost,
+                    tax: item.tax_percentage,
+                    hsn_code: item.hsn_code,
+                    section: item.section,
+                    department: item.department
+                });
+                
+                itemSelect.append(option);
             });
             
-            // Initialize Select2 with custom template
-            $(selectElement).select2({
-                placeholder: "",
+            // Enable and initialize Select2
+            itemSelect.select2({
+                placeholder: "Select Item",
                 allowClear: true,
                 width: '100%',
+                disabled: false,
                 templateResult: formatItemDisplay,
                 templateSelection: formatItemSelection
             });
             
-            // Trigger change event to load item details if an item is selected
-            if (selectedItemId) {
+            // If an item was pre-selected, trigger change to load its details
+            const selectedOption = itemSelect.find('option:selected');
+            if (selectedOption.val()) {
                 setTimeout(() => {
-                    $(selectElement).trigger('change');
+                    itemSelect.trigger('change');
                 }, 100);
             }
         }
@@ -1357,7 +1456,9 @@
             const $details = $('<div class="item-details">');
             
             // Add section badge
-            $details.append($('<span class="item-section">').text(itemData.section));
+            if (itemData.section) {
+                $details.append($('<span class="section-tag">').text(itemData.section));
+            }
             
             // Add unit
             $details.append($('<span>').text(` ${itemData.unit} | `));
@@ -1397,7 +1498,7 @@
             if (itemData) {
                 const row = $select.closest('tr');
                 
-                // Set default values if they're currently zero
+                // Get current values
                 const currentSalesPrice = parseFloat($(row).find('.sales-price').val());
                 const currentUnitPrice = parseFloat($(row).find('.unit-price').val());
                 const currentEntryRate = parseFloat($(row).find('.entry-rate').val());
@@ -1425,6 +1526,16 @@
             }
         }
         
+        // Function to initialize empty item dropdown
+        function initializeItemDropdown(selectElement) {
+            $(selectElement).select2({
+                placeholder: "Select Section First",
+                allowClear: true,
+                width: '100%',
+                disabled: true
+            });
+        }
+        
         // Function to add new item row
         async function addNewItem() {
             // Check if quotation is editable
@@ -1439,6 +1550,13 @@
             const row = document.createElement('tr');
             
             row.innerHTML = `
+                <!-- SECTION FIRST -->
+                <td>
+                    <select class="item-section" name="section[]" onchange="updateItemOptions(this)">
+                        <option value="">-- Select Section --</option>
+                    </select>
+                </td>
+                <!-- ITEM DESCRIPTION SECOND -->
                 <td>
                     <select class="item-desc" name="item_id[]" onchange="loadItemDetails(this)" required>
                         <option value="">-- Select Item --</option>
@@ -1478,8 +1596,11 @@
             
             tbody.appendChild(row);
             
-            // Populate the dropdown with items
-            populateItemDropdown(row.querySelector('.item-desc'));
+            // Populate the section dropdown first
+            updateSectionDropdown(row.querySelector('.item-section'));
+            
+            // Initialize item dropdown (will be disabled until section is selected)
+            initializeItemDropdown(row.querySelector('.item-desc'));
             
             // Calculate initial row total
             calculateRow(row.querySelector('.item-qty'));
@@ -1488,27 +1609,27 @@
         
         // Function to delete row
         function deleteRow(button) {
-    const nonEditableStatuses = ['Approved', 'Converted', 'Cancelled'];
-    
-    if (nonEditableStatuses.includes(normalizedStatus)) {
-        showNotification(`Cannot delete items from ${normalizedStatus} quotations`, 'warning');
-        return;
-    }
-    
-    const row = $(button).closest('tr');
-    const itemId = row.data('item-id');
-    
-    if (itemId) {
-        // Mark for deletion (hide but keep in DOM)
-        row.append('<input type="hidden" name="delete_item_ids[]" value="' + itemId + '">');
-        row.hide();
-    } else {
-        // New item - remove completely
-        row.remove();
-    }
-    
-    updateTotals();
-}
+            const nonEditableStatuses = ['Approved', 'Converted', 'Cancelled'];
+            
+            if (nonEditableStatuses.includes(normalizedStatus)) {
+                showNotification(`Cannot delete items from ${normalizedStatus} quotations`, 'warning');
+                return;
+            }
+            
+            const row = $(button).closest('tr');
+            const itemId = row.data('item-id');
+            
+            if (itemId) {
+                // Mark for deletion (hide but keep in DOM)
+                row.append('<input type="hidden" name="delete_item_ids[]" value="' + itemId + '">');
+                row.hide();
+            } else {
+                // New item - remove completely
+                row.remove();
+            }
+            
+            updateTotals();
+        }
         
         // Function to calculate row total
         function calculateRow(input) {
@@ -1611,178 +1732,151 @@
         
         // Function to get CSRF token from cookie
         function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
             }
+            return cookieValue;
         }
-    }
-    return cookieValue;
-}
         
         // MAIN SAVE FUNCTION - updateQuotation
-        // Improved MAIN SAVE FUNCTION
-async function updateQuotation() {
-    console.log('updateQuotation() called');
-    
-    // Check if quotation is editable
-    const nonEditableStatuses = ['Approved', 'Converted', 'Cancelled'];
-    
-    if (nonEditableStatuses.includes(normalizedStatus)) {
-        showNotification(`Cannot update ${normalizedStatus} quotations`, 'warning');
-        return;
-    }
-    
-    // Validate items
-    const visibleRows = $('#items-body tr:visible');
-    if (visibleRows.length === 0) {
-        showNotification('Please add at least one item', 'warning');
-        return;
-    }
-    
-    // Validate all rows have items selected
-    let valid = true;
-    visibleRows.each(function() {
-        const itemSelect = $(this).find('.item-desc');
-        if (!itemSelect.val()) {
-            valid = false;
-            $(this).css('border', '2px solid red');
-        } else {
-            $(this).css('border', '');
-        }
-    });
-    
-    if (!valid) {
-        showNotification('Please select items for all rows', 'warning');
-        return;
-    }
-    
-    // Prepare data
-    const quotationData = {
-        quotation_id: quotationId,
-        lead_id: selectedLead ? selectedLead.id : '{{ quotation.lead.id }}',
-        notes: $('#notes').val(),
-        items: [],
-        deleted_items: [],
-        subtotal: parseFloat($('#subtotal').text().replace('₹', '').replace(',', '')) || 0,
-        total_discount: parseFloat($('#total-discount').text().replace('₹', '').replace(',', '')) || 0,
-        total_tax: parseFloat($('#total-tax').text().replace('₹', '').replace(',', '')) || 0,
-        grand_total: parseFloat($('#grand-total').text().replace('₹', '').replace(',', '')) || 0
-    };
-
-    // Debug function to test the save
-function testSave() {
-    console.log('=== TEST SAVE FUNCTION ===');
-    console.log('Quotation ID:', quotationId);
-    console.log('Status:', normalizedStatus);
-    console.log('Update URL:', '{% url "app5:quotation_update" quotation.id %}');
-    console.log('CSRF Token:', getCookie('csrftoken'));
-    
-    // Test with simple data
-    const testData = {
-        quotation_id: quotationId,
-        lead_id: '{{ quotation.lead.id }}',
-        notes: 'Test note',
-        items: [{
-            item_id: '1',
-            quantity: 2,
-            sales_price: 100,
-            discount: 10,
-            tax: 18,
-            total: 200
-        }]
-    };
-    
-    console.log('Test data:', testData);
-}
-    
-    // Collect items
-    visibleRows.each(function() {
-        const row = $(this);
-        const item = {
-            id: row.data('item-id') || null,
-            item_id: row.find('.item-desc').val(),
-            quantity: parseFloat(row.find('.item-qty').val()) || 0,
-            entry_rate: parseFloat(row.find('.entry-rate').val()) || 0,
-            sales_price: parseFloat(row.find('.sales-price').val()) || 0,
-            unit_price: parseFloat(row.find('.unit-price').val()) || 0,
-            discount: parseFloat(row.find('.discount').val()) || 0,
-            tax: parseFloat(row.find('.tax').val()) || 0,
-            total: parseFloat(row.find('.row-total-value').val()) || 0
-        };
-        quotationData.items.push(item);
-    });
-    
-    // Collect deleted items
-    $('input[name="delete_item_ids[]"]').each(function() {
-        quotationData.deleted_items.push($(this).val());
-    });
-    
-    console.log('Sending data:', quotationData);
-    
-    // Show loading
-    const saveBtn = $('#saveBtn');
-    const originalHtml = saveBtn.html();
-    saveBtn.html('<i class="fas fa-spinner fa-spin"></i> Saving...');
-    saveBtn.prop('disabled', true);
-    
-    try {
-        // Get CSRF token
-        const csrftoken = getCookie('csrftoken');
-        
-        if (!csrftoken) {
-            throw new Error('CSRF token not found');
-        }
-        
-        // Get update URL
-        const updateUrl = '{% url "app5:quotation_update" quotation.id %}';
-        console.log('Update URL:', updateUrl);
-        
-        // Send request
-        const response = await fetch(updateUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrftoken,
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: JSON.stringify(quotationData)
-        });
-        
-        const result = await response.json();
-        console.log('Response:', result);
-        
-        if (response.ok && result.success) {
-            showNotification('Quotation updated successfully!', 'success');
+        async function updateQuotation() {
+            console.log('updateQuotation() called');
             
-            // Update UI if needed
-            if (result.quotation_number) {
-                $('.quotation-id').html(
-                    `Quotation #: ${result.quotation_number} ` +
-                    `<span class="status-badge status-${result.status.toLowerCase()}">${result.status}</span>`
-                );
+            // Check if quotation is editable
+            const nonEditableStatuses = ['Approved', 'Converted', 'Cancelled'];
+            
+            if (nonEditableStatuses.includes(normalizedStatus)) {
+                showNotification(`Cannot update ${normalizedStatus} quotations`, 'warning');
+                return;
             }
             
-            // Reload page after 1.5 seconds
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
+            // Validate items
+            const visibleRows = $('#items-body tr:visible');
+            if (visibleRows.length === 0) {
+                showNotification('Please add at least one item', 'warning');
+                return;
+            }
             
-        } else {
-            throw new Error(result.message || 'Update failed');
+            // Validate all rows have items selected
+            let valid = true;
+            visibleRows.each(function() {
+                const itemSelect = $(this).find('.item-desc');
+                if (!itemSelect.val()) {
+                    valid = false;
+                    $(this).css('border', '2px solid red');
+                } else {
+                    $(this).css('border', '');
+                }
+            });
+            
+            if (!valid) {
+                showNotification('Please select items for all rows', 'warning');
+                return;
+            }
+            
+            // Prepare data
+            const quotationData = {
+                quotation_id: quotationId,
+                lead_id: selectedLead ? selectedLead.id : '{{ quotation.lead.id }}',
+                notes: $('#notes').val(),
+                items: [],
+                deleted_items: [],
+                subtotal: parseFloat($('#subtotal').text().replace('₹', '').replace(',', '')) || 0,
+                total_discount: parseFloat($('#total-discount').text().replace('₹', '').replace(',', '')) || 0,
+                total_tax: parseFloat($('#total-tax').text().replace('₹', '').replace(',', '')) || 0,
+                grand_total: parseFloat($('#grand-total').text().replace('₹', '').replace(',', '')) || 0
+            };
+            
+            // Collect items
+            visibleRows.each(function() {
+                const row = $(this);
+                const item = {
+                    id: row.data('item-id') || null,
+                    item_id: row.find('.item-desc').val(),
+                    quantity: parseFloat(row.find('.item-qty').val()) || 0,
+                    entry_rate: parseFloat(row.find('.entry-rate').val()) || 0,
+                    sales_price: parseFloat(row.find('.sales-price').val()) || 0,
+                    unit_price: parseFloat(row.find('.unit-price').val()) || 0,
+                    discount: parseFloat(row.find('.discount').val()) || 0,
+                    tax: parseFloat(row.find('.tax').val()) || 0,
+                    total: parseFloat(row.find('.row-total-value').val()) || 0
+                };
+                quotationData.items.push(item);
+            });
+            
+            // Collect deleted items
+            $('input[name="delete_item_ids[]"]').each(function() {
+                quotationData.deleted_items.push($(this).val());
+            });
+            
+            console.log('Sending data:', quotationData);
+            
+            // Show loading
+            const saveBtn = $('#saveBtn');
+            const originalHtml = saveBtn.html();
+            saveBtn.html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+            saveBtn.prop('disabled', true);
+            
+            try {
+                // Get CSRF token
+                const csrftoken = getCookie('csrftoken');
+                
+                if (!csrftoken) {
+                    throw new Error('CSRF token not found');
+                }
+                
+                // Get update URL
+                const updateUrl = '{% url "app5:quotation_update" quotation.id %}';
+                console.log('Update URL:', updateUrl);
+                
+                // Send request
+                const response = await fetch(updateUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify(quotationData)
+                });
+                
+                const result = await response.json();
+                console.log('Response:', result);
+                
+                if (response.ok && result.success) {
+                    showNotification('Quotation updated successfully! Redirecting...', 'success');
+                    
+                    // Wait 1.5 seconds then redirect
+                    setTimeout(() => {
+                        // Try multiple possible URLs
+                        try {
+                            // First try Django URL
+                            window.location.href = '{% url "app5:quotation_form" %}';
+                        } catch (error) {
+                            console.log('Django URL failed, trying direct path');
+                            // Fallback to direct path
+                            window.location.href = '/app5/quotation/form/';
+                        }
+                    }, 1500);
+                    
+                } else {
+                    throw new Error(result.message || 'Error updating quotation');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification(error.message || 'Failed to save quotation', 'error');
+                saveBtn.html(originalHtml);
+                saveBtn.prop('disabled', false);
+            }
         }
-    } catch (error) {
-        console.error('Error:', error);
-        showNotification(error.message || 'Failed to save quotation', 'error');
-        saveBtn.html(originalHtml);
-        saveBtn.prop('disabled', false);
-    }
-}
         
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', async function() {
@@ -1817,11 +1911,21 @@ function testSave() {
             // Load items from Purchase Order app
             await loadItemsFromPurchaseOrderApp();
             
-            // Populate item dropdowns with existing items
-            document.querySelectorAll('.item-desc').forEach((select, index) => {
-                const originalItemId = select.closest('tr').querySelector('.original-item-id');
-                const selectedItemId = originalItemId ? originalItemId.value : null;
-                populateItemDropdown(select, selectedItemId);
+            // Populate section and item dropdowns for existing items
+            document.querySelectorAll('.item-section').forEach((select, index) => {
+                const row = $(select).closest('tr');
+                const originalSection = row.find('.item-section').data('original-section');
+                const originalItemId = row.find('.original-item-id').val();
+                
+                // Populate section dropdown with pre-selected section
+                updateSectionDropdown(select, originalSection);
+                
+                // If there's a section, populate item dropdown
+                if (originalSection) {
+                    setTimeout(() => {
+                        updateItemOptions(select);
+                    }, 100);
+                }
             });
             
             // Check if quotation is editable

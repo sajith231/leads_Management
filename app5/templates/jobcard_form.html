@@ -778,9 +778,11 @@
             color: #333;
         }
 
-        /* NEW: Warranty and Office Select Styles */
+        /* NEW: Warranty and Office Select Styles - UPDATED */
         .warranty-select, .office-select {
             width: 100%;
+            min-width: 100px;
+            max-width: 120px;
             padding: 7px 8px;
             font-size: 13px;
             border: 2px solid #e1e8ed;
@@ -795,6 +797,16 @@
             border-color: #28a745;
             background: #fff;
             box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+        }
+
+        /* Compact form group for warranty/office fields */
+        .compact-form-group {
+            flex: 0 0 auto !important;
+            min-width: 120px !important;
+        }
+
+        .compact-form-group label {
+            white-space: nowrap;
         }
 
         /* Warranty Details Styles */
@@ -897,6 +909,25 @@
             background: #218838;
         }
 
+        /* NEW: Device Category Styles */
+        .device-category-select {
+            width: 100%;
+            padding: 7px 8px;
+            font-size: 13px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            background: #fafafa;
+            outline: none;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .device-category-select:focus {
+            border-color: #28a745;
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+        }
+
         @media (max-width: 768px) {
             .form-row,
             .serial-config-row,
@@ -981,6 +1012,17 @@
             .warranty-details {
                 padding: 10px;
             }
+
+            /* Mobile adjustments for warranty/office fields */
+            .warranty-select, .office-select {
+                width: 100%;
+                max-width: 100%;
+            }
+            
+            .compact-form-group {
+                flex: 1 1 100% !important;
+                min-width: unset !important;
+            }
         }
     </style>
 </head>
@@ -1043,14 +1085,29 @@
                     <h3>Item Details</h3>
 
                     <div class="form-inline">
+                        <!-- NEW: Device Category Field -->
+                        <div class="form-group">
+                            <label>Section *</label>
+                            <select name="device_category[]" class="device-category-select" required onchange="filterItemsByCategory(this, 0)" id="category-0">
+                                <option value="">Select Section</option>
+                                <option value="GENERAL" {% if request.GET.section == 'GENERAL' %}selected{% endif %}>General</option>
+                                <option value="HARDWARE" {% if request.GET.section == 'HARDWARE' %}selected{% endif %}>Hardware</option>
+                                <option value="SOFTWARE" {% if request.GET.section == 'SOFTWARE' %}selected{% endif %}>Softwares</option>
+                                <option value="PAPER_ROLLS" {% if request.GET.section == 'PAPER_ROLLS' %}selected{% endif %}>Paper Rolls</option>
+                            </select>
+                        </div>
+
                         <div class="form-group">
                             <label>Select Item *</label>
-                            <select name="items[]" onchange="toggleItemFields(this, 0); updateWarrantyItemName(this, 0)" required>
-                                <option value="">Select Items</option>
-                                {% for item in items %}
-        <option value="{{ item.name }}">{{ item.name }}</option>
-    {% endfor %}
-
+                            <select name="items[]" class="item-select" id="items-0" onchange="toggleItemFields(this, 0)">
+                                <option value="">-- Select Item --</option>
+                                {% for section, items in items_by_section.items %}
+                                    <optgroup label="{{ section }}" data-section="{{ section|slugify }}">
+                                        {% for item in items %}
+                                            <option value="{{ item.name }}" data-section="{{ section|slugify }}">{{ item.name }}</option>
+                                        {% endfor %}
+                                    </optgroup>
+                                {% endfor %}
                             </select>
                         </div>
 
@@ -1065,8 +1122,8 @@
                             <input type="text" name="configs[]">
                         </div>
 
-                        <!-- NEW: Warranty Item Question -->
-                        <div class="form-group">
+                        <!-- NEW: Warranty Item Question - UPDATED -->
+                        <div class="form-group compact-form-group">
                             <label>Warranty Item?</label>
                             <select name="warranty[]" class="warranty-select">
                                 <option value="no">No</option>
@@ -1074,8 +1131,8 @@
                             </select>
                         </div>
 
-                        <!-- NEW: Take to Office Question -->
-                        <div class="form-group">
+                        <!-- NEW: Take to Office Question - UPDATED -->
+                        <div class="form-group compact-form-group">
                             <label>Take to Office?</label>
                             <select name="take_to_office[]" class="office-select">
                                 <option value="no">No</option>
@@ -1085,43 +1142,7 @@
                     </div>
 
                     <!-- Warranty details (hidden by default) -->
-                    <div class="warranty-details">
-                        <h4>
-                            <i class="fas fa-file-contract"></i>
-                            Warranty Item Details
-                        </h4>
-
-                        <div class="form-inline">
-                            <div class="form-group">
-                                <label>Supplier *</label>
-                                <select name="supplier[]" class="supplier-select">
-                                    <option value="">Select Supplier</option>
-                                    <option value="1">Supplier A</option>
-                                    <option value="2">Supplier B</option>
-                                    <option value="3">Supplier C</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Ticket No *</label>
-                                <input type="text" name="warranty_ticket_no[]" placeholder="Enter Ticket No">
-                            </div>
-
-                            <div class="form-group">
-                                <label>Customer Name</label>
-                                <input type="text" name="warranty_customer_name[]" readonly style="background:#f5f5f5;">
-                            </div>
-
-                            <div class="form-group">
-                                <label>Item Name</label>
-                                <input type="text" name="warranty_item_name[]" readonly style="background:#f5f5f5;">
-                            </div>
-                        </div>
-                        
-                        <div class="warranty-instructions">
-                            <strong>Note:</strong> Warranty items require supplier information and ticket number for processing.
-                        </div>
-                    </div>
+                    
 
                     <div class="hidden-section" id="item-fields-0" style="display:none;">
                         <div class="complaint-section">
@@ -1187,17 +1208,16 @@
     <script>
         let itemCount = 1;
         let complaintData = [[]];
-    const customers = [
-    {% for customer in customer_data %}
-    {
-        name: "{{ customer.name|escapejs }}",
-        address: "{{ customer.address|escapejs }}",
-        branch: "{{ customer.branch|escapejs }}",
-        phone: "{{ customer.phone_number|default_if_none:''|escapejs }}"  
-    },
-    {% endfor %}
-];
-
+        const customers = [
+            {% for customer in customer_data %}
+            {
+                name: "{{ customer.name|escapejs }}",
+                address: "{{ customer.address|escapejs }}",
+                branch: "{{ customer.branch|escapejs }}",
+                phone: "{{ customer.phone_number|default_if_none:''|escapejs }}"  
+            },
+            {% endfor %}
+        ];
 
         function searchCustomer() {
             const input = document.getElementById("customer-search").value.toLowerCase();
@@ -1295,9 +1315,9 @@
                         <select name="complaints-${itemIndex}[]" class="complaint-select" 
                                 onchange="updateComplaintSelect(${itemIndex}, ${complaintIndex}, this.value)" required>
                             <option value="">Select Complaint</option>
-        {% for c in hardware_complaints %}
-            <option value="{{ c.description }}">{{ c.description|capfirst }}</option>
-        {% endfor %}
+                            {% for c in hardware_complaints %}
+                                <option value="{{ c.description }}">{{ c.description|capfirst }}</option>
+                            {% endfor %}
                         </select>
                         ${complaintData[itemIndex].length > 1 ? 
                             `<button type="button" class="complaint-delete-btn" 
@@ -1383,6 +1403,54 @@
             }
         }
 
+        // Updated: Function to filter items by section
+        function filterItemsByCategory(categorySelect, itemIndex) {
+            const selectedCategory = categorySelect.value;
+            const itemSelect = document.getElementById(`items-${itemIndex}`);
+            const allOptions = itemSelect.querySelectorAll('option');
+            const allOptgroups = itemSelect.querySelectorAll('optgroup');
+            
+            // Reset item selection
+            itemSelect.value = '';
+            
+            // Hide all optgroups first
+            allOptgroups.forEach(optgroup => {
+                optgroup.style.display = 'none';
+            });
+            
+            // Show the "Select Item" option
+            const defaultOption = itemSelect.querySelector('option[value=""]');
+            if (defaultOption) {
+                defaultOption.style.display = '';
+            }
+            
+            if (selectedCategory) {
+                // Show only the optgroup that matches the selected section
+                const sectionSlug = selectedCategory.toLowerCase().replace(/_/g, '-');
+                const matchingOptgroup = itemSelect.querySelector(`optgroup[data-section="${sectionSlug}"]`);
+                
+                if (matchingOptgroup) {
+                    matchingOptgroup.style.display = '';
+                    // Show all options within this optgroup
+                    matchingOptgroup.querySelectorAll('option').forEach(option => {
+                        option.style.display = '';
+                    });
+                }
+            } else {
+                // If no section selected, show all optgroups
+                allOptgroups.forEach(optgroup => {
+                    optgroup.style.display = '';
+                    optgroup.querySelectorAll('option').forEach(option => {
+                        option.style.display = '';
+                    });
+                });
+            }
+            
+            // Hide item fields if category is changed
+            const fields = document.getElementById(`item-fields-${itemIndex}`);
+            fields.style.display = 'none';
+        }
+
         function addItem() {
             const index = itemCount;
             const container = document.getElementById('itemsContainer');
@@ -1406,14 +1474,29 @@
                     <h3>Item ${index + 1}</h3>
 
                     <div class="form-inline">
+                        <!-- NEW: Device Category Field -->
+                        <div class="form-group">
+                            <label>Section *</label>
+                            <select name="device_category[]" class="device-category-select" required onchange="filterItemsByCategory(this, ${index})" id="category-${index}">
+                                <option value="">Select Section</option>
+                                <option value="GENERAL" {% if request.GET.section == 'GENERAL' %}selected{% endif %}>General</option>
+                                <option value="HARDWARE" {% if request.GET.section == 'HARDWARE' %}selected{% endif %}>Hardware</option>
+                                <option value="SOFTWARE" {% if request.GET.section == 'SOFTWARE' %}selected{% endif %}>Softwares</option>
+                                <option value="PAPER_ROLLS" {% if request.GET.section == 'PAPER_ROLLS' %}selected{% endif %}>Paper Rolls</option>
+                            </select>
+                        </div>
+
                         <div class="form-group">
                             <label>Select Item *</label>
-                            <select name="items[]" onchange="toggleItemFields(this, ${index}); updateWarrantyItemName(this, ${index})" required>
-                               <option value="">Select Items</option>
-                                {% for item in items %}
-        <option value="{{ item.name }}">{{ item.name }}</option>
-    {% endfor %}
-
+                            <select name="items[]" class="item-select" id="items-${index}" onchange="toggleItemFields(this, ${index})">
+                                <option value="">-- Select Item --</option>
+                                {% for section, items in items_by_section.items %}
+                                    <optgroup label="{{ section }}" data-section="{{ section|slugify }}">
+                                        {% for item in items %}
+                                            <option value="{{ item.name }}" data-section="{{ section|slugify }}">{{ item.name }}</option>
+                                        {% endfor %}
+                                    </optgroup>
+                                {% endfor %}
                             </select>
                         </div>
 
@@ -1428,8 +1511,8 @@
                             <input type="text" name="configs[]">
                         </div>
 
-                        <!-- NEW: Warranty Item Question -->
-                        <div class="form-group">
+                        <!-- NEW: Warranty Item Question - UPDATED -->
+                        <div class="form-group compact-form-group">
                             <label>Warranty Item?</label>
                             <select name="warranty[]" class="warranty-select">
                                 <option value="no">No</option>
@@ -1437,8 +1520,8 @@
                             </select>
                         </div>
 
-                        <!-- NEW: Take to Office Question -->
-                        <div class="form-group">
+                        <!-- NEW: Take to Office Question - UPDATED -->
+                        <div class="form-group compact-form-group">
                             <label>Take to Office?</label>
                             <select name="take_to_office[]" class="office-select">
                                 <option value="no">No</option>
@@ -1448,43 +1531,7 @@
                     </div>
 
                     <!-- Warranty details (hidden by default) -->
-                    <div class="warranty-details">
-                        <h4>
-                            <i class="fas fa-file-contract"></i>
-                            Warranty Item Details
-                        </h4>
-
-                        <div class="form-inline">
-                            <div class="form-group">
-                                <label>Supplier *</label>
-                                <select name="supplier[]" class="supplier-select">
-                                    <option value="">Select Supplier</option>
-                                    <option value="1">Supplier A</option>
-                                    <option value="2">Supplier B</option>
-                                    <option value="3">Supplier C</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Ticket No *</label>
-                                <input type="text" name="warranty_ticket_no[]" placeholder="Enter Ticket No">
-                            </div>
-
-                            <div class="form-group">
-                                <label>Customer Name</label>
-                                <input type="text" name="warranty_customer_name[]" readonly style="background:#f5f5f5;">
-                            </div>
-
-                            <div class="form-group">
-                                <label>Item Name</label>
-                                <input type="text" name="warranty_item_name[]" readonly style="background:#f5f5f5;">
-                            </div>
-                        </div>
-                        
-                        <div class="warranty-instructions">
-                            <strong>Note:</strong> Warranty items require supplier information and ticket number for processing.
-                        </div>
-                    </div>
+                    
 
                     <div class="hidden-section" id="item-fields-${index}" style="display:none;">
                         <div class="complaint-section">
@@ -1533,6 +1580,13 @@
                 toggleWarrantyDetails(newWarrantySelect, index);
             }
             
+            // Initialize section filtering for the new item
+            const newCategorySelect = document.querySelector(`#item-${index} .device-category-select`);
+            if (newCategorySelect) {
+                // Apply filtering based on selected section
+                filterItemsByCategory(newCategorySelect, index);
+            }
+
             // Initialize complaint data for new item
             complaintData[index] = [{number: 1, text: ''}];
             renderComplaints(index);
@@ -1714,9 +1768,42 @@
         // Initialize complaint data for first item
         complaintData[0] = [{number: 1, text: ''}];
         
-        // Initialize complaint rendering when page loads
+        // Initialize section filtering when page loads
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize the first item's section filter
+            const firstCategorySelect = document.querySelector('#category-0');
+            if (firstCategorySelect) {
+                // Apply filtering for the first item
+                filterItemsByCategory(firstCategorySelect, 0);
+            }
+            
+            // Also initialize complaint rendering
             renderComplaints(0);
         });
+
+        // Helper function to update warranty customer names (optional)
+        function updateAllWarrantyCustomerNames() {
+            const customerName = document.getElementById('customer-search').value;
+            const warrantyCustomerFields = document.querySelectorAll('input[name^="warranty_customer_name"]');
+            warrantyCustomerFields.forEach(field => {
+                field.value = customerName;
+            });
+        }
+
+        // Function to toggle warranty details (optional - if you have this functionality)
+        function toggleWarrantyDetails(warrantySelect, index) {
+            const warrantyDetails = warrantySelect.closest('.item-block').querySelector('.warranty-details');
+            if (warrantySelect.value === 'yes') {
+                warrantyDetails.style.display = 'block';
+                // Update customer name in warranty section
+                const customerName = document.getElementById('customer-search').value;
+                const customerField = warrantyDetails.querySelector('input[name="warranty_customer_name[]"]');
+                if (customerField && customerName) {
+                    customerField.value = customerName;
+                }
+            } else {
+                warrantyDetails.style.display = 'none';
+            }
+        }
     </script>
 {% endblock %}
