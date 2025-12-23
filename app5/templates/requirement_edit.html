@@ -11,7 +11,16 @@
     
     /* Directory Column */
     .directory-column { flex: 0 0 320px; width: 320px; display: flex; flex-direction: column; }
-    .lead-directory-container { background: white; border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.08); overflow: hidden; height: 100%; display: flex; flex-direction: column; }
+      .lead-directory-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            height: 100%;
+            max-height: calc(100vh - 40px);
+            display: flex;
+            flex-direction: column;
+        }
     .directory-header { background: #4a6fdc; color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; }
     .directory-header h2 { font-size: 16px; font-weight: 600; }
     .directory-info { font-size: 12px; opacity: 0.9; }
@@ -494,41 +503,10 @@
                         </select>
                     </div>
                     
-                    <div class="status-filter-group">
-                        <span class="filter-label">Status:</span>
-                        <select id="statusFilter" class="filter-select">
-                            <option value="all">All</option>
-                            <option value="Active">Active</option>
-                            <option value="Follow Up">Follow Up</option>
-                            <option value="Quoted">Quoted</option>
-                            <option value="Closed">Closed</option>
-                        </select>
-                    </div>
+                    
                 </div>
                 
-                <!-- Active Lead Indicator -->
-                {% if lead_data %}
-                <div class="active-lead-header">
-                    <div class="active-lead-title">
-                        <i class="fas fa-star" style="color:#2196f3;"></i>
-                        <span style="font-weight: 700;">Currently Editing:</span>
-                    </div>
-                    <div class="active-lead-details">
-                        <div class="active-lead-detail">
-                            <i class="fas fa-user"></i>
-                            <span class="active-lead-value">{{ lead_data.ownerName }}</span>
-                        </div>
-                        <div class="active-lead-detail">
-                            <i class="fas fa-ticket-alt"></i>
-                            <span class="active-lead-value">#{{ lead_data.ticket_number }}</span>
-                        </div>
-                        <div class="active-lead-detail">
-                            <i class="fas fa-clipboard-list"></i>
-                            <span class="active-lead-value">{{ requirements|length }} item(s)</span>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
+                
                 
                 <!-- Lead List -->
                 <div class="lead-list active" id="leadList">
