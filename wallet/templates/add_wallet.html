@@ -1,0 +1,434 @@
+{% extends "base.html" %}
+{% block content %}
+<title>Add Wallet Item</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial; color: #222; }
+
+    .page-center {
+        min-height: calc(100vh - 160px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: transparent;
+    }
+
+    .form-container {
+        background: #fff;
+        border-radius: 8px;
+        padding: 28px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        border: 1px solid #e6e6e6;
+        max-width: 680px;
+        width: 100%;
+    }
+
+    .form-header { margin-bottom: 20px; text-align: center; }
+    .upload-icon { font-size: 36px; color: #4a5568; margin-bottom: 8px; display:block; }
+    .form-header h2 { font-size: 22px; margin: 6px 0; color:#222; }
+    .form-header p { color: #6b7280; margin:0; font-size: 13px; }
+
+    label.form-label { display:block; margin-bottom:6px; font-weight:600; color:#333; font-size:14px; }
+    .required { color:#e63946; margin-left:4px; }
+
+    .form-row { margin-bottom:16px; }
+    input[type="text"], input[type="file"], select, textarea {
+        width:100%;
+        padding:10px 12px;
+        border-radius:6px;
+        border:1px solid #e6e6e6;
+        font-size:14px;
+        outline: none;
+        background: #fff;
+        transition: box-shadow .12s, border-color .12s;
+    }
+    input[type="text"]:focus, select:focus, textarea:focus {
+        border-color: #4a5568;
+        box-shadow: 0 0 0 4px rgba(74,85,104,0.06);
+    }
+    textarea { resize: vertical; min-height: 90px; }
+
+    .info-text { font-size:12px; color:#6b7280; margin-top:6px; }
+    .info-text.highlight { color:#2563eb; font-weight:600; }
+
+    .field-group { background:#f8fafb; border:1px solid #eef2f7; padding:14px; border-radius:6px; margin-bottom:14px; }
+    .field-group-title { display:flex; align-items:center; gap:8px; font-weight:600; color:#325065; margin-bottom:10px; font-size:15px; }
+
+    .btn { display:inline-flex; align-items:center; gap:8px; justify-content:center; cursor:pointer; border-radius:6px; padding:8px 14px; font-weight:600; font-size:14px; border:1px solid transparent; }
+    .btn-submit { width:100%; background:#4a5568; color:#fff; border-color:#4a5568; padding:12px 14px; }
+    .btn-submit:hover { background:#2f3a42; border-color:#2f3a42; }
+
+    .btn-back { display:inline-block; background:#eef2f3; color:#394046; padding:8px 14px; text-decoration:none; border-radius:6px; border:1px solid #e1e6e9; }
+    .btn-back:hover { background:#e4eaed; }
+
+    .image-preview-container { margin-top:10px; display:none; }
+    .image-preview { max-width:100%; max-height:250px; border-radius:6px; border:1px solid #e6e6e6; box-shadow:0 1px 6px rgba(0,0,0,0.04); }
+
+    .pdf-preview-container { margin-top:10px; display:none; background:#f9fafb; padding:12px; border-radius:6px; border:1px solid #e6e6e6; }
+    .pdf-preview-info { display:flex; align-items:center; gap:10px; color:#374151; font-size:13px; }
+    .pdf-icon { font-size:32px; color:#dc2626; }
+    .pdf-details { flex:1; }
+    .pdf-name { font-weight:600; margin-bottom:4px; }
+    .pdf-size { color:#6b7280; font-size:12px; }
+
+    .alert { position: relative; padding:10px 12px; border-radius:6px; margin-bottom:12px; border:1px solid transparent; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .alert .message-text { flex:1; margin-right:10px; }
+    .alert .close-btn { background:transparent; border:none; font-size:16px; cursor:pointer; color:inherit; padding:6px; border-radius:4px; }
+    .alert-info { background:#eef2f8; color:#083b6b; border-color:#cfe7ff; }
+    .alert-success { background:#ecfdf5; color:#064e3b; border-color:#bbf7d0; }
+    .alert-danger { background:#fff1f2; color:#701a1a; border-color:#fecaca; }
+
+    .file-upload-section { background:#f8fafb; border:1px solid #eef2f7; padding:16px; border-radius:6px; margin-bottom:14px; }
+    .section-title { font-weight:600; color:#325065; margin-bottom:12px; font-size:15px; display:flex; align-items:center; gap:8px; }
+</style>
+
+<div class="page-center">
+  <div class="form-container">
+    <div class="form-header">
+      <i class="fas fa-wallet upload-icon"></i>
+      <h2>Add New Wallet Item</h2>
+      <p>Upload bank details, QR codes, documents or PDFs</p>
+    </div>
+
+    {% if messages %}
+      {% for message in messages %}
+        {% if 'error' in message.tags or 'danger' in message.tags %}
+          <div class="alert alert-danger" role="alert">
+            <div class="message-text">{{ message }}</div>
+            <button type="button" class="close-btn" aria-label="Close">&times;</button>
+          </div>
+        {% elif 'success' in message.tags %}
+          <div class="alert alert-success" role="alert">
+            <div class="message-text">{{ message }}</div>
+            <button type="button" class="close-btn" aria-label="Close">&times;</button>
+          </div>
+        {% else %}
+          <div class="alert alert-info" role="alert">
+            <div class="message-text">{{ message }}</div>
+            <button type="button" class="close-btn" aria-label="Close">&times;</button>
+          </div>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" id="walletForm" autocomplete="off">
+      {% csrf_token %}
+
+      <div class="form-row">
+        <label class="form-label" for="title">Wallet name <span class="required">*</span></label>
+        <input id="title" name="title" type="text" placeholder="Enter wallet name" required>
+      </div>
+
+      <div class="form-row">
+        <label class="form-label" for="upload_type">Upload Type <span class="required">*</span></label>
+        <select id="upload_type" name="upload_type" required>
+          <option value="">Select upload type</option>
+          <option value="bank">Bank/Details QR</option>
+          <option value="qr">QR image</option>
+          <option value="document">Documentation Image wallet</option>
+          <option value="pdf">PDF Document Wallet</option>
+          <option value="other">Address Card</option>
+          <option value="ofdocs_imc_dev">Ofdocs - IMC DEV</option>
+          <option value="ofdocs_imc_ho">Ofdocs - IMC HO</option>
+          <option value="ofdocs_imc_mukkam">Ofdocs - IMC Mukkam</option>
+          <option value="ofdocs_sysmac">Ofdocs - Sysmac</option>
+          <option value="ofdocs_sysmac_info">Ofdocs - Sysmac Info</option>
+          <option value="ofdocs_sysmac_old">Ofdocs - Sysmac Old</option>
+          <option value="vehicle_data">Vehicle Data</option>
+        </select>
+        <div class="info-text">Select the category for this wallet item</div>
+      </div>
+
+      <!-- Type-Specific Fields (shown conditionally) -->
+      <div id="typeSpecificFields" style="display:none;">
+        <!-- Bank Fields -->
+        <div id="bankFields" class="dynamic-fields" style="display:none;">
+          <div class="field-group">
+            <div class="field-group-title"><i class="fas fa-university"></i> Bank Account Details</div>
+
+            <div class="form-row">
+              <label class="form-label" for="account_holder_name">Account Holder Name</label>
+              <input id="account_holder_name" name="account_holder_name" type="text" placeholder="Enter account holder name">
+            </div>
+
+            <div class="form-row">
+              <label class="form-label" for="account_number">Account Number</label>
+              <input id="account_number" name="account_number" type="text" placeholder="Enter account number">
+            </div>
+
+            <div class="form-row">
+              <label class="form-label" for="ifsc_code">IFSC Code</label>
+              <input id="ifsc_code" name="ifsc_code" type="text" placeholder="Enter IFSC code" style="text-transform:uppercase;">
+            </div>
+
+            <div class="form-row">
+              <label class="form-label" for="bank_address">Bank Address</label>
+              <textarea id="bank_address" name="bank_address" rows="3" placeholder="Enter bank branch address"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- QR Fields -->
+        <div id="qrFields" class="dynamic-fields" style="display:none;">
+          <div class="field-group">
+            <div class="field-group-title"><i class="fas fa-qrcode"></i> QR Details</div>
+            <div class="form-row">
+              <label class="form-label" for="qr_name">QR Name</label>
+              <input id="qr_name" name="qr_name" type="text" placeholder="Enter QR code name (e.g., UPI ID)">
+              <div class="info-text">Enter the name or purpose of this QR code</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PDF Fields -->
+        <div id="pdfSpecificFields" class="dynamic-fields" style="display:none;">
+          <div class="field-group">
+            <div class="field-group-title"><i class="fas fa-file-pdf"></i> PDF Details</div>
+            <div class="form-row">
+              <label class="form-label" for="pdf_name">PDF Name</label>
+              <input id="pdf_name" name="pdf_name" type="text" placeholder="Enter PDF document name">
+              <div class="info-text">Enter a descriptive name for this PDF document</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Address Book Fields -->
+        <div id="otherFields" class="dynamic-fields" style="display:none;">
+          <div class="field-group">
+            <div class="field-group-title"><i class="fas fa-address-book"></i> Address card</div>
+            <div class="form-row">
+              <label class="form-label" for="other_name">Name <span class="required">*</span></label>
+              <input id="other_name" name="other_name" type="text" placeholder="Enter contact name">
+              <div class="info-text">Enter the contact name</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Common File Upload Section (for all types) -->
+        <div class="file-upload-section">
+          <div class="section-title"><i class="fas fa-cloud-upload-alt"></i> File Upload</div>
+          <div class="info-text highlight" style="margin-bottom:12px;">
+            <i class="fas fa-info-circle"></i> Upload at least one file (Image OR PDF)
+          </div>
+
+          <!-- Image Upload -->
+          <div class="form-row">
+            <label class="form-label" for="wallet_image"><i class="fas fa-image"></i> Image Upload</label>
+            <input id="wallet_image" name="wallet_image" type="file" accept="image/png, image/jpeg, image/jpg">
+            <div class="info-text">Supported formats: JPG, JPEG, PNG (Max 5MB)</div>
+            <div id="imagePreview" class="image-preview-container">
+              <img id="previewImg" class="image-preview" src="" alt="Preview">
+            </div>
+          </div>
+
+          <!-- PDF Upload -->
+          <div class="form-row">
+            <label class="form-label" for="wallet_pdf"><i class="fas fa-file-pdf"></i> PDF Upload</label>
+            <input id="wallet_pdf" name="wallet_pdf" type="file" accept="application/pdf">
+            <div class="info-text">Supported format: PDF (Max 10MB)</div>
+            <div id="pdfPreview" class="pdf-preview-container">
+              <div class="pdf-preview-info">
+                <i class="fas fa-file-pdf pdf-icon"></i>
+                <div class="pdf-details">
+                  <div class="pdf-name" id="pdfFileName"></div>
+                  <div class="pdf-size" id="pdfFileSize"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label class="form-label" for="visibility_priority"><i class="fas fa-eye"></i> Visibility Priority <span class="required">*</span></label>
+        <select id="visibility_priority" name="visibility_priority" required>
+          <option value="">Select visibility level</option>
+          <option value="superadmin">Super Admin</option>
+          <option value="admin">Admin</option>
+          <option value="user">User</option>
+        </select>
+        <div class="info-text">Who can view this wallet item</div>
+      </div>
+
+      <div class="form-row">
+        <label class="form-label" for="description"><i class="fas fa-align-left"></i> Description <span class="required" id="descRequired">*</span></label>
+        <textarea id="description" name="description" rows="4" placeholder="Add any additional details about this wallet item" required></textarea>
+        <div class="info-text">Add any additional details about this wallet item</div>
+      </div>
+
+      <div class="form-row">
+        <button type="submit" class="btn btn-submit"><i class="fas fa-save"></i> Save Wallet Item</button>
+      </div>
+    </form>
+
+    <div style="text-align:center; margin-top:12px;">
+      <a href="{% url 'wallet_list' %}" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Wallet List</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Close alert messages
+  document.querySelectorAll('.alert .close-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      const alert = this.closest('.alert');
+      if (!alert) return;
+      alert.style.transition = 'opacity .18s ease, height .18s ease, margin .18s ease';
+      alert.style.opacity = '0';
+      alert.style.height = '0';
+      alert.style.margin = '0';
+      setTimeout(() => alert.remove(), 200);
+    });
+  });
+
+  const uploadTypeEl = document.getElementById('upload_type');
+  const typeSpecificFields = document.getElementById('typeSpecificFields');
+  const descriptionEl = document.getElementById('description');
+  const descRequired = document.getElementById('descRequired');
+  const walletImage = document.getElementById('wallet_image');
+  const walletPdf = document.getElementById('wallet_pdf');
+
+  // Hide all dynamic fields
+  function hideAllDynamicFields() {
+    document.querySelectorAll('.dynamic-fields').forEach(el => {
+      el.style.display = 'none';
+    });
+  }
+
+  // Show specific fields based on upload type
+  function showFieldsForType(type) {
+    hideAllDynamicFields();
+    
+    if (type === 'bank') {
+      document.getElementById('bankFields').style.display = 'block';
+    } else if (type === 'qr') {
+      document.getElementById('qrFields').style.display = 'block';
+    } else if (type === 'pdf') {
+      document.getElementById('pdfSpecificFields').style.display = 'block';
+    } else if (type === 'other') {
+      document.getElementById('otherFields').style.display = 'block';
+    }
+    // All other types (document, ofdocs_*, vehicle_data) have no specific fields, just file uploads
+  }
+
+  // Handle upload type change
+  uploadTypeEl.addEventListener('change', function () {
+    const val = this.value;
+    
+    if (!val) {
+      typeSpecificFields.style.display = 'none';
+      descriptionEl.setAttribute('required', 'required');
+      descRequired.style.display = 'inline';
+      return;
+    }
+
+    typeSpecificFields.style.display = 'block';
+    showFieldsForType(val);
+    
+    // Make description required only for Address Book (other)
+    if (val === 'other') {
+      descriptionEl.setAttribute('required', 'required');
+      descRequired.style.display = 'inline';
+      document.getElementById('other_name').setAttribute('required', 'required');
+    } else {
+      descriptionEl.removeAttribute('required');
+      descRequired.style.display = 'none';
+    }
+  });
+
+  // Image preview
+  walletImage.addEventListener('change', function (e) {
+    const file = e.target.files && e.target.files[0];
+    const container = document.getElementById('imagePreview');
+    const img = document.getElementById('previewImg');
+    
+    if (!file) {
+      container.style.display = 'none';
+      img.src = '';
+      return;
+    }
+
+    const allowed = ['image/jpeg','image/jpg','image/png'];
+    if (!allowed.includes(file.type)) {
+      alert('Only JPG, JPEG, and PNG images are allowed.');
+      walletImage.value = '';
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image file size should not exceed 5MB.');
+      walletImage.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function (ev) {
+      img.src = ev.target.result;
+      container.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // PDF preview
+  walletPdf.addEventListener('change', function (e) {
+    const file = e.target.files && e.target.files[0];
+    const container = document.getElementById('pdfPreview');
+    const fileName = document.getElementById('pdfFileName');
+    const fileSize = document.getElementById('pdfFileSize');
+    
+    if (!file) {
+      container.style.display = 'none';
+      return;
+    }
+
+    if (file.type !== 'application/pdf') {
+      alert('Only PDF files are allowed.');
+      walletPdf.value = '';
+      return;
+    }
+    
+    if (file.size > 10 * 1024 * 1024) {
+      alert('PDF file size should not exceed 10MB.');
+      walletPdf.value = '';
+      return;
+    }
+
+    fileName.textContent = file.name;
+    
+    let size = file.size;
+    let sizeStr = '';
+    if (size < 1024) {
+      sizeStr = size + ' B';
+    } else if (size < 1024 * 1024) {
+      sizeStr = (size / 1024).toFixed(1) + ' KB';
+    } else {
+      sizeStr = (size / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+    fileSize.textContent = sizeStr;
+    
+    container.style.display = 'block';
+  });
+
+  // IFSC code uppercase
+  const ifscEl = document.getElementById('ifsc_code');
+  if (ifscEl) {
+    ifscEl.addEventListener('input', function () {
+      this.value = this.value.toUpperCase();
+    });
+  }
+
+  // Form validation - ensure at least one file is uploaded
+  document.getElementById('walletForm').addEventListener('submit', function(e) {
+    const uploadType = uploadTypeEl.value;
+    const hasImage = walletImage.files && walletImage.files.length > 0;
+    const hasPdf = walletPdf.files && walletPdf.files.length > 0;
+    
+    if (uploadType && !hasImage && !hasPdf) {
+      e.preventDefault();
+      alert('Please upload at least one file (Image OR PDF)');
+      return false;
+    }
+  });
+</script>
+{% endblock %}

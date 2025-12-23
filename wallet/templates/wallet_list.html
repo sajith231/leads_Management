@@ -1,0 +1,1085 @@
+{% extends "base.html" %}
+{% block content %}
+    <title>Wallet List</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+*, *:before, *:after { box-sizing: border-box; }
+html,body{ height:100%; margin:0; font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif; background:#f5f5f5; color:#333;}
+a { color: inherit; text-decoration: none; }
+.container { max-width: 1400px; margin: 20px auto; padding: 0 18px; }
+.header { background: #fff; border-radius: 8px; padding: 22px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid #e6e6e6; display:flex; align-items:center; justify-content:space-between; gap:16px; }
+.header-left { display:flex; gap:14px; align-items:center; }
+.header h1 { font-size:22px; margin:0; display:flex; gap:8px; align-items:center; }
+.header p { margin:0; color:#6b7280; font-size:13px; margin-top:4px; }
+.btn-add { background: #4a5568; color: #fff; padding: 10px 18px; border-radius: 8px; border: none; cursor: pointer; font-weight:600; display:inline-flex; align-items:center; gap:8px; }
+.btn-add:hover { filter:brightness(.95); }
+.alert { background:#fff; border:1px solid #e6e6e6; padding:12px 14px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.03); display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px; }
+.alert .text { color:#111827; font-size:14px; }
+.alert .close-btn { background:transparent; border: none; cursor:pointer; font-size:18px; color:#6b7280; }
+.filter-section { background: #fff; border-radius: 8px; padding: 18px; margin-bottom: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid #e6e6e6; }
+.filter-grid { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 12px; align-items: end; }
+@media (max-width: 768px) { .filter-grid { grid-template-columns: 1fr; } }
+.filter-group { display: flex; flex-direction: column; gap: 6px; }
+.filter-label { font-size: 12px; font-weight: 700; color: #6b7280; text-transform: uppercase; display: flex; align-items: center; gap: 6px; }
+.filter-input { padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; font-family: inherit; transition: all 0.2s; background: #fff; }
+.filter-input:focus { outline: none; border-color: #4a5568; box-shadow: 0 0 0 3px rgba(74, 85, 104, 0.1); }
+.btn-clear-filters { background: #ef4444; color: #fff; padding: 10px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; }
+.btn-clear-filters:hover { filter: brightness(0.95); }
+.results-info { background: #f3f4f6; padding: 10px 14px; border-radius: 6px; font-size: 13px; color: #374151; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.results-info-left { display: flex; align-items: center; gap: 8px; }
+.ribbon-wrapper { position: relative; margin-bottom: 18px; }
+.ribbon-scroll-container { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: #cbd5e1 #f3f4f6; }
+.ribbon-scroll-container::-webkit-scrollbar { height: 6px; }
+.ribbon-scroll-container::-webkit-scrollbar-track { background: #f3f4f6; border-radius: 3px; }
+.ribbon-scroll-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+.ribbon-scroll-container::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+.ribbon-container { display: flex; gap: 15px; padding: 4px 0; min-width: min-content; }
+.ribbon { background: white; border: 2px solid #e6e6e6; color: #666; padding: 14px 18px; border-radius: 8px; cursor: pointer; transition: all 0.15s ease; min-width: 180px; text-align: center; white-space: nowrap; flex-shrink: 0; }
+.ribbon:hover { border-color: #4a5568; background: #fafafa; }
+.ribbon.active { background: #4a5568; border-color: #4a5568; color: #fff; }
+.ribbon-title { font-size: 13px; font-weight: 700; display: flex; gap: 8px; justify-content: center; align-items: center; }
+.ribbon-count { font-size: 20px; font-weight: 800; margin-top: 6px; }
+.scroll-arrow { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255, 255, 255, 0.95); border: 2px solid #d1d5db; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }
+.scroll-arrow:hover { background: #fff; border-color: #4a5568; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); }
+.scroll-arrow.left { left: 0; }
+.scroll-arrow.right { right: 0; }
+.scroll-arrow i { color: #4a5568; font-size: 16px; }
+.scroll-arrow.hidden { opacity: 0; pointer-events: none; }
+.wallet-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:20px; margin-top:6px; }
+.wallet-card { background:#fff; border-radius:8px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.06); border:1px solid #e6e6e6; transition: transform .12s ease, box-shadow .12s ease; display:flex; flex-direction:column; min-height:300px; }
+.wallet-card:hover { transform: translateY(-4px); box-shadow:0 8px 18px rgba(0,0,0,0.08); }
+.wallet-image { width:100%; height:180px; object-fit:cover; border-bottom:1px solid #eee; background:#f3f4f6; display:block; }
+.no-image { width:100%; height:180px; display:flex; align-items:center; justify-content:center; background:#f3f4f6; border-bottom:1px solid #eee; color:#cbd5e1; }
+.pdf-thumbnail { width:100%; height:180px; display:flex; flex-direction:column; align-items:center; justify-content:center; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-bottom:1px solid #eee; color:white; padding:20px; text-align:center; }
+.pdf-thumbnail i { font-size:48px; margin-bottom:10px; }
+.pdf-thumbnail .pdf-title { font-size:14px; font-weight:600; margin-top:8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
+.pdf-thumbnail .pdf-size { font-size:11px; opacity:0.9; margin-top:4px; }
+.wallet-content { padding:14px; display:flex; flex-direction:column; gap:8px; flex:1; }
+.wallet-type-badge { display:inline-block; padding:6px 10px; border-radius:6px; font-size:12px; font-weight:700; text-transform:uppercase; background:#f3f4f6; color:#374151; align-self:flex-start; }
+.wallet-title { font-size:15px; margin:0; color:#111827; font-weight:700; }
+.wallet-desc { color:#6b7280; font-size:13px; margin:0 0 6px 0; }
+.wallet-meta { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:auto; }
+.small-muted { font-size:12px; color:#6b7280; display:flex; gap:6px; align-items:center; }
+.action-btns { display:flex; gap:8px; align-items:center; }
+.btn { padding:7px 11px; border-radius:6px; border:none; font-weight:700; cursor:pointer; font-size:13px; display:inline-flex; gap:8px; align-items:center; }
+.btn-view { background:#3b82f6; color:#fff; }
+.btn-view:hover{ filter:brightness(.96); }
+.btn-delete { background:#ef4444; color:#fff; }
+.btn-delete:hover{ filter:brightness(.96); }
+.btn-wa { background:#25D366; color:#fff; }
+.btn-wa:hover{ filter:brightness(.96); }
+.btn-edit { background:#f59e0b; color:#fff; border-radius:6px; padding:7px 11px; }
+.empty-state { text-align:center; padding:40px 20px; background:white; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.04); border:1px solid #e6e6e6; }
+.empty-state i { font-size:48px; color:#d1d5db; margin-bottom:12px; display:block; }
+.pagination-container { background: #fff; border-radius: 8px; padding: 20px; margin-top: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid #e6e6e6; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+.pagination-info { font-size: 14px; color: #6b7280; display: flex; align-items: center; gap: 8px; }
+.pagination-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.page-btn { padding: 8px 14px; border: 1px solid #d1d5db; background: #fff; color: #374151; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+.page-btn:hover:not(:disabled) { background: #f3f4f6; border-color: #4a5568; }
+.page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.page-btn.active { background: #4a5568; color: #fff; border-color: #4a5568; }
+.page-btn.ellipsis { border: none; background: transparent; cursor: default; pointer-events: none; }
+.items-per-page { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #6b7280; }
+.items-per-page select { padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; background: #fff; cursor: pointer; }
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); z-index: 9998; backdrop-filter: blur(4px); }
+.modal-overlay.active { display: flex; align-items: center; justify-content: center; animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.modal-content { background: #fff; border-radius: 12px; max-width: 600px; width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); position: relative; animation: slideUp 0.3s ease; }
+@keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+.modal-header { padding: 20px 24px; border-bottom: 1px solid #e6e6e6; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: #fff; z-index: 1; }
+.modal-header h2 { margin: 0; font-size: 20px; color: #111827; display: flex; align-items: center; gap: 10px; }
+.modal-close { background: transparent; border: none; font-size: 28px; color: #6b7280; cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; transition: all 0.2s; }
+.modal-close:hover { background: #f3f4f6; color: #111827; }
+.modal-body { padding: 24px; }
+.modal-image-container { width: 100%; margin-bottom: 20px; border-radius: 8px; overflow: hidden; border: 1px solid #e6e6e6; }
+.modal-image { width: 100%; height: auto; max-height: 300px; object-fit: contain; background: #f3f4f6; }
+.modal-no-image { width: 100%; height: 200px; display: flex; align-items: center; justify-content: center; background: #f3f4f6; color: #cbd5e1; font-size: 48px; }
+.modal-pdf-container { width: 100%; margin-bottom: 20px; border-radius: 8px; overflow: hidden; border: 1px solid #e6e6e6; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; }
+.modal-pdf-preview { display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; }
+.modal-pdf-preview i { font-size: 64px; margin-bottom: 15px; }
+.modal-pdf-preview .pdf-name { font-size: 18px; font-weight: 600; margin-bottom: 5px; }
+.modal-pdf-preview .pdf-size { font-size: 14px; opacity: 0.9; }
+.detail-section { margin-bottom: 20px; }
+.detail-section:last-child { margin-bottom: 0; }
+.detail-label { font-size: 12px; font-weight: 700; text-transform: uppercase; color: #6b7280; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.detail-value { font-size: 15px; color: #111827; background: #f9fafb; padding: 10px 12px; border-radius: 6px; border: 1px solid #e5e7eb; }
+.detail-value.long-text { white-space: pre-wrap; word-break: break-word; }
+.bank-details-grid { display: grid; gap: 14px; }
+.detail-row { display: flex; align-items: flex-start; gap: 10px; }
+.detail-row i { color: #6b7280; margin-top: 12px; font-size: 14px; }
+.detail-row-content { flex: 1; }
+.whatsapp-input-group { margin-bottom: 20px; }
+.whatsapp-input-label { font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 8px; display: block; }
+.phone-input-container { display: flex; align-items: center; border: 2px solid #d1d5db; border-radius: 8px; background: #fff; transition: all 0.2s; overflow: hidden; }
+.phone-input-container:focus-within { border-color: #25D366; box-shadow: 0 0 0 3px rgba(37, 211, 102, 0.1); }
+.phone-input-container.error { border-color: #ef4444; }
+.phone-prefix { padding: 12px 0 12px 14px; font-size: 15px; font-weight: 600; color: #374151; background: #f9fafb; border-right: 1px solid #e5e7eb; display: flex; align-items: center; gap: 4px; }
+.whatsapp-phone-input { flex: 1; padding: 12px 14px; border: none; font-size: 15px; font-family: inherit; background: transparent; }
+.whatsapp-phone-input:focus { outline: none; }
+.input-hint { font-size: 12px; color: #6b7280; margin-top: 6px; display: flex; align-items: center; gap: 6px; }
+.error-message { color: #ef4444; font-size: 13px; margin-top: 8px; display: flex; align-items: center; gap: 6px; }
+.modal-actions { display: flex; gap: 10px; margin-top: 24px; }
+.btn-send-whatsapp { flex: 1; background: #25D366; color: #fff; padding: 12px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; }
+.btn-send-whatsapp:hover { filter: brightness(0.95); }
+.btn-send-whatsapp:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-cancel { background: #6b7280; color: #fff; padding: 12px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 15px; transition: all 0.2s; }
+.btn-cancel:hover { filter: brightness(0.95); }
+.loading-spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #fff; border-radius: 50%; border-top-color: transparent; animation: spinner 0.6s linear infinite; }
+@keyframes spinner { to { transform: rotate(360deg); } }
+.success-message { background: #d1fae5; color: #065f46; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500; }
+</style>
+
+<div class="container">
+        <div class="header">
+            <div class="header-left">
+                <h1><i class="fas fa-wallet"></i> Wallets</h1>
+                <p>Manage bank details, QR codes, docs and more</p>
+            </div>
+            <div>
+                <a href="{% url 'add_wallet' %}" class="btn-add"><i class="fas fa-plus"></i> Add Wallet</a>
+            </div>
+        </div>
+
+        {% if messages %}
+            <div class="alert" id="msgAlert">
+                <div class="text">
+                    {% for message in messages %}
+                        {{ message }}
+                    {% endfor %}
+                </div>
+                <button class="close-btn" onclick="document.getElementById('msgAlert').remove()">&times;</button>
+            </div>
+        {% endif %}
+
+        <div class="filter-section">
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label class="filter-label" for="searchInput">
+                        <i class="fas fa-search"></i> Search All Pages
+                    </label>
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        class="filter-input" 
+                        placeholder="Search by title, description..."
+                    >
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label" for="dateFrom">
+                        <i class="fas fa-calendar-alt"></i> From Date
+                    </label>
+                    <input 
+                        type="date" 
+                        id="dateFrom" 
+                        class="filter-input"
+                    >
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label" for="dateTo">
+                        <i class="fas fa-calendar-check"></i> To Date
+                    </label>
+                    <input 
+                        type="date" 
+                        id="dateTo" 
+                        class="filter-input"
+                    >
+                </div>
+                
+                <div class="filter-group">
+                    <button class="btn-clear-filters" onclick="clearAllFilters()">
+                        <i class="fas fa-times-circle"></i> Clear
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="results-info" id="resultsInfo">
+            <div class="results-info-left">
+                <i class="fas fa-info-circle"></i>
+                <span id="resultsText">Showing all {{ wallets|length }} wallets</span>
+            </div>
+            <div class="items-per-page">
+                <label for="itemsPerPage">Items per page:</label>
+                <select id="itemsPerPage" onchange="changeItemsPerPage()">
+                    <option value="6">6</option>
+                    <option value="12" selected>12</option>
+                    <option value="24">24</option>
+                    <option value="48">48</option>
+                    <option value="all">All</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="ribbon-wrapper">
+            <div class="scroll-arrow left hidden" id="scrollLeft" onclick="scrollRibbons('left')">
+                <i class="fas fa-chevron-left"></i>
+            </div>
+            <div class="ribbon-scroll-container" id="ribbonScrollContainer">
+                <div class="ribbon-container">
+                    <div class="ribbon active" data-type="" id="allRibbon">
+                        <div class="ribbon-title"><i class="fas fa-th-large"></i> All Wallets</div>
+                        <div class="ribbon-count" id="count-all">{{ wallets|length }}</div>
+                    </div>
+                    <div class="ribbon" data-type="bank">
+                        <div class="ribbon-title"><i class="fas fa-university"></i> Bank/ACC-Details QR</div>
+                        <div class="ribbon-count" id="count-bank">{{ bank_wallets|length }}</div>
+                    </div>
+                    <div class="ribbon" data-type="qr">
+                        <div class="ribbon-title"><i class="fas fa-qrcode"></i> QR Wallet</div>
+                        <div class="ribbon-count" id="count-qr">{{ qr_wallets|length }}</div>
+                    </div>
+                    <div class="ribbon" data-type="document">
+                        <div class="ribbon-title"><i class="fas fa-file-alt"></i> Document Wallet</div>
+                        <div class="ribbon-count" id="count-document">{{ document_wallets|length }}</div>
+                    </div>
+                    <div class="ribbon" data-type="pdf">
+                        <div class="ribbon-title"><i class="fas fa-file-pdf"></i> PDF Wallet</div>
+                        <div class="ribbon-count" id="count-pdf">{{ pdf_wallets|length }}</div>
+                    </div>
+                    <div class="ribbon" data-type="other">
+                        <div class="ribbon-title"><i class="fas fa-address-book"></i> Address Card</div>
+                        <div class="ribbon-count" id="count-other">{{ other_wallets|length }}</div>
+                    </div>
+                    <div class="ribbon" data-type="ofdocs_imc_dev">
+                        <div class="ribbon-title"><i class="fas fa-folder"></i> Ofdocs - IMC DEV</div>
+                        <div class="ribbon-count" id="count-ofdocs_imc_dev">{{ ofdocs_imc_dev_wallets|length }}</div>
+                    </div>
+                    <div class="ribbon" data-type="ofdocs_imc_ho">
+                        <div class="ribbon-title"><i class="fas fa-folder"></i> Ofdocs - IMC HO</div>
+                        <div class="ribbon-count" id="count-ofdocs_imc_ho">{{ ofdocs_imc_ho_wallets|length }}</div>
+                    </div>
+                    <div class="ribbon" data-type="ofdocs_imc_mukkam">
+                        <div class="ribbon-title"><i class="fas fa-folder"></i> Ofdocs - IMC Mukkam</div>
+                        <div class="ribbon-count" id="count-ofdocs_imc_mukkam">{{ ofdocs_imc_mukkam_wallets|length }}</div>
+                    </div>
+                    <div class="ribbon" data-type="ofdocs_sysmac">
+                        <div class="ribbon-title"><i class="fas fa-folder"></i> Ofdocs - Sysmac</div>
+                        <div class="ribbon-count" id="count-ofdocs_sysmac">{{ ofdocs_sysmac_wallets|length }}</div>
+                    </div>
+                    <div class="ribbon" data-type="ofdocs_sysmac_info">
+                        <div class="ribbon-title"><i class="fas fa-folder"></i> Ofdocs - Sysmac Info</div>
+                        <div class="ribbon-count" id="count-ofdocs_sysmac_info">{{ ofdocs_sysmac_info_wallets|length }}</div>
+                    </div>
+                    <div class="ribbon" data-type="ofdocs_sysmac_old">
+                        <div class="ribbon-title"><i class="fas fa-folder"></i> Ofdocs - Sysmac Old</div>
+                        <div class="ribbon-count" id="count-ofdocs_sysmac_old">{{ ofdocs_sysmac_old_wallets|length }}</div>
+                    </div>
+                    <div class="ribbon" data-type="vehicle_data">
+                        <div class="ribbon-title"><i class="fas fa-car"></i> Vehicle Data</div>
+                        <div class="ribbon-count" id="count-vehicle_data">{{ vehicle_data_wallets|length }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="scroll-arrow right" id="scrollRight" onclick="scrollRibbons('right')">
+                <i class="fas fa-chevron-right"></i>
+            </div>
+        </div>
+
+        <div class="wallet-grid" id="walletGrid">
+            {% for wallet in wallets %}
+                <div class="wallet-card" 
+                     data-type="{{ wallet.upload_type }}" 
+                     data-id="{{ wallet.id }}"
+                     data-title="{{ wallet.title }}"
+                     data-description="{{ wallet.description }}"
+                     data-upload-type="{{ wallet.upload_type }}"
+                     data-visibility="{{ wallet.get_visibility_priority_display }}"
+                     data-created="{{ wallet.created_at|date:'M d, Y' }}"
+                     data-created-iso="{{ wallet.created_at|date:'Y-m-d' }}"
+                     data-account-holder="{{ wallet.account_holder_name }}"
+                     data-account-number="{{ wallet.account_number }}"
+                     data-ifsc="{{ wallet.ifsc_code }}"
+                     data-bank-address="{{ wallet.bank_address }}"
+                     data-qr-name="{{ wallet.qr_name }}"
+                     data-pdf-name="{{ wallet.pdf_name }}"
+                     data-pdf-file="{% if wallet.pdf_file %}{{ wallet.pdf_file.url }}{% endif %}"
+                     data-pdf-size="{% if wallet.pdf_file %}{{ wallet.pdf_file.size }}{% endif %}"
+                     data-other-name="{{ wallet.other_name }}"
+                     data-image-url="{% if wallet.image %}{{ wallet.image.url }}{% endif %}">
+                    
+                    {% if wallet.image %}
+                        <img src="{{ wallet.image.url }}" alt="{{ wallet.title }}" class="wallet-image">
+                    {% elif wallet.pdf_file %}
+                        <div class="pdf-thumbnail">
+                            <i class="fas fa-file-pdf"></i>
+                            <div class="pdf-title">{{ wallet.pdf_name|default:wallet.title }}</div>
+                            {% if wallet.pdf_file.size %}
+                                <div class="pdf-size">{{ wallet.pdf_file.size|filesizeformat }}</div>
+                            {% endif %}
+                            <div style="font-size: 10px; margin-top: 8px; opacity: 0.8;">Click to Download/view PDF details</div>
+                        </div>
+                    {% else %}
+                        <div class="no-image"><i class="fas fa-image"></i></div>
+                    {% endif %}
+
+                    <div class="wallet-content">
+                        <span class="wallet-type-badge">
+                            {% if wallet.upload_type == 'bank' %}
+                                <i class="fas fa-university"></i> Bank/Details
+                            {% elif wallet.upload_type == 'qr' %}
+                                <i class="fas fa-qrcode"></i> QR
+                            {% elif wallet.upload_type == 'document' %}
+                                <i class="fas fa-file-alt"></i> Document
+                            {% elif wallet.upload_type == 'pdf' %}
+                                <i class="fas fa-file-pdf"></i> PDF
+                            {% elif wallet.upload_type == 'other' %}
+                                <i class="fas fa-address-book"></i> Address Card
+                            {% elif wallet.upload_type == 'ofdocs_imc_dev' %}
+                                <i class="fas fa-folder"></i> IMC DEV
+                            {% elif wallet.upload_type == 'ofdocs_imc_ho' %}
+                                <i class="fas fa-folder"></i> IMC HO
+                            {% elif wallet.upload_type == 'ofdocs_imc_mukkam' %}
+                                <i class="fas fa-folder"></i> IMC Mukkam
+                            {% elif wallet.upload_type == 'ofdocs_sysmac' %}
+                                <i class="fas fa-folder"></i> Sysmac
+                            {% elif wallet.upload_type == 'ofdocs_sysmac_info' %}
+                                <i class="fas fa-folder"></i> Sysmac Info
+                            {% elif wallet.upload_type == 'ofdocs_sysmac_old' %}
+                                <i class="fas fa-folder"></i> Sysmac Old
+                            {% elif wallet.upload_type == 'vehicle_data' %}
+                                <i class="fas fa-car"></i> Vehicle Data
+                            {% else %}
+                                <i class="fas fa-wallet"></i> Other
+                            {% endif %}
+                        </span>
+
+                        <h3 class="wallet-title">{{ wallet.title }}</h3>
+                        <p class="wallet-desc">{{ wallet.description|truncatewords:15 }}</p>
+
+                        <div class="wallet-meta">
+                            <div class="small-muted"><i class="fas fa-clock"></i> {{ wallet.created_at|date:"M d, Y" }}</div>
+                            <div class="action-btns">
+                                <button class="btn btn-view" onclick="openViewModal({{ wallet.id }})"><i class="fas fa-eye"></i></button>
+                                <button class="btn btn-wa" onclick="openWhatsAppModal({{ wallet.id }})"><i class="fab fa-whatsapp"></i></button>
+                                <a class="btn btn-edit" href="{% url 'edit_wallet' wallet.id %}"><i class="fas fa-edit"></i></a>
+                                <form method="post" action="{% url 'delete_wallet' wallet.id %}" style="display:inline;" onsubmit="return confirm('Delete this wallet?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-delete"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if wallets|length == 0 %}
+            <div style="margin-top:20px;">
+                <div class="empty-state">
+                    <i class="fas fa-wallet"></i>
+                    <div style="font-weight:700; margin-bottom:6px;">No wallets yet</div>
+                    <div style="color:#6b7280; font-size:13px;">Upload wallets and they'll appear here.</div>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="empty-state" id="noResultsMessage" style="display:none; margin-top:20px;">
+            <i class="fas fa-search"></i>
+            <div style="font-weight:700; margin-bottom:6px;">No wallets found</div>
+            <div style="color:#6b7280; font-size:13px;">Try adjusting your search or filters.</div>
+        </div>
+
+        <div class="pagination-container" id="paginationContainer">
+            <div class="pagination-info" id="paginationInfo">
+                Showing <strong>1-12</strong> of <strong>{{ wallets|length }}</strong> wallets
+            </div>
+            <div class="pagination-controls" id="paginationControls">
+            </div>
+        </div>
+    </div>
+
+    <!-- View Details Modal -->
+    <div class="modal-overlay" id="viewModal" onclick="closeModalOnOverlay(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2><i class="fas fa-info-circle"></i> Wallet Details</h2>
+                <button class="modal-close" onclick="closeViewModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+            </div>
+        </div>
+    </div>
+
+    <!-- WhatsApp Modal -->
+    <div class="modal-overlay" id="whatsappModal" onclick="closeModalOnOverlay(event)">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 450px;">
+            <div class="modal-header">
+                <h2><i class="fab fa-whatsapp"></i> Send via WhatsApp</h2>
+                <button class="modal-close" onclick="closeWhatsAppModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="successMessageContainer"></div>
+                
+                <div class="whatsapp-input-group">
+                    <label class="whatsapp-input-label" for="whatsappPhone">
+                        <i class="fas fa-phone"></i> Recipient Phone Number
+                    </label>
+                    <div class="phone-input-container" id="phoneInputContainer">
+                        <div class="phone-prefix">
+                            <i class="fas fa-flag" style="font-size: 12px;"></i> +91
+                        </div>
+                        <input 
+                            type="tel" 
+                            id="whatsappPhone" 
+                            class="whatsapp-phone-input" 
+                            placeholder="Enter 10-digit number (e.g., 9876543210)"
+                            maxlength="10"
+                        >
+                    </div>
+                    <div class="input-hint">
+                        <i class="fas fa-info-circle"></i>
+                        Default country code is +91 (India). Enter 10-digit mobile number.
+                    </div>
+                    <div id="phoneError" class="error-message" style="display: none;">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span id="phoneErrorText"></span>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn-cancel" onclick="closeWhatsAppModal()">
+                        Cancel
+                    </button>
+                    <button class="btn-send-whatsapp" id="sendWhatsAppBtn" onclick="sendWhatsAppMessage()">
+                        <i class="fab fa-whatsapp"></i>
+                        <span id="sendBtnText">Send Message</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+  <script>
+  // Helper: read CSRF cookie
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie) {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+  const csrftoken = getCookie('csrftoken');
+
+  // State
+  let currentPage = 1;
+  let itemsPerPage = 12;
+  let filteredWallets = [];
+  let currentTypeFilter = '';
+  let currentWalletId = null;
+  let allWalletCards = [];
+
+  // Run when DOM is ready
+  document.addEventListener('DOMContentLoaded', () => {
+    allWalletCards = Array.from(document.querySelectorAll('.wallet-card'));
+
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) searchInput.addEventListener('input', applyFilters);
+
+    const dateFrom = document.getElementById('dateFrom');
+    if (dateFrom) dateFrom.addEventListener('change', applyFilters);
+
+    const dateTo = document.getElementById('dateTo');
+    if (dateTo) dateTo.addEventListener('change', applyFilters);
+
+    const itemsPerPageSelect = document.getElementById('itemsPerPage');
+    if (itemsPerPageSelect) itemsPerPageSelect.addEventListener('change', changeItemsPerPage);
+
+    const phoneInput = document.getElementById('whatsappPhone');
+    if (phoneInput) {
+      phoneInput.addEventListener('input', function(e) {
+        this.value = this.value.replace(/\D/g, '');
+      });
+      
+      phoneInput.addEventListener('keypress', function(e) {
+        if (!/\d/.test(e.key) && e.key !== 'Enter') {
+          e.preventDefault();
+        }
+        if (e.key === 'Enter') sendWhatsAppMessage();
+      });
+    }
+
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') {
+        closeViewModal();
+        closeWhatsAppModal();
+      }
+    });
+
+    document.querySelectorAll('.ribbon').forEach(ribbon => {
+      ribbon.addEventListener('click', function() {
+        const type = this.getAttribute('data-type');
+        document.querySelectorAll('.ribbon').forEach(r => r.classList.remove('active'));
+        this.classList.add('active');
+        currentTypeFilter = type;
+        applyFilters();
+      });
+    });
+
+    // Ribbon scroll functionality
+    const scrollContainer = document.getElementById('ribbonScrollContainer');
+    const scrollLeft = document.getElementById('scrollLeft');
+    const scrollRight = document.getElementById('scrollRight');
+
+    function updateScrollButtons() {
+      if (!scrollContainer || !scrollLeft || !scrollRight) return;
+      
+      const isAtStart = scrollContainer.scrollLeft <= 0;
+      const isAtEnd = scrollContainer.scrollLeft + scrollContainer.clientWidth >= scrollContainer.scrollWidth - 1;
+      
+      scrollLeft.classList.toggle('hidden', isAtStart);
+      scrollRight.classList.toggle('hidden', isAtEnd);
+    }
+
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', updateScrollButtons);
+      window.addEventListener('resize', updateScrollButtons);
+      updateScrollButtons();
+    }
+
+    init();
+  });
+
+  function scrollRibbons(direction) {
+    const container = document.getElementById('ribbonScrollContainer');
+    if (!container) return;
+    
+    const scrollAmount = 300;
+    const currentScroll = container.scrollLeft;
+    
+    if (direction === 'left') {
+      container.scrollTo({
+        left: currentScroll - scrollAmount,
+        behavior: 'smooth'
+      });
+    } else {
+      container.scrollTo({
+        left: currentScroll + scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  }
+
+  function init() {
+    applyFilters();
+  }
+
+  function applyFilters() {
+    const searchTermElem = document.getElementById('searchInput');
+    const dateFromElem = document.getElementById('dateFrom');
+    const dateToElem = document.getElementById('dateTo');
+
+    const searchTerm = searchTermElem ? searchTermElem.value.toLowerCase() : '';
+    const dateFrom = dateFromElem ? dateFromElem.value : '';
+    const dateTo = dateToElem ? dateToElem.value : '';
+
+    filteredWallets = [];
+    let typeCounts = { 
+      '': 0, 'bank': 0, 'qr': 0, 'document': 0, 'pdf': 0, 'other': 0,
+      'ofdocs_imc_dev': 0, 'ofdocs_imc_ho': 0, 'ofdocs_imc_mukkam': 0,
+      'ofdocs_sysmac': 0, 'ofdocs_sysmac_info': 0, 'ofdocs_sysmac_old': 0,
+      'vehicle_data': 0
+    };
+
+    allWalletCards.forEach(card => {
+      const cardType = card.getAttribute('data-type') || '';
+      const title = (card.getAttribute('data-title') || '').toLowerCase();
+      const description = (card.getAttribute('data-description') || '').toLowerCase();
+      const createdDate = card.getAttribute('data-created-iso') || '';
+
+      const typeMatch = currentTypeFilter === '' || cardType === currentTypeFilter;
+      const searchMatch = searchTerm === '' || title.includes(searchTerm) || description.includes(searchTerm);
+
+      let dateMatch = true;
+      if (dateFrom && createdDate < dateFrom) dateMatch = false;
+      if (dateTo && createdDate > dateTo) dateMatch = false;
+
+      if (typeMatch && searchMatch && dateMatch) {
+        filteredWallets.push(card);
+        typeCounts['']++;
+        if (typeCounts[cardType] !== undefined) typeCounts[cardType]++; else typeCounts[cardType] = 1;
+      }
+    });
+
+    updateRibbonCounts(typeCounts);
+    currentPage = 1;
+    updateDisplay();
+  }
+
+  function updateDisplay() {
+    const grid = document.getElementById('walletGrid');
+    const noResults = document.getElementById('noResultsMessage');
+    const paginationContainer = document.getElementById('paginationContainer');
+
+    allWalletCards.forEach(card => {
+      card.style.display = 'none';
+    });
+
+    if (!filteredWallets || filteredWallets.length === 0) {
+      if (noResults) noResults.style.display = 'block';
+      if (grid) grid.style.display = 'none';
+      if (paginationContainer) paginationContainer.style.display = 'none';
+      updateResultsInfo(0, 0, 0);
+      return;
+    }
+
+    if (noResults) noResults.style.display = 'none';
+    if (grid) grid.style.display = 'grid';
+
+    const totalItems = filteredWallets.length;
+    const showAll = itemsPerPage === 'all';
+    const itemsToShow = showAll ? totalItems : itemsPerPage;
+    const totalPages = showAll ? 1 : Math.ceil(totalItems / itemsPerPage);
+
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+
+    const startIndex = showAll ? 0 : (currentPage - 1) * itemsPerPage;
+    const endIndex = showAll ? totalItems : Math.min(startIndex + itemsPerPage, totalItems);
+
+    for (let i = startIndex; i < endIndex; i++) {
+      const card = filteredWallets[i];
+      card.style.display = 'flex';
+      if (grid && grid.contains(card) === false) {
+        grid.appendChild(card);
+      } else if (grid) {
+        grid.appendChild(card);
+      }
+    }
+
+    updatePaginationInfo(startIndex + 1, endIndex, totalItems);
+    renderPaginationControls(totalPages);
+
+    if (paginationContainer) paginationContainer.style.display = showAll ? 'none' : 'flex';
+    updateResultsInfo(totalItems, startIndex + 1, endIndex);
+  }
+
+  function updateRibbonCounts(counts) {
+    const setText = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = val || 0;
+    };
+    setText('count-all', counts[''] || 0);
+    setText('count-bank', counts['bank'] || 0);
+    setText('count-qr', counts['qr'] || 0);
+    setText('count-document', counts['document'] || 0);
+    setText('count-pdf', counts['pdf'] || 0);
+    setText('count-other', counts['other'] || 0);
+    setText('count-ofdocs_imc_dev', counts['ofdocs_imc_dev'] || 0);
+    setText('count-ofdocs_imc_ho', counts['ofdocs_imc_ho'] || 0);
+    setText('count-ofdocs_imc_mukkam', counts['ofdocs_imc_mukkam'] || 0);
+    setText('count-ofdocs_sysmac', counts['ofdocs_sysmac'] || 0);
+    setText('count-ofdocs_sysmac_info', counts['ofdocs_sysmac_info'] || 0);
+    setText('count-ofdocs_sysmac_old', counts['ofdocs_sysmac_old'] || 0);
+    setText('count-vehicle_data', counts['vehicle_data'] || 0);
+  }
+
+  function updateResultsInfo(total, start, end) {
+    const resultsText = document.getElementById('resultsText');
+    if (!resultsText) return;
+    const searchTerm = document.getElementById('searchInput') ? document.getElementById('searchInput').value : '';
+    const dateFrom = document.getElementById('dateFrom') ? document.getElementById('dateFrom').value : '';
+    const dateTo = document.getElementById('dateTo') ? document.getElementById('dateTo').value : '';
+
+    let text = '';
+    if (itemsPerPage === 'all') {
+      text = `Showing all ${total} wallet${total !== 1 ? 's' : ''}`;
+    } else {
+      text = `Showing ${start}-${end} of ${total} wallet${total !== 1 ? 's' : ''}`;
+    }
+
+    const filters = [];
+    if (searchTerm) filters.push('search');
+    if (dateFrom || dateTo) filters.push('date range');
+    if (currentTypeFilter) filters.push('type');
+
+    if (filters.length > 0) {
+      text += ` (filtered by ${filters.join(', ')})`;
+    }
+
+    resultsText.textContent = text;
+  }
+
+  function updatePaginationInfo(start, end, total) {
+    const paginationInfo = document.getElementById('paginationInfo');
+    if (!paginationInfo) return;
+    paginationInfo.innerHTML = `Showing <strong>${start}-${end}</strong> of <strong>${total}</strong> wallets`;
+  }
+
+  function renderPaginationControls(totalPages) {
+    const controls = document.getElementById('paginationControls');
+    if (!controls) return;
+    controls.innerHTML = '';
+
+    if (totalPages <= 1) return;
+
+    const createBtn = (html, disabled, onClick) => {
+      const btn = document.createElement('button');
+      btn.className = 'page-btn';
+      btn.innerHTML = html;
+      btn.disabled = !!disabled;
+      if (!disabled) btn.addEventListener('click', onClick);
+      return btn;
+    };
+
+    const prevBtn = createBtn('<i class="fas fa-chevron-left"></i> Previous', currentPage === 1, () => goToPage(currentPage - 1));
+    controls.appendChild(prevBtn);
+
+    const pageButtons = getPageButtons(currentPage, totalPages);
+    pageButtons.forEach(page => {
+      const btn = document.createElement('button');
+      btn.className = 'page-btn';
+      if (page === '...') {
+        btn.className += ' ellipsis';
+        btn.textContent = '...';
+      } else {
+        btn.textContent = page;
+        if (page === currentPage) btn.className += ' active';
+        btn.addEventListener('click', () => goToPage(page));
+      }
+      controls.appendChild(btn);
+    });
+
+    const nextBtn = createBtn('Next <i class="fas fa-chevron-right"></i>', currentPage === totalPages, () => goToPage(currentPage + 1));
+    controls.appendChild(nextBtn);
+  }
+
+  function getPageButtons(current, total) {
+    const pages = [];
+    const maxButtons = 7;
+
+    if (total <= maxButtons) {
+      for (let i = 1; i <= total; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (current > 3) pages.push('...');
+      const start = Math.max(2, current - 1);
+      const end = Math.min(total - 1, current + 1);
+      for (let i = start; i <= end; i++) pages.push(i);
+      if (current < total - 2) pages.push('...');
+      pages.push(total);
+    }
+    return pages;
+  }
+
+  function goToPage(page) {
+    currentPage = page;
+    updateDisplay();
+    const grid = document.getElementById('walletGrid');
+    if (grid) grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function changeItemsPerPage() {
+    const select = document.getElementById('itemsPerPage');
+    if (!select) return;
+    itemsPerPage = select.value === 'all' ? 'all' : parseInt(select.value);
+    currentPage = 1;
+    updateDisplay();
+  }
+
+  function clearAllFilters() {
+    if (document.getElementById('searchInput')) document.getElementById('searchInput').value = '';
+    if (document.getElementById('dateFrom')) document.getElementById('dateFrom').value = '';
+    if (document.getElementById('dateTo')) document.getElementById('dateTo').value = '';
+    applyFilters();
+  }
+
+  function openViewModal(walletId) {
+    const card = document.querySelector(`[data-id="${walletId}"]`);
+    if (!card) return;
+
+    const modal = document.getElementById('viewModal');
+    const modalBody = document.getElementById('modalBody');
+
+    if (!modal || !modalBody) return;
+
+    const title = card.getAttribute('data-title') || '';
+    const description = card.getAttribute('data-description') || '';
+    const uploadType = card.getAttribute('data-upload-type') || '';
+    const visibility = card.getAttribute('data-visibility') || '';
+    const created = card.getAttribute('data-created') || '';
+    const imageUrl = card.getAttribute('data-image-url') || '';
+    const pdfFile = card.getAttribute('data-pdf-file') || '';
+    const pdfName = card.getAttribute('data-pdf-name') || '';
+    const pdfSize = card.getAttribute('data-pdf-size') || '';
+
+    const accountHolder = card.getAttribute('data-account-holder') || '';
+    const accountNumber = card.getAttribute('data-account-number') || '';
+    const ifsc = card.getAttribute('data-ifsc') || '';
+    const bankAddress = card.getAttribute('data-bank-address') || '';
+    const qrName = card.getAttribute('data-qr-name') || '';
+    const otherName = card.getAttribute('data-other-name') || '';
+
+    let typeLabel = 'Other';
+    let typeIcon = 'fas fa-wallet';
+    if (uploadType === 'bank') { typeLabel = 'Bank'; typeIcon = 'fas fa-university'; }
+    else if (uploadType === 'qr') { typeLabel = 'QR'; typeIcon = 'fas fa-qrcode'; }
+    else if (uploadType === 'document') { typeLabel = 'Document'; typeIcon = 'fas fa-file-alt'; }
+    else if (uploadType === 'pdf') { typeLabel = 'PDF'; typeIcon = 'fas fa-file-pdf'; }
+    else if (uploadType === 'other') { typeLabel = 'Address Book'; typeIcon = 'fas fa-address-book'; }
+    else if (uploadType === 'ofdocs_imc_dev') { typeLabel = 'Ofdocs - IMC DEV'; typeIcon = 'fas fa-folder'; }
+    else if (uploadType === 'ofdocs_imc_ho') { typeLabel = 'Ofdocs - IMC HO'; typeIcon = 'fas fa-folder'; }
+    else if (uploadType === 'ofdocs_imc_mukkam') { typeLabel = 'Ofdocs - IMC Mukkam'; typeIcon = 'fas fa-folder'; }
+    else if (uploadType === 'ofdocs_sysmac') { typeLabel = 'Ofdocs - Sysmac'; typeIcon = 'fas fa-folder'; }
+    else if (uploadType === 'ofdocs_sysmac_info') { typeLabel = 'Ofdocs - Sysmac Info'; typeIcon = 'fas fa-folder'; }
+    else if (uploadType === 'ofdocs_sysmac_old') { typeLabel = 'Ofdocs - Sysmac Old'; typeIcon = 'fas fa-folder'; }
+    else if (uploadType === 'vehicle_data') { typeLabel = 'Vehicle Data'; typeIcon = 'fas fa-car'; }
+
+    let content = '';
+
+    if (imageUrl) {
+      content += `
+        <div class="modal-image-container">
+          <img src="${imageUrl}" alt="${title}" class="modal-image">
+        </div>
+      `;
+    } else if (pdfFile) {
+      content += `
+        <div class="modal-pdf-container">
+          <div class="modal-pdf-preview">
+            <i class="fas fa-file-pdf"></i>
+            <div class="pdf-name">${pdfName || 'PDF Document'}</div>
+            ${pdfSize ? `<div class="pdf-size">${formatFileSize(pdfSize)}</div>` : ''}
+            <div style="font-size: 12px; margin-top: 10px; opacity: 0.9;">Click the download button to view the PDF</div>
+          </div>
+        </div>
+      `;
+    } else {
+      content += `
+        <div class="modal-image-container">
+          <div class="modal-no-image"><i class="fas fa-image"></i></div>
+        </div>
+      `;
+    }
+
+    content += `
+      <div class="detail-section">
+        <div class="detail-label"><i class="fas fa-heading"></i> Title</div>
+        <div class="detail-value">${title}</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-label"><i class="${typeIcon}"></i> Type</div>
+        <div class="detail-value">${typeLabel}</div>
+      </div>
+    `;
+
+    if (uploadType === 'bank') {
+      content += `<div class="detail-section"><div class="detail-label"><i class="fas fa-university"></i> Bank Details</div><div class="bank-details-grid">`;
+      if (accountHolder) content += `<div class="detail-row"><i class="fas fa-user"></i><div class="detail-row-content"><div style="font-size:11px; color:#6b7280; font-weight:600; margin-bottom:4px;">ACCOUNT HOLDER</div><div class="detail-value">${accountHolder}</div></div></div>`;
+      if (accountNumber) content += `<div class="detail-row"><i class="fas fa-hashtag"></i><div class="detail-row-content"><div style="font-size:11px; color:#6b7280; font-weight:600; margin-bottom:4px;">ACCOUNT NUMBER</div><div class="detail-value">${accountNumber}</div></div></div>`;
+      if (ifsc) content += `<div class="detail-row"><i class="fas fa-code"></i><div class="detail-row-content"><div style="font-size:11px; color:#6b7280; font-weight:600; margin-bottom:4px;">IFSC CODE</div><div class="detail-value">${ifsc}</div></div></div>`;
+      if (bankAddress) content += `<div class="detail-row"><i class="fas fa-map-marker-alt"></i><div class="detail-row-content"><div style="font-size:11px; color:#6b7280; font-weight:600; margin-bottom:4px;">BANK ADDRESS</div><div class="detail-value">${bankAddress}</div></div></div>`;
+      content += `</div></div>`;
+    } else if (uploadType === 'qr' && qrName) {
+      content += `<div class="detail-section"><div class="detail-label"><i class="fas fa-qrcode"></i> QR Name</div><div class="detail-value">${qrName}</div></div>`;
+    } else if (uploadType === 'pdf' && pdfName) {
+      content += `<div class="detail-section"><div class="detail-label"><i class="fas fa-file-pdf"></i> PDF Name</div><div class="detail-value">${pdfName}</div></div>`;
+      if (pdfSize) {
+        content += `<div class="detail-section"><div class="detail-label"><i class="fas fa-weight"></i> File Size</div><div class="detail-value">${formatFileSize(pdfSize)}</div></div>`;
+      }
+      if (pdfFile) {
+        content += `<div class="detail-section"><div class="detail-label"><i class="fas fa-download"></i> Download</div><div class="detail-value"><a href="${pdfFile}" target="_blank" style="color: #3b82f6; text-decoration: none;"><i class="fas fa-download"></i> Download PDF</a></div></div>`;
+      }
+    } else if (uploadType === 'other' && otherName) {
+      content += `<div class="detail-section"><div class="detail-label"><i class="fas fa-user"></i> Name</div><div class="detail-value">${otherName}</div></div>`;
+    }
+
+    if (description) {
+      content += `<div class="detail-section"><div class="detail-label"><i class="fas fa-align-left"></i> Description</div><div class="detail-value long-text">${description}</div></div>`;
+    }
+
+    content += `
+      <div class="detail-section">
+        <div class="detail-label"><i class="fas fa-eye"></i> Visibility</div>
+        <div class="detail-value">${visibility}</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-label"><i class="fas fa-calendar"></i> Created Date</div>
+        <div class="detail-value">${created}</div>
+      </div>
+    `;
+
+    modalBody.innerHTML = content;
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function formatFileSize(bytes) {
+    if (!bytes || bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  function closeViewModal() {
+    const modal = document.getElementById('viewModal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  function openWhatsAppModal(walletId) {
+    currentWalletId = walletId;
+    const modal = document.getElementById('whatsappModal');
+    const phoneInput = document.getElementById('whatsappPhone');
+    const phoneInputContainer = document.getElementById('phoneInputContainer');
+    const errorDiv = document.getElementById('phoneError');
+    const successContainer = document.getElementById('successMessageContainer');
+
+    if (!modal || !phoneInput) return;
+
+    phoneInput.value = '';
+    if (phoneInputContainer) phoneInputContainer.classList.remove('error');
+    if (errorDiv) errorDiv.style.display = 'none';
+    if (successContainer) successContainer.innerHTML = '';
+
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+
+    setTimeout(() => {
+      phoneInput.focus();
+    }, 300);
+  }
+
+  function closeWhatsAppModal() {
+    const modal = document.getElementById('whatsappModal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+    currentWalletId = null;
+  }
+
+  function closeModalOnOverlay(event) {
+    if (!event || !event.target) return;
+    if (event.target.id === 'viewModal') closeViewModal();
+    else if (event.target.id === 'whatsappModal') closeWhatsAppModal();
+  }
+
+  async function sendWhatsAppMessage() {
+    const phoneInput = document.getElementById('whatsappPhone');
+    const phoneInputContainer = document.getElementById('phoneInputContainer');
+    const phoneError = document.getElementById('phoneError');
+    const phoneErrorText = document.getElementById('phoneErrorText');
+    const sendBtn = document.getElementById('sendWhatsAppBtn');
+    const sendBtnText = document.getElementById('sendBtnText');
+    const successContainer = document.getElementById('successMessageContainer');
+
+    if (!phoneInput || !phoneError || !phoneErrorText || !sendBtn || !sendBtnText || !successContainer) {
+      console.error('[sendWhatsAppMessage] missing DOM elements');
+      return;
+    }
+
+    if (!currentWalletId) {
+      if (phoneInputContainer) phoneInputContainer.classList.add('error');
+      phoneErrorText.textContent = 'Internal error: wallet id not available. Close and reopen the modal.';
+      phoneError.style.display = 'flex';
+      return;
+    }
+
+    const phoneNumber = phoneInput.value.trim();
+    if (phoneInputContainer) phoneInputContainer.classList.remove('error');
+    phoneError.style.display = 'none';
+    successContainer.innerHTML = '';
+
+    if (!phoneNumber) {
+      if (phoneInputContainer) phoneInputContainer.classList.add('error');
+      phoneErrorText.textContent = 'Please enter a phone number';
+      phoneError.style.display = 'flex';
+      phoneInput.focus();
+      return;
+    }
+
+    const cleanPhone = phoneNumber.replace(/\D/g, '');
+    if (cleanPhone.length !== 10) {
+      if (phoneInputContainer) phoneInputContainer.classList.add('error');
+      phoneErrorText.textContent = 'Please enter a valid 10-digit mobile number';
+      phoneError.style.display = 'flex';
+      phoneInput.focus();
+      return;
+    }
+
+    const fullPhoneNumber = '91' + cleanPhone;
+
+    sendBtn.disabled = true;
+    sendBtnText.innerHTML = '<span class="loading-spinner"></span> Sending...';
+
+    const url = `/wallet/whatsapp/${currentWalletId}/`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({ phone_number: fullPhoneNumber })
+      });
+
+      let data = null;
+      try {
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          data = await response.json();
+        } else {
+          const text = await response.text().catch(() => '');
+          console.error('[sendWhatsAppMessage] Non-JSON response', response.status, text);
+          if (phoneInputContainer) phoneInputContainer.classList.add('error');
+          if (response.status === 404) phoneErrorText.textContent = 'Server returned 404 (URL not found). Check backend URL pattern and request path.';
+          else if (response.status >= 500) phoneErrorText.textContent = 'Server error (5xx). Check server logs for stack trace.';
+          else phoneErrorText.textContent = `Server returned status ${response.status}. Check server logs.`;
+          phoneError.style.display = 'flex';
+          return;
+        }
+      } catch (parseErr) {
+        const text = await response.text().catch(() => '');
+        console.error('[sendWhatsAppMessage] Failed to parse JSON:', parseErr, text);
+        if (phoneInputContainer) phoneInputContainer.classList.add('error');
+        phoneErrorText.textContent = 'Server returned invalid JSON. Check server logs.';
+        phoneError.style.display = 'flex';
+        return;
+      }
+
+      if (response.ok && data && data.success) {
+        successContainer.innerHTML = `
+          <div class="success-message">
+            <i class="fas fa-check-circle"></i>
+            <div>
+              <div><strong>Message sent successfully to +91 ${cleanPhone}!</strong></div>
+              ${data.text_sent ? '<div style="font-size:12px; margin-top:2px;">✓ Text message sent</div>' : '<div style="font-size:12px; margin-top:2px;">✓ Text message sent</div>'}
+              ${data.image_sent ? '<div style="font-size:12px; margin-top:2px;">✓ Image sent</div>' : ''}
+              ${data.pdf_sent ? '<div style="font-size:12px; margin-top:2px;">✓ PDF sent</div>' : ''}
+            </div>
+          </div>
+        `;
+        phoneInput.value = '';
+        setTimeout(() => closeWhatsAppModal(), 2000);
+      } else {
+        if (phoneInputContainer) phoneInputContainer.classList.add('error');
+        const serverError = (data && (data.error || data.details)) ? (data.error || JSON.stringify(data.details)) : `Failed to send (status ${response.status})`;
+        phoneErrorText.textContent = serverError;
+        phoneError.style.display = 'flex';
+        console.error('[sendWhatsAppMessage] API error ->', response.status, data);
+      }
+    } catch (err) {
+      console.error('[sendWhatsAppMessage] Network error ->', err);
+      if (phoneInputContainer) phoneInputContainer.classList.add('error');
+      phoneErrorText.textContent = 'Connection error. Please check your internet and try again.';
+      phoneError.style.display = 'flex';
+    } finally {
+      sendBtn.disabled = false;
+      sendBtnText.innerHTML = '<i class="fab fa-whatsapp"></i> Send Message';
+    }
+  }
+  </script> 
+{% endblock %}

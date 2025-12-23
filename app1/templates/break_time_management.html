@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+    <h2 class="my-4">Break Time Management</h2>
+
+    <!-- Filters -->
+    <div class="row mb-3">
+        <div class="col-md-3">
+            <label>From Date:</label>
+            <input type="date" id="start-date" class="form-control"
+                   value="{{ start_date|date:'Y-m-d' }}" onchange="applyFilters()">
+        </div>
+        <div class="col-md-3">
+            <label>To Date:</label>
+            <input type="date" id="end-date" class="form-control"
+                   value="{{ end_date|date:'Y-m-d' }}" onchange="applyFilters()">
+        </div>
+        <div class="col-md-4">
+            <label>User:</label>
+            <select id="filter-user" class="form-control" onchange="applyFilters()">
+                <option value="">All Active Users</option>
+                {% for user in active_users %}
+                    <option value="{{ user.id }}" {% if user.id|stringformat:"s" == selected_user_id|stringformat:"s" %}selected{% endif %}>
+                        {{ user.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div style="overflow: scroll;">
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>Employee</th>
+                    <th>Date</th>
+                    <th>Main Punch In</th>
+                    <th>Main Punch Out</th>
+                    <th>Break Punch In</th>
+                    <th>Break Punch Out</th>
+                    <th>Duration</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in punched_users %}
+                    {% if record.breaks %}
+                        {% for b in record.breaks %}
+                        <tr>
+                            <td>{{ record.employee.name }}</td>
+                            <td>{{ record.date|date:"d-m-Y" }}</td>
+                            <td>{{ record.punch_in|date:"H:i:s" }}</td>
+                            <td>{{ record.punch_out|date:"H:i:s"|default:"-" }}</td>
+                            <td>{{ b.break_punch_in|date:"H:i:s" }}</td>
+                            <td>{{ b.break_punch_out|date:"H:i:s"|default:"-" }}</td>
+                            <td>
+                                {% if b.break_punch_out %}
+                                    {{ b.break_punch_out|timeuntil:b.break_punch_in }}
+                                {% else %}
+                                    In Progress
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if b.break_punch_out %}
+                                    <span class="badge bg-success">Completed</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Active</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td>{{ record.employee.name }}</td>
+                            <td>{{ record.date|date:"d-m-Y" }}</td>
+                            <td>{{ record.punch_in|date:"H:i:s" }}</td>
+                            <td>{{ record.punch_out|date:"H:i:s"|default:"-" }}</td>
+                            <td colspan="4" class="text-center">No Breaks Recorded</td>
+                        </tr>
+                    {% endif %}
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center">No main punch-in data found for this date or user.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function applyFilters() {
+    const startDate = document.getElementById('start-date').value;
+    const endDate = document.getElementById('end-date').value;
+    const user = document.getElementById('filter-user').value;
+
+    let url = '?';
+    if (startDate) url += 'start_date=' + startDate + '&';
+    if (endDate) url += 'end_date=' + endDate + '&';
+    if (user) url += 'user=' + user;
+    window.location.href = url;
+}
+</script>
+{% endblock %}

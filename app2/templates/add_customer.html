@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+
+
+
+
+
+{% block content %}
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  
+
+  .back-button {
+    max-width: 700px;
+    margin: 20px 20px auto;
+    text-align: left;
+  }
+
+  .back-button button {
+    padding: 10px 24px;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    background: linear-gradient(to right, #718096, #4a5568);
+    color: white;
+    transition: background 0.3s ease, transform 0.2s ease;
+  }
+
+  .back-button button:hover {
+    background: linear-gradient(to right, #a0aec0, #2d3748);
+    transform: scale(1.03);
+  }
+
+  .form-container {
+    max-width: 900px;
+    margin: auto;
+    background-color: #fff;
+    padding: 40px 30px;
+    border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+  }
+
+  .form-container:hover {
+    transform: translateY(-2px);
+  }
+
+  h1 {
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 28px;
+    color: #2d3748;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: black;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="date"],
+  select,
+  textarea {
+    width: 100%;
+    padding: 12px;
+    font-size: 15px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background-color: #f9fafb;
+    transition: all 0.3s ease;
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus {
+    border-color: #667eea;
+    background-color: #fff;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+  }
+
+  .form-buttons {
+    display: flex;
+    justify-content: center; 
+    gap: 15px;
+    margin-top: 30px;
+    flex-wrap: wrap;
+  }
+
+  button {
+    padding: 10px 24px;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+  }
+
+  button[type="submit"],
+  .btn-back {
+    background: linear-gradient(to right, #344aad, #0a0114);
+    color: white;
+  }
+
+  button:hover {
+    transform: scale(1.03);
+    opacity: 0.95;
+  }
+
+  @media (max-width: 600px) {
+    .form-buttons {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    button {
+      width: 100%;
+      max-width: 250px;
+    }
+
+    .back-button {
+      text-align: center;
+    }
+  }
+</style>
+<div class="back-button">
+  <button onclick="window.location.href='{% url 'all_customers' %}'">← Back</button>
+</div>
+
+<div class="form-container">
+  <h1>Add New Customer</h1>
+  <form method="post">
+    {% csrf_token %}
+
+    <div class="form-group">
+      <label for="customerName">Customer Name</label>
+      <input type="text" id="customerName" name="customerName" required>
+    </div>
+
+    <div class="form-group">
+      <label for="firmName">Firm Name</label>
+      <input type="text" id="firmName" name="firmName" required>
+    </div>
+
+    <div class="form-group">
+      <label for="place">Place</label>
+      <input type="text" id="place" name="place" required>
+    </div>
+
+    <div class="form-group">
+      <label for="district">District</label>
+      <select id="district" name="district" required>
+        <option value="">-- Select District --</option>
+        <option value="Alappuzha">Alappuzha</option>
+        <option value="Ernakulam">Ernakulam</option>
+        <option value="Idukki">Idukki</option>
+        <option value="Kannur">Kannur</option>
+        <option value="Kasaragod">Kasaragod</option>
+        <option value="Kollam">Kollam</option>
+        <option value="Kottayam">Kottayam</option>
+        <option value="Kozhikode">Kozhikode</option>
+        <option value="Malappuram">Malappuram</option>
+        <option value="Palakkad">Palakkad</option>
+        <option value="Pathanamthitta">Pathanamthitta</option>
+        <option value="Thiruvananthapuram">Thiruvananthapuram</option>
+        <option value="Thrissur">Thrissur</option>
+        <option value="Wayanad">Wayanad</option>
+        <option value="Wayanad">Other</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="state">State</label>
+      <input type="text" id="state" name="state" required>
+    </div>
+
+    <div class="form-group">
+      <label for="country">Country</label>
+      <input type="text" id="country" name="country" required>
+    </div>
+
+    <div class="form-group">
+      <label for="phone">Phone No</label>
+      <input type="tel" id="phone" name="phone" required>
+    </div>
+
+    <div class="form-group">
+      <label for="businessType">Business Type</label>
+      <select id="businessType" name="businessType" required>
+        <option value="">-- Select Business Type --</option>
+        {% for type in business_types %}
+        <option value="{{ type.id }}">{{ type.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="contactPerson">Contact Person</label>
+      <input type="text" id="contactPerson" name="contactPerson" required>
+    </div>
+
+    <div class="form-group">
+      <label for="phone1">Phone No 1</label>
+      <input type="tel" id="phone1" name="phone1" required>
+    </div>
+
+    <div class="form-group">
+      <label for="phone2">Phone No 2</label>
+      <input type="tel" id="phone2" name="phone2">
+    </div>
+
+    <div class="form-group">
+      <label for="email">Email ID</label>
+      <input type="email" id="email" name="email">
+
+    </div>
+
+    <div class="form-buttons">
+      <button type="submit">Save</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

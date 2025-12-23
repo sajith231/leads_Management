@@ -1,0 +1,3070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saved Quotations</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: #f0f2f5;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+        
+        /* Header Section */
+        .header-section {
+            background: linear-gradient(135deg, #a095f6, #8a7cf0);
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            padding: 25px 30px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+        
+        .header-section h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .header-section p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .btn-add-new {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+            text-decoration: none;
+        }
+        
+        .btn-add-new:hover {
+            background: linear-gradient(135deg, #218838, #1ea085);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(40, 167, 69, 0.4);
+        }
+        
+        .btn-refresh {
+            background:#45a049;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        
+        .btn-refresh:hover {
+            background:#45a049;
+            transform: translateY(-2px);
+        }
+        
+        /* Main Content Layout */
+        .main-content {
+            display: flex;
+            gap: 25px;
+            align-items: stretch;
+            width: 100%;
+            min-height: 80vh;
+        }
+        
+        /* Directory Column */
+        .directory-column {
+            flex: 0 0 350px;
+            width: 350px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Quotations Column */
+        .quotations-column {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* ========================================
+           CURRENT/ACTIVE LEAD HIGHLIGHTING (Matching requirement_edit style)
+           ======================================== */
+        .lead-item.current-lead-item {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb) !important;
+            border-left: 4px solid #2196f3 !important;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2) !important;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        /* Glow effect for current lead */
+        .lead-item.current-lead-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #2196f3, #42a5f5, #2196f3);
+            animation: pulse-glow 2s infinite;
+        }
+        
+        .lead-item.current-lead-item .lead-avatar {
+            background: #2196f3 !important;
+            box-shadow: 0 0 0 2px white, 0 0 0 4px #2196f3;
+            transform: scale(1.1);
+            transition: transform 0.3s;
+        }
+        
+        /* Current lead badge */
+        .current-lead-badge {
+            background: linear-gradient(135deg, #2196f3, #1976d2);
+            color: white;
+            font-size: 9px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: 700;
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
+            animation: badge-pulse 1.5s infinite;
+        }
+        
+        /* Hover effect for all leads */
+        .lead-item:hover {
+            background: linear-gradient(135deg, #f8f9ff, #e8f0ff);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border-left: 4px solid #4a6fdc;
+        }
+        
+        /* Edit indicator */
+        .edit-lead-indicator {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #4CAF50;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 2;
+        }
+        
+        .lead-item:hover .edit-lead-indicator {
+            opacity: 1;
+        }
+        
+        .lead-item.current-lead-item .edit-lead-indicator {
+            background: #ff9800;
+            opacity: 1;
+            transform: scale(1.1);
+        }
+        
+        /* Animations */
+        @keyframes pulse-glow {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+        
+        @keyframes badge-pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        /* ========== ENHANCED DIRECTORY STYLES ========== */
+        .lead-directory-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Directory Header */
+        .directory-header {
+            background: linear-gradient(135deg, #4a6fdc, #3a5fcc);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        
+        .directory-left {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            text-align: left;
+        }
+        
+        .directory-left h2 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .directory-date {
+            font-size: 14px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.95);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .directory-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            text-align: right;
+        }
+        
+        .directory-count {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .directory-time {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        /* Directory Tabs */
+        .directory-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .directory-tab {
+            flex: 1;
+            padding: 12px 15px;
+            text-align: center;
+            background: transparent;
+            border: none;
+            font-weight: 600;
+            font-size: 14px;
+            color: #6c757d;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .directory-tab.active {
+            color: #4a6fdc;
+            border-bottom-color: #4a6fdc;
+            background: white;
+        }
+        
+        .directory-tab:hover {
+            background: #e9ecef;
+        }
+        
+        /* Search and Filter Container */
+        .directory-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            gap: 10px;
+        }
+        
+        .directory-search-container {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .search-box {
+            position: relative;
+            width: 100%;
+        }
+        
+        .search-box input {
+            padding: 10px 15px 10px 40px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            width: 100%;
+            background: white;
+            transition: all 0.3s;
+        }
+        
+        .search-box input:focus {
+            border-color: #4a6fdc;
+            box-shadow: 0 0 0 3px rgba(74, 111, 220, 0.1);
+            outline: none;
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        .directory-filter-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+        
+        .filter-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #495057;
+            white-space: nowrap;
+        }
+        
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            min-width: 130px;
+            transition: all 0.3s;
+        }
+        
+        .filter-select:focus {
+            border-color: #4a6fdc;
+            outline: none;
+        }
+        
+        .lead-list, .employee-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+            display: none;
+            max-height: 600px;
+        }
+        
+        .lead-list.active, .employee-list.active {
+            display: block;
+        }
+        
+        .lead-item, .employee-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: all 0.2s;
+            cursor: pointer;
+            position: relative;
+            border-left: 4px solid transparent;
+        }
+        
+        .lead-item:hover, .employee-item:hover {
+            background: #f8f9fa;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .lead-avatar, .employee-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            margin-right: 12px;
+            flex-shrink: 0;
+            transition: all 0.3s;
+        }
+        
+        .lead-avatar {
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+        
+        .employee-avatar {
+            background: linear-gradient(135deg, #4a6fdc, #3a5fcc);
+        }
+        
+        .lead-details, .employee-details {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .lead-name, .employee-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 3px;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .employee-role, .lead-info {
+            font-size: 13px;
+            color: #6c757d;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .lead-phone {
+            font-size: 12px;
+            color: #495057;
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .lead-ticket {
+            font-size: 11px;
+            color: #6c757d;
+            background: #f8f9fa;
+            padding: 3px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-top: 3px;
+            font-weight: 500;
+        }
+        
+        .lead-status {
+            font-size: 11px;
+            color: #28a745;
+            font-weight: 600;
+            margin-top: 3px;
+        }
+        
+        .lead-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+        
+        .lead-name-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .lead-priority-indicator {
+            font-size: 14px;
+            margin-right: 5px;
+        }
+        
+        .date-time-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 5px;
+            min-width: 90px;
+        }
+        
+        .lead-date-compact {
+            font-size: 11px;
+            color: #6c757d;
+            background: #f8f9fa;
+            padding: 3px 8px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-weight: 600;
+        }
+        
+        .lead-datetime {
+            font-size: 10px;
+            color: #888;
+            margin-top: 2px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .lead-info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 5px;
+            width: 100%;
+        }
+        
+        /* Time elapsed badge */
+        .time-elapsed-badge {
+            font-size: 10px !important;
+            font-weight: 700 !important;
+            padding: 3px 8px !important;
+            border-radius: 12px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 5px !important;
+            background: rgba(0, 0, 0, 0.05) !important;
+            color: #666 !important;
+            white-space: nowrap !important;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .time-elapsed-badge.time-recent {
+            background: rgba(34, 197, 94, 0.2) !important;
+            color: #16a34a !important;
+            border-color: rgba(34, 197, 94, 0.1);
+        }
+        
+        .time-elapsed-badge.time-medium {
+            background: rgba(245, 158, 11, 0.2) !important;
+            color: #d97706 !important;
+            border-color: rgba(245, 158, 11, 0.1);
+        }
+        
+        .time-elapsed-badge.time-old {
+            background: rgba(239, 68, 68, 0.2) !important;
+            color: #dc2626 !important;
+            border-color: rgba(239, 68, 68, 0.1);
+        }
+        
+        .lead-campaign {
+            position: relative;
+            cursor: help;
+            font-size: 12px;
+            color: #666;
+            margin-top: 3px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-style: italic;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .no-results {
+            padding: 40px 20px;
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        .no-results i {
+            font-size: 48px;
+            color: #ddd;
+            margin-bottom: 15px;
+            display: block;
+        }
+        
+        /* Pagination Styles */
+        .directory-pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            gap: 10px;
+        }
+        
+        .pagination-info {
+            font-size: 13px;
+            color: #6c757d;
+            margin: 0 10px;
+            font-weight: 500;
+        }
+        
+        .pagination-btn {
+            padding: 8px 15px;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #4a6fdc;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .pagination-btn:hover:not(:disabled) {
+            background: #4a6fdc;
+            color: white;
+            border-color: #4a6fdc;
+            transform: translateY(-1px);
+        }
+        
+        .pagination-btn:disabled {
+            background: #f8f9fa;
+            color: #adb5bd;
+            cursor: not-allowed;
+        }
+        
+        .pagination-numbers {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .page-number {
+            padding: 8px 12px;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #495057;
+            font-weight: 500;
+            min-width: 40px;
+            text-align: center;
+        }
+        
+        .page-number.active {
+            background: #4a6fdc;
+            color: white;
+            border-color: #4a6fdc;
+            font-weight: 600;
+        }
+        
+        .page-number:hover:not(.active) {
+            background: #e9ecef;
+            border-color: #dee2e6;
+        }
+        
+        /* Quotations Table Styles */
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .table-header {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .table-header h2 {
+            font-size: 20px;
+            font-weight: 700;
+        }
+        
+        .table-stats {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .quotations-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .quotations-table th {
+            background: linear-gradient(135deg, #4a6fdc, #3a5fcc);
+            color: white;
+            padding: 18px 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 15px;
+            border:1px solid #060606 ;
+            position: sticky;
+            top: 0;
+        }
+        
+        .quotations-table td {
+            padding: 16px 15px;
+            border: 1px solid #020202;
+            font-size: 14px;
+            vertical-align: middle;
+            transition: background-color 0.2s;
+        }
+        
+        .quotations-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        .quotations-table tr:hover {
+            background-color: #f0f8ff;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            min-width: 90px;
+            text-align: center;
+        }
+        
+        /* .status-draft {
+            background: linear-gradient(135deg, #FFF3CD, #FFE8A5);
+            color: #856404;
+            border: 1px solid #FFD966;
+        } */
+        
+        .status-sent {
+            background: linear-gradient(135deg, #A3E4D7, #76D7C4);
+            color: #0B5345;
+            border: 1px solid #48C9B0;
+        }
+        
+        .status-accepted {
+            background: linear-gradient(135deg, #D4EDDA, #A3D9B1);
+            color: #155724;
+            border: 1px solid #82E0AA;
+        }
+        
+        .status-expired {
+            background: linear-gradient(135deg, #F8D7DA, #F5B7B1);
+            color: #721C24;
+            border: 1px solid #F1948A;
+        }
+        
+        .client-info {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .client-name {
+            font-weight: 700;
+            color: #333;
+            font-size: 15px;
+        }
+        
+        .client-phone {
+            font-size: 13px;
+            color: #090909;
+        }
+        
+        .client-email {
+            font-size: 12px;
+            color: #0a0a0a;
+        }
+        
+        .amount {
+            font-weight: 700;
+            color: #030303;
+            font-size: 15px;
+        }
+        
+        .action-cell {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn-action {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            height: 36px;
+        }
+        
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .btn-view {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+        }
+        
+        .btn-view:hover {
+            background: linear-gradient(135deg, #1976D2, #1565C0);
+        }
+        
+        .btn-edit {
+            background: linear-gradient(135deg, #FF9800, #F57C00);
+        }
+        
+        .btn-edit:hover {
+            background: linear-gradient(135deg, #F57C00, #EF6C00);
+        }
+        
+        .btn-download {
+            background: linear-gradient(135deg, #9C27B0, #7B1FA2);
+        }
+        
+        .btn-download:hover {
+            background: linear-gradient(135deg, #7B1FA2, #6A1B9A);
+        }
+        
+        .btn-delete {
+            background: linear-gradient(135deg, #F44336, #D32F2F);
+        }
+        
+        .btn-delete:hover {
+            background: linear-gradient(135deg, #D32F2F, #C62828);
+        }
+        
+        /* Confirmation Modal */
+        .confirmation-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .modal-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .modal-header i {
+            color: #f44336;
+            font-size: 24px;
+        }
+        
+        .modal-header h3 {
+            color: #333;
+            font-size: 20px;
+        }
+        
+        .modal-body {
+            margin-bottom: 25px;
+        }
+        
+        .modal-body p {
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+        }
+        
+        .modal-btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .modal-btn-cancel {
+            background: #f8f9fa;
+            color: #495057;
+            border: 1px solid #dee2e6;
+        }
+        
+        .modal-btn-cancel:hover {
+            background: #e9ecef;
+        }
+        
+        .modal-btn-confirm {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+        }
+        
+        .modal-btn-confirm:hover {
+            background: linear-gradient(135deg, #d32f2f, #c62828);
+            transform: translateY(-2px);
+        }
+        
+        /* Branch Selection Modal */
+        .branch-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10001;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .branch-modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+            width: 90%;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .branch-modal-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .branch-modal-header i {
+            color: #2196F3;
+            font-size: 24px;
+        }
+        
+        .branch-modal-header h3 {
+            color: #333;
+            font-size: 22px;
+            margin: 0;
+        }
+        
+        .branch-modal-body {
+            margin-bottom: 25px;
+        }
+        
+        .branch-modal-body p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        .branch-modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #f0f0f0;
+        }
+        
+        .branch-modal-btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .branch-modal-btn-cancel {
+            background: #f8f9fa;
+            color: #495057;
+            border: 1px solid #dee2e6;
+        }
+        
+        .branch-modal-btn-cancel:hover {
+            background: #e9ecef;
+        }
+        
+        .branch-modal-btn-download {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white;
+        }
+        
+        .branch-modal-btn-download:hover {
+            background: linear-gradient(135deg, #1976D2, #1565C0);
+            transform: translateY(-2px);
+        }
+        
+        /* Branch Selection Grid */
+        .branch-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .branch-card {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .branch-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-color: #2196F3;
+            background: #f0f7ff;
+        }
+        
+        .branch-card.selected {
+            border-color: #2196F3;
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.2);
+        }
+        
+        .branch-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        
+        .branch-icon i {
+            color: white;
+            font-size: 24px;
+        }
+        
+        .branch-name {
+            font-weight: 700;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .branch-address {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+            line-height: 1.4;
+        }
+        
+        .branch-check {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: #2196F3;
+            font-size: 18px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .branch-card.selected .branch-check {
+            opacity: 1;
+        }
+        
+        /* Selected Lead Info */
+        .selected-lead-info {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 5px solid #2196F3;
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.1);
+        }
+        
+        .selected-lead-info h3 {
+            color: #1976d2;
+            margin: 0 0 10px 0;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .lead-details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            flex: 1;
+        }
+        
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .detail-label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .detail-value {
+            font-size: 15px;
+            color: #333;
+            font-weight: 700;
+        }
+        
+        /* Filter Controls */
+        .table-filters {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .filter-group label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .filter-group select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            min-width: 150px;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+        
+        .empty-state i {
+            font-size: 64px;
+            color: #e0e0e0;
+            margin-bottom: 20px;
+        }
+        
+        .empty-state h3 {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: #495057;
+        }
+        
+        .empty-state p {
+            font-size: 16px;
+            margin-bottom: 20px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        /* Loading Spinner */
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4a6fdc;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .directory-column {
+                width: 100%;
+                flex: none;
+            }
+            
+            .lead-list {
+                max-height: 400px;
+            }
+        }
+        
+        @media (max-width: 992px) {
+            .header-section {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+            
+            .header-actions {
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            
+            .lead-details-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header-section {
+                padding: 20px;
+            }
+            
+            .header-section h1 {
+                font-size: 24px;
+            }
+            
+            .header-section p {
+                font-size: 14px;
+            }
+            
+            .btn-add-new, .btn-refresh {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+            
+            .directory-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .directory-left, .directory-right {
+                width: 100%;
+                align-items: flex-start;
+                text-align: left;
+            }
+            
+            .directory-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .directory-search-container {
+                width: 100%;
+            }
+            
+            .directory-filter-container {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .filter-select {
+                min-width: 100%;
+            }
+            
+            .selected-lead-info {
+                flex-direction: column;
+                text-align: center;
+                align-items: stretch;
+            }
+            
+            .lead-details-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .table-filters {
+                flex-direction: column;
+            }
+            
+            .quotations-table {
+                display: block;
+                overflow-x: auto;
+            }
+            
+            .quotations-table th,
+            .quotations-table td {
+                padding: 12px 10px;
+                font-size: 13px;
+            }
+            
+            .action-cell {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .btn-action {
+                min-width: 36px;
+                height: 32px;
+                padding: 6px;
+            }
+            
+            .status-badge {
+                padding: 6px 12px;
+                font-size: 11px;
+                min-width: 80px;
+            }
+            
+            .modal-content {
+                padding: 20px;
+                width: 95%;
+            }
+            
+            .modal-footer {
+                flex-direction: column;
+            }
+            
+            .modal-btn {
+                width: 100%;
+            }
+            
+            .branch-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .branch-modal-content {
+                padding: 20px;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 0;
+            }
+            
+            .header-section {
+                margin-bottom: 15px;
+                padding: 15px;
+                border-radius: 8px;
+            }
+            
+            .main-content {
+                gap: 15px;
+            }
+            
+            .table-header {
+                padding: 15px;
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+            
+            .pagination-numbers {
+                display: none;
+            }
+        }
+
+        /* Show All Button */
+        .btn-show-all {
+            background: linear-gradient(135deg, #6c757d, #495057);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .btn-show-all:hover {
+            background: linear-gradient(135deg, #495057, #343a40);
+            transform: translateY(-2px);
+        }
+
+         .branch-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10001;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .branch-modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            max-width: 850px;
+            width: 90%;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .branch-modal-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .branch-modal-header i {
+            color: #2196F3;
+            font-size: 24px;
+        }
+        
+        .branch-modal-header h3 {
+            color: #333;
+            font-size: 22px;
+            margin: 0;
+        }
+        
+        .branch-modal-body {
+            margin-bottom: 25px;
+        }
+        
+        .branch-modal-body p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        .branch-modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #f0f0f0;
+        }
+        
+        .branch-modal-btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .branch-modal-btn-cancel {
+            background: #f8f9fa;
+            color: #495057;
+            border: 1px solid #dee2e6;
+        }
+        
+        .branch-modal-btn-cancel:hover {
+            background: #e9ecef;
+        }
+        
+        .branch-modal-btn-download {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white;
+        }
+        
+        .branch-modal-btn-download:hover {
+            background: linear-gradient(135deg, #1976D2, #1565C0);
+            transform: translateY(-2px);
+        }
+        
+        /* Branch Selection Grid - 3 columns layout */
+        .branch-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 15px;
+        }
+        
+        .branch-card {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+            min-height: 180px;
+        }
+        
+        .branch-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-color: #2196F3;
+            background: #f0f7ff;
+        }
+        
+        .branch-card.selected {
+            border-color: #2196F3;
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.2);
+        }
+        
+        .branch-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        
+        .branch-icon i {
+            color: white;
+            font-size: 24px;
+        }
+        
+        .branch-name {
+            font-weight: 700;
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        
+        .branch-address {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.4;
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+        }
+        
+        .branch-check {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: #2196F3;
+            font-size: 18px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .branch-card.selected .branch-check {
+            opacity: 1;
+        }
+        
+        /* Responsive adjustments for branch modal */
+        @media (max-width: 992px) {
+            .branch-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+            
+            .branch-modal-content {
+                max-width: 700px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .branch-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            
+            .branch-modal-content {
+                padding: 20px;
+                max-width: 500px;
+            }
+            
+            .branch-card {
+                min-height: 160px;
+                padding: 15px 10px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .branch-modal-content {
+                width: 95%;
+                padding: 15px;
+            }
+            
+            .branch-modal-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+            
+            .branch-modal-header h3 {
+                font-size: 18px;
+            }
+            
+            .branch-modal-footer {
+                flex-direction: column;
+            }
+            
+            .branch-modal-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Confirmation Modal -->
+    <div class="confirmation-modal" id="confirmationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>Delete Quotation</h3>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this quotation? This action cannot be undone.</p>
+                <p><strong>Quotation ID:</strong> <span id="modalQuotationId">-</span></p>
+                <p><strong>Client:</strong> <span id="modalClientName">-</span></p>
+                <p><strong>Amount:</strong> <span id="modalAmount">-</span></p>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-cancel" onclick="closeModal()">Cancel</button>
+                <button class="modal-btn modal-btn-confirm" onclick="confirmDelete()">Delete Quotation</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Branch Selection Modal -->
+    <div class="branch-modal" id="branchModal">
+        <div class="branch-modal-content">
+            <div class="branch-modal-header">
+                <i class="fas fa-building"></i>
+                <h3 id="branchModalTitle">Select Branch</h3>
+            </div>
+            <div class="branch-modal-body">
+                <p>Please select the branch for which you want to download the quotation:</p>
+                
+                <div class="branch-grid" id="branchGrid">
+                    <!-- Branch cards will be dynamically added here -->
+                    <!-- Layout: 3 branches per row, 2 rows total -->
+                </div>
+                
+                <div class="branch-modal-footer">
+                    <button class="branch-modal-btn branch-modal-btn-cancel" onclick="closeBranchModal()">Cancel</button>
+                    <button class="branch-modal-btn branch-modal-btn-download" id="branchDownloadBtn" onclick="downloadWithSelectedBranch()" disabled>
+                        <i class="fas fa-download"></i>
+                        Download PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden field to store selected lead ID -->
+    <input type="hidden" id="selectedLeadId" value="">
+
+    <div class="container">
+        <!-- Header Section -->
+        <div class="header-section">
+            <div>
+                <h1>Saved Quotations</h1>
+                <p>View and manage all your submitted quotations</p>
+                <div style="margin-top: 10px; font-size: 14px; opacity: 0.9;">
+                    {% if quotations|length > 0 %}
+                    Showing <span id="headerQuotationCount">{{ quotations|length }}</span> quotations | Total: ₹<span id="headerTotalAmount">{{ total_amount|default:"0.00" }}</span>
+                    {% else %}
+                    No quotations found
+                    {% endif %}
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn-refresh" onclick="window.location.href='{% url 'app5:lead_report' %}'">
+                    <i class="fas fa-sync-alt"></i>
+                    Back
+                </button>
+                <a href="{% url 'app5:quotation_list' %}" class="btn-add-new">
+                    <i class="fas fa-plus-circle"></i>
+                    Create New 
+                </a>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <!-- Left Column - Enhanced Lead Directory -->
+            <div class="directory-column">
+                <div class="lead-directory-container">
+                    <!-- Directory Header -->
+                    <div class="directory-header">
+                        <div class="directory-left">
+                            <h2>Lead Management</h2>
+                            <div class="directory-date" id="currentDate">
+                                <i class="far fa-calendar-alt"></i>
+                                <span id="dateDisplay">Loading date...</span>
+                            </div>
+                        </div>
+                        <div class="directory-right">
+                            <div class="directory-count">Leads: <span id="activeTabCount">{{ leads|length }}</span></div>
+                            <div class="directory-time" id="todayDate">
+                                <i class="far fa-clock"></i>
+                                <span id="timeDisplay">Loading time...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Directory Tabs -->
+                    <div class="directory-tabs">
+                        <button class="directory-tab active" data-tab="leads">Active Leads</button>
+                        <button class="directory-tab" data-tab="employees">Employees</button>
+                    </div>
+                    
+                    <!-- Search and Filter -->
+                    <div class="directory-controls">
+                        <div class="directory-search-container">
+                            <div class="search-box">
+                                <i class="fas fa-search search-icon"></i>
+                                <input type="text" id="directorySearch" placeholder="Search leads...">
+                            </div>
+                        </div>
+                        <div class="directory-filter-container">
+                            <span class="filter-label">Priority:</span>
+                            <select id="priorityFilter" class="filter-select">
+                                <option value="all">All</option>
+                                <option value="High">🔴 High</option>
+                                <option value="Medium">🟡 Medium</option>
+                                <option value="Low">🟢 Low</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Lead List (shown by default) -->
+                    <div class="lead-list active" id="leadList">
+                        {% if leads %}
+                            {% for lead in leads %}
+                            <div class="lead-item" data-id="{{ lead.id }}"
+                                 data-name="{{ lead.ownerName|default:'' }}"
+                                 data-phone="{{ lead.phoneNo|default:'' }}"
+                                 data-email="{{ lead.email|default:'' }}"
+                                 data-ticket="{{ lead.ticket_number|default:'' }}"
+                                 data-priority="{{ lead.priority|default:'Medium' }}"
+                                 data-place="{{ lead.place|default:'' }}"
+                                 data-business="{{ lead.business|default:'' }}"
+                                 data-created="{{ lead.created_at|date:'c'|default:'' }}">
+                                <!-- Edit indicator -->
+                                <div class="edit-lead-indicator" title="Click to view quotations">
+                                    <i class="fas fa-file-invoice" style="font-size: 10px;"></i>
+                                </div>
+                                
+                                <div class="lead-avatar">
+                                    {{ lead.ownerName|default:"L"|slice:":2"|upper }}
+                                </div>
+
+                                <div class="lead-details">
+                                    <div class="lead-header">
+                                        <div class="lead-name-container">
+                                            <span class="lead-priority-indicator">
+                                                {% if lead.priority == "High" %}🔴
+                                                {% elif lead.priority == "Medium" %}🟡
+                                                {% elif lead.priority == "Low" %}🟢
+                                                {% else %}⚪{% endif %}
+                                            </span>
+                                            <span class="lead-name">{{ lead.ownerName|default:"Unknown" }}</span>
+                                        </div>
+                                        
+                                        <!-- Date and Time Container -->
+                                        <div class="date-time-container">
+                                            {% if lead.created_at %}
+                                            <div class="lead-date-compact" title="Created: {{ lead.created_at|date:'l, d F Y' }}">
+                                                <i class="far fa-calendar-alt"></i>
+                                                {{ lead.created_at|date:"d M" }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <div class="lead-phone">{{ lead.phoneNo|default:"No Phone" }}</div>
+                                    <div class="lead-ticket">{{ lead.ticket_number|default:"No Ticket" }}</div>
+                                    {% if lead.created_at %}
+                                    <div class="lead-datetime">
+                                        <i class="far fa-clock"></i>
+                                        Created at {{ lead.created_at|time:"H:i" }}
+                                    </div>
+                                    {% endif %}
+                                    <div class="lead-info-row">
+                                        <div class="lead-status">Status: {{ lead.status|default:"Active" }}</div>
+                                        <span style="color: {% if lead.priority == 'High' %}#ff4444{% elif lead.priority == 'Medium' %}#ffaa00{% else %}#22c55e{% endif %}; font-weight: 700; font-size: 11px; padding: 3px 8px; border-radius: 12px; background: {% if lead.priority == 'High' %}#ff444415{% elif lead.priority == 'Medium' %}#ffaa0015{% else %}#22c55e15{% endif %};">
+                                            {{ lead.priority|default:"Medium" }}
+                                        </span>
+                                    </div>
+                                    {% if lead.customerType %}
+                                    <div class="lead-campaign" title="Customer Type: {{ lead.customerType }}">
+                                        <i class="fas fa-user-tag" style="font-size: 10px;"></i>
+                                        <span>{{ lead.customerType }}</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="no-results">
+                                <i class="fas fa-users"></i>
+                                <div>No active leads found</div>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Employee List (hidden by default) -->
+                    <div class="employee-list" id="employeeList">
+                        {% if active_users %}
+                            {% for u in active_users %}
+                            <div class="employee-item" data-id="{{ u.id }}" data-name="{{ u.name }}">
+                                <div class="employee-avatar">
+                                    {{ u.name|slice:":2"|upper }}
+                                </div>
+
+                                <div class="employee-details">
+                                    <div class="employee-name">{{ u.name }}</div>
+                                    <div class="employee-role">
+                                        {{ u.department }}{% if u.designation %} - {{ u.designation }}{% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="no-results">
+                                <i class="fas fa-user-friends"></i>
+                                <div>No active users found</div>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Pagination -->
+                    <div class="directory-pagination" id="directoryPagination">
+                        <div class="pagination-buttons">
+                            <button class="pagination-btn" id="prevPage" disabled>
+                                <i class="fas fa-chevron-left"></i> Prev
+                            </button>
+                        </div>
+                        
+                        <div class="pagination-numbers" id="paginationNumbers">
+                            <!-- Page numbers will be generated here -->
+                        </div>
+                        
+                        <div class="pagination-info" id="paginationInfo">
+                            Page 1 of 1
+                        </div>
+                        
+                        <div class="pagination-buttons">
+                            <button class="pagination-btn" id="nextPage" disabled>
+                                Next <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Column - Quotations Table -->
+            <div class="quotations-column">
+                <!-- Table Filters -->
+                <div class="table-filters">
+                    <div class="filter-group">
+                        <label for="statusFilter">Status:</label>
+                        <select id="statusFilter" onchange="filterQuotations()">
+                            <option value="all">All Status</option>
+                            <option value="sent">Sent</option>
+                            <option value="accepted">Accepted</option>
+                            <option value="expired">Expired</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="dateFilter">Date Range:</label>
+                        <select id="dateFilter" onchange="filterQuotations()">
+                            <option value="all">All Time</option>
+                            <option value="today">Today</option>
+                            <option value="week">This Week</option>
+                            <option value="month">This Month</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Quotations Table -->
+                <div class="table-container">
+                    <div class="table-header">
+                        <h2>All Quotations</h2>
+                        <div class="table-stats">
+                            <span id="quotationCount">{{ quotations|length }}</span> Quotations
+                            <span id="totalAmount" style="margin-left: 20px;">Total: ₹{{ total_amount|default:"0.00" }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="table-content">
+                        <table class="quotations-table">
+                            <thead>
+                                <tr>
+                                    <th width="80">Sl.No</th>
+                                    <th width="120">Date</th>
+                                    <th width="150">Client</th>
+                                    <th width="80">Items</th>
+                                    <th width="120">Subtotal</th>
+                                    <th width="120">Tax</th>
+                                    <th width="120">Total</th>
+                                    <th width="150">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="quotations-body">
+                                {% if quotations %}
+                                    {% for quotation in quotations %}
+                                    <tr data-quotation-id="{{ quotation.id }}" 
+                                        data-lead-id="{{ quotation.lead.id|default:'' }}"
+                                        data-lead-ticket="{{ quotation.lead.ticket_number|default:'' }}"
+                                        data-quotation-number="{{ quotation.quotation_number }}"
+                                        data-client-name="{{ quotation.client_name|default:'Unknown Client' }}"
+                                        data-amount="₹{{ quotation.grand_total|floatformat:2 }}">
+                                        <td>{{ forloop.counter }}</td>
+                                        <td>{{ quotation.created_at|date:"Y-m-d" }}</td>
+                                        <td>
+                                            <div class="client-info">
+                                                <span class="client-name">
+                                                    {{ quotation.client_name|default:"Unknown Client" }}
+                                                </span>
+                                                <span class="client-phone">
+                                                    {{ quotation.client_phone|default:"No Phone" }}
+                                                </span>
+                                                {% if quotation.lead %}
+                                                    <span class="client-email">
+                                                        <i class="fas fa-ticket-alt"></i> 
+                                                        {{ quotation.lead.ticket_number|default:"No Ticket" }}
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        
+                                        <td>
+                                            {% if quotation.items.all %}
+                                                {{ quotation.items.all.count }}
+                                            {% else %}
+                                                0
+                                            {% endif %}
+                                        </td>
+                                        <td class="amount">₹{{ quotation.subtotal|floatformat:2 }}</td>
+                                        <td class="amount">₹{{ quotation.total_tax|floatformat:2 }}</td>
+                                        <td class="amount">₹{{ quotation.grand_total|floatformat:2 }}</td>
+                                        <td>
+                                            <div class="action-cell">
+                                                <button class="btn-action btn-edit" onclick="editQuotation('{{ quotation.id }}')" title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn-action btn-download" onclick="showBranchSelection('{{ quotation.id }}', '{{ quotation.quotation_number }}')" title="Download PDF">
+                                                    <i class="fas fa-download"></i>
+                                                </button>
+                                                <button class="btn-action btn-delete" onclick="showDeleteConfirmation('{{ quotation.id }}', '{{ quotation.client_name|default:"Unknown Client"|escapejs }}', '₹{{ quotation.grand_total|floatformat:2 }}')" title="Delete">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="10">
+                                            <div class="empty-state">
+                                                <i class="fas fa-file-invoice"></i>
+                                                <h3>No Quotations Found</h3>
+                                                <p>You haven't created any quotations yet. Start by creating your first quotation.</p>
+                                                <a href="{% url 'app5:quotation_list' %}" class="btn-add-new">
+                                                    <i class="fas fa-plus-circle"></i>
+                                                    Create First Quotation
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== BRANCH SELECTION FUNCTIONALITY ==========
+        let selectedQuotationId = null;
+        let selectedBranchId = null;
+        
+        // Branch data - 6 branches total, will display 3 per row (2 rows)
+        const branches = [
+            { id: 1, name: "Main Branch", address: "123 Main Street, City Center, Mumbai 400001", icon: "fas fa-building" },
+            { id: 2, name: "North Branch", address: "456 North Avenue, Industrial Zone, Delhi 110001", icon: "fas fa-warehouse" },
+            { id: 3, name: "South Branch", address: "789 South Road, Commercial Area, Bangalore 560001", icon: "fas fa-store" },
+            { id: 4, name: "East Branch", address: "321 East Boulevard, Tech Park, Hyderabad 500001", icon: "fas fa-industry" },
+            { id: 5, name: "West Branch", address: "654 West Street, Business District, Pune 411001", icon: "fas fa-landmark" },
+            { id: 6, name: "Central Branch", address: "987 Central Plaza, Financial District, Chennai 600001", icon: "fas fa-city" }
+        ];
+        
+        function showBranchSelection(quotationId, quotationNumber) {
+            selectedQuotationId = quotationId;
+            selectedBranchId = null;
+            
+            // Update modal title with quotation number
+            document.getElementById('branchModalTitle').innerHTML = `<i class="fas fa-building"></i> Select Branch for Quotation #${quotationNumber}`;
+            
+            // Clear previous branch grid
+            const branchGrid = document.getElementById('branchGrid');
+            branchGrid.innerHTML = '';
+            
+            // Add branch cards - will create 6 cards in 2 rows of 3
+            branches.forEach((branch, index) => {
+                const branchCard = document.createElement('div');
+                branchCard.className = 'branch-card';
+                branchCard.dataset.branchId = branch.id;
+                
+                branchCard.innerHTML = `
+                    <div class="branch-icon">
+                        <i class="${branch.icon}"></i>
+                    </div>
+                    <div class="branch-check">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="branch-name">${branch.name}</div>
+                    <div class="branch-address">${branch.address}</div>
+                `;
+                
+                branchCard.addEventListener('click', () => selectBranch(branch.id, branchCard));
+                branchGrid.appendChild(branchCard);
+                
+                // Add visual separator after every 3rd card (optional)
+                if ((index + 1) % 3 === 0 && index < branches.length - 1) {
+                    // You could add a visual separator if needed
+                }
+            });
+            
+            // Reset download button
+            const downloadBtn = document.getElementById('branchDownloadBtn');
+            downloadBtn.disabled = true;
+            downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download PDF';
+            
+            // Show modal
+            document.getElementById('branchModal').style.display = 'flex';
+        }
+        
+        function selectBranch(branchId, branchCard) {
+            // Remove selected class from all branch cards
+            document.querySelectorAll('.branch-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked branch card
+            branchCard.classList.add('selected');
+            selectedBranchId = branchId;
+            
+            // Enable download button
+            const downloadBtn = document.getElementById('branchDownloadBtn');
+            downloadBtn.disabled = false;
+            downloadBtn.innerHTML = `<i class="fas fa-download"></i> Download from ${branchCard.querySelector('.branch-name').textContent}`;
+            
+            // Show notification
+            showNotification(`Selected: ${branchCard.querySelector('.branch-name').textContent}`, 'info');
+        }
+        
+        function downloadWithSelectedBranch() {
+    if (!selectedQuotationId || !selectedBranchId) {
+        showNotification('Please select a branch first', 'warning');
+        return;
+    }
+    
+    const selectedBranch = branches.find(b => b.id === selectedBranchId);
+    
+    // Create a new window/tab
+    const downloadWindow = window.open('/app5/quotation/download/' + selectedQuotationId + '/', '_blank');
+    
+    // Store branch data in localStorage for the new page to access
+    localStorage.setItem('selectedBranchData', JSON.stringify({
+        id: selectedBranchId,
+        name: selectedBranch.name,
+        address: selectedBranch.address,
+        // Add other branch properties you need
+    }));
+    
+    // Close modal
+    closeBranchModal();
+    
+    // Show notification
+    showNotification(`Downloading from ${selectedBranch.name}...`, 'success');
+}
+        
+        function closeBranchModal() {
+            document.getElementById('branchModal').style.display = 'none';
+            selectedQuotationId = null;
+            selectedBranchId = null;
+        }
+        
+        // ========== LEAD SELECTION AND QUOTATION FILTERING ==========
+        let selectedLead = null;
+        let allQuotations = [];
+        let filteredQuotations = [];
+
+        // Save lead to localStorage
+        function saveLeadToStorage(leadData) {
+            try {
+                localStorage.setItem('selectedLeadData', JSON.stringify(leadData));
+                console.log('✅ Lead saved to storage:', leadData.ownerName);
+                return true;
+            } catch (error) {
+                console.error('❌ Error saving lead:', error);
+                return false;
+            }
+        }
+        
+        // Get lead from localStorage
+        function getLeadFromStorage() {
+            try {
+                const data = localStorage.getItem('selectedLeadData');
+                return data ? JSON.parse(data) : null;
+            } catch (error) {
+                console.error('❌ Error reading lead:', error);
+                return null;
+            }
+        }
+        
+        // Restore selected lead on page load
+        function restoreSelectedLead() {
+            const storedLead = getLeadFromStorage();
+            const urlParams = new URLSearchParams(window.location.search);
+            const leadIdFromUrl = urlParams.get('lead_id');
+            
+            let leadIdToSelect = null;
+            
+            // Priority: URL parameter > localStorage > nothing
+            if (leadIdFromUrl) {
+                leadIdToSelect = leadIdFromUrl;
+            } else if (storedLead && storedLead.id) {
+                leadIdToSelect = storedLead.id;
+            }
+            
+            if (leadIdToSelect) {
+                setTimeout(() => {
+                    const leadItem = document.querySelector(`.lead-item[data-id="${leadIdToSelect}"]`);
+                    if (leadItem) {
+                        // Simulate click to select the lead
+                        leadItem.click();
+                        leadItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 300);
+            }
+        }
+
+
+        // Add this function to quotation_form.html
+function restoreSelectedLeadFromStorage() {
+    try {
+        // Check if localStorage has saved lead data
+        const savedLeadData = localStorage.getItem('selectedLeadData');
+        const savedLeadId = localStorage.getItem('selectedLeadId');
+        const savedTimestamp = localStorage.getItem('selectedLeadTimestamp');
+        
+        if (!savedLeadData || !savedLeadId) {
+            console.log('ℹ️ No saved lead found in storage');
+            return null;
+        }
+        
+        // Check if data is recent (within 1 hour)
+        const now = Date.now();
+        const timestamp = parseInt(savedTimestamp) || 0;
+        const oneHour = 60 * 60 * 1000; // 1 hour in milliseconds
+        
+        if (now - timestamp > oneHour) {
+            console.log('ℹ️ Saved lead data is too old, ignoring');
+            localStorage.removeItem('selectedLeadData');
+            localStorage.removeItem('selectedLeadId');
+            localStorage.removeItem('selectedLeadTimestamp');
+            return null;
+        }
+        
+        const leadData = JSON.parse(savedLeadData);
+        console.log('🔄 Restoring lead from storage:', leadData.name);
+        
+        // Find the lead item in the directory
+        const leadItem = document.querySelector(`.lead-item[data-id="${savedLeadId}"]`);
+        
+        if (leadItem) {
+            // Click the lead item to select it
+            leadItem.click();
+            
+            // Scroll into view
+            setTimeout(() => {
+                leadItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+            
+            // Highlight it
+            highlightLeadAsSelected(leadItem);
+            
+            return leadData;
+        } else {
+            console.log('⚠️ Lead not found in directory:', savedLeadId);
+            return null;
+        }
+        
+    } catch (error) {
+        console.error('❌ Error restoring lead from storage:', error);
+        return null;
+    }
+}
+
+// Function to highlight a lead as selected
+function highlightLeadAsSelected(leadItem) {
+    // Remove current-lead-item class from all leads
+    document.querySelectorAll('.lead-item').forEach(item => {
+        item.classList.remove('current-lead-item');
+        const existingBadge = item.querySelector('.current-lead-badge');
+        if (existingBadge) {
+            existingBadge.remove();
+        }
+    });
+    
+    // Add current-lead-item class to selected lead
+    leadItem.classList.add('current-lead-item');
+    
+    // Add current lead badge
+    const leadNameElement = leadItem.querySelector('.lead-name');
+    if (leadNameElement && !leadNameElement.querySelector('.current-lead-badge')) {
+        const badge = document.createElement('div');
+        badge.className = 'current-lead-badge';
+        badge.innerHTML = '<i class="fas fa-star" style="font-size: 8px;"></i>SELECTED';
+        leadNameElement.appendChild(badge);
+    }
+}
+
+// Update the initialization in DOMContentLoaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Quotations page loaded');
+    
+    // Store all quotations data
+    const rows = document.querySelectorAll('#quotations-body tr[data-quotation-id]');
+    allQuotations = Array.from(rows).map(row => ({
+        element: row,
+        leadId: row.getAttribute('data-lead-id'),
+        leadTicket: row.getAttribute('data-lead-ticket'),
+        clientName: row.getAttribute('data-client-name'),
+        amount: parseFloat(row.getAttribute('data-amount').replace('₹', '').replace(',', '')) || 0
+    }));
+    
+    // Set up lead selection
+    setupLeadSelection();
+    
+    // Try to restore selected lead from storage
+    const restoredLead = restoreSelectedLeadFromStorage();
+    
+    // If URL has lead_id parameter, use that instead
+    const urlParams = new URLSearchParams(window.location.search);
+    const leadIdFromUrl = urlParams.get('lead_id');
+    
+    if (leadIdFromUrl) {
+        setTimeout(() => {
+            const leadItem = document.querySelector(`.lead-item[data-id="${leadIdFromUrl}"]`);
+            if (leadItem) {
+                leadItem.click();
+                leadItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 300);
+    } else if (restoredLead) {
+        // Lead restored from storage
+        console.log('✅ Lead restored from storage:', restoredLead.name);
+    }
+    
+    // Initialize date display
+    initializeDateDisplay();
+    
+    // Set up modal event listeners
+    setupModalListeners();
+    
+    // ... rest of existing code ...
+});
+
+// Add this to both pages (requirement_edit.html and quotation_form.html)
+function enhanceNavigationLinks() {
+    // Get current selected lead ID
+    const selectedLeadId = getSelectedLeadId();
+    if (!selectedLeadId) return;
+    
+    // Update all relevant navigation links
+    document.querySelectorAll('a[href*="quotation"], a[href*="requirement"], a[href*="event"]').forEach(link => {
+        const href = link.getAttribute('href');
+        if (href && !href.includes('#') && !href.includes('lead_id=')) {
+            const separator = href.includes('?') ? '&' : '?';
+            link.setAttribute('href', `${href}${separator}lead_id=${selectedLeadId}`);
+        }
+    });
+}
+
+function getSelectedLeadId() {
+    // First check if there's a current lead item
+    const currentLeadItem = document.querySelector('.lead-item.current-lead-item');
+    if (currentLeadItem) {
+        return currentLeadItem.getAttribute('data-id');
+    }
+    
+    // Then check localStorage
+    try {
+        return localStorage.getItem('selectedLeadId');
+    } catch (error) {
+        console.error('Error getting lead ID from storage:', error);
+        return null;
+    }
+}
+
+// Call this function after page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // ... existing initialization code ...
+    
+    // Enhance navigation links
+    enhanceNavigationLinks();
+    
+    // Also update links when a new lead is selected
+    document.querySelectorAll('.lead-item').forEach(item => {
+        item.addEventListener('click', function() {
+            setTimeout(enhanceNavigationLinks, 100);
+        });
+    });
+});
+
+// Add to both pages
+function syncLeadSelection(leadId, leadName) {
+    // Save to localStorage
+    const leadData = {
+        id: leadId,
+        name: leadName,
+        timestamp: Date.now()
+    };
+    
+    try {
+        localStorage.setItem('selectedLeadData', JSON.stringify(leadData));
+        localStorage.setItem('selectedLeadId', leadId);
+        localStorage.setItem('selectedLeadTimestamp', Date.now().toString());
+        console.log(`✅ Lead "${leadName}" synced to storage`);
+    } catch (error) {
+        console.error('❌ Error syncing lead:', error);
+    }
+}
+
+// Clear lead selection when needed (e.g., when clicking "Show All" or logging out)
+function clearLeadSelection() {
+    try {
+        localStorage.removeItem('selectedLeadData');
+        localStorage.removeItem('selectedLeadId');
+        localStorage.removeItem('selectedLeadTimestamp');
+        console.log('🧹 Lead selection cleared from storage');
+    } catch (error) {
+        console.error('Error clearing lead selection:', error);
+    }
+}
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Quotations page loaded');
+            
+            // Store all quotations data
+            const rows = document.querySelectorAll('#quotations-body tr[data-quotation-id]');
+            allQuotations = Array.from(rows).map(row => ({
+                element: row,
+                leadId: row.getAttribute('data-lead-id'),
+                leadTicket: row.getAttribute('data-lead-ticket'),
+                clientName: row.getAttribute('data-client-name'),
+                amount: parseFloat(row.getAttribute('data-amount').replace('₹', '').replace(',', '')) || 0
+            }));
+            
+            // Set up lead selection
+            setupLeadSelection();
+            
+            // Restore previously selected lead
+            restoreSelectedLead();
+            
+            // Initialize date display
+            initializeDateDisplay();
+            
+            // Set up modal event listeners
+            setupModalListeners();
+            
+            // Set up branch modal listeners
+            document.getElementById('branchModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeBranchModal();
+                }
+            });
+            
+            // Close modals with Escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeModal();
+                    closeBranchModal();
+                }
+            });
+            
+            // Check if there's a lead ID in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const leadIdFromUrl = urlParams.get('lead_id');
+            if (leadIdFromUrl) {
+                setTimeout(() => {
+                    const leadItem = document.querySelector(`.lead-item[data-id="${leadIdFromUrl}"]`);
+                    if (leadItem) {
+                        leadItem.click();
+                        leadItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 500);
+            }
+        });
+
+        function setupLeadSelection() {
+            document.querySelectorAll('.lead-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    if (e.defaultPrevented) return;
+                    
+                    const leadId = this.getAttribute('data-id');
+                    if (!leadId) return;
+                    
+                    console.log('🎯 Lead clicked:', leadId);
+                    
+                    // Remove current-lead-item class from all leads
+                    document.querySelectorAll('.lead-item').forEach(i => {
+                        i.classList.remove('current-lead-item');
+                        
+                        // Remove any existing current lead badge
+                        const existingBadge = i.querySelector('.current-lead-badge');
+                        if (existingBadge) {
+                            existingBadge.remove();
+                        }
+                    });
+                    
+                    // Add current-lead-item class to clicked lead
+                    this.classList.add('current-lead-item');
+                    
+                    // Add current lead badge
+                    const leadNameElement = this.querySelector('.lead-name');
+                    if (leadNameElement && !leadNameElement.querySelector('.current-lead-badge')) {
+                        const badge = document.createElement('div');
+                        badge.className = 'current-lead-badge';
+                        badge.innerHTML = '<i class="fas fa-star" style="font-size: 8px;"></i>SELECTED';
+                        leadNameElement.appendChild(badge);
+                    }
+                    
+                    // Get lead data
+                    const leadData = {
+                        id: leadId,
+                        ownerName: this.querySelector('.lead-name')?.textContent?.replace('SELECTED', '').trim() || '',
+                        phoneNo: this.querySelector('.lead-phone')?.textContent || '',
+                        ticket_number: this.querySelector('.lead-ticket')?.textContent || '',
+                        priority: this.getAttribute('data-priority') || ''
+                    };
+                    
+                    // Store selected lead
+                    selectedLead = leadData;
+                    
+                    // Show selected lead info
+                    showSelectedLeadInfo(leadData);
+                    
+                    // Filter quotations by this lead
+                    filterQuotationsByLead(leadId);
+                    
+                    // Save to localStorage for persistence
+                    saveLeadToStorage(leadData);
+                });
+            });
+        }
+
+        function showSelectedLeadInfo(leadData) {
+            const infoDiv = document.getElementById('selectedLeadInfo');
+            const nameSpan = document.getElementById('selected-lead-name');
+            const phoneSpan = document.getElementById('selected-lead-phone');
+            const ticketSpan = document.getElementById('selected-lead-ticket');
+            const prioritySpan = document.getElementById('selected-lead-priority');
+            
+            if (infoDiv && nameSpan && phoneSpan && ticketSpan && prioritySpan) {
+                nameSpan.textContent = leadData.ownerName || '-';
+                phoneSpan.textContent = leadData.phoneNo || '-';
+                ticketSpan.textContent = leadData.ticket_number || '-';
+                prioritySpan.textContent = leadData.priority || '-';
+                infoDiv.style.display = 'flex';
+            }
+        }
+
+        function filterQuotationsByLead(leadId) {
+            const tbody = document.getElementById('quotations-body');
+            const leadItem = document.querySelector(`.lead-item[data-id="${leadId}"]`);
+            const leadTicket = leadItem?.getAttribute('data-ticket') || '';
+            const leadName = leadItem?.querySelector('.lead-name')?.textContent?.replace('SELECTED', '').trim() || 'Selected lead';
+            
+            let visibleCount = 0;
+            let totalAmount = 0;
+            
+            // Remove any existing "no quotations" message
+            const existingMessage = tbody.querySelector('.no-quotations-message');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+            
+            // Filter quotations
+            allQuotations.forEach(quotation => {
+                const row = quotation.element;
+                const shouldShow = quotation.leadId === leadId || 
+                                  quotation.leadTicket === leadTicket;
+                
+                if (shouldShow) {
+                    row.style.display = '';
+                    visibleCount++;
+                    totalAmount += quotation.amount;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Update counts
+            updateQuotationCounts(visibleCount, totalAmount);
+            
+            // Show message if no quotations found
+            if (visibleCount === 0) {
+                showNoQuotationsMessage(leadId, leadName);
+            }
+        }
+
+        function showNoQuotationsMessage(leadId, leadName) {
+            const tbody = document.getElementById('quotations-body');
+            
+            // Add new message
+            const messageRow = document.createElement('tr');
+            messageRow.className = 'no-quotations-message';
+            messageRow.innerHTML = `
+                <td colspan="10">
+                    <div class="empty-state">
+                        <i class="fas fa-file-invoice"></i>
+                        <h3>No Quotations Found for ${leadName}</h3>
+                        <p>This lead doesn't have any quotations yet.</p>
+                        <a href="{% url 'app5:quotation_list' %}?lead_id=${leadId}" class="btn-add-new">
+                            <i class="fas fa-plus-circle"></i>
+                            Create First Quotation for ${leadName}
+                        </a>
+                    </div>
+                </td>
+            `;
+            
+            tbody.appendChild(messageRow);
+        }
+
+        function showAllQuotations() {
+            // Show all quotations
+            allQuotations.forEach(quotation => {
+                quotation.element.style.display = '';
+            });
+            
+            // Remove any "no quotations" message
+            const existingMessage = document.querySelector('.no-quotations-message');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+            
+            // Hide selected lead info
+            document.getElementById('selectedLeadInfo').style.display = 'none';
+            
+            // Remove current-lead-item class and badge from all leads
+            document.querySelectorAll('.lead-item').forEach(item => {
+                item.classList.remove('current-lead-item');
+                const badge = item.querySelector('.current-lead-badge');
+                if (badge) {
+                    badge.remove();
+                }
+            });
+            
+            // Clear selected lead
+            selectedLead = null;
+            
+            // Clear localStorage
+            localStorage.removeItem('selectedLeadData');
+            
+            // Update counts with all quotations
+            updateQuotationCounts(allQuotations.length, 
+                allQuotations.reduce((sum, q) => sum + q.amount, 0));
+        }
+
+        function viewQuotationsForLead() {
+            if (!selectedLead) {
+                showNotification('Please select a lead first', 'warning');
+                return;
+            }
+            // Already showing filtered quotations, just ensure they're visible
+            filterQuotationsByLead(selectedLead.id);
+        }
+
+        function updateQuotationCounts(count, total) {
+            document.getElementById('quotationCount').textContent = count;
+            document.getElementById('totalAmount').textContent = `Total: ₹${total.toFixed(2)}`;
+            document.getElementById('headerQuotationCount').textContent = count;
+            document.getElementById('headerTotalAmount').textContent = total.toFixed(2);
+        }
+
+        // ========== DELETE FUNCTIONALITY ==========
+        let quotationToDelete = null;
+        
+        function showDeleteConfirmation(quotationId, clientName, amount) {
+            quotationToDelete = quotationId;
+            
+            // Update modal content
+            document.getElementById('modalQuotationId').textContent = quotationId;
+            document.getElementById('modalClientName').textContent = clientName;
+            document.getElementById('modalAmount').textContent = amount;
+            
+            // Show modal
+            document.getElementById('confirmationModal').style.display = 'flex';
+        }
+        
+        function closeModal() {
+            document.getElementById('confirmationModal').style.display = 'none';
+            quotationToDelete = null;
+        }
+        
+        async function confirmDelete() {
+            if (!quotationToDelete) return;
+            
+            const modal = document.getElementById('confirmationModal');
+            const confirmBtn = modal.querySelector('.modal-btn-confirm');
+            const originalText = confirmBtn.innerHTML;
+            
+            // Show loading
+            confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+            confirmBtn.disabled = true;
+            
+            try {
+                // Get CSRF token
+                const csrftoken = getCookie('csrftoken');
+                
+                // DEBUG: Log what we're sending
+                console.log('Deleting quotation:', quotationToDelete);
+                console.log('CSRF Token exists:', !!csrftoken);
+                
+                // Option 1: Use POST with _method parameter (more compatible)
+                const response = await fetch(`/app5/quotation/${quotationToDelete}/delete/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrftoken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        _method: 'DELETE'  // Some Django setups need this
+                    })
+                });
+                
+                // Option 2: If above doesn't work, try DELETE directly
+                if (!response.ok) {
+                    console.log('POST method failed, trying DELETE...');
+                    const deleteResponse = await fetch(`/app5/quotation/${quotationToDelete}/delete/`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRFToken': csrftoken,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    const deleteData = await deleteResponse.json();
+                    handleDeleteResponse(deleteResponse, deleteData);
+                } else {
+                    const data = await response.json();
+                    handleDeleteResponse(response, data);
+                }
+                
+            } catch (error) {
+                console.error('Network error:', error);
+                showNotification('Network error occurred. Please check console for details.', 'error');
+            } finally {
+                // Close modal
+                closeModal();
+                confirmBtn.innerHTML = originalText;
+                confirmBtn.disabled = false;
+            }
+        }
+        
+        function handleDeleteResponse(response, data) {
+            if (response.ok && data.success) {
+                showNotification(data.message || 'Quotation deleted successfully', 'success');
+                
+                // Remove the row from table and from allQuotations array
+                const row = document.querySelector(`tr[data-quotation-id="${quotationToDelete}"]`);
+                if (row) {
+                    // Remove from allQuotations array
+                    allQuotations = allQuotations.filter(q => q.element !== row);
+                    
+                    // Fade out and remove
+                    row.style.opacity = '0.5';
+                    row.style.backgroundColor = '#ffebee';
+                    
+                    setTimeout(() => {
+                        row.remove();
+                        
+                        // Update counts
+                        if (selectedLead) {
+                            // If showing filtered view, recalculate
+                            filterQuotationsByLead(selectedLead.id);
+                        } else {
+                            // If showing all, update with remaining
+                            updateQuotationCounts(allQuotations.length, 
+                                allQuotations.reduce((sum, q) => sum + q.amount, 0));
+                        }
+                        
+                        // Check if table is now empty
+                        const remainingRows = document.querySelectorAll('#quotations-body tr:not(.no-quotations-message)');
+                        if (remainingRows.length === 0) {
+                            // Show empty state
+                            showEmptyState();
+                        }
+                    }, 500);
+                }
+            } else {
+                showNotification(data.message || 'Error deleting quotation', 'error');
+                console.error('Delete error:', data);
+            }
+        }
+
+        function showEmptyState() {
+            const tbody = document.getElementById('quotations-body');
+            const messageRow = document.createElement('tr');
+            messageRow.innerHTML = `
+                <td colspan="10">
+                    <div class="empty-state">
+                        <i class="fas fa-file-invoice"></i>
+                        <h3>No Quotations Found</h3>
+                        <p>You haven't created any quotations yet. Start by creating your first quotation.</p>
+                        <a href="{% url 'app5:quotation_list' %}" class="btn-add-new">
+                            <i class="fas fa-plus-circle"></i>
+                            Create First Quotation
+                        </a>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(messageRow);
+        }
+
+        // ========== UTILITY FUNCTIONS ==========
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function setupModalListeners() {
+            // Close modal when clicking outside
+            document.getElementById('confirmationModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeModal();
+                }
+            });
+        }
+
+        // ========== NOTIFICATION SYSTEM ==========
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                background: ${type === 'success' ? '#4CAF50' : type === 'warning' ? '#ff9800' : type === 'error' ? '#f44336' : '#2196F3'};
+                color: white;
+                border-radius: 8px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                z-index: 10000;
+                font-weight: 600;
+                transition: all 0.3s ease;
+                max-width: 400px;
+                word-wrap: break-word;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                animation: slideIn 0.3s ease;
+            `;
+            
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : type === 'error' ? 'times-circle' : 'info-circle'}"></i>
+                ${message}
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateX(100px)';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 4000);
+        }
+        
+        // Add CSS for animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    opacity: 0;
+                    transform: translateX(100px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // ========== DATE AND TIME FUNCTIONS ==========
+        function updateDirectoryDateDisplay() {
+            const now = new Date();
+            const currentDateDisplay = now.toLocaleDateString('en-GB', {
+                weekday: 'short',
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+            const timeDisplay = now.toLocaleTimeString('en-GB', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            });
+            
+            document.getElementById('dateDisplay').textContent = currentDateDisplay;
+            document.getElementById('timeDisplay').textContent = timeDisplay;
+        }
+        
+        function initializeDateDisplay() {
+            updateDirectoryDateDisplay();
+            setInterval(updateDirectoryDateDisplay, 60000);
+        }
+
+        // ========== QUOTATION ACTIONS ==========
+        function viewQuotation(quotationId) {
+            showNotification(`Loading quotation ${quotationId}...`, 'info');
+            window.open(`/app5/quotation/view/${quotationId}/`, '_blank');
+        }
+        
+        function editQuotation(quotationId) {
+            showNotification(`Opening quotation ${quotationId} for editing...`, 'info');
+            window.location.href = `/app5/quotation/edit/${quotationId}/`;
+        }
+        
+        // ========== FILTER FUNCTIONS ==========
+        function filterQuotations() {
+            // This function can be expanded to filter by status and date range
+            const statusFilter = document.getElementById('statusFilter').value;
+            const dateFilter = document.getElementById('dateFilter').value;
+            
+            // For now, just show notification that filtering is available
+            if (statusFilter !== 'all' || dateFilter !== 'all') {
+                showNotification('Filtering by status/date is available', 'info');
+            }
+        }
+
+        // ========== NAVIGATION SYSTEM ==========
+        (function() {
+            'use strict';
+            
+            const CONFIG = {
+                STORAGE_KEY: 'selectedLeadData',
+                LEAD_ID_PARAM: 'lead_id',
+                AUTO_LOAD_DELAY: 300
+            };
+            
+            function getLeadIdFromURL() {
+                const urlParams = new URLSearchParams(window.location.search);
+                return urlParams.get(CONFIG.LEAD_ID_PARAM);
+            }
+            
+            function enhanceNavigationLinks(leadId) {
+                if (!leadId) return;
+                
+                document.querySelectorAll('.nav-link[href*="requirements"], .nav-link[href*="quotation"], .nav-link[href*="event"]').forEach(link => {
+                    const href = link.getAttribute('href');
+                    if (href && !href.includes('#') && !href.includes('lead_id=')) {
+                        const separator = href.includes('?') ? '&' : '?';
+                        link.setAttribute('href', `${href}${separator}lead_id=${leadId}`);
+                        console.log('🔗 Link updated:', link.textContent.trim());
+                    }
+                });
+            }
+            
+            function autoLoadLead() {
+                const urlLeadId = getLeadIdFromURL();
+                
+                if (urlLeadId) {
+                    console.log('🔄 Loading from URL:', urlLeadId);
+                    const leadItem = document.querySelector(`.lead-item[data-id="${urlLeadId}"]`);
+                    if (leadItem) {
+                        setTimeout(() => {
+                            leadItem.click();
+                            leadItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }, CONFIG.AUTO_LOAD_DELAY);
+                        return;
+                    }
+                }
+                
+                const storedLead = getLeadFromStorage();
+                if (storedLead && storedLead.id) {
+                    console.log('🔄 Loading from storage:', storedLead.ownerName);
+                    const leadItem = document.querySelector(`.lead-item[data-id="${storedLead.id}"]`);
+                    if (leadItem) {
+                        setTimeout(() => {
+                            leadItem.click();
+                        }, CONFIG.AUTO_LOAD_DELAY);
+                    } else {
+                        console.log('📋 Lead not in directory, using stored data');
+                        enhanceNavigationLinks(storedLead.id);
+                    }
+                }
+            }
+            
+            function init() {
+                console.log('🚀 Navigation System Starting...');
+                
+                const path = window.location.pathname;
+                if (path.includes('lead') || path.includes('form') || 
+                    path.includes('requirement') || path.includes('quotation')) {
+                    autoLoadLead();
+                }
+                
+                console.log('✅ Navigation System Ready');
+            }
+            
+            window.clearLeadSelection = function() {
+                try {
+                    localStorage.removeItem(CONFIG.STORAGE_KEY);
+                    document.querySelectorAll('.lead-item').forEach(item => {
+                        item.classList.remove('current-lead-item');
+                        const badge = item.querySelector('.current-lead-badge');
+                        if (badge) {
+                            badge.remove();
+                        }
+                    });
+                    console.log('🧹 Lead selection cleared');
+                } catch (error) {
+                    console.error('Error clearing selection:', error);
+                }
+            };
+            
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+            
+        })();
+    </script>
+</body>
