@@ -1081,73 +1081,124 @@
         }
         
         .branch-card {
-            background: #f8f9fa;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            padding: 20px 15px;
-            text-align: center;
+            position: relative;
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
             cursor: pointer;
             transition: all 0.3s ease;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            text-align: center;
+            min-height: 280px;
         }
         
         .branch-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            border-color: #2196F3;
-            background: #f0f7ff;
+            border-color: #4a6fdc;
+            box-shadow: 0 8px 25px rgba(74, 111, 220, 0.15);
+            transform: translateY(-5px);
         }
         
         .branch-card.selected {
-            border-color: #2196F3;
-            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
-            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.2);
+            border-color: #28a745;
+            background: linear-gradient(135deg, #f0fff4, #e8f7ed);
+            box-shadow: 0 8px 25px rgba(40, 167, 69, 0.2);
         }
         
         .branch-icon {
             width: 60px;
             height: 60px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #2196F3, #1976D2);
+            border-radius: 12px;
+            background:whitesmoke;
+            color: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 10px;
+            font-size: 28px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .branch-card:hover .branch-icon {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(74, 111, 220, 0.3);
+        }
+        
+        .branch-card.selected .branch-icon {
+            background:whitesmoke;
         }
         
         .branch-icon i {
             color: white;
-            font-size: 24px;
+            font-size: 28px;
         }
         
         .branch-name {
+            font-size: 18px;
             font-weight: 700;
-            color: #333;
-            font-size: 16px;
+            color: #2c3e50;
+            margin-bottom: 8px;
         }
         
         .branch-address {
-            font-size: 12px;
-            color: #666;
-            margin-top: 5px;
+            font-size: 14px;
+            color: #6c757d;
             line-height: 1.4;
+            margin-bottom: 12px;
+            min-height: 40px;
+        }
+        
+        .branch-details {
+            width: 100%;
+            margin-top: auto;
+            padding-top: 12px;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .branch-contact,
+        .branch-email,
+        .branch-gst {
+            font-size: 12px;
+            color: #495057;
+            margin: 6px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        .branch-contact i,
+        .branch-email i,
+        .branch-gst i {
+            color: #4a6fdc;
+            width: 14px;
         }
         
         .branch-check {
             position: absolute;
             top: 10px;
             right: 10px;
-            color: #2196F3;
-            font-size: 18px;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             opacity: 0;
-            transition: opacity 0.3s;
+            transition: all 0.3s ease;
         }
         
         .branch-card.selected .branch-check {
             opacity: 1;
+            background: #28a745;
+            border-color: #28a745;
+            color: white;
+            transform: scale(1.1);
         }
         
         /* Selected Lead Info */
@@ -1621,7 +1672,7 @@
             width: 60px;
             height: 60px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #2196F3, #1976D2);
+            background:white;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1769,30 +1820,8 @@
     <input type="hidden" id="selectedLeadId" value="">
 
     <div class="container">
-        <!-- Header Section -->
-        <div class="header-section">
-            <div>
-                <h1>Saved Quotations</h1>
-                <p>View and manage all your submitted quotations</p>
-                <div style="margin-top: 10px; font-size: 14px; opacity: 0.9;">
-                    {% if quotations|length > 0 %}
-                    Showing <span id="headerQuotationCount">{{ quotations|length }}</span> quotations | Total: ₹<span id="headerTotalAmount">{{ total_amount|default:"0.00" }}</span>
-                    {% else %}
-                    No quotations found
-                    {% endif %}
-                </div>
-            </div>
-            <div class="header-actions">
-                <button class="btn-refresh" onclick="window.location.href='{% url 'app5:lead_report' %}'">
-                    <i class="fas fa-sync-alt"></i>
-                    Back
-                </button>
-                <a href="{% url 'app5:quotation_list' %}" class="btn-add-new">
-                    <i class="fas fa-plus-circle"></i>
-                    Create New 
-                </a>
-            </div>
-        </div>
+       
+       
         
         <div class="main-content">
             <!-- Left Column - Enhanced Lead Directory -->
@@ -1819,7 +1848,7 @@
                     <!-- Directory Tabs -->
                     <div class="directory-tabs">
                         <button class="directory-tab active" data-tab="leads">Active Leads</button>
-                        <button class="directory-tab" data-tab="employees">Employees</button>
+                        
                     </div>
                     
                     <!-- Search and Filter -->
@@ -1840,9 +1869,14 @@
                             </select>
                         </div>
                     </div>
+
+                    
                     
                     <!-- Lead List (shown by default) -->
                     <div class="lead-list active" id="leadList">
+
+
+                        
                         {% if leads %}
                             {% for lead in leads %}
                             <div class="lead-item" data-id="{{ lead.id }}"
@@ -1916,9 +1950,13 @@
                             </div>
                         {% endif %}
                     </div>
+
+                    
                     
                     <!-- Employee List (hidden by default) -->
                     <div class="employee-list" id="employeeList">
+
+                        
                         {% if active_users %}
                             {% for u in active_users %}
                             <div class="employee-item" data-id="{{ u.id }}" data-name="{{ u.name }}">
@@ -1966,9 +2004,35 @@
                     </div>
                 </div>
             </div>
+
+            
             
             <!-- Right Column - Quotations Table -->
             <div class="quotations-column">
+
+                <div class="header-section">
+            <div>
+                <h1>Saved Quotations</h1>
+                <p>View and manage all your submitted quotations</p>
+                <div style="margin-top: 10px; font-size: 14px; opacity: 0.9;">
+                    {% if quotations|length > 0 %}
+                    Showing <span id="headerQuotationCount">{{ quotations|length }}</span> quotations | Total: ₹<span id="headerTotalAmount">{{ total_amount|default:"0.00" }}</span>
+                    {% else %}
+                    No quotations found
+                    {% endif %}
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn-refresh" onclick="window.location.href='{% url 'app5:lead_report' %}'">
+                    <i class="fas fa-sync-alt"></i>
+                    Back
+                </button>
+                <a href="{% url 'app5:quotation_list' %}" class="btn-add-new">
+                    <i class="fas fa-plus-circle"></i>
+                    Create New 
+                </a>
+            </div>
+        </div>
                 <!-- Table Filters -->
                 <div class="table-filters">
                     <div class="filter-group">
@@ -2097,60 +2161,111 @@
         let selectedBranchId = null;
         
         // Branch data - 6 branches total, will display 3 per row (2 rows)
+        // ============= DEPARTMENT/BRANCH DATA FROM DJANGO =============
         const branches = [
-            { id: 1, name: "Main Branch", address: "123 Main Street, City Center, Mumbai 400001", icon: "fas fa-building" },
-            { id: 2, name: "North Branch", address: "456 North Avenue, Industrial Zone, Delhi 110001", icon: "fas fa-warehouse" },
-            { id: 3, name: "South Branch", address: "789 South Road, Commercial Area, Bangalore 560001", icon: "fas fa-store" },
-            { id: 4, name: "East Branch", address: "321 East Boulevard, Tech Park, Hyderabad 500001", icon: "fas fa-industry" },
-            { id: 5, name: "West Branch", address: "654 West Street, Business District, Pune 411001", icon: "fas fa-landmark" },
-            { id: 6, name: "Central Branch", address: "987 Central Plaza, Financial District, Chennai 600001", icon: "fas fa-city" }
+            {% for dept in departments %}
+            {
+                id: {{ dept.id }},
+                name: "{{ dept.name|escapejs }}",
+                address: "{{ dept.address|default:''|escapejs }}{% if dept.city %}, {{ dept.city|escapejs }}{% endif %}{% if dept.state %}, {{ dept.state|escapejs }}{% endif %}",
+                city: "{{ dept.city|default:''|escapejs }}",
+                state: "{{ dept.state|default:''|escapejs }}",
+                contact: "{{ dept.contact_number|default:''|escapejs }}",
+                gst: "{{ dept.gst_number|default:''|escapejs }}",
+                email: "{{ dept.email|default:''|escapejs }}",
+                logo_url: "{% if dept.logo %}{{ dept.logo.url }}{% endif %}",
+                icon: "fas fa-building"
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
         ];
         
-        function showBranchSelection(quotationId, quotationNumber) {
-            selectedQuotationId = quotationId;
-            selectedBranchId = null;
-            
-            // Update modal title with quotation number
-            document.getElementById('branchModalTitle').innerHTML = `<i class="fas fa-building"></i> Select Branch for Quotation #${quotationNumber}`;
-            
-            // Clear previous branch grid
-            const branchGrid = document.getElementById('branchGrid');
-            branchGrid.innerHTML = '';
-            
-            // Add branch cards - will create 6 cards in 2 rows of 3
-            branches.forEach((branch, index) => {
-                const branchCard = document.createElement('div');
-                branchCard.className = 'branch-card';
-                branchCard.dataset.branchId = branch.id;
-                
-                branchCard.innerHTML = `
-                    <div class="branch-icon">
-                        <i class="${branch.icon}"></i>
-                    </div>
-                    <div class="branch-check">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                    <div class="branch-name">${branch.name}</div>
-                    <div class="branch-address">${branch.address}</div>
-                `;
-                
-                branchCard.addEventListener('click', () => selectBranch(branch.id, branchCard));
-                branchGrid.appendChild(branchCard);
-                
-                // Add visual separator after every 3rd card (optional)
-                if ((index + 1) % 3 === 0 && index < branches.length - 1) {
-                    // You could add a visual separator if needed
-                }
-            });
-            
-            // Reset download button
-            const downloadBtn = document.getElementById('branchDownloadBtn');
-            downloadBtn.disabled = true;
-            downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download PDF';
-            
-            // Show modal
-            document.getElementById('branchModal').style.display = 'flex';
+    function showBranchSelection(quotationId, quotationNumber) {
+    selectedQuotationId = quotationId;
+    selectedBranchId = null;
+    
+    // Get the row data for this quotation
+    const quotationRow = document.querySelector(`tr[data-quotation-id="${quotationId}"]`);
+    const clientName = quotationRow?.getAttribute('data-client-name') || '';
+    const leadId = quotationRow?.getAttribute('data-lead-id') || '';
+    const leadTicket = quotationRow?.getAttribute('data-lead-ticket') || '';
+    
+    // Get client details from the row
+    const clientInfo = quotationRow?.querySelector('.client-info');
+    const clientPhone = clientInfo?.querySelector('.client-phone')?.textContent || '';
+    const clientEmail = clientInfo?.querySelector('.client-email')?.textContent || '';
+    
+    console.log('📋 Client data for download:', { clientName, clientPhone, clientEmail, leadTicket });
+    
+    // Store client data for the download page
+    localStorage.setItem('quotationClientData', JSON.stringify({
+        quotationId: quotationId,
+        clientName: clientName,
+        clientPhone: clientPhone,
+        clientEmail: clientEmail,
+        leadTicket: leadTicket,
+        leadId: leadId
+    }));
+    
+    // Update modal title with quotation number
+    document.getElementById('branchModalTitle').innerHTML = `<i class="fas fa-building"></i> Select Branch for Quotation #${quotationNumber}`;
+    
+    // Clear previous branch grid
+    const branchGrid = document.getElementById('branchGrid');
+    branchGrid.innerHTML = '';
+    
+    // Add branch cards with full department information
+    branches.forEach((branch, index) => {
+        const branchCard = document.createElement('div');
+        branchCard.className = 'branch-card';
+        branchCard.dataset.branchId = branch.id;
+        
+        // Build detailed address
+        let fullAddress = branch.address || '';
+        if (!fullAddress && (branch.city || branch.state)) {
+            fullAddress = `${branch.city ? branch.city : ''}${branch.city && branch.state ? ', ' : ''}${branch.state ? branch.state : ''}`;
         }
+        
+        // Build contact info
+        let contactInfo = '';
+        if (branch.contact) {
+            contactInfo += `<div class="branch-contact"><i class="fas fa-phone"></i> ${branch.contact}</div>`;
+        }
+        if (branch.email) {
+            contactInfo += `<div class="branch-email"><i class="fas fa-envelope"></i> ${branch.email}</div>`;
+        }
+        if (branch.gst) {
+            contactInfo += `<div class="branch-gst"><i class="fas fa-file-invoice"></i> GST: ${branch.gst}</div>`;
+        }
+        
+        branchCard.innerHTML = `
+            <div class="branch-icon">
+                ${branch.logo_url ? 
+                    `<img src="${branch.logo_url}" alt="${branch.name}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 8px;">` : 
+                    `<i class="${branch.icon}"></i>`
+                }
+            </div>
+            <div class="branch-check">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="branch-name">${branch.name}</div>
+            <div class="branch-address">${fullAddress || 'No address available'}</div>
+            <div class="branch-details">
+                ${contactInfo}
+            </div>
+        `;
+        
+        branchCard.addEventListener('click', () => selectBranch(branch.id, branchCard));
+        branchGrid.appendChild(branchCard);
+    });
+    
+    // Reset download button
+    const downloadBtn = document.getElementById('branchDownloadBtn');
+    downloadBtn.disabled = true;
+    downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download PDF';
+    
+    // Show modal
+    document.getElementById('branchModal').style.display = 'flex';
+}
         
         function selectBranch(branchId, branchCard) {
             // Remove selected class from all branch cards
@@ -2179,16 +2294,35 @@
     
     const selectedBranch = branches.find(b => b.id === selectedBranchId);
     
-    // Create a new window/tab
-    const downloadWindow = window.open('/app5/quotation/download/' + selectedQuotationId + '/', '_blank');
+    // Get stored client data
+    const clientData = JSON.parse(localStorage.getItem('quotationClientData') || '{}');
     
-    // Store branch data in localStorage for the new page to access
+    // Create a new window/tab for the download
+    const downloadUrl = `/app5/quotation/download/${selectedQuotationId}/`;
+    console.log('Opening download URL:', downloadUrl);
+    
+    // Store all data for the download page
     localStorage.setItem('selectedBranchData', JSON.stringify({
         id: selectedBranchId,
         name: selectedBranch.name,
         address: selectedBranch.address,
-        // Add other branch properties you need
+        city: selectedBranch.city,
+        state: selectedBranch.state,
+        contact: selectedBranch.contact,
+        email: selectedBranch.email,
+        gst: selectedBranch.gst
     }));
+    
+    // Store client data specifically
+    localStorage.setItem('selectedClientData', JSON.stringify({
+        name: clientData.clientName || '',
+        phone: clientData.clientPhone || '',
+        email: clientData.clientEmail || '',
+        ticket: clientData.leadTicket || ''
+    }));
+    
+    // Open the download page
+    window.open(downloadUrl, '_blank');
     
     // Close modal
     closeBranchModal();

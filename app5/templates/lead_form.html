@@ -1851,7 +1851,7 @@
                     <!-- Directory Tabs -->
                     <div class="directory-tabs">
                         <button class="directory-tab active" data-tab="leads">Active Leads</button>
-                        <button class="directory-tab" data-tab="employees">Employees</button>
+                       
                     </div>
                     
                     <!-- UPDATED SEARCH AND FILTER - Combined in one row -->
@@ -1877,7 +1877,11 @@
                     <div class="lead-list active" id="leadList">
                         {% if active_leads_data %}
                             {% for lead in active_leads_data %}
-                            <div class="lead-item" data-id="{{ lead.id }}">
+                           <div class="lead-item"
+     data-id="{{ lead.id }}"
+     data-index="{{ forloop.counter0 }}"
+     onclick="openLead('{{ lead.id }}', {{ forloop.counter0 }})">
+
                                 <div class="lead-avatar">
                                     {{ lead.ownerName|default:""|slice:":2"|upper }}
                                 </div>

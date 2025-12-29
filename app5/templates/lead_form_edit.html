@@ -2020,7 +2020,7 @@
                     <!-- Directory Tabs -->
                     <div class="directory-tabs">
                         <button class="directory-tab active" data-tab="leads">Active Leads</button>
-                        <button class="directory-tab" data-tab="employees">Employees</button>
+                        
                     </div>
                     
                     <!-- UPDATED SEARCH AND FILTER - Combined in one row -->
@@ -5124,6 +5124,27 @@
     }
     
 })();
+
+document.addEventListener("DOMContentLoaded", function () {
+    const params = new URLSearchParams(window.location.search);
+    const pos = params.get("pos");
+
+    if (pos !== null) {
+        const leadItems = document.querySelectorAll(".lead-item");
+
+        if (leadItems[pos]) {
+            leadItems[pos].classList.add("selected");
+            leadItems[pos].scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            });
+        }
+    }
+});
+
+function openLead(leadId, index) {
+    window.location.href = `/app5/lead/edit/${leadId}/?pos=${index}`;
+}
 
 // =====================================================
 // HELPER FUNCTION: Clear Selection

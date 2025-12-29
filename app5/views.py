@@ -6667,6 +6667,10 @@ def quotation_form_view(request):
         ).prefetch_related(
             'items'
         ).order_by('-created_at')
+
+        # ✅ GET DEPARTMENTS FOR BRANCH SELECTION
+        departments = Department.objects.filter(is_active=True).order_by('name')
+        logger.info(f"🏢 Loaded {departments.count()} active departments")
         
         # DEBUG: Check if we're getting any data
         logger.info(f"📊 Quotations QuerySet: {quotations}")
@@ -6734,16 +6738,17 @@ def quotation_form_view(request):
         # Calculate statistics
         total_quotations = len(quotation_list)
         
-        # Make sure we're passing all necessary fields to template
+        # ✅ UPDATED CONTEXT - INCLUDES DEPARTMENTS
         context = {
             'quotations': quotation_list,  # Pass the evaluated list
             'leads': active_leads,
             'active_users': active_users,
+            'departments': departments,  # ✅ ADDED: Departments for branch selection
             'total_quotations': total_quotations,
             'leads_count': len(active_leads),
         }
         
-        logger.info(f"✅ Context prepared with {total_quotations} quotations")
+        logger.info(f"✅ Context prepared with {total_quotations} quotations and {departments.count()} departments")
         
         return render(request, 'quotation_form.html', context)
         
@@ -6751,10 +6756,12 @@ def quotation_form_view(request):
         logger.error(f"❌ Error in quotation_form_view: {e}", exc_info=True)
         
         # Return empty context but show error
+        # ✅ INCLUDE EMPTY DEPARTMENTS IN ERROR CASE TOO
         return render(request, 'quotation_form.html', {
             'quotations': [],
             'leads': [],
             'active_users': [],
+            'departments': [],  # ✅ ADDED: Empty departments list
             'total_quotations': 0,
             'leads_count': 0,
             'error_message': f'Error loading quotations: {str(e)}'
@@ -7687,69 +7694,43 @@ def update_quotation(request, pk):
 def download_quotation(request, quotation_id):
     quotation = get_object_or_404(Quotation, id=quotation_id)
     
-    # Get branch from request parameter
-    branch_id = request.GET.get('branch_id')
+    # Get branch/department ID from request parameter
+    branch_id = request.GET.get('branch_id') or request.GET.get('department_id')
     branch = None
     
-    # Define branch data (you can move this to a database model or settings)
-    BRANCHES_DATA = {
-        1: {
-            'name': 'Main Branch',
-            'code': 'BR-001',
-            'manager': 'John Doe',
-            'address': '123 Business Street, City, State 12345',
-            'phone': '+1 (123) 456-7890',
-            'email': 'main@company.com'
-        },
-        2: {
-            'name': 'North Branch',
-            'code': 'BR-002',
-            'manager': 'Jane Smith',
-            'address': '456 North Avenue, Industrial Zone, Delhi 110001',
-            'phone': '+1 (234) 567-8901',
-            'email': 'north@company.com'
-        },
-        3: {
-            'name': 'South Branch',
-            'code': 'BR-003',
-            'manager': 'Robert Johnson',
-            'address': '789 South Road, Commercial Area, Bangalore 560001',
-            'phone': '+1 (345) 678-9012',
-            'email': 'south@company.com'
-        },
-        4: {
-            'name': 'East Branch',
-            'code': 'BR-004',
-            'manager': 'Maria Garcia',
-            'address': '321 East Boulevard, Tech Park, Hyderabad 500001',
-            'phone': '+1 (456) 789-0123',
-            'email': 'east@company.com'
-        },
-        5: {
-            'name': 'West Branch',
-            'code': 'BR-005',
-            'manager': 'David Lee',
-            'address': '654 West Street, Business District, Pune 411001',
-            'phone': '+1 (567) 890-1234',
-            'email': 'west@company.com'
-        },
-        6: {
-            'name': 'Central Branch',
-            'code': 'BR-006',
-            'manager': 'Sarah Williams',
-            'address': '987 Central Plaza, Financial District, Chennai 600001',
-            'phone': '+1 (678) 901-2345',
-            'email': 'central@company.com'
-        }
-    }
-    
-    # Get selected branch or default to Main Branch
-    if branch_id and branch_id.isdigit():
-        branch = BRANCHES_DATA.get(int(branch_id))
-    
-    # If no branch selected or invalid branch_id, use default
-    if not branch:
-        branch = BRANCHES_DATA.get(1)  # Default to Main Branch
+    # Try to get department from purchase_order app
+    try:
+        from purchase_order.models import Department
+        
+        if branch_id and branch_id.isdigit():
+            # Try to get the selected department
+            try:
+                department = Department.objects.get(id=int(branch_id), is_active=True)
+                branch = {
+                    'name': department.name,
+                    'code': f"DEPT-{department.id:03d}",
+                    'address': department.address or '',
+                    'city': department.city or '',
+                    'state': department.state or '',
+                    'pincode': department.pincode or '',
+                    'contact_number': department.contact_number or '',
+                    'alternate_number': department.alternate_number or '',
+                    'email': department.email or '',
+                    'gst_number': department.gst_number or '',
+                    'logo': department.logo.url if department.logo else None,
+                    'type': 'department',
+                    'full_address': department.get_full_address() if hasattr(department, 'get_full_address') else '',
+                }
+            except Department.DoesNotExist:
+                # If specified department doesn't exist, use default
+                branch = get_default_department()
+        else:
+            # No branch specified, use default
+            branch = get_default_department()
+            
+    except ImportError:
+        # Purchase order app not available, use fallback branches
+        branch = get_fallback_branch(branch_id)
     
     # Get all items for this quotation
     items = quotation.items.all()
@@ -7761,7 +7742,7 @@ def download_quotation(request, quotation_id):
     
     # Calculate item-wise totals
     for item in items:
-        # Get sale price and quantity (use sales_price as per your template)
+        # Get sale price and quantity
         sale_price = getattr(item, 'sales_price', 0) or 0
         quantity = getattr(item, 'quantity', 1) or 1
         
@@ -7774,6 +7755,11 @@ def download_quotation(request, quotation_id):
         # Calculate tax if applicable
         if hasattr(item, 'tax_percentage'):
             tax_percentage = getattr(item, 'tax_percentage', 0) or 0
+            item_tax = (item_total * tax_percentage) / 100
+            total_tax += item_tax
+        elif hasattr(item, 'tax'):
+            # Alternative tax field
+            tax_percentage = getattr(item, 'tax', 0) or 0
             item_tax = (item_total * tax_percentage) / 100
             total_tax += item_tax
     
@@ -7790,10 +7776,37 @@ def download_quotation(request, quotation_id):
     def format_currency(value):
         return f"₹{value:,.2f}"
     
+    # Build complete address string
+    if branch:
+        address_parts = []
+        if branch.get('address'):
+            address_parts.append(branch['address'])
+        if branch.get('city'):
+            address_parts.append(branch['city'])
+        if branch.get('state'):
+            address_parts.append(branch['state'])
+        if branch.get('pincode'):
+            address_parts.append(f"PIN: {branch['pincode']}")
+        
+        branch['full_address_display'] = ', '.join(address_parts)
+        
+        # Build contact info
+        contact_info = []
+        if branch.get('contact_number'):
+            contact_info.append(f"📞 {branch['contact_number']}")
+        if branch.get('alternate_number'):
+            contact_info.append(f" / {branch['alternate_number']}")
+        if branch.get('email'):
+            contact_info.append(f"✉️ {branch['email']}")
+        if branch.get('gst_number'):
+            contact_info.append(f"📋 GST: {branch['gst_number']}")
+        
+        branch['contact_info'] = ' | '.join(contact_info)
+    
     # Create context with calculated values
     context = {
         'quotation': quotation,
-        'branch': branch,  # Pass selected branch to template
+        'branch': branch,  # Pass selected branch/department to template
         'items': items,
         
         # Calculated values with formatting
@@ -7812,6 +7825,254 @@ def download_quotation(request, quotation_id):
         'item_count': items.count(),
         'today': timezone.now().date(),
         'valid_until': getattr(quotation, 'valid_until', None) or (timezone.now() + timezone.timedelta(days=30)).date(),
+        
+        # Quotation metadata
+        'quotation_number': getattr(quotation, 'quotation_number', f"QT-{quotation.id:06d}"),
+        'client_name': getattr(quotation, 'client_name', ''),
+        'client_email': getattr(quotation, 'client_email', ''),
+        'client_phone': getattr(quotation, 'client_phone', ''),
+        'client_address': getattr(quotation, 'client_address', ''),
+        
+        # Company info (from branch/department)
+        'company_name': branch['name'] if branch else 'Our Company',
+        'company_address': branch.get('full_address_display', '') if branch else '',
+        'company_contact': branch.get('contact_info', '') if branch else '',
+        'company_gst': branch.get('gst_number', '') if branch else '',
     }
     
+    # Check if we should return PDF or HTML
+    if request.GET.get('format') == 'pdf':
+        # Generate PDF (you'll need to implement this)
+        return generate_quotation_pdf(context)
+    
     return render(request, 'quotation_download.html', context)
+
+
+def get_default_department():
+    """Get the default/fallback department from database"""
+    try:
+        from purchase_order.models import Department
+        
+        # Try to get the first active department
+        default_dept = Department.objects.filter(is_active=True).first()
+        
+        if default_dept:
+            return {
+                'name': default_dept.name,
+                'code': f"DEPT-{default_dept.id:03d}",
+                'address': default_dept.address or '',
+                'city': default_dept.city or '',
+                'state': default_dept.state or '',
+                'pincode': default_dept.pincode or '',
+                'contact_number': default_dept.contact_number or '',
+                'alternate_number': default_dept.alternate_number or '',
+                'email': default_dept.email or '',
+                'gst_number': default_dept.gst_number or '',
+                'logo': default_dept.logo.url if default_dept.logo else None,
+                'type': 'department',
+            }
+    except (ImportError, AttributeError):
+        pass
+    
+    # Fallback if no departments exist
+    return {
+        'name': 'Main Branch',
+        'code': 'BR-001',
+        'address': '123 Business Street',
+        'city': 'City',
+        'state': 'State',
+        'contact_number': '+91 1234567890',
+        'email': 'info@company.com',
+        'gst_number': 'GSTINXXXXXXX',
+        'type': 'default',
+    }
+
+
+def get_fallback_branch(branch_id=None):
+    """Fallback branch data when purchase_order app is not available"""
+    BRANCHES_DATA = {
+        1: {
+            'name': 'Main Branch',
+            'code': 'BR-001',
+            'address': '123 Business Street, City, State 12345',
+            'contact_number': '+1 (123) 456-7890',
+            'email': 'main@company.com',
+            'gst_number': 'GSTINXXXXXXX',
+            'type': 'fallback',
+        },
+        2: {
+            'name': 'North Branch',
+            'code': 'BR-002',
+            'address': '456 North Avenue, Industrial Zone, Delhi 110001',
+            'contact_number': '+91 9876543210',
+            'email': 'north@company.com',
+            'gst_number': 'GSTINXXXXXXX',
+            'type': 'fallback',
+        },
+        3: {
+            'name': 'South Branch',
+            'code': 'BR-003',
+            'address': '789 South Road, Commercial Area, Bangalore 560001',
+            'contact_number': '+91 8765432109',
+            'email': 'south@company.com',
+            'gst_number': 'GSTINXXXXXXX',
+            'type': 'fallback',
+        },
+    }
+    
+    if branch_id and branch_id.isdigit() and int(branch_id) in BRANCHES_DATA:
+        return BRANCHES_DATA[int(branch_id)]
+    
+    # Default to main branch
+    return BRANCHES_DATA.get(1)
+
+
+def generate_quotation_pdf(context):
+    """Generate PDF version of the quotation"""
+    from django.http import HttpResponse
+    from reportlab.pdfgen import canvas
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import inch
+    from io import BytesIO
+    
+    # Create a file-like buffer to receive PDF data
+    buffer = BytesIO()
+    
+    # Create the PDF object
+    p = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+    
+    # Set up document
+    p.setTitle(f"Quotation {context.get('quotation_number', '')}")
+    
+    # Header
+    p.setFont("Helvetica-Bold", 16)
+    p.drawString(50, height - 50, "QUOTATION")
+    p.setFont("Helvetica", 10)
+    p.drawString(50, height - 70, f"Quotation #: {context.get('quotation_number', '')}")
+    p.drawString(50, height - 85, f"Date: {context.get('today', '').strftime('%d/%m/%Y')}")
+    
+    # Company/Branch Info
+    if context.get('branch'):
+        p.setFont("Helvetica-Bold", 12)
+        p.drawString(50, height - 120, f"{context['branch'].get('name', '')}")
+        p.setFont("Helvetica", 10)
+        
+        y = height - 135
+        if context['branch'].get('full_address_display'):
+            p.drawString(50, y, context['branch']['full_address_display'])
+            y -= 15
+        if context['branch'].get('contact_number'):
+            p.drawString(50, y, f"Phone: {context['branch']['contact_number']}")
+            y -= 15
+        if context['branch'].get('email'):
+            p.drawString(50, y, f"Email: {context['branch']['email']}")
+            y -= 15
+        if context['branch'].get('gst_number'):
+            p.drawString(50, y, f"GST: {context['branch']['gst_number']}")
+    
+    # Client Info
+    p.setFont("Helvetica-Bold", 12)
+    p.drawString(300, height - 120, "BILL TO:")
+    p.setFont("Helvetica", 10)
+    p.drawString(300, height - 135, f"{context.get('client_name', '')}")
+    
+    y = height - 150
+    if context.get('client_address'):
+        p.drawString(300, y, context['client_address'])
+        y -= 15
+    if context.get('client_phone'):
+        p.drawString(300, y, f"Phone: {context['client_phone']}")
+        y -= 15
+    if context.get('client_email'):
+        p.drawString(300, y, f"Email: {context['client_email']}")
+    
+    # Table Header
+    p.setFont("Helvetica-Bold", 10)
+    y_table_start = height - 220
+    
+    p.drawString(50, y_table_start, "Item")
+    p.drawString(250, y_table_start, "Quantity")
+    p.drawString(320, y_table_start, "Price")
+    p.drawString(380, y_table_start, "Tax")
+    p.drawString(450, y_table_start, "Total")
+    
+    p.line(50, y_table_start - 5, 550, y_table_start - 5)
+    
+    # Items
+    p.setFont("Helvetica", 9)
+    y_current = y_table_start - 20
+    
+    for item in context['items']:
+        item_name = getattr(item, 'name', f"Item {item.id}")
+        quantity = getattr(item, 'quantity', 1)
+        price = getattr(item, 'sales_price', 0) or 0
+        tax_percent = getattr(item, 'tax_percentage', 0) or 0
+        item_total = quantity * price
+        item_tax = (item_total * tax_percent) / 100
+        
+        # Truncate long item names
+        if len(item_name) > 30:
+            item_name = item_name[:27] + "..."
+        
+        p.drawString(50, y_current, item_name)
+        p.drawString(250, y_current, str(quantity))
+        p.drawString(320, y_current, f"₹{price:,.2f}")
+        p.drawString(380, y_current, f"{tax_percent}%")
+        p.drawString(450, y_current, f"₹{item_total:,.2f}")
+        
+        y_current -= 15
+        
+        # Check for page break
+        if y_current < 100:
+            p.showPage()
+            p.setFont("Helvetica", 9)
+            y_current = height - 50
+    
+    # Totals
+    y_totals = y_current - 30
+    
+    p.setFont("Helvetica-Bold", 10)
+    p.drawString(350, y_totals, "Subtotal:")
+    p.drawString(450, y_totals, context['subtotal'])
+    
+    y_totals -= 15
+    p.drawString(350, y_totals, "Tax:")
+    p.drawString(450, y_totals, context['total_tax'])
+    
+    if context.get('discount_amount_raw', 0) > 0:
+        y_totals -= 15
+        p.drawString(350, y_totals, "Discount:")
+        p.drawString(450, y_totals, f"-{context['discount_amount']}")
+    
+    if context.get('shipping_charges_raw', 0) > 0:
+        y_totals -= 15
+        p.drawString(350, y_totals, "Shipping:")
+        p.drawString(450, y_totals, context['shipping_charges'])
+    
+    y_totals -= 20
+    p.setFont("Helvetica-Bold", 12)
+    p.drawString(350, y_totals, "GRAND TOTAL:")
+    p.drawString(450, y_totals, context['grand_total'])
+    
+    # Footer
+    p.setFont("Helvetica", 8)
+    p.drawString(50, 50, "Terms & Conditions:")
+    p.drawString(50, 40, "1. Prices are valid for 30 days")
+    p.drawString(50, 30, "2. Payment terms: Net 30")
+    p.drawString(50, 20, "3. All taxes applicable")
+    
+    # Validity
+    p.drawString(400, 30, f"Valid Until: {context.get('valid_until', '').strftime('%d/%m/%Y')}")
+    
+    # Close the PDF object cleanly
+    p.showPage()
+    p.save()
+    
+    # FileResponse with PDF content
+    buffer.seek(0)
+    response = HttpResponse(buffer, content_type='application/pdf')
+    filename = f"quotation_{context.get('quotation_number', quotation_id)}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    return response
