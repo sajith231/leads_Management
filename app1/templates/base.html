@@ -1048,8 +1048,8 @@
                 </a>
             </div>
             {% endif %}
-{% if 'feeder_list' in allowed_menus or 'show_clients' in allowed_menus or 'key_request_list' in allowed_menus or 'collections_list' in allowed_menus or 'image_capture' in allowed_menus or 'wallet' in allowed_menus or 'purchase_order' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
 
+{% if 'feeder_list' in allowed_menus or 'show_clients' in allowed_menus or 'key_request_list' in allowed_menus or 'collections_list' in allowed_menus or request.session.user_level == 'admin' or 'image_capture' in allowed_menus or 'Wallet' in allowed_menus or 'purchase_order' in allowed_menus or user.is_superuser %}
 <div class="mainmenu" onclick="togglePlanetMenu()">
     <span>
         <i class="fas fa-globe"></i>
@@ -1058,17 +1058,12 @@
 </div>
 
 <div id="planet-menu" class="submenu">
-
     {% if 'show_clients' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-    <a href="{% url 'show_clients' %}">
-        <i class="fas fa-users"></i> Clients
-    </a>
+    <a href="{% url 'show_clients' %}"><i class="fas fa-users"></i> Clients</a>
     {% endif %}
 
     {% if 'feeder_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-    <a href="{% url 'feeder_list' %}">
-        <i class="fas fa-tools" style="margin-left: 5px;"></i> Feeder
-    </a>
+    <a href="{% url 'feeder_list' %}"><i class="fas fa-tools" style="margin-left: 5px;"></i> Feeder</a>
     {% endif %}
 
     {% if 'license_type' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
@@ -1077,59 +1072,60 @@
         License Key
     </a>
     {% endif %}
-
     {% if 'key_request_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
     <a href="{% url 'key_request_list' %}">
         <i class="fas fa-file-signature" style="margin-right: 5px;"></i>
         Key Request
     </a>
     {% endif %}
-
+    <!-- {% if 'key_request' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'key_request' %}">
+        <i class="fas fa-plus-circle" style="margin-right: 5px;"></i>
+        Add Key Request
+    </a>
+    {% endif %} -->
     {% if 'collections_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
     <a href="{% url 'collections_list' %}">
         <i class="fas fa-coins" style="margin-right: 5px;"></i>
         Collections
     </a>
     {% endif %}
-
     {% if 'fuel_management' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
     <a href="{% url 'fuel_management' %}">
         <i class="fas fa-gas-pump" style="margin-right: 5px;"></i>
         Fuel Management
     </a>
-    {% endif %}
-
-    {% if 'image_capture' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-    <a href="{% url 'index' %}">
-        <i class="fas fa-camera" style="margin-right: 5px;"></i>
-        Image Capture
-    </a>
-    {% endif %}
-
-    {% if 'purchase_order' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-    <a href="{% url 'purchase_order:po_list' %}">
-        <i class="fas fa-file-invoice" style="margin-right: 5px;"></i>
-        Purchase Order
-    </a>
-    {% endif %}
-
-    {% if 'wallet' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-    <a href="{% url 'wallet_list' %}">
-        <i class="fas fa-wallet" style="margin-right: 5px;"></i>
-        Wallet
-    </a>
-    {% endif %}
-
-    {% if 'software_update' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-    <a href="{% url 'software_update' %}">
-        <i class="fas fa-sync-alt" style="margin-right: 5px;"></i>
-        Software Updation
-    </a>
-    {% endif %}
-
-</div>
+    
+    
+   
+{% endif %}
+{% if 'image_capture' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<a href="{% url 'index' %}">
+  <i class="fas fa-camera" style="margin-right: 5px;"></i>
+  Image Capture
+</a>
 {% endif %}
 
+{% if 'purchase_order' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<a href="{% url 'purchase_order:po_list' %}">
+  <i class="fas fa-file-invoice" style="margin-right: 5px;"></i>
+  Purchase Order
+</a>
+{% endif %}
+{% if 'Wallet' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<a href="{% url 'wallet_list' %}">
+  <i class="fas fa-wallet" style="margin-right: 5px;"></i>
+  Wallet
+</a>
+{% endif %}
+{% if 'software_update' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<a href="{% url 'software_update' %}">
+  <i class="fas fa-sync-alt" style="margin-right: 5px;"></i>
+  Software Updation
+</a>
+{% endif %}
+</div>
+{% endif %}
 
 <!-- Vehicle Management - Standalone Main Menu for Regular Users with Submenu -->
 {% if 'fuel_management' in allowed_menus or 'vehicle_list' in allowed_menus or 'fuel_monitoring' in allowed_menus %}
