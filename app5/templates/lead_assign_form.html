@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Assign Lead{% endblock %}
+
+{% block content %}
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Assign Lead</title>
+
+<style>
+  body {
+    
+  }
+  .assign-form-container {
+    max-width: 600px;
+    margin: 30px auto;
+    background: #fff;
+    padding: 25px 35px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  h2 {
+    font-size: 22px;
+    color: #333;
+    margin-bottom: 15px;
+    text-align: center;
+  }
+  label {
+    font-weight: 600;
+    display: block;
+    margin-bottom: 6px;
+    color: #444;
+  }
+  select, input[type="text"], input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    background-color: #fff;
+    font-size: 15px;
+    margin-bottom: 15px;
+  }
+  select:focus {
+    border-color: #007bff;
+    outline: none;
+  }
+  button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 18px;
+    font-size: 15px;
+    cursor: pointer;
+  }
+  button:hover {
+    background-color: #0056b3;
+  }
+  .btn-secondary {
+    background-color: #6c757d;
+  }
+  .btn-secondary:hover {
+    background-color: #565e64;
+  }
+  .form-group {
+    margin-bottom: 20px;
+  }
+  .alert {
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+  }
+  .alert-success {
+    background-color: #d1e7dd;
+    color: #0f5132;
+  }
+  .alert-error {
+    background-color: #f8d7da;
+    color: #842029;
+  }
+</style>
+
+<div class="assign-form-container">
+  <h2>🎯 Assign Lead</h2>
+
+  {# Display messages #}
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="POST" action="{% url 'app5:assign_lead' %}">
+    {% csrf_token %}
+
+    <!-- Lead Ticket Selection - SHOW ONLY TICKET NUMBER -->
+    <div class="form-group">
+      <label for="lead_id">🎫 Lead Ticket Number</label>
+      <select id="lead_id" name="lead_id" required>
+        <option value="">-- Select Unassigned Lead --</option>
+        {% for lead in unassigned_leads %}
+          <option value="{{ lead.id }}">
+            {% if lead.ticket_number %}
+              {{ lead.ticket_number }}
+            {% else %}
+              Lead #{{ lead.id }}
+            {% endif %}
+          </option>
+        {% empty %}
+          <option value="" disabled>No unassigned leads available</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Assign To Field -->
+    <div class="form-group">
+      <label for="assign_to">👤 Assign To</label>
+      <select id="assign_to" name="assigned_to" required>
+        <option value="">-- Select User --</option>
+        {% for user in users %}
+          <option value="{{ user.id }}">
+            {# Priority order for displaying user names #}
+            {% if user.name %}
+              {{ user.name }}
+            {% elif user.first_name or user.last_name %}
+              {{ user.first_name }} {{ user.last_name }}
+            {% elif user.get_full_name %}
+              {{ user.get_full_name }}
+            {% elif user.username %}
+              {{ user.username }}
+            {% elif user.email %}
+              {{ user.email }}
+            {% else %}
+              User #{{ user.id }}
+            {% endif %}
+          </option>
+        {% empty %}
+          <option value="" disabled>No active users available</option>
+        {% endfor %}
+      </select>
+      {% if not users %}
+        <small style="color: #dc3545;">No active users found. Please contact administrator.</small>
+      {% endif %}
+    </div>
+
+    <!-- Buttons -->
+    <div style="text-align:center;">
+      <button type="submit">✅ Assign Lead</button>
+      <a href="{% url 'app5:lead_assign_list' %}" class="btn btn-secondary">⬅ Back to List</a>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

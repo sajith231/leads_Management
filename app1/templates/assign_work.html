@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid">
+    <h2>Assign Work for Ticket {{ service_log.ticket_number }}</h2>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Service Log Details</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Customer:</strong> {{ service_log.customer_name }}</p>
+                    <p><strong>Phone:</strong> {{ service_log.phone_number }}</p>
+                    <p><strong>Place:</strong> {{ service_log.place }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Date:</strong> {{ service_log.date|date:"d-m-Y H:i" }}</p>
+                    <p><strong>Type:</strong> {{ service_log.get_complaint_type_display }}</p>
+                    <p><strong>Status:</strong> 
+                        <span class="badge 
+                            {% if service_log.status == 'Completed' %}bg-success
+                            {% elif service_log.status == 'In Progress' %}bg-warning
+                            {% elif service_log.status == 'Pending' %}bg-secondary
+                            {% else %}bg-info
+                            {% endif %}">
+                            {{ service_log.status }}
+                        </span>
+                    </p>
+                </div>
+            </div>
+            {% if service_log.remarks %}
+                <p><strong>Remarks:</strong> {{ service_log.remarks }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5>Assign Individual Complaints</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                {% if complaints %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Complaint</th>
+                                    <th>Note</th>
+                                    <th>Current Assigned Person</th>
+                                    <th>Assign to</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for complaint_log in complaints %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ complaint_log.complaint.description }}</strong>
+                                    </td>
+                                    <td>
+                                        {% if complaint_log.note %}
+                                            <small class="text-muted">{{ complaint_log.note }}</small>
+                                        {% else %}
+                                            <small class="text-muted">No note</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if complaint_log.assigned_person %}
+                                            <span class="badge bg-info">{{ complaint_log.assigned_person.name }}</span>
+                                        {% else %}
+                                            <span class="text-muted">Not assigned</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <select class="form-select" name="assigned_person_{{ complaint_log.id }}" required>
+                                            <option value="">-- Select User --</option>
+                                            {% for user in users %}
+                                                <option value="{{ user.id }}" 
+                                                    {% if complaint_log.assigned_person and complaint_log.assigned_person.id == user.id %}selected{% endif %}>
+                                                    {{ user.name }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if complaint_log.status == 'Completed' %}bg-success
+                                            {% elif complaint_log.status == 'In Progress' %}bg-warning
+                                            {% else %}bg-secondary
+                                            {% endif %}">
+                                            {{ complaint_log.status }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="d-flex gap-2 mt-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-user-check"></i> Assign Complaints
+                        </button>
+                        <a href="{% url 'assign_service_logs' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to List
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        No complaints found for this service log.
+                    </div>
+                    <a href="{% url 'assign_service_logs' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to List
+                    </a>
+                {% endif %}
+                
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+.card-header {
+    background-color: #e9ecef;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<style>
+    @media only screen and (max-width: 768px) {
+        .backbutton {
+            margin-top: 15%;
+        }
+    }
+    .submenu-group {
+        margin-left: 20px;
+        border-left: 2px solid #dee2e6;
+        padding-left: 15px;
+    }
+    .menu-group-checkbox {
+        margin-right: 8px;
+    }
+    .menu-item-checkbox {
+        margin-right: 8px;
+    }
+</style>
+<div class="backbutton">
+    <button onclick="history.back()" class="btn btn-primary" style="background-color: black; margin-right: 5%;">
+        ← Back
+    </button>
+</div>
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Set Default Menus for All Users</h5>
+                </div>
+                {% if messages %}
+                <div class="messages mb-3">
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <div class="card-body">
+                    <p class="alert alert-info">
+                        These settings will be applied as default menu access for new users and can be applied to all existing users.
+                    </p>
+                    <form method="post">
+                        {% csrf_token %}
+                        {% for menu in menus %}
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <div class="form-check">
+                                    <input class="form-check-input menu-group-checkbox" type="checkbox" 
+                                           id="menu_group_{{ forloop.counter }}" 
+                                           data-group="{{ forloop.counter }}">
+                                    <label class="form-check-label" for="menu_group_{{ forloop.counter }}">
+                                        <i class="{{ menu.icon }}"></i> {{ menu.name }}
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                {% for submenu in menu.submenus %}
+                                    {% if submenu.submenus %}
+                                        {# This is a parent menu with submenus #}
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input menu-item-checkbox group-{{ forloop.parentloop.counter }}" 
+                                                       type="checkbox" name="menu_{{ submenu.id }}" 
+                                                       id="menu_{{ submenu.id }}"
+                                                       {% if submenu.id in default_menus %}checked{% endif %}>
+                                                <label class="form-check-label" for="menu_{{ submenu.id }}">
+                                                    <i class="{{ submenu.icon }}"></i> {{ submenu.name }}
+                                                </label>
+                                            </div>
+                                            <div class="submenu-group mt-2">
+                                                {% for child in submenu.submenus %}
+                                                <div class="form-check mb-2">
+                                                    <input class="form-check-input menu-item-checkbox group-{{ forloop.parentloop.parentloop.counter }}" 
+                                                           type="checkbox" name="menu_{{ child.id }}" 
+                                                           id="menu_{{ child.id }}"
+                                                           {% if child.id in default_menus %}checked{% endif %}>
+                                                    <label class="form-check-label" for="menu_{{ child.id }}">
+                                                        <i class="{{ child.icon }}"></i> {{ child.name }}
+                                                    </label>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        {# This is a regular menu item #}
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input menu-item-checkbox group-{{ forloop.parentloop.counter }}" 
+                                                   type="checkbox" name="menu_{{ submenu.id }}" 
+                                                   id="menu_{{ submenu.id }}"
+                                                   {% if submenu.id in default_menus %}checked{% endif %}>
+                                            <label class="form-check-label" for="menu_{{ submenu.id }}">
+                                                <i class="{{ submenu.icon }}"></i> {{ submenu.name }}
+                                            </label>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" name="apply_to_all" id="apply_to_all" value="yes">
+                            <label class="form-check-label" for="apply_to_all">
+                                Apply these settings to all existing users
+                            </label>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'user_menu_control' %}" class="btn btn-secondary">Back</a>
+                            <button type="submit" class="btn btn-success">Save Default Menus</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // JavaScript to handle group selection
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if all checkboxes in a group are checked
+        function updateGroupCheckbox(groupNum) {
+            const groupCheckbox = document.querySelector(`#menu_group_${groupNum}`);
+            const checkboxes = document.querySelectorAll(`.group-${groupNum}:not(.menu-group-checkbox)`);
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            groupCheckbox.checked = allChecked;
+        }
+        
+        // Initialize all group checkboxes
+        const groups = document.querySelectorAll('.menu-group-checkbox');
+        groups.forEach(group => {
+            const groupNum = group.dataset.group;
+            updateGroupCheckbox(groupNum);
+            
+            // Add event listener to group checkbox
+            group.addEventListener('change', function() {
+                const checkboxes = document.querySelectorAll(`.group-${groupNum}`);
+                checkboxes.forEach(cb => {
+                    cb.checked = this.checked;
+                });
+            });
+        });
+        
+        // Add event listeners to menu item checkboxes
+        const menuItems = document.querySelectorAll('.menu-item-checkbox');
+        menuItems.forEach(item => {
+            item.addEventListener('change', function() {
+                const matches = this.className.match(/group-(\d+)/);
+                if (matches && matches[1]) {
+                    updateGroupCheckbox(matches[1]);
+                }
+            });
+        });
+        
+        // Handle parent menu checkbox changes
+        const parentMenus = document.querySelectorAll('.menu-item-checkbox[data-has-children]');
+        parentMenus.forEach(menu => {
+            menu.addEventListener('change', function() {
+                const children = this.closest('.mb-3').querySelectorAll('.submenu-group .menu-item-checkbox');
+                children.forEach(child => {
+                    child.checked = this.checked;
+                    const childGroup = child.className.match(/group-(\d+)/)[1];
+                    updateGroupCheckbox(childGroup);
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}

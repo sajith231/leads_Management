@@ -1,0 +1,670 @@
+{% extends "base.html" %}
+{% load static app2_custom_filters %}
+
+{% block title %}Client List{% endblock %}
+
+<link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+<style>
+    .filter-section {
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
+    padding: 20px 25px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 0;
+}
+
+.filter-group {
+    flex: 1;
+    min-width: 220px;
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #343a40;
+}
+
+.filter-select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 6px;
+    border: 1px solid #ced4da;
+    background-color: #fdfdfd;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+}
+
+.filter-select:focus {
+    border-color: #80bdff;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.15);
+}
+
+.filter-reset-btn {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: #dc3545;
+    color: white;
+    font-size: 0.875rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    align-self: flex-start;
+}
+
+.filter-reset-btn:hover {
+    background-color: #c82333;
+}
+
+    body {
+        font-family: 'Roboto', sans-serif;
+    }
+    .dataTables_wrapper {
+        padding: 20px 0;
+    }
+    .card {
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+    }
+    .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #eee;
+        padding: 15px 20px;
+        border-radius: 8px 8px 0 0 !important;
+    }
+    .card-title {
+        margin-bottom: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+    .table-responsive {
+        overflow-x: auto;
+    }
+    table.dataTable {
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+    }
+    .table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    .table td {
+        vertical-align: middle;
+    }
+    .badge {
+        font-weight: 500;
+        padding: 5px 8px;
+        font-size: 0.75rem;
+    }
+    .debug-panel {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-left: 4px solid #6c757d;
+    }
+    .debug-panel h5 {
+        color: #6c757d;
+        margin-bottom: 15px;
+    }
+    .debug-info {
+        font-family: monospace;
+        font-size: 0.85rem;
+        margin-bottom: 5px;
+    }
+    .no-data {
+        text-align: center;
+        padding: 40px;
+        color: #6c757d;
+    }
+    .no-data i {
+        font-size: 2rem;
+        margin-bottom: 10px;
+        color: #dee2e6;
+    }
+    .status-active {
+        color: #28a745;
+    }
+    .status-inactive {
+        color: #dc3545;
+    }
+    .action-btns .btn {
+        padding: 3px 8px;
+        font-size: 0.75rem;
+        margin-right: 5px;
+    }
+    /* Custom pagination styles */
+    .pagination-info {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .pagination-info .info-text {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    .pagination-info .page-info {
+        font-weight: 600;
+    }
+    .custom-pagination {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+    }
+    .custom-pagination .pagination {
+        margin: 0;
+    }
+    .custom-pagination .page-link {
+        color: #007bff;
+        border: 1px solid #dee2e6;
+        padding: 8px 12px;
+        margin: 0 2px;
+        border-radius: 4px;
+        text-decoration: none;
+    }
+    .custom-pagination .page-link:hover {
+        background-color: #e9ecef;
+        border-color: #adb5bd;
+    }
+    .custom-pagination .page-item.active .page-link {
+        background-color: #007bff;
+        border-color: #007bff;
+        color: white;
+    }
+    .custom-pagination .page-item.disabled .page-link {
+        color: #6c757d;
+        background-color: #fff;
+        border-color: #dee2e6;
+        cursor: not-allowed;
+    }
+    .search-bar {
+        margin-bottom: 20px;
+    }
+    .search-bar .form-control {
+        border-radius: 20px;
+        padding: 10px 20px;
+    }
+    .text-black {
+        color: black;
+    }
+    
+    /* Search highlight styles */
+    .search-highlight, mark.search-highlight {
+        background-color: #ffeb3b !important;
+        color: #000 !important;
+        padding: 1px 2px;
+        border-radius: 2px;
+        font-weight: 500;
+        box-shadow: 0 1px 3px rgba(255, 235, 59, 0.3);
+    }
+    
+    /* Search info styles */
+    .search-info {
+        background-color: #e3f2fd;
+        border: 1px solid #bbdefb;
+        border-radius: 4px;
+        padding: 8px 12px;
+        margin-bottom: 15px;
+        color: #1976d2;
+        font-size: 0.9rem;
+    }
+    
+    .search-info .search-term {
+        background-color: #ffe600;
+        color: #000;
+        padding: 2px 4px;
+        border-radius: 2px;
+        font-weight: 500;
+        margin: 0 2px;
+    }
+    
+    /* Filter dropdown styles */
+    .filter-section {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    .filter-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 10px;
+    }
+    .filter-group {
+        flex: 1;
+        min-width: 180px;
+    }
+    .filter-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: #495057;
+    }
+    .filter-select {
+        width: 100%;
+        padding: 8px 12px;
+        border-radius: 4px;
+        border: 1px solid #ced4da;
+        background-color: white;
+    }
+    .filter-select:focus {
+        border-color: #80bdff;
+        outline: 0;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    .filter-reset-btn {
+        margin-top: 10px;
+        padding: 8px 15px;
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .filter-reset-btn:hover {
+        background-color: #5a6268;
+    }
+</style>
+
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title">Client Management</h5>
+                    </div>
+                </div>
+
+                <!-- Pagination Info -->
+                <div class="card-body">
+                    <div class="pagination-info">
+                        Total Clients: {{ total_clients }}
+                        <div class="info-text">
+                            {% if clients.has_other_pages %}
+                                <span class="page-info">
+                                    Page {{ clients.number }} of {{ clients.paginator.num_pages }}
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Filter Section -->
+                    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+                    <div class="container-fluid my-3">
+                        <form method="GET" id="filterForm">
+                            <div class="row g-3 align-items-end">
+
+<!-- Branch -->
+<div class="col-md-2">
+  <label for="branch" class="form-label">Branch</label>
+  <select name="branch" id="branch" class="form-select"
+          {% if is_branch_restricted %}disabled{% endif %}
+          onchange="this.form.submit()">
+    
+    <!-- For unrestricted users (IMC/SYSMAC) -->
+    {% if not is_branch_restricted %}
+      <option value="">All Branches</option>
+      {% for branch in unique_branches %}
+        <option value="{{ branch }}" {% if branch == selected_branch %}selected{% endif %}>{{ branch }}</option>
+      {% endfor %}
+    
+    <!-- For restricted users -->
+    {% else %}
+      <option value="{{ user_branch }}" selected>{{ user_branch }}</option>
+    {% endif %}
+  </select>
+
+  <!-- Hidden field for restricted users to maintain branch filter -->
+  {% if is_branch_restricted %}
+    <input type="hidden" name="branch" value="{{ user_branch }}">
+  {% endif %}
+</div>
+
+                                <!-- Software -->
+                                <div class="col-md-2">
+                                    <label for="software" class="form-label">Software</label>
+                                    <select name="software" id="software" class="form-select" onchange="this.form.submit()">
+                                        <option value="">All Software</option>
+                                        {% for software in unique_software %}
+                                            <option value="{{ software }}" {% if request.GET.software == software %}selected{% endif %}>{{ software }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <!-- Direct Dealing -->
+                                <div class="col-md-2">
+                                    <label for="direct_dealing" class="form-label">Direct Dealing</label>
+                                    <select name="direct_dealing" id="direct_dealing" class="form-select" onchange="this.form.submit()">
+                                        <option value="All" {% if selected_direct_dealing == "All" %}selected{% endif %}>All</option>
+                                        <option value="Yes" {% if selected_direct_dealing == "Yes" %}selected{% endif %}>Yes</option>
+                                        <option value="Dealing No" {% if selected_direct_dealing == "Dealing No" %}selected{% endif %}>Dealing No</option>
+                                        <option value="Self" {% if selected_direct_dealing == "Self" %}selected{% endif %}>Self</option>
+                                    </select>
+                                </div>
+
+                                <!-- AMC -->
+                                <div class="col-md-2">
+                                    <label for="amc" class="form-label">AMC</label>
+                                    <select name="amc" id="amc" class="form-select" onchange="this.form.submit()">
+                                        <option value="">All</option>
+                                        {% for amc_label in unique_amc_labels %}
+                                            <option value="{{ amc_label }}" {% if request.GET.amc == amc_label %}selected{% endif %}>
+                                                {{ amc_label }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <!-- Business Nature -->
+                                <div class="col-md-2">
+                                    <label for="nature" class="form-label">Business Nature</label>
+                                    <select name="nature" id="nature" class="form-select" onchange="this.form.submit()">
+                                        <option value="">All</option>
+                                        {% for nature in unique_natures %}
+                                            <option value="{{ nature }}" {% if request.GET.nature == nature %}selected{% endif %}>{{ nature }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <!-- SP -->
+                                <div class="col-md-2">
+                                    <label for="sp" class="form-label">SP</label>
+                                    <select name="sp" id="sp" class="form-select" onchange="this.form.submit()">
+                                        <option value="">All SP</option>
+                                        {% for sp in unique_sp %}
+                                            <option value="{{ sp }}" {% if request.GET.sp == sp %}selected{% endif %}>{{ sp }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <!-- License Type -->
+                                <div class="col-md-2">
+                                    <label for="lictype" class="form-label">License Type</label>
+                                    <select name="lictype" id="lictype" class="form-select" onchange="this.form.submit()">
+                                        <option value="">All License Types</option>
+                                        {% for lic_type in unique_lic_types %}
+                                            <option value="{{ lic_type }}" {% if request.GET.lictype == lic_type %}selected{% endif %}>{{ lic_type }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <!-- Rows per Page -->
+                                <div class="col-md-2">
+                                    <label for="rows" class="form-label">Rows Count</label>
+                                    <select name="rows" id="rows" class="form-select" onchange="this.form.submit()">
+                                        <option disabled {% if not selected_rows %}selected{% endif %}>Rows Count</option>
+                                        {% for count in rows_options %}
+                                            <option value="{{ count }}" {% if selected_rows == count %}selected{% endif %}>{{ count }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <!-- Reset Button -->
+                                <div class="col-md-2 d-grid">
+                                    <a href="{% url 'show_clients' %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-redo-alt me-1"></i> Reset Filters
+                                    </a>
+                                </div>
+
+                            </div>
+                        </form>
+                    </div>
+
+
+                    
+                    <!-- Search Bar -->
+                    <div class="search-bar">
+                        <form method="GET" class="d-flex">
+                            <input type="text" name="search" class="form-control" placeholder="Search clients by name, code, mobile, address, branch, district, state, software, priority, AMC, route, etc..." 
+                                   value="{{ search_query }}" id="searchInput">
+                            <button type="submit" class="btn btn-outline-secondary ms-2">
+                                <i class="fas fa-search"></i>
+                            </button>
+                            {% if search_query %}
+                            <a href="?" class="btn btn-outline-danger ms-2" title="Clear search">
+                                <i class="fas fa-times"></i>
+                            </a>
+                            {% endif %}
+                        </form>
+                        
+                        {% if search_query %}
+                        <div class="search-info">
+                            <i class="fas fa-search"></i>
+                            Searching for: 
+                            {% for term in search_terms %}
+                                <span class="search-term">{{ term }}</span>
+                            {% endfor %}
+                            - Found {{ filtered_count }} of {{ total_clients }} clients
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if clients.has_other_pages %}
+                    <div class="custom-pagination" style="display: flex;justify-content: center;">
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination">
+                                {% if clients.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.rows %}&rows={{ request.GET.rows }}{% endif %}{% for key, value in request.GET.items %}{% if key != 'page' and key != 'search' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="First">
+                                             First
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ clients.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.rows %}&rows={{ request.GET.rows }}{% endif %}{% for key, value in request.GET.items %}{% if key != 'page' and key != 'search' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Previous">
+                                             Previous
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link"> First</span>
+                                    </li>
+                                    <li class="page-item disabled">
+                                        <span class="page-link"> Previous</span>
+                                    </li>
+                                {% endif %}
+
+                                {% for num in clients.paginator.page_range %}
+                                    {% if clients.number == num %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                    {% elif num > clients.number|add:'-3' and num < clients.number|add:'3' %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.rows %}&rows={{ request.GET.rows }}{% endif %}{% for key, value in request.GET.items %}{% if key != 'page' and key != 'search' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if clients.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ clients.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.rows %}&rows={{ request.GET.rows }}{% endif %}{% for key, value in request.GET.items %}{% if key != 'page' and key != 'search' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next">
+                                            Next 
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ clients.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.rows %}&rows={{ request.GET.rows }}{% endif %}{% for key, value in request.GET.items %}{% if key != 'page' and key != 'search' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Last">
+                                            Last 
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">Next</span>
+                                    </li>
+                                    <li class="page-item disabled">
+                                        <span class="page-link">Last</span>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover table-bordered" style="width:100%">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Name</th>
+                                    <th>Address</th>
+                                    <th>Branch</th>
+                                    <th>District</th>
+                                    <th>State</th>
+                                    <th>Software</th>
+                                    <th>Mobile</th>
+                                    <th>Install Date</th>
+                                    <th>Priority</th>
+                                    <th>Direct Dealing</th>
+                                    <th>Route</th>
+                                    <th>AMC</th>
+                                    <th>AMC Amount</th>
+                                    <th>Account Code</th>
+                                    <th>Address 3</th>
+                                    <th>License Type</th>
+                                    <th>Clients</th>
+                                    <th>SP</th>
+                                    <th>Nature</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for client in clients %}
+                                <tr>
+                                    <td>{{ client.code|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>{{ client.name|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>{{ client.address|truncatechars:20|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>{{ client.branch|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>{{ client.district|trim|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>{{ client.state|trim|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>{{ client.software|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>{{ client.mobile|trim|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>{{ client.formatted_installationdate|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>
+                                        <span class="badge badge-{% if client.priorty == 'High' %}danger{% elif client.priorty == 'Medium' %}warning{% else %}secondary{% endif %}">
+                                            {{ client.priorty|default:"-"|highlight_search:search_terms }}
+                                        </span>
+                                    </td>
+                                    <td>{{ client.directdealing_label|highlight_search:search_terms }}</td>
+                                    <td>{{ client.rout|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>
+                                        <span class="badge badge-{% if client.amc == 'Yes' %}success{% else %}danger{% endif %}" style="color: black;">
+                                            {{ client.amc_label|default:"No"|highlight_search:search_terms }}
+                                        </span>
+                                    </td>
+                                    <td>{{ client.amcamt|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>{{ client.accountcode|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>{{ client.address3|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>{{ client.lictype_label|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>{{ client.clients|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>{{ client.sp|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>{{ client.nature|default:"-"|highlight_search:search_terms }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="20" class="no-data">
+                                        <i class="fas fa-{% if search_query %}search{% else %}database{% endif %}"></i>
+                                        <h5>
+                                            {% if search_query %}
+                                                No clients found for "{{ search_query }}"
+                                            {% else %}
+                                                No client data available
+                                            {% endif %}
+                                        </h5>
+                                        <p class="text-muted">
+                                            {% if search_query %}
+                                                Try adjusting your search terms or <a href="?">clear the search</a>
+                                            {% else %}
+                                                Please check your data source or connection
+                                            {% endif %}
+                                        </p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Auto-submit search form after typing (with delay)
+        let searchTimeout;
+        $('#searchInput').on('input', function() {
+            clearTimeout(searchTimeout);
+            const searchValue = $(this).val().trim();
+            
+            searchTimeout = setTimeout(function() {
+                if (searchValue.length >= 2 || searchValue.length === 0) {
+                    $('#searchInput').closest('form').submit();
+                }
+            }, 800); // 800ms delay after user stops typing
+        });
+        
+        // Handle Enter key press
+        $('#searchInput').on('keypress', function(e) {
+            if (e.which === 13) { // Enter key
+                clearTimeout(searchTimeout);
+                $(this).closest('form').submit();
+            }
+        });
+        
+        // Focus search input if there's a search query
+        {% if search_query %}
+        $('#searchInput').focus();
+        {% endif %}
+        
+        // Highlight search terms in real-time as user types
+        $('#searchInput').on('input', function() {
+            const searchValue = $(this).val().trim();
+            if (searchValue.length > 0) {
+                // Add visual feedback for active search
+                $(this).addClass('border-primary');
+            } else {
+                $(this).removeClass('border-primary');
+            }
+        });
+    });
+    
+    // Function to reset all filters
+    function resetFilters() {
+        // Get all select elements in the filter form
+        const selects = document.querySelectorAll('#filterForm select');
+        
+        // Reset each select to its first option (empty value)
+        selects.forEach(select => {
+            select.selectedIndex = 0;
+        });
+        
+        // Submit the form to apply the reset
+        document.getElementById('filterForm').submit();
+    }
+</script>
+{% endblock %}

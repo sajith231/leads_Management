@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+    <h2 style="display: flex; justify-content: center;">Add Service Log</h2>
+    <form method="POST" action="{% url 'add_service_log' %}" enctype="multipart/form-data" style="width: 100%;">
+        {% csrf_token %}
+       <div class="form-group" style="position: relative;">
+    <label for="customer_name">Customer Name:</label>
+    <input type="text" class="form-control" id="customer_name" name="customer_name" placeholder="Search Customer" autocomplete="off" required>
+    <div id="dropdown" class="dropdown-menu" style="display: none; position: absolute; width: 100%; max-height: 200px; overflow-y: auto; z-index: 1000;">
+        <p style="padding: 10px; margin: 0;">Loading customers...</p>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const customerInput = document.getElementById("customer_name");
+        const dropdown = document.getElementById("dropdown");
+
+        // Fetch customers when the page loads
+        fetch('/proxy/customers/')
+            .then(response => response.json())
+            .then(data => {
+                dropdown.innerHTML = ""; // Clear existing options
+
+                // Add customer options to the dropdown
+                data.forEach(customer => {
+                    const option = document.createElement("div");
+                    option.classList.add("dropdown-item");
+                    option.textContent = `${customer.name} - ${customer.address}`;
+                    option.addEventListener("click", function () {
+                        customerInput.value = option.textContent;
+                        dropdown.style.display = "none"; // Hide the dropdown on selection
+                    });
+                    dropdown.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error("Error loading customers:", error);
+                dropdown.innerHTML = '<p style="padding: 10px; margin: 0;">Failed to load customers.</p>';
+            });
+
+        // Show dropdown when clicking on the input field
+        customerInput.addEventListener("focus", function () {
+            dropdown.style.display = "block";
+        });
+
+        // Hide dropdown when clicking outside
+        document.addEventListener("click", function (e) {
+            if (!customerInput.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.style.display = "none";
+            }
+        });
+
+        // Filter the dropdown items as user types
+        customerInput.addEventListener("input", function () {
+            const filter = customerInput.value.toLowerCase();
+            const items = dropdown.querySelectorAll(".dropdown-item");
+            let hasVisibleItem = false;
+
+            items.forEach(item => {
+                if (item.textContent.toLowerCase().includes(filter)) {
+                    item.style.display = "block";
+                    hasVisibleItem = true;
+                } else {
+                    item.style.display = "none";
+                }
+            });
+
+            // Show dropdown if any item matches
+            dropdown.style.display = hasVisibleItem ? "block" : "none";
+        });
+    });
+</script>
+
+<style>
+    .dropdown-menu {
+        background-color: white;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    .dropdown-item {
+        padding: 8px 12px;
+        cursor: pointer;
+    }
+
+    .dropdown-item:hover {
+        background-color: #f1f1f1;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 8px;
+        margin: 5px 0;
+    }
+
+    .form-group {
+        margin: 10px 0;
+    }
+</style>
+
+
+
+
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+    let customerDropdown = document.getElementById("customer_name");
+    
+    fetch('/proxy/customers/')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Failed to load customers.");
+            }
+            return response.json();
+        })
+        .then(data => {
+            customerDropdown.innerHTML = ""; // Clear existing options
+            
+            // Add default option
+            let defaultOption = document.createElement("option");
+            defaultOption.value = "";
+            defaultOption.textContent = "Select Customer";
+            defaultOption.disabled = true;
+            defaultOption.selected = true;
+            customerDropdown.appendChild(defaultOption);
+            
+            // Add customer options
+            data.forEach(customer => {
+                let option = document.createElement("option");
+                option.value = customer.name;  // Still store name as value
+                option.textContent = `${customer.name} - ${customer.address}`;  // Show name and address
+                customerDropdown.appendChild(option);
+            });
+
+        })
+        .catch(error => {
+            console.error("Error loading customers:", error);
+            alert("Failed to load customers. Please try again.");
+        });
+});
+            </script>
+            
+        
+        <!-- <div class="form-group">
+            <label for="type">Type:</label>
+            <input type="text" class="form-control" id="type" name="type" required>
+        </div> -->
+        <div class="form-group">
+            <label for="type">Type:</label>
+            <select class="form-control" id="type" name="type" required>
+                <option value="" disabled selected>Select Type</option>
+                <option value="Software">Software</option>
+                <option value="Hardware">Hardware</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="complaint">Complaint:</label>
+            <select class="form-control" id="complaint" name="complaint" required>
+                <option value="" disabled selected>Select a Complaint</option>
+                {% for complaint in complaints %}
+                    <option value="{{ complaint.id }}">{{ complaint.description }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="remark">Remark:</label>
+            <textarea class="form-control" id="remark" name="remark" ></textarea>
+        </div>
+        <div class="form-group">
+            <label for="voice_note">Voice Note:</label><br>
+            <button type="button" id="startRecording" class="btn btn-success">Start Recording</button>
+            <button type="button" id="stopRecording" class="btn btn-danger" disabled>Stop Recording</button>
+            <div style="margin-top: 3%;"><audio id="audioPlayback" controls></audio></div>
+            <input type="file" id="voice_note" name="voice_note" style="display: none;" accept="audio/*">
+        </div>
+        <button type="submit" class="btn btn-primary" style="margin-top: 2%;">Submit</button>
+    </form>
+
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+        let audioBlob;
+        let audioUrl;
+
+        const startButton = document.getElementById('startRecording');
+        const stopButton = document.getElementById('stopRecording');
+        const audioPlayback = document.getElementById('audioPlayback');
+        const voiceNoteInput = document.getElementById('voice_note');
+
+        // Start recording
+        startButton.addEventListener('click', () => {
+            audioChunks = []; // Clear previous recording
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorder.ondataavailable = event => {
+                        audioChunks.push(event.data);
+                    };
+                    mediaRecorder.onstop = () => {
+                        audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        audioUrl = URL.createObjectURL(audioBlob);
+                        audioPlayback.src = audioUrl;
+                        
+                        // Create a File object from the Blob
+                        const audioFile = new File([audioBlob], 'voice_note.wav', { type: 'audio/wav' });
+                        
+                        // Create a FormData object and append the file
+                        const formData = new FormData();
+                        formData.append('voice_note', audioFile);
+                        
+                        // Create a new FileList-like object
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(audioFile);
+                        voiceNoteInput.files = dataTransfer.files;
+                    };
+                    mediaRecorder.start();
+                    startButton.disabled = true;
+                    stopButton.disabled = false;
+                })
+                .catch(err => {
+                    console.error('Error accessing microphone:', err);
+                    alert('Error accessing microphone: ' + err);
+                });
+        });
+
+        // Stop recording
+        stopButton.addEventListener('click', () => {
+            mediaRecorder.stop();
+            startButton.disabled = false;
+            stopButton.disabled = true;
+            // Stop all tracks of the stream
+            mediaRecorder.stream.getTracks().forEach(track => track.stop());
+        });
+    </script>
+{% endblock %}

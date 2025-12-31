@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+{% block title %}Edit Warranty Ticket{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+    .container {
+        max-width: 900px;
+        margin: 30px auto;
+        padding: 25px;
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .page-header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 3px solid #061262;
+    }
+
+    .page-header h1 {
+        font-size: 2rem;
+        color: #061262;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    form {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .form-group label {
+        font-weight: 600;
+        color: #333;
+        display: block;
+        margin-bottom: 8px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 2px solid #ddd;
+        border-radius: 6px;
+        font-size: 1rem;
+    }
+
+    .form-group input[readonly] {
+        background-color: #f8f9fa;
+        color: #6c757d;
+        border-color: #e9ecef;
+        cursor: not-allowed;
+    }
+
+    textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    .btn-container {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .btn-primary {
+        background: #061262;
+        color: white;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        background: #0a1b7a;
+        transform: translateY(-2px);
+    }
+
+    .btn-cancel {
+        background: #0b0b0b;
+        color: white;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .btn-cancel:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+    }
+
+    .alert {
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+        font-weight: 500;
+    }
+
+    .alert-success {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .alert-error {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .info-text {
+        background: #e7f3ff;
+        border: 1px solid #b3d9ff;
+        border-radius: 6px;
+        padding: 15px;
+        margin-bottom: 20px;
+        color: #004085;
+        font-size: 0.9rem;
+    }
+
+    /* Back button styles */
+    .btn-back {
+        background: #070707;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-back:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+    }
+
+    .header-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+    }
+
+    .page-title {
+        flex: 1;
+        text-align: center;
+    }
+</style>
+
+<div class="container">
+    <!-- Header with Back Button -->
+    <div class="header-container">
+        <a href="{% url 'app5:warranty_ticket_list' %}" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+        <div class="page-title">
+            <div class="page-header">
+                <h1><i class="fas fa-edit"></i> Edit Warranty Ticket</h1>
+            </div>
+        </div>
+        <div style="width: 120px;"></div> <!-- Spacer for balance -->
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="info-text">
+        <i class="fas fa-info-circle"></i> Only the supplier field can be edited. All other fields are read-only.
+    </div>
+
+    <form method="POST" action="{% url 'app5:warranty_ticket_edit' ticket.id %}">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label>Warranty Ticket No</label>
+            <input type="text" value="{{ ticket.ticket_no }}" readonly>
+        </div>
+
+        <div class="form-group">
+            <label>Customer</label>
+            <input type="text" value="{{ ticket.jobcard.customer }}" readonly>
+        </div>
+
+        <div class="form-group">
+            <label>Item</label>
+            <input type="text" value="{{ ticket.selected_item }}" readonly>
+        </div>
+
+        <div class="form-group">
+            <label>Item Serial No</label>
+            <input type="text" value="{{ ticket.item_serial }}" readonly>
+        </div>
+       
+        <!-- Only editable field -->
+        <div class="form-group">
+            <label>Supplier <span style="color: #dc3545;">*</span></label>
+            <select name="supplier" required>
+                <option value="">-- Select Supplier --</option>
+                {% for supplier in suppliers %}
+                    <option value="{{ supplier.id }}" {% if ticket.supplier.id == supplier.id %}selected{% endif %}>
+                        {{ supplier.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="btn-container">
+            <button type="submit" class="btn-primary">
+                <i class="fas fa-save"></i> Update
+            </button>
+            <a href="{% url 'app5:warranty_ticket_list' %}" class="btn-cancel">
+                <i class="fas fa-times"></i> Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

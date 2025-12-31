@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    .form-container {
+        max-width: 400px;
+        background: #ffffff;
+        margin: 40px auto;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+        text-align: center;
+        margin-bottom: 20px;
+        color: #333;
+    }
+    label {
+        font-weight: 600;
+        display: block;
+        margin-bottom: 6px;
+    }
+    input[type="text"] {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        outline: none;
+        font-size: 15px;
+    }
+    input[type="text"]:focus {
+        border-color: #007BFF;
+    }
+    .btn {
+        display: block;
+        width: 100%;
+        background: #007BFF;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 10px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.3s ease;
+    }
+    .btn:hover {
+        background: #0056b3;
+    }
+    @media (max-width: 600px) {
+        .form-container {
+            margin: 20px;
+            padding: 20px;
+        }
+    }
+</style>
+
+<div class="form-container">
+    <h2>{% if software %}Edit Software{% else %}Add Software{% endif %}</h2>
+
+    <form method="POST">
+        {% csrf_token %}
+        <div class="form-group">
+            <label>Software Name:</label>
+            <input type="text" name="name" value="{{ software.name|default:'' }}" placeholder="Enter software name" required>
+        </div><br>
+        <button type="submit" class="btn">{% if software %}Update{% else %}Save{% endif %}</button>
+    </form>
+</div>
+{% endblock %}

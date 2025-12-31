@@ -1,0 +1,2007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Requirements Management</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #f0f2f5; min-height: 100vh; }
+        .container { max-width: 1600px; width: 100%; margin: 0 auto; padding: 20px; }
+        .main-content { display: flex; gap: 20px; align-items: stretch; width: 100%; min-height: 80vh; }
+        .directory-column { flex: 0 0 320px; width: 320px; display: flex; flex-direction: column; }
+        .form-column { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+        .form-container { background-color:#dcd9f3; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.15); overflow: hidden; width: 100%; flex: 1; display: flex; flex-direction: column; }
+        .form-header { background:#a095f6; color:black; padding: 15px 20px; text-align: center; }
+        .form-header h1 { font-size: 22px; margin-bottom: 5px; font-weight: 700; }
+        .form-header p { font-size: 13px; opacity: 0.9; }
+        .form-body { padding: 20px; flex: 1; display: flex; flex-direction: column; }
+        .form-section { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #e0e0e0; }
+        #communication-details { background-color:#dbf5dd; border: 2px solid #0ec33f; border-radius: 10px; padding: 20px; box-shadow: 0 3px 10px rgba(37,117,252,0.15); }
+        .section-title { font-size: 16px; color: #14ad09; font-weight: bold; margin-bottom: 15px; padding-bottom: 5px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; }
+        .section-title > div:first-child { display: flex; align-items: center; gap: 8px; }
+        .section-title i { margin-right: 8px; font-size: 16px; }
+        .form-row { display: flex; flex-wrap: wrap; margin: 0 -5px; width: 100%; }
+        .form-group { flex: 1; min-width: 180px; padding: 0 5px; margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; color: #444; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        input, select, textarea { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; transition: all 0.2s; background-color: #f9f9f9; }
+        input:focus, select:focus, textarea:focus { border-color: #6a11cb; box-shadow: 0 0 0 2px rgba(106,17,203,0.1); outline: none; background-color: white; }
+        
+        /* Ticket Select Dropdown */
+        .ticket-select-container {
+            position: relative;
+            width: 100%;
+        }
+        .ticket-select-dropdown {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #4a6fdc;
+            border-radius: 8px;
+            background: white;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.3s;
+        }
+        .ticket-select-dropdown:hover {
+            border-color: #2575fc;
+            box-shadow: 0 2px 8px rgba(37,117,252,0.2);
+        }
+        .ticket-select-dropdown i {
+            transition: transform 0.3s;
+        }
+        .ticket-select-dropdown.active i {
+            transform: rotate(180deg);
+        }
+        .ticket-select-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .ticket-select-options.active {
+            display: block;
+        }
+        .ticket-option {
+            padding: 10px 12px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .ticket-option:hover {
+            background: #f8f9fa;
+        }
+        .ticket-option.selected {
+            background: #e3f2fd;
+            border-left: 4px solid #2575fc;
+        }
+        .ticket-details {
+            flex: 1;
+            min-width: 0;
+        }
+        .ticket-number {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 13px;
+        }
+        .ticket-owner {
+            font-size: 12px;
+            color: #495057;
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .ticket-priority {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-weight: 600;
+            margin-left: 8px;
+            white-space: nowrap;
+        }
+        .ticket-priority.high {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .ticket-priority.medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .ticket-priority.low {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        /* Make communication fields slightly different for better UX */
+        .communication-input { 
+            background-color: #f8fff8 !important; 
+            border: 1px solid #4CAF50 !important;
+            font-weight: 500;
+        }
+        .communication-input:read-only {
+            background-color: #e8f5e9 !important;
+            cursor: not-allowed;
+            color: #2e7d32;
+        }
+        
+        .form-navigation { display: flex; justify-content: center; margin-bottom: 20px; background: white; border-radius: 10px; padding: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); width: 100%; }
+        .nav-menu { display: flex; list-style: none; gap: 5px; width: 100%; justify-content: center; flex-wrap: wrap; }
+        .nav-item { flex: 1; text-align: center; min-width: 120px; }
+        .nav-link { display: block; padding: 12px 15px; text-decoration: none; color: #666; font-weight: 600; border-radius: 8px; transition: all 0.3s ease; border: 2px solid transparent; font-size: 14px; white-space: nowrap; }
+        .nav-link:hover { background: linear-gradient(135deg, #f8f9ff, #e8f0ff); color: #4CAF50; border-color: #4CAF50; }
+        .nav-link.active { background: linear-gradient(135deg, #4CAF50, #45a049); color: white; border-color: #4CAF50; box-shadow: 0 4px 12px rgba(37,117,252,0.3); transform: translateY(-2px); }
+        .nav-link i { margin-right: 8px; font-size: 16px; }
+        .requirements-section { background-color: #ffe9cc; border: 2px solid #f8861b; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 3px 10px rgba(0,0,0,0.08); }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #e5bc08; width: 100%; }
+        .section-title-compact { display: flex; align-items: center; font-size: 16px; color: #d29105; font-weight: 700; margin: 0; white-space: nowrap; }
+        .section-title-compact i { margin-right: 10px; font-size: 18px; color: #d29105; }
+        .add-btn { background: linear-gradient(135deg, #4CAF50, #45a049); color: white; padding: 10px 20px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; }
+        .add-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(37,117,252,0.4); }
+        .table-container { overflow-x: auto; border: 1px solid #f18d0a; border-radius: 8px; background: white; margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { background-color: #ffe9cc; padding: 12px 10px; text-align: left; font-weight: 600; color: #444; border: 1px solid #f18d0a; }
+        td { padding: 10px; border: 1px solid #f18d0a; background: white; }
+        tr:hover { background-color: #f9fafb; }
+        .total-row { font-weight: bold; background-color: #ffe9cc; }
+        .total-row td { border-top: 2px solid #f18d0a; font-size: 14px; }
+        .delete-btn { background: #dc3545; color: white; padding: 6px 10px; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; width: 100%; }
+        .delete-btn:hover { background: #c82333; }
+        .btn-group { display: flex; justify-content: center; margin-top: auto; gap: 10px; width: 100%; padding-top: 20px; }
+        button { padding: 10px 20px; background-color: #0ec33f;color: #ffffff; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+        .submit-btn { background: linear-gradient(135deg, #4CAF50, #45a049); color: white; box-shadow: 0 3px 8px rgba(37,117,252,0.3); }
+        .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(37,117,252,0.4); }
+        .back-btn { background-color: #4CAF50; color: #faf9f9; border: 1px solid #ddd; text-decoration: none; display: flex; align-items: center; justify-content: center; }
+        .back-btn:hover { background-color: #4CAF50; }
+        
+        /* Ticket Info Box */
+        .ticket-info-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: none;
+        }
+        .ticket-info-box.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .ticket-info-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            padding-bottom: 8px;
+        }
+        .ticket-info-title {
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .ticket-info-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .ticket-details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+        .ticket-detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .ticket-detail-label {
+            font-size: 11px;
+            opacity: 0.8;
+            margin-bottom: 2px;
+        }
+        .ticket-detail-value {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        /* Lead Directory Styles */
+             .lead-directory-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            height: 100%;
+            max-height: calc(100vh - 40px);
+            display: flex;
+            flex-direction: column;
+        }
+        .directory-header { background: #4a6fdc; color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; }
+        .directory-header h2 { font-size: 16px; font-weight: 600; }
+        .directory-info { font-size: 12px; opacity: 0.9; }
+        .directory-tabs { display: flex; background: #f8f9fa; border-bottom: 1px solid #e9ecef; }
+        .directory-tab { flex: 1; padding: 10px 12px; text-align: center; background: transparent; border: none; font-weight: 600; font-size: 13px; color: #6c757d; cursor: pointer; transition: all 0.3s; border-bottom: 3px solid transparent; }
+        .directory-tab.active { color: #4a6fdc; border-bottom-color: #4a6fdc; background: white; }
+        .directory-tab:hover { background: #e9ecef; }
+        .search-container { padding: 12px 15px; background: #f8f9fa; border-bottom: 1px solid #e9ecef; }
+        .search-box { position: relative; width: 100%; }
+        .search-box input { padding: 8px 12px 8px 35px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; width: 100%; background: white; }
+        .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #6c757d; font-size: 13px; }
+        .employee-list, .lead-list { flex: 1; overflow-y: auto; padding: 8px 0; display: none; }
+        .employee-list.active, .lead-list.active { display: block; }
+        
+        /* Lead Item Styles */
+        .lead-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: all 0.2s;
+            cursor: pointer;
+            position: relative;
+        }
+        .lead-item.selected {
+            background: #e3f2fd;
+            border-left: 4px solid #2575fc;
+        }
+        .lead-item:hover {
+            background: #f8f9fa;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .lead-item.clickable {
+            cursor: pointer;
+        }
+        .lead-item.editable:hover {
+            background: linear-gradient(135deg, #f8f9ff, #e8f0ff);
+        }
+        .edit-lead-indicator {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #4CAF50;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .lead-item:hover .edit-lead-indicator {
+            opacity: 1;
+        }
+        .lead-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #28a745;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 12px;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+        .lead-details {
+            flex: 1;
+            min-width: 0;
+        }
+        .lead-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 2px;
+            font-size: 13px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .lead-info {
+            font-size: 12px;
+            color: #6c757d;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .lead-phone {
+            font-size: 11px;
+            color: #495057;
+            margin-top: 1px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .lead-ticket {
+            font-size: 10px;
+            color: #6c757d;
+            background: #f8f9fa;
+            border-radius: 4px;
+            display: inline-block;
+            margin-top: 2px;
+            padding: 2px 6px;
+            font-weight: 600;
+        }
+
+        /* Selected lead highlighting */
+        .lead-item.selected {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb) !important;
+            border-left: 5px solid #2575fc !important;
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(37, 117, 252, 0.3) !important;
+            transition: all 0.3s ease;
+        }
+
+        .lead-item.selected .lead-name {
+            color: #1565c0;
+            font-weight: 700;
+        }
+
+        .lead-item.selected .lead-avatar {
+            background: linear-gradient(135deg, #2575fc, #6a11cb);
+            color: white;
+            font-weight: bold;
+        }
+
+        .lead-item.selected::before {
+            content: "✓";
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            background: #4CAF50;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .lead-status {
+            font-size: 10px;
+            color: #28a745;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+        
+        /* Quick Action Buttons */
+        .lead-actions {
+            display: flex;
+            gap: 5px;
+            margin-top: 8px;
+        }
+        .quick-action-btn {
+            padding: 4px 8px;
+            border: none;
+            border-radius: 4px;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+        .edit-btn {
+            background: #007bff;
+            color: white;
+        }
+        .edit-btn:hover {
+            background: #0056b3;
+        }
+        .view-btn {
+            background: #28a745;
+            color: white;
+        }
+        .view-btn:hover {
+            background: #1e7e34;
+        }
+        
+        .assign-btn {
+            padding: 5px 10px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .assign-btn:hover { background: #45a049; }
+        .assign-btn.assigned { background: #6c757d; }
+        .no-results { padding: 20px 15px; text-align: center; color: #6c757d; font-size: 13px; }
+
+        /* Priority Filter Styles */
+        .filter-container { padding: 10px 15px; background: #f8f9fa; border-bottom: 1px solid #ddd; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+        .filter-group { display: flex; align-items: center; gap: 8px; }
+        .filter-label { font-size: 13px; font-weight: 600; white-space: nowrap; }
+        .filter-select { padding: 6px; border-radius: 8px; min-width: 120px; }
+        
+        /* Status Filter */
+        .status-filter-group { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+
+        /* Pagination Styles */
+        .directory-pagination { display: flex; justify-content: center; align-items: center; padding: 12px 15px; background: #f8f9fa; border-top: 1px solid #e9ecef; gap: 10px; }
+        .pagination-info { font-size: 12px; color: #6c757d; margin: 0 10px; }
+        .pagination-btn { padding: 6px 12px; background: white; border: 1px solid #dee2e6; border-radius: 4px; font-size: 12px; cursor: pointer; transition: all 0.2s; color: #4a6fdc; }
+        .pagination-btn:hover:not(:disabled) { background: #4a6fdc; color: white; border-color: #4a6fdc; }
+        .pagination-btn:disabled { background: #f8f9fa; color: #6c757d; cursor: not-allowed; }
+        .pagination-numbers { display: flex; gap: 5px; }
+        .page-number { padding: 6px 10px; background: white; border: 1px solid #dee2e6; border-radius: 4px; font-size: 12px; cursor: pointer; transition: all 0.2s; color: #495057; }
+        .page-number.active { background: #4a6fdc; color: white; border-color: #4a6fdc; }
+        .page-number:hover:not(.active) { background: #e9ecef; }
+
+        /* Message styles */
+        .success-message { background-color: #d4edda; color: #155724; padding: 12px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #c3e6cb; }
+        .error-message { background-color: #f8d7da; color: #721c24; padding: 12px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #f5c6cb; }
+        .warning-message { background-color: #fff3cd; color: #856404; padding: 12px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #ffeaa7; }
+        
+        /* Lead selection styles */
+        .lead-selection-hint {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 12px 15px;
+            border-radius: 6px;
+            font-size: 13px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196f3;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Existing requirements indicator */
+        .existing-requirements-info {
+            background: #fff3cd;
+            color: #856404;
+            padding: 12px 15px;
+            border-radius: 6px;
+            font-size: 13px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffc107;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Edit mode indicator */
+        .edit-mode-indicator {
+            background: #d1ecf1;
+            color: #0c5460;
+            padding: 12px 15px;
+            border-radius: 6px;
+            font-size: 13px;
+            margin-bottom: 20px;
+            border-left: 4px solid #17a2b8;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Loading spinner */
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Section info badge */
+        .section-info-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            background: #e3f2fd;
+            color: #1976d2;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-left: 8px;
+            font-weight: 600;
+        }
+
+        /* Status inline styles */
+        .status-inline {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .status-select {
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            background-color: #f9f9f9;
+            min-width: 120px;
+        }
+
+        .status-select:focus {
+            border-color: #6a11cb;
+            box-shadow: 0 0 0 2px rgba(106,17,203,0.1);
+            outline: none;
+            background-color: white;
+        }
+        
+        /* Form actions */
+        .reset-btn {
+            background: linear-gradient(135deg, #ff9800, #f57c00);
+            color: white;
+        }
+        .reset-btn:hover {
+            background: linear-gradient(135deg, #f57c00, #e65100);
+        }
+
+        @media (max-width: 1200px) {
+            .main-content { flex-direction: column; }
+            .directory-column { flex: 0 0 auto; width: 100%; }
+            .lead-directory-container { height: auto; max-height: 400px; }
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .form-row { flex-direction: column; }
+            .form-group { min-width: 100%; }
+            .nav-menu { flex-direction: column; }
+            .nav-item { min-width: 100%; }
+            .directory-pagination { flex-wrap: wrap; }
+            .directory-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .employee-item, .lead-item { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .assign-btn { align-self: flex-end; }
+            .section-title { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .status-inline { width: 100%; justify-content: flex-start; }
+            .ticket-info-box { padding: 12px; }
+            .ticket-details-grid { grid-template-columns: 1fr; }
+            .filter-container { flex-direction: column; align-items: stretch; }
+            .status-filter-group { margin-left: 0; }
+            .lead-actions { width: 100%; justify-content: flex-start; }
+            .quick-action-btn { flex: 1; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="main-content">
+        <!-- Left Column - Lead Directory -->
+        <div class="directory-column">
+            <div class="lead-directory-container">
+                <div class="directory-header">
+                    <h2>Lead Directory</h2>
+                    <div class="directory-info">
+                        <span id="activeTabCount">{{ leads_count }}</span> active leads
+                    </div>
+                </div>
+                
+                <!-- Directory Tabs -->
+                <div class="directory-tabs">
+                    <button class="directory-tab active" data-tab="leads">
+                        <i class="fas fa-users"></i> Leads
+                    </button>
+                   
+                </div>
+                
+                <div class="search-container">
+                    <div class="search-box">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="directorySearch" placeholder="Search by Name/Phone/Ticket...">
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="filter-container" id="leadFilters" style="display: block;">
+                    <div class="filter-group">
+                        <span class="filter-label">Priority:</span>
+                        <select id="priorityFilter" class="filter-select">
+                            <option value="all">All</option>
+                            <option value="High">🔴 High</option>
+                            <option value="Medium">🟡 Medium</option>
+                            <option value="Low">🟢 Low</option>
+                        </select>
+                    </div>
+                    
+                    
+                </div>
+                
+                <!-- Lead List (shown by default) -->
+                <div class="lead-list active" id="leadList">
+                    {% if active_leads %}
+                        {% for lead in active_leads %}
+                        <div class="lead-item clickable editable" 
+                             data-id="{{ lead.id }}" 
+                             data-name="{{ lead.ownerName }}" 
+                             data-phone="{{ lead.phoneNo }}" 
+                             data-ticket="{{ lead.ticket_number }}"
+                             data-priority="{{ lead.priority }}"
+                             data-status="{{ lead.status }}"
+                             data-requirements-count="{{ lead.requirements_count }}"
+                             data-email="{{ lead.email|default:'' }}"
+                             data-company="{{ lead.company|default:'' }}"
+                             data-place="{{ lead.place|default:'' }}">
+                            
+                            <!-- Edit Indicator -->
+                            <div class="edit-lead-indicator" title="Click to edit requirements">
+                                <i class="fas fa-edit" style="font-size: 10px;"></i>
+                            </div>
+                            
+                            <!-- Priority Indicator -->
+                            <div class="lead-avatar" style="background: {% if lead.priority == 'High' %}#dc3545{% elif lead.priority == 'Medium' %}#ffc107{% else %}#28a745{% endif %}">
+                                {{ lead.ownerName|slice:":1"|upper }}
+                            </div>
+
+                            <div class="lead-details">
+                                <!-- Name with Ticket -->
+                                <div class="lead-name">
+                                    {{ lead.ownerName }}
+                                    {% if lead.ticket_number %}
+                                    <span class="lead-ticket">#{{ lead.ticket_number }}</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Phone -->
+                                {% if lead.phoneNo %}
+                                <div class="lead-phone">
+                                    <i class="fas fa-phone-alt" style="font-size: 9px;"></i> {{ lead.phoneNo }}
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Company/Place -->
+                                {% if lead.company or lead.place %}
+                                <div class="lead-info">
+                                    {% if lead.company %}{{ lead.company }}{% endif %}
+                                    {% if lead.place %}{% if lead.company %} - {% endif %}{{ lead.place }}{% endif %}
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Status & Priority -->
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
+                                    <span style="color: {% if lead.status == 'Active' %}#28a745{% elif lead.status == 'Follow Up' %}#17a2b8{% elif lead.status == 'Quoted' %}#ffc107{% elif lead.status == 'Closed' %}#6c757d{% else %}#6c757d{% endif %}; font-size: 10px; font-weight: 600;">
+                                        {{ lead.status }}
+                                    </span>
+                                    <span style="color: {% if lead.priority == 'High' %}#dc3545{% elif lead.priority == 'Medium' %}#ffc107{% else %}#28a745{% endif %}; font-weight:600; font-size: 10px; padding: 2px 6px; border-radius: 10px; background: rgba(0,0,0,0.05);">
+                                        {{ lead.priority }}
+                                    </span>
+                                </div>
+                                
+                                <!-- Requirements Count -->
+                                {% if lead.requirements_count and lead.requirements_count > 0 %}
+                                <div style="margin-top: 3px; font-size: 10px; color: #28a745; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                                    <i class="fas fa-clipboard-list" style="font-size: 9px;"></i> 
+                                    {{ lead.requirements_count }} item(s)
+                                    <span style="font-size: 9px; color: #6c757d; margin-left: 4px;">
+                                        <i class="fas fa-external-link-alt"></i> Click to edit
+                                    </span>
+                                </div>
+                                {% else %}
+                                <div style="margin-top: 3px; font-size: 10px; color: #6c757d; display: flex; align-items: center; gap: 4px;">
+                                    <i class="fas fa-plus-circle" style="font-size: 9px;"></i> 
+                                    No requirements yet
+                                    <span style="font-size: 9px; color: #007bff; margin-left: 4px;">
+                                        <i class="fas fa-external-link-alt"></i> Click to add
+                                    </span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="no-results">
+                            <i class="fas fa-user-slash" style="font-size: 24px; margin-bottom: 10px; color: #6c757d;"></i>
+                            <p>No active leads found</p>
+                            <p style="font-size: 11px; margin-top: 5px;">Create leads in the Lead Form first</p>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Employee List (hidden by default) -->
+                <div class="employee-list" id="employeeList">
+                    {% if active_users %}
+                        {% for u in active_users %}
+                        <div class="lead-item" data-id="{{ u.id }}" data-name="{{ u.name }}" data-phone="{{ u.phone }}">
+                            <div class="lead-avatar">
+                                {{ u.name|slice:":1"|upper }}
+                            </div>
+
+                            <div class="lead-details">
+                                <div class="lead-name">{{ u.name }}</div>
+                                <div class="lead-info">
+                                    {% if u.designation %}{{ u.designation }}{% endif %}
+                                    {% if u.department %}{% if u.designation %}, {% endif %}{{ u.department }}{% endif %}
+                                </div>
+                                {% if u.phone %}
+                                <div class="lead-phone">
+                                    <i class="fas fa-phone-alt" style="font-size: 9px;"></i> {{ u.phone }}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <button class="assign-btn"
+                                    data-id="{{ u.id }}"
+                                    data-name="{{ u.name|escapejs }}"
+                                    data-phone="{{ u.phone|default_if_none:''|escapejs }}">
+                                Assign
+                            </button>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="no-results">
+                            <i class="fas fa-user-tie" style="font-size: 24px; margin-bottom: 10px; color: #6c757d;"></i>
+                            <p>No active employees found</p>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Pagination -->
+                <div class="directory-pagination" id="directoryPagination">
+                    <div class="pagination-buttons">
+                        <button class="pagination-btn" id="prevPage" disabled>
+                            <i class="fas fa-chevron-left"></i> Prev
+                        </button>
+                    </div>
+                    
+                    <div class="pagination-numbers" id="paginationNumbers">
+                        <!-- Page numbers will be generated here -->
+                    </div>
+                    
+                    <div class="pagination-info" id="paginationInfo">
+                        Page 1 of 1
+                    </div>
+                    
+                    <div class="pagination-buttons">
+                        <button class="pagination-btn" id="nextPage" disabled>
+                            Next <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Requirements Form -->
+        <div class="form-column">
+            <div class="form-container">
+                <div class="form-header">
+                    <h1>Requirements Management</h1>
+                    <p>Add or edit requirements for selected lead</p>
+                    
+                    <!-- Selected Lead Info -->
+                    
+                </div>
+
+                <!-- Navigation Menu -->
+                <div class="form-navigation">
+                    <ul class="nav-menu">
+                        <li class="nav-item">
+                            <a href="{% url 'app5:lead' %}" class="nav-link">
+                                <i class="fas fa-phone-alt"></i>
+                                Lead Form
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" id="smartRequirementsBtn">
+                                <i class="fas fa-clipboard-list"></i>
+                                Requirements
+                                <span id="requirementsBtnBadge" style="font-size: 10px; margin-left: 5px;"></span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'app5:event_form' %}" class="nav-link">
+                                <i class="fas fa-calendar"></i>
+                                Event
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'app5:quotation_form' %}" class="nav-link">
+                                <i class="fas fa-file-invoice-dollar"></i>
+                                Quotation
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="form-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="{{ message.tags|default:'info' }}-message">
+                                <i class="fas fa-info-circle"></i> {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <!-- Lead Selection Hint -->
+                    <div class="lead-selection-hint" id="leadSelectionHint">
+                        <i class="fas fa-info-circle"></i>
+                        <div>
+                            <strong>Select a lead from the directory</strong>
+                            <p style="margin-top: 5px; font-size: 12px; opacity: 0.9;">
+                                Click on any lead in the left panel to select it. The form will be auto-populated with lead details.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- ===== Communication Details Section ===== -->
+                    <div class="form-section" id="communication-details">
+                        <div class="section-title">
+                            <div>
+                                <i class="fas fa-phone-alt"></i>
+                                <span>Communication Details</span>
+                                <span id="communicationStatus" class="section-info-badge">No lead selected</span>
+                            </div>
+                            <div class="status-inline">
+                                <select id="status" name="status" class="status-select" required>
+                                    <option value="">Select Status</option>
+                                    <option value="Active">🟢 Active</option>
+                                    <option value="Inactive">🔴 Inactive</option>
+                                    <option value="Installed">🟡 Installed</option>
+                                </select>
+
+                                <select id="priority" name="priority" class="status-select" required>
+                                    <option value="">Select Priority</option>
+                                    <option value="High">🔴 High</option>
+                                    <option value="Medium">🟡 Medium</option>
+                                    <option value="Low">🟢 Low</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Ticket Select Dropdown -->
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 2;">
+                                <label for="ticket_select"><i class="fas fa-ticket-alt"></i> Select Ticket *</label>
+                                <div class="ticket-select-container">
+                                    <div class="ticket-select-dropdown" id="ticketSelectDropdown">
+                                        <span id="selectedTicketText">Click to select a ticket</span>
+                                        <i class="fas fa-chevron-down"></i>
+                                    </div>
+                                    <div class="ticket-select-options" id="ticketSelectOptions">
+                                        {% for lead in active_leads %}
+                                        <div class="ticket-option" 
+                                             data-ticket="{{ lead.ticket_number }}"
+                                             data-name="{{ lead.ownerName }}"
+                                             data-phone="{{ lead.phoneNo }}"
+                                             data-priority="{{ lead.priority }}"
+                                             data-status="{{ lead.status }}"
+                                             data-requirements-count="{{ lead.requirements_count }}"
+                                             data-lead-id="{{ lead.id }}"
+                                             data-email="{{ lead.email|default:'' }}"
+                                             data-company="{{ lead.company|default:'' }}"
+                                             data-place="{{ lead.place|default:'' }}">
+                                            <div class="ticket-details">
+                                                <div class="ticket-number">
+                                                    {{ lead.ticket_number }}
+                                                </div>
+                                                <div class="ticket-owner">
+                                                    {{ lead.ownerName }}
+                                                </div>
+                                            </div>
+                                            <div class="ticket-priority {{ lead.priority|lower }}">
+                                                {{ lead.priority }}
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <small style="font-size: 10px; color: #666;">Select a ticket to auto-fill lead details</small>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <!-- Ticket Number (Auto-filled from ticket selection) -->
+                            <div class="form-group">
+                                <label for="ticket_number"><i class="fas fa-hashtag"></i> Ticket Number</label>
+                                <input type="text" id="ticket_number" name="ticket_number" 
+                                       class="communication-input" placeholder="Auto-filled" 
+                                       readonly>
+                            </div>
+                            
+                            <!-- Owner Name (Auto-filled from ticket selection) -->
+                            <div class="form-group">
+                                <label for="ownerName"><i class="fas fa-user"></i> Owner Name *</label>
+                                <input type="text" id="ownerName" name="ownerName" 
+                                       class="communication-input" placeholder="Auto-filled from ticket" 
+                                       required readonly>
+                            </div>
+                            
+                            <!-- Phone Number (Auto-filled from ticket selection) -->
+                            <div class="form-group">
+                                <label for="phoneNo"><i class="fas fa-phone"></i> Phone Number *</label>
+                                <input type="tel" id="phoneNo" name="phoneNo" 
+                                       class="communication-input" placeholder="Auto-filled from ticket" 
+                                       required readonly>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- ===== end Communication Details Section ===== -->
+                    
+                    <!-- ===== Requirements Section ===== -->
+                    <div class="requirements-section" id="requirements-section">
+                        <div class="section-header">
+                            <div class="section-title-compact">
+                                <i class="fas fa-clipboard-list"></i>
+                                <span>Requirements List</span>
+                                <span id="itemsCountBadge" class="section-info-badge">0 items</span>
+                            </div>
+                            <button type="button" class="add-btn" id="add-item-btn">
+                                <i class="fas fa-plus"></i> Add Item
+                            </button>
+                        </div>
+
+                        <form id="requirements-form" method="POST" action="{% url 'app5:requirement_form' %}">
+                            {% csrf_token %}
+
+                            <!-- Hidden fields for communication details -->
+                            <input type="hidden" name="owner_name" id="hiddenOwnerName">
+                            <input type="hidden" name="phone_no" id="hiddenPhoneNo">
+                            <input type="hidden" name="ticket_number" id="hiddenTicketNumber">
+                            <input type="hidden" name="priority" id="hiddenPriority">
+                            <input type="hidden" name="email_address" id="hiddenEmailAddress" value="">
+                            <input type="hidden" name="requirement_ids" id="hiddenRequirementIds" value="">
+                            <input type="hidden" name="status" id="hiddenStatus">
+                            <input type="hidden" name="email" id="hiddenEmail">
+                            <input type="hidden" name="company" id="hiddenCompany">
+                            <input type="hidden" name="place" id="hiddenPlace">
+                            <input type="hidden" name="lead_id" id="hiddenLeadId">
+
+                            <!-- Item Options Template -->
+                            <template id="item-options">
+                                {% for it in items %}
+                                    <option value="{{ it.id }}"
+                                        data-unit="{{ it.unit_of_measure }}"
+                                        data-price="{{ it.mrp }}"
+                                        data-section="{{ it.section|default:'GENERAL' }}"
+                                        data-hsn="{{ it.hsn_code|default:'' }}"
+                                        data-description="{{ it.description|default:'' }}">
+                                        {{ it.name }}{% if it.section %} - {{ it.section_display }}{% endif %}
+                                    </option>
+                                {% endfor %}
+                            </template>
+
+                            <div class="table-container">
+                                <table id="requirements-table">
+                                    <thead>
+                                        <tr>
+                                            <th width="5%">#</th>
+                                            <th width="25%">Section</th>
+                                            <th width="35%">Item Name</th>
+                                            <th width="10%">Unit</th>
+                                            <th width="15%">Price</th>
+                                            <th width="10%">Qty</th>
+                                            <th width="15%">Total</th>
+                                            <th width="10%">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="table-body">
+                                        <!-- Rows will be added dynamically -->
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="total-row">
+                                            <td colspan="6" style="text-align: right; font-weight:700; font-size: 14px;">Grand Total:</td>
+                                            <td id="grand-total" style="font-weight:700; font-size: 14px;">0.00</td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+
+                            <!-- Form Actions -->
+                            <div class="btn-group">
+                                <button type="submit" class="submit-btn" id="submitRequirementsBtn" disabled>
+                                    <i class="fas fa-paper-plane"></i> Save Requirements
+                                </button>
+                                <!-- <button type="button" class="reset-btn" id="clearFormBtn">
+                                    <i class="fas fa-times"></i> Clear Form
+                                </button> -->
+                                <button type="button" class="back-btn" onclick="window.location.href='{% url 'app5:lead_report' %}'">
+                                    <i class="fas fa-arrow-left"></i> Back to Reports
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    <!-- ===== end Requirements Section ===== -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // =====================================================
+    // SMART REQUIREMENTS NAVIGATION SYSTEM
+    // =====================================================
+    
+    // Global variables
+    let leadRequirementsMap = {{ lead_requirements_map|safe }};
+    let currentLeadTicket = null;
+    let isEditMode = false;
+    let existingRequirementIds = [];
+    let selectedLeadId = null;
+    let activeLeads = {{ active_leads_json|safe }};
+    const tbody = document.getElementById('table-body');
+    const grandEl = document.getElementById('grand-total');
+
+    // =====================================================
+    // UTILITY FUNCTIONS
+    // =====================================================
+    
+    function formatNumber(n) {
+        n = parseFloat(n) || 0;
+        return n.toFixed(2);
+    }
+
+    function showNotification(message, type = 'info') {
+        const colors = {
+            success: '#4CAF50',
+            error: '#f44336',
+            warning: '#ff9800',
+            info: '#2196F3'
+        };
+        
+        const icons = {
+            success: 'check-circle',
+            error: 'exclamation-circle',
+            warning: 'exclamation-triangle',
+            info: 'info-circle'
+        };
+        
+        // Remove existing notification
+        const existing = document.querySelector('.smart-notification');
+        if (existing) existing.remove();
+        
+        const notification = document.createElement('div');
+        notification.className = 'smart-notification';
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: ${colors[type]};
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 10000;
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideInRight 0.3s ease-out;
+        `;
+        
+        notification.innerHTML = `
+            <i class="fas fa-${icons[type]}"></i>
+            <span>${message}</span>
+        `;
+        
+        // Add animation styles if not already added
+        if (!document.getElementById('smart-notification-styles')) {
+            const style = document.createElement('style');
+            style.id = 'smart-notification-styles';
+            style.textContent = `
+                @keyframes slideInRight {
+                    from {
+                        opacity: 0;
+                        transform: translateX(100px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateX(0);
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        document.body.appendChild(notification);
+        
+        // Auto-remove after 3 seconds
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            notification.style.transform = 'translateX(100px)';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 3000);
+    }
+
+    // =====================================================
+    // LEAD SELECTION AND SMART NAVIGATION
+    // =====================================================
+    
+    function setupLeadSelection() {
+        const leadItems = document.querySelectorAll('.lead-item.clickable');
+        
+        leadItems.forEach(item => {
+            // Clone to remove any existing listeners
+            const newItem = item.cloneNode(true);
+            item.parentNode.replaceChild(newItem, item);
+            
+            newItem.addEventListener('click', function(e) {
+                // Don't interfere with button clicks
+                if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+                    return;
+                }
+                
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const leadId = this.getAttribute('data-id');
+                const leadName = this.getAttribute('data-name') || 'Unknown';
+                const requirementsCount = parseInt(this.getAttribute('data-requirements-count') || 0);
+                
+                console.log(`Lead clicked: ${leadId}, Requirements: ${requirementsCount}`);
+                
+                // Gather lead data from attributes
+                const leadData = {
+                    id: leadId,
+                    ownerName: leadName,
+                    phoneNo: this.getAttribute('data-phone') || '',
+                    ticket_number: this.getAttribute('data-ticket') || '',
+                    priority: this.getAttribute('data-priority') || '',
+                    status: this.getAttribute('data-status') || '',
+                    email: this.getAttribute('data-email') || '',
+                    company: this.getAttribute('data-company') || '',
+                    place: this.getAttribute('data-place') || '',
+                    requirements_count: requirementsCount
+                };
+                
+                // Save to localStorage
+                localStorage.setItem('smartLeadData', JSON.stringify(leadData));
+                
+                // Highlight selected lead
+                document.querySelectorAll('.lead-item').forEach(i => {
+                    i.classList.remove('selected');
+                });
+                this.classList.add('selected');
+                
+                // SMART NAVIGATION DECISION
+                if (requirementsCount > 0) {
+                    // Has requirements → Navigate to edit page
+                    const editUrl = '{% url "app5:edit_requirement" 0 %}'.replace('0', leadId);
+                    console.log(`Has ${requirementsCount} requirements, navigating to EDIT page`);
+                    
+                    // Show notification
+                    showNotification(`Opening edit page for ${leadName} (${requirementsCount} items)...`, 'info');
+                    
+                    // Add visual feedback
+                    this.style.transform = 'scale(0.95)';
+                    this.style.opacity = '0.7';
+                    
+                    // Navigate after short delay
+                    setTimeout(() => {
+                        window.location.href = editUrl;
+                    }, 500);
+                } else {
+                    // No requirements → Stay on list page, populate form
+                    console.log(`No requirements for ${leadName}, populating form`);
+                    
+                    // Populate the form fields
+                    populateFormWithLeadData(leadData);
+                    
+                    // Show notification
+                    showNotification(`Ready to add requirements for ${leadName}`, 'success');
+                    
+                    // Update navigation button badge
+                    updateRequirementsButtonBadge(requirementsCount);
+                }
+            });
+        });
+        
+        console.log(`✅ Setup lead selection for ${leadItems.length} leads`);
+    }
+
+    function populateFormWithLeadData(leadData) {
+        // Populate communication details
+        document.getElementById('ticket_number').value = leadData.ticket_number || '';
+        document.getElementById('ownerName').value = leadData.ownerName || '';
+        document.getElementById('phoneNo').value = leadData.phoneNo || '';
+        document.getElementById('status').value = leadData.status || '';
+        document.getElementById('priority').value = leadData.priority || '';
+        
+        // Populate hidden fields
+        document.getElementById('hiddenTicketNumber').value = leadData.ticket_number || '';
+        document.getElementById('hiddenOwnerName').value = leadData.ownerName || '';
+        document.getElementById('hiddenPhoneNo').value = leadData.phoneNo || '';
+        document.getElementById('hiddenStatus').value = leadData.status || '';
+        document.getElementById('hiddenPriority').value = leadData.priority || '';
+        document.getElementById('hiddenEmail').value = leadData.email || '';
+        document.getElementById('hiddenCompany').value = leadData.company || '';
+        document.getElementById('hiddenPlace').value = leadData.place || '';
+        document.getElementById('hiddenLeadId').value = leadData.id || '';
+        
+        // Update selected ticket dropdown
+        const selectedText = document.getElementById('selectedTicketText');
+        if (selectedText && leadData.ticket_number) {
+            selectedText.textContent = `${leadData.ticket_number} - ${leadData.ownerName}`;
+        }
+        
+        // Update selected lead info box
+        updateSelectedLeadInfoBox(
+            leadData.ticket_number,
+            leadData.ownerName,
+            leadData.phoneNo,
+            leadData.priority,
+            leadData.status,
+            leadData.requirements_count || 0
+        );
+        
+        // Enable submit button
+        const submitBtn = document.getElementById('submitRequirementsBtn');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+        }
+        
+        // Hide lead selection hint
+        const leadSelectionHint = document.getElementById('leadSelectionHint');
+        if (leadSelectionHint) {
+            leadSelectionHint.style.display = 'none';
+        }
+        
+        // Clear any existing requirements from table
+        clearRequirementsTable();
+        createRow();
+    }
+
+    function updateSelectedLeadInfoBox(ticket, name, phone, priority, status, itemsCount) {
+        const infoBox = document.getElementById('selectedLeadInfo');
+        if (infoBox) {
+            infoBox.classList.add('show');
+            
+            // Update the badge
+            const badge = document.getElementById('selectedLeadBadge');
+            if (badge) {
+                badge.textContent = 'Selected';
+            }
+            
+            // Update all the info fields
+            document.getElementById('infoTicket').textContent = ticket || '-';
+            document.getElementById('infoName').textContent = name || '-';
+            document.getElementById('infoPhone').textContent = phone || '-';
+            document.getElementById('infoPriority').textContent = priority || '-';
+            document.getElementById('infoStatus').textContent = status || '-';
+            document.getElementById('infoItemsCount').textContent = itemsCount || '0';
+        }
+    }
+
+    function updateRequirementsButtonBadge(count) {
+        const badge = document.getElementById('requirementsBtnBadge');
+        if (badge) {
+            if (count > 0) {
+                badge.textContent = `(${count})`;
+                badge.style.color = '#28a745';
+            } else {
+                badge.textContent = '';
+            }
+        }
+    }
+
+    // =====================================================
+    // TICKET DROPDOWN FUNCTIONALITY
+    // =====================================================
+    
+    function setupTicketSelectDropdown() {
+    const dropdown = document.getElementById('ticketSelectDropdown');
+    const optionsContainer = document.getElementById('ticketSelectOptions');
+    const selectedText = document.getElementById('selectedTicketText');
+    const allOptions = document.querySelectorAll('.ticket-option');
+    
+    if (!dropdown || !optionsContainer) return;
+    
+    // Function to refresh ticket options - showing only those with no requirements
+    function refreshTicketOptions() {
+        // Clear all existing options
+        optionsContainer.innerHTML = '';
+        
+        let visibleCount = 0;
+        
+        // Filter: Show only tickets with requirements_count = 0 (no requirements yet)
+        allOptions.forEach(option => {
+            const requirementsCount = parseInt(option.getAttribute('data-requirements-count') || 0);
+            
+            // Only show tickets with NO requirements
+            if (requirementsCount === 0) {
+                // Clone the option
+                const newOption = option.cloneNode(true);
+                optionsContainer.appendChild(newOption);
+                visibleCount++;
+            }
+        });
+        
+        // If no tickets without requirements, show a message
+        if (visibleCount === 0) {
+            const noOptionsDiv = document.createElement('div');
+            noOptionsDiv.className = 'ticket-option';
+            noOptionsDiv.style.pointerEvents = 'none';
+            noOptionsDiv.innerHTML = `
+                <div class="ticket-details">
+                    <div class="ticket-number" style="color: #666; font-style: italic;">
+                        No tickets available
+                    </div>
+                    <div class="ticket-owner" style="font-size: 11px;">
+                        All tickets already have requirements
+                    </div>
+                </div>
+            `;
+            optionsContainer.appendChild(noOptionsDiv);
+        }
+        
+        // Update dropdown text to indicate filtered view
+        if (visibleCount > 0) {
+            selectedText.textContent = `Select ticket (${visibleCount} without requirements)`;
+        } else {
+            selectedText.textContent = 'No tickets available';
+            dropdown.style.opacity = '0.7';
+            dropdown.style.cursor = 'not-allowed';
+        }
+        
+        // Re-attach event listeners to the new options
+        attachTicketOptionEvents();
+    }
+    
+    // Function to attach event listeners to ticket options
+    function attachTicketOptionEvents() {
+        const options = document.querySelectorAll('.ticket-option:not([style*="pointer-events: none"])');
+        
+        options.forEach(option => {
+            option.addEventListener('click', function() {
+                const ticket = this.getAttribute('data-ticket');
+                const name = this.getAttribute('data-name');
+                const phone = this.getAttribute('data-phone');
+                const priority = this.getAttribute('data-priority');
+                const status = this.getAttribute('data-status');
+                const requirementsCount = this.getAttribute('data-requirements-count') || 0;
+                const leadId = this.getAttribute('data-lead-id');
+                const email = this.getAttribute('data-email') || '';
+                const company = this.getAttribute('data-company') || '';
+                const place = this.getAttribute('data-place') || '';
+                
+                // Update selected text
+                selectedText.textContent = `${ticket} - ${name}`;
+                
+                // Remove selected class from all options
+                options.forEach(opt => opt.classList.remove('selected'));
+                // Add selected class to clicked option
+                this.classList.add('selected');
+                
+                // Create lead data object
+                const leadData = {
+                    id: leadId,
+                    ownerName: name,
+                    phoneNo: phone,
+                    ticket_number: ticket,
+                    priority: priority,
+                    status: status,
+                    email: email,
+                    company: company,
+                    place: place,
+                    requirements_count: parseInt(requirementsCount)
+                };
+                
+                // Save to localStorage
+                localStorage.setItem('smartLeadData', JSON.stringify(leadData));
+                
+                // Populate form with lead data
+                populateFormWithLeadData(leadData);
+                
+                // Close dropdown
+                dropdown.classList.remove('active');
+                optionsContainer.classList.remove('active');
+                
+                // Show notification
+                showNotification(`Selected: ${name} (Ticket: ${ticket})`, 'success');
+                
+                // Update navigation button
+                updateRequirementsButtonBadge(requirementsCount);
+            });
+        });
+    }
+    
+    // Toggle dropdown
+    dropdown.addEventListener('click', function(e) {
+        e.stopPropagation();
+        
+        // Don't open if no tickets available
+        const availableTickets = Array.from(allOptions).filter(opt => {
+            const reqCount = parseInt(opt.getAttribute('data-requirements-count') || 0);
+            return reqCount === 0;
+        });
+        
+        if (availableTickets.length === 0) {
+            showNotification('All tickets already have requirements. Please select a lead from the directory or create a new lead.', 'info');
+            return;
+        }
+        
+        dropdown.classList.toggle('active');
+        optionsContainer.classList.toggle('active');
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!dropdown.contains(e.target) && !optionsContainer.contains(e.target)) {
+            dropdown.classList.remove('active');
+            optionsContainer.classList.remove('active');
+        }
+    });
+    
+    // Initialize the filtered dropdown
+    refreshTicketOptions();
+}
+
+    // =====================================================
+    // REQUIREMENTS TABLE FUNCTIONS
+    // =====================================================
+    
+    function createRow() {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="sl-no"></td>
+            <td>
+                <select name="section[]" class="item-section-select section-select" 
+                    style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;" required>
+                    <option value="">-- Select Section --</option>
+                    <option value="GENERAL">General</option>
+                    <option value="HARDWARE">Hardware</option>
+                    <option value="SOFTWARE">Software</option>
+                    <option value="PAPER_ROLLS">Paper Rolls</option>
+                </select>
+            </td>
+            <td>
+                <select name="item_id[]" class="form-control item-select" required>
+                    <option value="">-- Select Item --</option>
+                </select>
+            </td>
+            <td><input type="text" name="unit[]" class="item-unit" readonly placeholder="Unit"></td>
+            <td><input type="number" name="price[]" class="item-price" min="0" step="0.01" placeholder="0.00" required></td>
+            <td><input type="number" name="qty[]" class="item-qty" min="1" step="1" value="1" required></td>
+            <td class="item-total">0.00</td>
+            <td><button type="button" class="delete-row delete-btn"><i class="fas fa-trash"></i></button></td>
+        `;
+        
+        attachRowEvents(tr);
+        tbody.appendChild(tr);
+        
+        // Initialize the item dropdown
+        const itemSelect = tr.querySelector('.item-select');
+        if (itemSelect) {
+            populateItemDropdown(itemSelect);
+        }
+        
+        refreshSlNos();
+        return tr;
+    }
+
+    function populateItemDropdown(dropdown) {
+        const template = document.getElementById('item-options');
+        if (!template) {
+            console.error("Template #item-options not found!");
+            return;
+        }
+        
+        // Get all item options from the template
+        const allOptions = Array.from(template.content.querySelectorAll('option'));
+        
+        // Clear dropdown
+        dropdown.innerHTML = '<option value="">-- Select Item --</option>';
+        
+        // Add all items
+        allOptions.forEach(opt => {
+            const newOption = document.createElement('option');
+            newOption.value = opt.value;
+            newOption.textContent = opt.textContent.trim();
+            newOption.dataset.unit = opt.dataset.unit || '';
+            newOption.dataset.price = opt.dataset.price || '0.00';
+            newOption.dataset.section = opt.dataset.section || '';
+            dropdown.appendChild(newOption);
+        });
+        
+        dropdown.disabled = false;
+    }
+
+    function refreshSlNos() {
+        document.querySelectorAll('#table-body tr').forEach((row, idx) => {
+            const cell = row.querySelector('.sl-no');
+            if (cell) cell.textContent = idx + 1;
+        });
+        updateItemsCountBadge();
+    }
+
+    function recalcRow(row) {
+        const priceInput = row.querySelector('.item-price');
+        const qtyInput = row.querySelector('.item-qty');
+        const totalCell = row.querySelector('.item-total');
+
+        const price = parseFloat(priceInput.value || 0);
+        const qty = parseInt(qtyInput.value || 0) || 0;
+        const total = price * qty;
+
+        totalCell.textContent = formatNumber(total);
+        recalcGrandTotal();
+    }
+
+    function recalcGrandTotal() {
+        let grand = 0;
+        document.querySelectorAll('#table-body .item-total').forEach(cell => {
+            grand += parseFloat(cell.textContent || 0);
+        });
+        if (grandEl) {
+            grandEl.textContent = formatNumber(grand);
+        }
+    }
+
+    function attachRowEvents(row) {
+        const sectionSelect = row.querySelector('.section-select');
+        const itemSelect = row.querySelector('.item-select');
+        const unitInput = row.querySelector('.item-unit');
+        const priceInput = row.querySelector('.item-price');
+        const qtyInput = row.querySelector('.item-qty');
+        const deleteBtn = row.querySelector('.delete-row');
+
+        // When SECTION changes → filter the items
+        if (sectionSelect) {
+            sectionSelect.addEventListener('change', function () {
+                const sec = this.value.trim();
+                
+                // Clear item selection and values
+                if (itemSelect) itemSelect.value = "";
+                if (unitInput) unitInput.value = "";
+                if (priceInput) priceInput.value = "";
+                
+                if (sec && itemSelect) {
+                    // Enable and populate item dropdown with section-filtered items
+                    filterItemsBySection(itemSelect, sec);
+                } else if (itemSelect) {
+                    itemSelect.innerHTML = `<option value="">-- Select Section First --</option>`;
+                }
+                
+                recalcRow(row);
+            });
+        }
+
+        // When ITEM changes → autofill (unit, price)
+        if (itemSelect) {
+            itemSelect.addEventListener('change', function () {
+                const opt = this.selectedOptions[0];
+
+                if (opt && opt.value !== "") {
+                    if (unitInput) unitInput.value = opt.dataset.unit || "";
+                    if (priceInput) priceInput.value = parseFloat(opt.dataset.price || 0).toFixed(2);
+                } else {
+                    if (unitInput) unitInput.value = "";
+                    if (priceInput) priceInput.value = "";
+                }
+
+                recalcRow(row);
+            });
+        }
+
+        // Price / Qty changes
+        if (priceInput) priceInput.addEventListener('input', () => recalcRow(row));
+        if (qtyInput) qtyInput.addEventListener('input', () => recalcRow(row));
+
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', function () {
+                row.remove();
+                refreshSlNos();
+                recalcGrandTotal();
+                updateItemsCountBadge();
+                // Create new row if table is empty
+                if (document.querySelectorAll('#table-body tr').length === 0) {
+                    createRow();
+                }
+            });
+        }
+    }
+
+    function filterItemsBySection(dropdown, section) {
+        const template = document.getElementById('item-options');
+        if (!template) return;
+        
+        const allOptions = Array.from(template.content.querySelectorAll('option'));
+        
+        // Clear dropdown
+        dropdown.innerHTML = '<option value="">-- Select Item --</option>';
+        
+        // Filter items by section
+        const filtered = allOptions.filter(opt => {
+            const optSection = (opt.dataset.section || 'GENERAL').toUpperCase().trim();
+            return optSection === section.toUpperCase().trim();
+        });
+        
+        if (filtered.length === 0) {
+            dropdown.innerHTML = `<option value="">-- No items in ${section} section --</option>`;
+            return;
+        }
+        
+        // Add filtered items to dropdown
+        filtered.forEach(opt => {
+            const newOption = document.createElement('option');
+            newOption.value = opt.value;
+            newOption.textContent = opt.textContent.trim();
+            newOption.dataset.unit = opt.dataset.unit || '';
+            newOption.dataset.price = opt.dataset.price || '0.00';
+            newOption.dataset.section = opt.dataset.section || '';
+            dropdown.appendChild(newOption);
+        });
+    }
+
+    function updateItemsCountBadge() {
+        const itemCount = document.querySelectorAll('#table-body tr').length;
+        const badge = document.getElementById('itemsCountBadge');
+        if (badge) {
+            badge.textContent = `${itemCount} item${itemCount !== 1 ? 's' : ''}`;
+        }
+    }
+
+    function clearRequirementsTable() {
+        if (tbody) {
+            tbody.innerHTML = '';
+        }
+        existingRequirementIds = [];
+        const hiddenIds = document.getElementById('hiddenRequirementIds');
+        if (hiddenIds) {
+            hiddenIds.value = '';
+        }
+        recalcGrandTotal();
+        updateItemsCountBadge();
+    }
+
+    // =====================================================
+    // FORM MANAGEMENT
+    // =====================================================
+    
+    function clearForm() {
+        // Clear the form
+        clearRequirementsTable();
+        
+        // Clear hidden fields
+        document.getElementById('hiddenOwnerName').value = '';
+        document.getElementById('hiddenPhoneNo').value = '';
+        document.getElementById('hiddenTicketNumber').value = '';
+        document.getElementById('hiddenPriority').value = '';
+        document.getElementById('hiddenStatus').value = '';
+        document.getElementById('hiddenRequirementIds').value = '';
+        document.getElementById('hiddenEmail').value = '';
+        document.getElementById('hiddenCompany').value = '';
+        document.getElementById('hiddenPlace').value = '';
+        document.getElementById('hiddenLeadId').value = '';
+        
+        // Clear visible fields
+        document.getElementById('ticket_number').value = '';
+        document.getElementById('ownerName').value = '';
+        document.getElementById('phoneNo').value = '';
+        document.getElementById('status').value = '';
+        document.getElementById('priority').value = '';
+        
+        // Clear selected ticket
+        document.getElementById('selectedTicketText').textContent = 'Click to select a ticket';
+        document.querySelectorAll('.ticket-option').forEach(opt => {
+            opt.classList.remove('selected');
+        });
+        
+        // Hide selected lead info box
+        const infoBox = document.getElementById('selectedLeadInfo');
+        if (infoBox) {
+            infoBox.classList.remove('show');
+        }
+        
+        // Reset the badge
+        const badge = document.getElementById('selectedLeadBadge');
+        if (badge) {
+            badge.textContent = 'Not Selected';
+        }
+        
+        // Show lead selection hint
+        const leadSelectionHint = document.getElementById('leadSelectionHint');
+        if (leadSelectionHint) {
+            leadSelectionHint.style.display = 'flex';
+        }
+        
+        // Disable submit button
+        const submitBtn = document.getElementById('submitRequirementsBtn');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+        }
+        
+        // Clear selection from leads
+        document.querySelectorAll('.lead-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+        
+        // Clear localStorage
+        localStorage.removeItem('smartLeadData');
+        
+        // Create initial row
+        createRow();
+        
+        showNotification('Form cleared', 'info');
+    }
+
+    // =====================================================
+    // SEARCH AND FILTERS
+    // =====================================================
+    
+    function setupSearchAndFilters() {
+        const searchInput = document.getElementById('directorySearch');
+        const priorityFilter = document.getElementById('priorityFilter');
+        const statusFilter = document.getElementById('statusFilter');
+        const leadItems = document.querySelectorAll('#leadList .lead-item');
+        
+        function filterItems() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const priorityValue = priorityFilter.value;
+            const statusValue = statusFilter.value;
+            
+            leadItems.forEach(item => {
+                const name = item.getAttribute('data-name').toLowerCase();
+                const phone = item.getAttribute('data-phone').toLowerCase();
+                const ticket = item.getAttribute('data-ticket').toLowerCase();
+                const priority = item.getAttribute('data-priority');
+                const status = item.getAttribute('data-status');
+                
+                // Combine search fields
+                const matchesSearch = !searchTerm || 
+                                     name.includes(searchTerm) || 
+                                     phone.includes(searchTerm) || 
+                                     ticket.includes(searchTerm);
+                
+                // Match priority (if not "all")
+                const matchesPriority = priorityValue === 'all' || priority === priorityValue;
+                
+                // Match status (if not "all")
+                const matchesStatus = statusValue === 'all' || status === statusValue;
+                
+                // Show/hide based on all filters
+                if (matchesSearch && matchesPriority && matchesStatus) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+        
+        // Add event listeners
+        if (searchInput) searchInput.addEventListener('input', filterItems);
+        if (priorityFilter) priorityFilter.addEventListener('change', filterItems);
+        if (statusFilter) statusFilter.addEventListener('change', filterItems);
+    }
+
+    // =====================================================
+    // AUTO-LOAD FUNCTIONALITY
+    // =====================================================
+    
+    function autoLoadLead() {
+        // Check URL for lead_id parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlLeadId = urlParams.get('lead_id');
+        
+        if (urlLeadId) {
+            console.log('🔄 Loading from URL parameter:', urlLeadId);
+            const leadItem = document.querySelector(`.lead-item[data-id="${urlLeadId}"]`);
+            
+            if (leadItem) {
+                setTimeout(() => {
+                    leadItem.click();
+                    leadItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 300);
+                return true;
+            }
+        }
+        
+        // Check localStorage for saved lead
+        const storedLeadStr = localStorage.getItem('smartLeadData');
+        if (storedLeadStr) {
+            try {
+                const leadData = JSON.parse(storedLeadStr);
+                console.log('💾 Loading from storage:', leadData.ownerName);
+                
+                // Find and highlight the lead item
+                const leadItem = document.querySelector(`.lead-item[data-id="${leadData.id}"]`);
+                if (leadItem) {
+                    leadItem.classList.add('selected');
+                    
+                    // Populate form if on list page
+                    if (leadData.requirements_count === 0) {
+                        populateFormWithLeadData(leadData);
+                    }
+                }
+                return true;
+            } catch (error) {
+                console.error('Error loading from localStorage:', error);
+            }
+        }
+        
+        return false;
+    }
+
+    // =====================================================
+    // NAVIGATION MENU ENHANCEMENT
+    // =====================================================
+    
+    function setupNavigationMenu() {
+        const requirementsBtn = document.getElementById('smartRequirementsBtn');
+        
+        if (requirementsBtn) {
+            requirementsBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Get saved lead data
+                const leadDataStr = localStorage.getItem('smartLeadData');
+                
+                if (!leadDataStr) {
+                    showNotification('Please select a lead first', 'warning');
+                    return;
+                }
+                
+                try {
+                    const leadData = JSON.parse(leadDataStr);
+                    
+                    if (!leadData.id) {
+                        showNotification('Invalid lead data', 'error');
+                        return;
+                    }
+                    
+                    const requirementsCount = leadData.requirements_count || 0;
+                    
+                    if (requirementsCount > 0) {
+                        // Navigate to edit page
+                        const editUrl = '{% url "app5:edit_requirement" 0 %}'.replace('0', leadData.id);
+                        window.location.href = editUrl;
+                    } else {
+                        // Already on list page, just ensure form is populated
+                        const leadItem = document.querySelector(`.lead-item[data-id="${leadData.id}"]`);
+                        if (leadItem) {
+                            leadItem.click();
+                        }
+                        
+                        // Scroll to form
+                        document.getElementById('requirements-section').scrollIntoView({ 
+                            behavior: 'smooth' 
+                        });
+                    }
+                } catch (error) {
+                    showNotification('Error loading lead data', 'error');
+                }
+            });
+        }
+    }
+
+    // =====================================================
+    // INITIALIZATION
+    // =====================================================
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('✅ Requirement List Page Loaded');
+        
+        // Setup directory functionality
+        setupLeadSelection();
+        
+        // Setup ticket dropdown
+        setupTicketSelectDropdown();
+        
+        // Setup search and filters
+        setupSearchAndFilters();
+        
+        // Setup navigation menu
+        setupNavigationMenu();
+        
+        // Initialize requirements table
+        createRow();
+        
+        // Add new row button
+        const addBtn = document.getElementById('add-item-btn');
+        if (addBtn) {
+            addBtn.addEventListener('click', function() {
+                createRow();
+            });
+        }
+        
+        // Clear form button
+        const clearFormBtn = document.getElementById('clearFormBtn');
+        if (clearFormBtn) {
+            clearFormBtn.addEventListener('click', clearForm);
+        }
+        
+        // Form submission validation
+        const requirementsForm = document.getElementById('requirements-form');
+        if (requirementsForm) {
+            requirementsForm.addEventListener('submit', function(e) {
+                const ownerName = document.getElementById('hiddenOwnerName').value;
+                if (!ownerName) {
+                    e.preventDefault();
+                    showNotification('Please select a lead first', 'error');
+                    return;
+                }
+
+                const hasItems = document.querySelectorAll('#table-body tr').length > 0;
+                if (!hasItems) {
+                    e.preventDefault();
+                    showNotification('Please add at least one requirement item', 'error');
+                    return;
+                }
+
+                // Validate all rows have items selected
+                let allValid = true;
+                document.querySelectorAll('.item-select').forEach(select => {
+                    if (!select.value) {
+                        allValid = false;
+                        select.style.borderColor = '#ff4444';
+                    } else {
+                        select.style.borderColor = '';
+                    }
+                });
+
+                if (!allValid) {
+                    e.preventDefault();
+                    showNotification('Please select an item for all rows', 'error');
+                    return;
+                }
+
+                // Show loading state
+                const submitBtn = document.getElementById('submitRequirementsBtn');
+                const clearBtn = document.getElementById('clearFormBtn');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                submitBtn.disabled = true;
+                clearBtn.disabled = true;
+                
+                // Re-enable after 5 seconds if still on page (in case of error)
+                setTimeout(() => {
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                    clearBtn.disabled = false;
+                }, 5000);
+            });
+        }
+        
+        // Auto-load lead if specified
+        autoLoadLead();
+        
+        console.log('✅ Requirements page initialized successfully with smart navigation');
+    });
+
+    // Export functions to global scope
+    window.clearLeadSelection = clearForm;
+</script>
+</body>
+</html>

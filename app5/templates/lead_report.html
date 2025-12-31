@@ -1,0 +1,1549 @@
+{% extends "base.html" %}
+
+{% block title %}Lead Report{% endblock %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Font Awesome (already used in your original template) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background:#795548;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        /* ---------------- CUSTOM ICON COLORS ---------------- */
+        .icon-owner {
+            color: #6a11cb; /* purple-blue */
+            transition: transform 0.18s ease, filter 0.18s ease;
+            display: inline-block;
+        }
+
+        .icon-email {
+            color: #007bff; /* bright blue */
+            transition: transform 0.18s ease, filter 0.18s ease;
+            display: inline-block;
+        }
+
+        .icon-phone {
+            color: #28a745; /* green */
+            transition: transform 0.18s ease, filter 0.18s ease;
+            display: inline-block;
+        }
+
+        .icon-place {
+            color: #dc3545; /* red */
+            transition: transform 0.18s ease, filter 0.18s ease;
+            display: inline-block;
+        }
+
+        /* Hover / focus styles */
+        .icon-owner:hover, .icon-owner:focus,
+        .icon-email:hover, .icon-email:focus,
+        .icon-phone:hover, .icon-phone:focus,
+        .icon-place:hover, .icon-place:focus {
+            transform: scale(1.15);
+            filter: brightness(1.25);
+        }
+
+        /* small spacing utility since template uses me-1 */
+        .me-1 { margin-right: 0.25rem; }
+        .me-2 { margin-right: 0.5rem; }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background:#795548;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.2s;
+            border: 1px solid rgb(91, 61, 61);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+        }
+
+        .stat-card h3 {
+            font-size: 14px;
+            color:rgb(252, 250, 250);
+            margin-bottom: 10px;
+        }
+
+        .stat-card .number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #fcfcfc;
+        }
+
+        .filters {
+            background: #795548;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #f8f5f5;
+            font-size: 13px;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            border-color: #2575fc;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(37, 117, 252, 0.1);
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+        }
+
+        .leads-table {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .table-header {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-header h2 {
+            font-size: 18px;
+            color: #333;
+        }
+
+        .table-info {
+            color: #666;
+            font-size: 14px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            color: #0b0b0b;
+            font-weight: bold;
+            text-align: left;
+            border-bottom: 1px solid #7b7a7a;
+            border-top: 1px solid #7b7a7a;
+            border-right: 1px solid #7b7a7a;
+            border-left: 1px solid #7b7a7a;
+        }
+
+        th {
+            background:#795548;
+            font-weight: 600;
+            color: #fffdfd;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-active {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .status-inactive {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        .status-installed {
+            color: #007bff;
+            font-weight: 600;
+        }
+
+        .customer-type {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .business-type {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .individual-type {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .no-data i {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+            color: #2575fc;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #16bc67;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #56c58c;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 117, 252, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f12a0b;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #dc3545 !important;
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+        }
+
+        .btn-success {
+            background: rgba(100, 81, 81, 0.899);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background:rgba(146, 127, 127, 0.899);
+        }
+
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-info:hover {
+            background: #138496;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+        }
+
+        .btn-small {
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+        }
+
+        .serial-number {
+            text-align: center;
+            font-weight: 600;
+            color: #0a0a0a;
+            min-width: 50px;
+        }
+
+        .ticket-number {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: #0c0c0c;
+            background: #f3e8e5;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid #070707;
+            display: inline-block;
+            margin-bottom: 2px;
+        }
+
+        /* Badge styles */
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .badge-info {
+            background: #a27d0c;
+            color: white;
+        }
+
+        .badge-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .badge-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        /* Form inline alignment fix */
+        form[action*="delete"] {
+            margin: 0;
+            display: inline-block;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            background-color: #f8f9fa;
+            margin: 2% auto;
+            padding: 0;
+            border-radius: 15px;
+            width: 95%;
+            max-width: 1000px;
+            max-height: 95vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: modalSlideIn 0.4s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            background:#a27d0c ;
+            color: white;
+            padding: 20px 25px;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .close {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .close:hover {
+            transform: rotate(90deg);
+            color: #ffcccb;
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .detail-card {
+            background: white;
+            margin: 0 0 20px 0;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border: 1px solid #e9ecef;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .detail-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        }
+
+        .detail-card.header-card {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            margin-bottom: 25px;
+        }
+
+        .card-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-card .card-header {
+            background: #a27d0c;
+            border-bottom: none;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .lead-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .lead-title h3 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .lead-badges {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .lead-meta-single-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .creation-info-compact {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .creation-info-compact .creation-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background:#a27d0c;
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        .creation-separator {
+            color: rgba(255,255,255,0.5);
+            font-weight: bold;
+        }
+
+        .ticket-number-large {
+            background:#a27d0c;
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-weight: 700;
+            font-size: 16px;
+            backdrop-filter: blur(10px);
+        }
+
+        .card-header h4 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-card .card-header h4 {
+            color: white;
+        }
+
+        .card-body {
+            background-color: #a27d0c;
+            padding: 25px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .info-item:hover {
+            background: #e3f2fd;
+            transform: translateX(5px);
+        }
+
+        .info-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #2575fc, #6a11cb);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .info-content {
+            flex: 1;
+        }
+
+        .info-content label {
+            display: block;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 5px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-value {
+            display: block;
+            color: #2c3e50;
+            font-size: 15px;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        .contact-link {
+            color: #2575fc;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .contact-link:hover {
+            color: #1a5dd8;
+            text-decoration: underline;
+        }
+
+        .notes-content {
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .notes-text {
+            flex: 1;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            line-height: 1.6;
+            color: #495057;
+            font-style: italic;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 13px;
+            backdrop-filter: blur(10px);
+        }
+
+        .badge-active {
+            background:greenyellow;
+            color: #155724;
+            border: 1px solid rgba(40, 167, 69, 0.3);
+        }
+
+        .badge-inactive {
+            background:red;
+            color: #090909;
+            border: 1px solid rgba(220, 53, 69, 0.3);
+        }
+
+        .badge-installed {
+            background: rgba(0, 123, 255, 0.15);
+            color: #004085;
+            border: 1px solid rgba(0, 123, 255, 0.3);
+        }
+
+        /* Assignment Status Styles */
+        .assignment-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        .assignment-self {
+            background: rgba(40, 167, 69, 0.15);
+            color: #155724;
+            border: 1px solid #155724;
+        }
+
+        .assignment-assigned {
+            background: #d7d8fb;
+            color: #0a0a0a;
+            border: 1px solid #0b13e9;
+        }
+
+        .assignment-unassigned {
+            background: rgba(255, 193, 7, 0.15);
+            color: #856404;
+            border: 1px solid rgba(255, 193, 7, 0.3);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .stats-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .filter-row {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .filter-group {
+                width: 100%;
+                min-width: auto;
+            }
+
+            .filter-actions {
+                width: 100%;
+                justify-content: center;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 8px 10px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-chart-line"></i> Lead Management Report</h1>
+            <p>Comprehensive overview of all customer leads</p>
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <h3><i class="fas fa-users"></i> Total Leads</h3>
+                <div class="number">{{ total_leads }}</div>
+            </div>
+            <div class="stat-card">
+                <h3><i class="fas fa-ticket-alt"></i> Today's Leads</h3>
+                <div class="number">{{ today_leads }}</div>
+            </div>
+            <div class="stat-card">
+                <h3><i class="fas fa-check-circle"></i> Active</h3>
+                <div class="number status-active">{{ active_leads }}</div>
+            </div>
+            <div class="stat-card">
+                <h3><i class="fas fa-times-circle"></i> Inactive</h3>
+                <div class="number status-inactive">{{ inactive_leads }}</div>
+            </div>
+            <div class="stat-card">
+                <h3><i class="fas fa-tools"></i> Installed</h3>
+                <div class="number status-installed">{{ installed_leads }}</div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters">
+            <form method="get" id="filterForm">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label><i class="fas fa-filter"></i> Status</label>
+                        <select name="status" id="statusFilter">
+                            <option value="">All Status</option>
+                            <option value="Active" {% if current_status_filter == 'Active' %}selected{% endif %}>🟢 Active</option>
+                            <option value="Inactive" {% if current_status_filter == 'Inactive' %}selected{% endif %}>🔴 Inactive</option>
+                            <option value="Installed" {% if current_status_filter == 'Installed' %}selected{% endif %}>🔧 Installed</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label><i class="fas fa-user-tag"></i> Customer Type</label>
+                        <select name="customer_type" id="customerTypeFilter">
+                            <option value="">All Types</option>
+                            <option value="Business" {% if current_customer_type_filter == 'Business' %}selected{% endif %}>Business</option>
+                            <option value="Individual" {% if current_customer_type_filter == 'Individual' %}selected{% endif %}>Individual</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label><i class="fas fa-calendar-alt"></i> From Date</label>
+                        <input type="date" name="start_date" id="startDateFilter" value="{{ current_start_date }}" class="date-input">
+                    </div>
+
+                    <div class="filter-group">
+                        <label><i class="fas fa-calendar-alt"></i> To Date</label>
+                        <input type="date" name="end_date" id="endDateFilter" value="{{ current_end_date }}" class="date-input">
+                    </div>
+
+                    <div class="filter-group search-input">
+                        <label><i class="fas fa-search"></i> Search</label>
+                        <input type="text" name="search" id="searchFilter" value="{{ current_search_query }}" placeholder="Ticket no, name, phone, email...">
+                    </div>
+
+                    <div class="filter-actions">
+                        <a href="{% url 'app5:lead' %}" class="btn btn-success">
+                            <i class="fas fa-plus"></i> New Lead
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Leads Table -->
+        <div class="leads-table">
+            <div class="table-header">
+                <h2><i class="fas fa-table"></i> Leads List</h2>
+                <div class="table-info">
+                    Showing <strong>{{ filtered_count }}</strong> of <strong>{{ total_leads }}</strong> leads
+                </div>
+            </div>
+
+            {% if leads %}
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="serial-number">Sl.No</th>
+                            <th>Ticket No</th>
+                            <th>Created Date</th>
+                            <th>Owner Name</th>
+                            <th>Name/Firm</th>
+                            <th>Reference</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lead in leads %}
+                        <tr>
+                            <td class="serial-number">{{ forloop.counter }}</td>
+                            <td>
+                                <span class="ticket-number">{{ lead.ticket_number }}</span>
+                                <!-- Assignment status badge -->
+                                {% if lead.assignment_type == 'self_assigned' %}
+                                    <br>
+                                    <span class="assignment-status assignment-self">
+                                        <i class="fas fa-user-check"></i> Self Assigned
+                                    </span>
+                                {% elif lead.assignment_type == 'assigned' and lead.assigned_to_name %}
+                                    <br>
+                                    <span class="assignment-status assignment-assigned">
+                                        <i class="fas fa-user-tag"></i> {{ lead.assigned_to_name }}
+                                    </span>
+                                {% elif lead.assignment_type == 'unassigned' %}
+                                    <br>
+                                    <span class="assignment-status assignment-unassigned">
+                                        <i class="fas fa-user-plus"></i>
+                                        {% if lead.created_by %}
+                                            {% if lead.created_by.name %}
+                                                Created: {{ lead.created_by.name }}
+                                            {% elif lead.created_by.username %}
+                                                Created: {{ lead.created_by.username }}
+                                            {% elif lead.created_by.email %}
+                                                Created: {{ lead.created_by.email }}
+                                            {% else %}
+                                                Created: User #{{ lead.created_by.id }}
+                                            {% endif %}
+                                        {% else %}
+                                            Created: System
+                                        {% endif %}
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>{{ lead.date|date:"d M Y" }}</td>
+                            <td>
+                                <!-- Owner icon + name (colored) -->
+                                <i class="fa-solid fa-user icon-owner me-1" title="Owner"></i>
+                                <strong>{{ lead.ownerName }}</strong><br>
+
+                                <!-- Phone -->
+                                {% if lead.phoneNo %}
+                                    <a href="tel:{{ lead.phoneNo }}" style="color: #28a745;font-weight: bold; text-decoration: none;">
+                                        <i class="fas fa-phone icon-phone me-1" title="Phone"></i> {{ lead.phoneNo }}
+                                    </a>
+                                {% else %}
+                                    <span style="color: #999;">Not provided</span>
+                                {% endif %}
+                                <br>
+
+                                <!-- ✅ FIXED: Place (business vs individual) with maps link -->
+                                {% if lead.customerType == 'Business' %}
+                                    {% if lead.place %}
+                                        <a href="https://www.google.com/maps/search/{{ lead.place|urlencode }}" target="_blank" style="color: #dc3545;font-weight: bold; text-decoration: none;">
+                                            <i class="fa-solid fa-location-dot icon-place me-1" title="Place"></i>
+                                            {{ lead.place }}
+                                        </a>
+                                    {% else %}
+                                        <span style="color: #999;">No location</span>
+                                    {% endif %}
+                                {% else %}
+                                    {% if lead.individualPlace %}
+                                        <a href="https://www.google.com/maps/search/{{ lead.individualPlace|urlencode }}" target="_blank" style="color: #dc3545;font-weight: bold; text-decoration: none;">
+                                            <i class="fa-solid fa-location-dot icon-place me-1" title="Place"></i>
+                                            {{ lead.individualPlace }}
+                                        </a>
+                                    {% else %}
+                                        <span style="color: #999;">No location</span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+
+                            <!-- ✅ FIXED: Name/Firm Column -->
+                            <td>
+                                {% if lead.customerType == 'Business' %}
+                                    {% if lead.name %}
+                                        <i class="fas fa-building" style="color: #6a11cb; margin-right: 5px;"></i>
+                                        <strong>{{ lead.name }}</strong>
+                                        <br>
+                                        <span class="badge business-type"></span>
+                                    {% else %}
+                                        <span style="color: #999;">No firm name</span>
+                                    {% endif %}
+                                {% else %}
+                                    {% if lead.firstName or lead.lastName %}
+                                        <i class="fas fa-user-circle" style="color: #7b1fa2; margin-right: 5px;"></i>
+                                        <strong>{{ lead.firstName|default:"" }} {{ lead.lastName|default:"" }}</strong>
+                                        <br>
+                                        <!-- <span class="badge individual-type">Individual</span> -->
+                                    {% else %}
+                                        <span style="color: #999;">No name</span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td>{{ lead.refFrom|default:"-" }}</td>
+
+                            <td>
+                                <div class="action-buttons">
+                                    <!-- View Button - ✅ FIXED DATA ATTRIBUTES -->
+                                    <button class="btn btn-primary btn-small view-lead-btn"
+                                        data-lead-id="{{ lead.id }}"
+                                        data-ticket-number="{{ lead.ticket_number }}"
+                                        data-owner="{{ lead.ownerName|default:'' }}"
+                                        data-phone="{{ lead.phoneNo|default:'' }}"
+                                        data-email="{{ lead.email|default:'' }}"
+                                        data-type="{{ lead.customerType|default:'' }}"
+                                        data-firm="{{ lead.name|default:'' }}"
+                                        data-firstname="{{ lead.firstName|default:'' }}"
+                                        data-lastname="{{ lead.lastName|default:'' }}"
+                                        data-business-address="{{ lead.address|default:'' }}"
+                                        data-individual-address="{{ lead.individualAddress|default:'' }}"
+                                        data-place="{{ lead.place|default:'' }}"
+                                        data-individual-place="{{ lead.individualPlace|default:'' }}"
+                                        data-district="{{ lead.District|default:'' }}"
+                                        data-individual-district="{{ lead.individualDistrict|default:'' }}"
+                                        data-state="{{ lead.State|default:'' }}"
+                                        data-individual-state="{{ lead.individualState|default:'' }}"
+                                        data-pincode="{{ lead.pinCode|default:'' }}"
+                                        data-individual-pincode="{{ lead.individualPinCode|default:'' }}"
+                                        data-status="{{ lead.status|default:'' }}"
+                                        data-reference="{{ lead.refFrom|default:'' }}"
+                                        data-business-nature="{{ lead.business|default:'' }}"
+                                        data-marketed="{{ lead.marketedBy|default:'' }}"
+                                        data-consultant="{{ lead.Consultant|default:'' }}"
+                                        data-branch="{{ lead.requirement|default:'' }}"
+                                        data-notes="{{ lead.details|default:'' }}"
+                                        data-date="{{ lead.date|date:'Y-m-d'|default:'' }}"
+                                        data-created="{{ lead.created_at|date:'Y-m-d H:i:s'|default:'' }}"
+                                        data-updated="{{ lead.updated_at|date:'Y-m-d H:i:s'|default:'' }}"
+                                        data-created-by="{% if lead.created_by %}{% if lead.created_by.name %}{{ lead.created_by.name }}{% elif lead.created_by.username %}{{ lead.created_by.username }}{% elif lead.created_by.email %}{{ lead.created_by.email }}{% else %}User #{{ lead.created_by.id }}{% endif %}{% else %}System{% endif %}"
+                                        data-assigned-to="{{ lead.assigned_to_name|default:'' }}"
+                                        data-assigned-by="{{ lead.assigned_by_name|default:'' }}"
+                                        data-assignment-type="{{ lead.assignment_type|default:'unassigned' }}">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+
+                                    <!-- Edit Button -->
+                                    <button class="btn btn-success btn-small"
+                                            onclick="window.location.href='{% url 'app5:lead_edit' lead.id %}'"
+                                            title="Edit Lead">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+
+                                    <!-- Assign Button - Clickable link to assignment list -->
+                                    {% if lead.assignment_type == 'unassigned' %}
+                                    <a href="{% url 'app5:lead_assign_list' %}?lead_id={{ lead.id }}"
+                                       class="btn btn-info btn-small"
+                                       title="Assign Lead to Team Member">
+                                        <i class="fas fa-user-tag"></i>
+                                    </a>
+                                    {% endif %}
+
+                                    <!-- Delete Button with Form -->
+                                    <form method="post" action="{% url 'app5:lead_delete' lead.id %}" style="display:inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-secondary btn-small">
+                                            <i class="fas fa-trash-alt"></i> 
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="no-data">
+                <i class="fas fa-inbox"></i>
+                <h3>No leads found</h3>
+                {% if has_filters %}
+                <p>No leads match your current filters. Try adjusting your search criteria.</p>
+                <a href="{% url 'app5:lead_report' %}" class="btn btn-secondary" style="margin-top: 15px;">
+                    <i class="fas fa-redo"></i> Clear All Filters
+                </a>
+                {% else %}
+                <p>No leads have been created yet. Start by adding your first lead!</p>
+                <a href="{% url 'app5:lead' %}" class="btn btn-primary" style="margin-top: 15px;">
+                    <i class="fas fa-plus"></i> Create Your First Lead
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Lead Detail Modal -->
+    <div id="leadDetailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-user-tie"></i> Lead Details</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Auto-submit functionality for all filters
+        document.addEventListener('DOMContentLoaded', function() {
+            const filterForm = document.getElementById('filterForm');
+            const statusFilter = document.getElementById('statusFilter');
+            const customerTypeFilter = document.getElementById('customerTypeFilter');
+            const startDateFilter = document.getElementById('startDateFilter');
+            const endDateFilter = document.getElementById('endDateFilter');
+            const searchFilter = document.getElementById('searchFilter');
+
+            // Auto-submit when any filter changes
+            [statusFilter, customerTypeFilter, startDateFilter, endDateFilter].forEach(filter => {
+                if (filter) {
+                    filter.addEventListener('change', function() {
+                        filterForm.submit();
+                    });
+                }
+            });
+
+            // Auto-submit for search with debouncing
+            let searchTimeout;
+            if (searchFilter) {
+                searchFilter.addEventListener('input', function() {
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(function() {
+                        filterForm.submit();
+                    }, 800); // 800ms delay after typing stops
+                });
+            }
+
+            // Enhanced delete confirmation with loading state
+            const deleteForms = document.querySelectorAll('form[action*="delete"]');
+
+            deleteForms.forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    const deleteBtn = this.querySelector('button[type="submit"]');
+                    const originalText = deleteBtn.innerHTML;
+
+                    // Get form action result first (confirmation)
+                    const confirmed = this.onsubmit ? this.onsubmit() : true;
+
+                    if (confirmed !== false) {
+                        // Show loading state
+                        deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                        deleteBtn.disabled = true;
+                    } else {
+                        e.preventDefault();
+                    }
+                });
+            });
+        });
+
+        // Modal functionality
+        const modal = document.getElementById('leadDetailModal');
+        const closeBtn = document.querySelector('.close');
+        const modalBody = document.getElementById('modalBody');
+        const viewButtons = document.querySelectorAll('.view-lead-btn');
+
+        // Open modal when view button is clicked
+        viewButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const leadData = {
+                    id: this.dataset.leadId,
+                    ticket_number: this.dataset.ticketNumber,
+                    ownerName: this.dataset.owner,
+                    phoneNo: this.dataset.phone,
+                    email: this.dataset.email,
+                    customerType: this.dataset.type,
+                    name: this.dataset.firm,
+                    firstName: this.dataset.firstname,
+                    lastName: this.dataset.lastname,
+                    address: this.dataset.businessAddress,
+                    individualAddress: this.dataset.individualAddress,
+                    place: this.dataset.place,
+                    individualPlace: this.dataset.individualPlace,
+                    District: this.dataset.district,
+                    individualDistrict: this.dataset.individualDistrict,
+                    State: this.dataset.state,
+                    individualState: this.dataset.individualState,
+                    pinCode: this.dataset.pincode,
+                    individualPinCode: this.dataset.individualPincode,
+                    status: this.dataset.status,
+                    refFrom: this.dataset.reference,
+                    business: this.dataset.businessNature,
+                    marketedBy: this.dataset.marketed,
+                    Consultant: this.dataset.consultant,
+                    requirement: this.dataset.branch,
+                    details: this.dataset.notes,
+                    date: this.dataset.date,
+                    created_at: this.dataset.created,
+                    updated_at: this.dataset.updated,
+                    created_by: this.dataset.createdBy,
+                    assignment_type: this.dataset.assignmentType,
+                    assigned_to: this.dataset.assignedTo,
+                    assigned_by: this.dataset.assignedBy
+                };
+
+                populateModal(leadData);
+                modal.style.display = 'block';
+            });
+        });
+
+        // Close modal when X is clicked
+        closeBtn.addEventListener('click', function() {
+            modal.style.display = 'none';
+        });
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        // ✅ FIXED: Function to populate modal with lead data
+        function populateModal(data) {
+            const isBusiness = data.customerType === 'Business';
+            
+            // ✅ FIXED: Proper name handling
+            let fullName = '';
+            if (isBusiness) {
+                fullName = data.name || 'Not provided';
+            } else {
+                const firstName = data.firstName || '';
+                const lastName = data.lastName || '';
+                fullName = (firstName + ' ' + lastName).trim() || 'Not provided';
+            }
+            
+            // ✅ FIXED: Proper location handling
+            const address = isBusiness ? (data.address || 'Not provided') : (data.individualAddress || 'Not provided');
+            const place = isBusiness ? (data.place || 'Not provided') : (data.individualPlace || 'Not provided');
+            const district = isBusiness ? (data.District || 'Not provided') : (data.individualDistrict || 'Not provided');
+            const state = isBusiness ? (data.State || 'Not provided') : (data.individualState || 'Not provided');
+            const pincode = isBusiness ? (data.pinCode || 'Not provided') : (data.individualPinCode || 'Not provided');
+            
+            const businessNature = data.business || 'Not specified';
+            const consultant = data.Consultant || 'Not assigned';
+            const branch = data.requirement || 'Not specified';
+            const reference = data.refFrom || 'Not specified';
+
+            // Status badge
+            let statusBadge = '';
+            if (data.status === 'Active') {
+                statusBadge = '<span class="status-badge badge-active"><i class="fas fa-circle"></i> Active</span>';
+            } else if (data.status === 'Inactive') {
+                statusBadge = '<span class="status-badge badge-inactive"><i class="fas fa-circle"></i> Inactive</span>';
+            } else if (data.status === 'Installed') {
+                statusBadge = '<span class="status-badge badge-installed"><i class="fas fa-tools"></i> Installed</span>';
+            }
+
+            // ✅ FIXED: Assignment badge logic
+            let assignmentBadge = '';
+            if (data.assignment_type === 'self_assigned') {
+                assignmentBadge = '<span class="status-badge badge-active"><i class="fas fa-user-check"></i> Self Assigned</span>';
+            } else if (data.assignment_type === 'assigned' && data.assigned_to) {
+                assignmentBadge = `<span class="status-badge badge-info"><i class="fas fa-user-tag"></i> Assigned to: ${data.assigned_to}</span>`;
+            } else if (data.assignment_type === 'unassigned') {
+                const createdBy = data.created_by || 'System';
+                assignmentBadge = `<span class="status-badge badge-warning"><i class="fas fa-user-plus"></i> Created by: ${createdBy}</span>`;
+            }
+
+            // ✅ FIXED: Assignment Information Section
+            const assignmentSection = `
+                <div class="detail-card">
+                    <div class="card-header">
+                        <h4><i class="fas fa-users"></i> Assignment Information</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-user-plus"></i>
+                            </div>
+                            <div class="info-content">
+                                <label>Created By</label>
+                                <span class="info-value">${data.created_by || 'System'}</span>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-user-tag"></i>
+                            </div>
+                            <div class="info-content">
+                                <label>Assigned To</label>
+                                <span class="info-value">
+                                    ${data.assigned_to || 'Not assigned yet'}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-user-cog"></i>
+                            </div>
+                            <div class="info-content">
+                                <label>Assigned By</label>
+                                <span class="info-value">
+                                    ${data.assigned_by || 'Not assigned yet'}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div class="info-content">
+                                <label>Assignment Type</label>
+                                <span class="info-value">
+                                    ${data.assignment_type ? data.assignment_type.replace('_', ' ').toUpperCase() : 'UNASSIGNED'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            modalBody.innerHTML = `
+                <div class="detail-card header-card">
+                    <div class="card-header">
+                        <div class="lead-title">
+                            <h3><i class="fas fa-user-tie"></i> ${data.ownerName}</h3>
+                            <div class="lead-badges">
+                                ${statusBadge}
+                                ${assignmentBadge}
+                            </div>
+                        </div>
+                        <div class="lead-meta-single-line">
+                            <div class="creation-info-compact">
+                                <span class="ticket-number-large">${data.ticket_number}</span>
+                                <span class="creation-separator">|</span>
+                                <span class="creation-item">
+                                    <i class="fas fa-calendar-plus"></i> Created: ${formatDate(data.date)}
+                                </span>
+                                <span class="creation-separator">|</span>
+                                <span class="creation-item">
+                                    <i class="fas fa-user-edit"></i> By: ${data.created_by || 'System'}
+                                </span>
+                                <span class="creation-separator">|</span>
+                                <span class="creation-item">
+                                    <i class="fas fa-sync-alt"></i> Updated: ${formatDate(data.updated_at)}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-grid">
+                    <!-- Contact Information -->
+                    <div class="detail-card">
+                        <div class="card-header">
+                            <h4><i class="fas fa-address-card"></i> Contact Information</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="info-content">
+                                    <label>Owner Name</label>
+                                    <span class="info-value">${data.ownerName}</span>
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-phone"></i>
+                                </div>
+                                <div class="info-content">
+                                    <label>Phone Number</label>
+                                    <span class="info-value">
+                                        ${data.phoneNo ? `<a href="tel:${data.phoneNo}" class="contact-link">${data.phoneNo}</a>` : 'Not provided'}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-envelope"></i>
+                                </div>
+                                <div class="info-content">
+                                    <label>Email Address</label>
+                                    <span class="info-value">
+                                        ${data.email ? `<a href="mailto:${data.email}" class="contact-link">${data.email}</a>` : 'Not provided'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Customer Details -->
+                    <div class="detail-card">
+                        <div class="card-header">
+                            <h4><i class="fas fa-building"></i> Customer Details</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div class="info-content">
+                                    <label>Customer Type</label>
+                                    <span class="info-value">${data.customerType}</span>
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-signature"></i>
+                                </div>
+                                <div class="info-content">
+                                    <label>${isBusiness ? 'Firm/Company Name' : 'Full Name'}</label>
+                                    <span class="info-value">${fullName}</span>
+                                </div>
+                            </div>
+                            ${isBusiness ? `
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-industry"></i>
+                                </div>
+                                <div class="info-content">
+                                    <label>Nature of Business</label>
+                                    <span class="info-value">${businessNature}</span>
+                                </div>
+                            </div>
+                            ` : ''}
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-handshake"></i>
+                                </div>
+                                <div class="info-content">
+                                    <label>Reference Source</label>
+                                    <span class="info-value">${reference}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Location Information -->
+                    <div class="detail-card">
+                        <div class="card-header">
+                            <h4><i class="fas fa-map-marker-alt"></i> Location Information</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-map-pin"></i>
+                                </div>
+                                <div class="info-content">
+                                    <label>Address</label>
+                                    <span class="info-value">${address}</span>
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-city"></i>
+                                </div>
+                                <div class="info-content">
+                                    <label>Place/Locality</label>
+                                    <span class="info-value">${place}</span>
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-map"></i>
+                                </div>
+                                <div class="info-content">
+                                    <label>District</label>
+                                    <span class="info-value">${district}</span>
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-globe"></i>
+                                </div>
+                                <div class="info-content">
+                                    <label>State</label>
+                                    <span class="info-value">${state}</span>
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-mail-bulk"></i>
+                                </div>
+                                <div class="info-content">
+                                    <label>PIN Code</label>
+                                    <span class="info-value">${pincode}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lead Information -->
+                    <div class="detail-card">
+                        <div class="card-header">
+                            <h4><i class="fas fa-info-circle"></i> Lead Information</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-tag"></i>
+                                </div>
+                                <div class="info-content">
+                                    <label>Status</label>
+                                    <span class="info-value">${data.status}</span>
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-user-tie"></i>
+                                </div>
+                                <div class="info-content">
+                                    <label>Marketed By</label>
+                                    <span class="info-value">${data.marketedBy || 'Not specified'}</span>
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-user-graduate"></i>
+                                </div>
+                                <div class="info-content">
+                                    <label>Consultant</label>
+                                    <span class="info-value">${consultant}</span>
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-code-branch"></i>
+                                </div>
+                                <div class="info-content">
+                                    <label>Branch/Requirement</label>
+                                    <span class="info-value">${branch}</span>
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-calendar-day"></i>
+                                </div>
+                                <div class="info-content">
+                                    <label>Lead Date</label>
+                                    <span class="info-value">${formatDate(data.date)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assignment Information Section -->
+                ${assignmentSection}
+
+                <!-- Notes Section -->
+                ${data.details ? `
+                <div class="detail-card">
+                    <div class="card-header">
+                        <h4><i class="fas fa-sticky-note"></i> Additional Notes</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="notes-content">
+                            <div class="notes-text">${data.details}</div>
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+            `;
+        }
+
+        // Helper function to format dates
+        function formatDate(dateString) {
+            if (!dateString) return 'Not available';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+    </script>
+</body>
+</html>
+{% endblock %}

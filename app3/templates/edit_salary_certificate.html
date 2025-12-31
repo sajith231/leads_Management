@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block title %}Edit Salary Certificate{% endblock %}
+{% block header %}Edit Salary Certificate{% endblock %}
+
+{% block content %}
+
+<style>
+  .form-container {
+    max-width: 600px;
+    margin: 30px auto;
+    padding: 25px;
+    background-color: #fdfdfd;
+    border-radius: 12px;
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
+  }
+
+  h3 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #2c3e50;
+    font-weight: 600;
+  }
+
+  form label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+
+  form select,
+  form input {
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 16px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    transition: border-color 0.3s;
+    font-size: 15px;
+  }
+
+  form select:focus,
+  form input:focus {
+    border-color: #28a745;
+    outline: none;
+  }
+
+  .btn-success {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 6px;
+  }
+
+  .error-message {
+    color: red;
+    text-align: center;
+    margin-top: 10px;
+    font-weight: 500;
+  }
+</style>
+
+<div class="form-container">
+  <h3>Edit Salary Certificate</h3>
+
+  <form method="post">
+    {% csrf_token %}
+    <div>
+      <label for="employee_name">Employee Name:</label>
+      <select id="employee_name" name="employee_name" required>
+        <option value="">Select Employee</option>
+        {% for employee in employees %}
+        <option value="{{ employee.id }}" {% if employee.id == salary_certificate.employee.id %}selected{% endif %}>
+          {{ employee.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label for="salary">Salary:</label>
+      <input type="number" id="salary" name="salary" value="{{ salary_certificate.salary }}" step="0.01" required>
+    </div>
+
+    <button type="submit" class="btn btn-success">Update</button>
+  </form>
+
+  {% if error %}
+    <p class="error-message">{{ error }}</p>
+  {% endif %}
+</div>
+
+{% endblock %}
