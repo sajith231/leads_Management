@@ -94,6 +94,7 @@ urlpatterns = [
    path('requirements-list/', views.requirement_list, name='requirement_list'),
    path('requirements/save/', views.requirement_form, name='requirement_form'),
    
+   
    # Lead Assignment URLs
     path('lead-assign-list/', views.lead_assign_list_view, name='lead_assign_list'),
     path('assign-lead/', views.assign_lead_view, name='assign_lead'),

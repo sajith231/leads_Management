@@ -4328,8 +4328,8 @@ def lead_edit(request, lead_id):
     except:
         references = []
     
-    # Get active leads for directory
-    active_leads_data = Lead.objects.filter(status='Active').order_by('-date')[:50]
+    # Get active leads for directory - FIXED: Use same sorting as lead_form_view
+    active_leads_data = Lead.objects.filter(status='Active').order_by('-created_at')[:50]
 
     # ========== PREPARE DISPLAY DATA ==========
     marketed_by_id = None
@@ -6030,6 +6030,8 @@ def edit_requirement(request, lead_id):
         logger.error(f"❌ Error loading edit page: {str(e)}", exc_info=True)
         messages.error(request, f'Error loading requirements: {str(e)}')
         return redirect('app5:requirement_list')
+    
+    
 
 def update_requirement(request, lead_id):
     """
