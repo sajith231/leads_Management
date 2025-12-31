@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<style>
+    body {
+        background-color: black;
+        color: white;
+        font-family: Arial, sans-serif;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: black;
+        color: white;
+    }
+
+    .title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: white;
+        margin: 0 0 20px 0;
+    }
+
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        color: white;
+    }
+
+    .table th, .table td {
+        padding: 15px;
+        text-align: left;
+        border-bottom: 1px solid #444;
+    }
+
+    .table th {
+        background-color: #333;
+        font-weight: 600;
+    }
+
+    .table tbody tr:hover {
+        background-color: #555;
+    }
+
+    .table img {
+        max-width: 100px;
+        height: auto;
+        border-radius: 4px;
+    }
+
+    .text-center {
+        text-align: center;
+    }
+
+    .no-items {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6c757d;
+    }
+
+    .no-items h3 {
+        font-size: 1.25rem;
+        margin-bottom: 10px;
+        color: #495057;
+    }
+
+    .no-items p {
+        font-size: 1rem;
+        margin: 0;
+    }
+
+    .pagination {
+        margin-top: 20px;
+        display: flex;
+        justify-content: center;
+    }
+
+    .pagination a {
+        color: white;
+        padding: 8px 16px;
+        text-decoration: none;
+        border: 1px solid #444;
+        margin: 0 4px;
+    }
+
+    .pagination a:hover {
+        background-color: #555;
+    }
+
+    .pagination .active {
+        background-color: #333;
+        border: 1px solid #333;
+    }
+
+    .filter-form {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.date-group {
+    display: flex;
+    gap: 0; /* no space between the dates */
+}
+
+
+    .filter-form input, .filter-form select {
+        padding: 8px;
+        margin-right: 10px;
+        border: 1px solid #444;
+        border-radius: 4px;
+        background-color: #333;
+        color: white;
+    }
+    .pagination {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.pagination a,
+.pagination span {
+    display: inline-block;
+    padding: 8px 12px;
+    margin: 2px;
+    text-decoration: none;
+    color: white;
+    background-color: red;
+    border-radius: 4px;
+}
+
+.pagination a:hover {
+    background-color: darkred;
+}
+
+.pagination .active {
+    font-weight: bold;
+    background-color: darkred;
+}
+
+</style>
+
+<div class="container-fluid">
+    <h1 class="title">IMC Connect Table</h1>
+    
+    <!-- Filter Form -->
+    <form class="filter-form" method="get" id="filterForm">
+    <input type="text" name="search" placeholder="Search by title" value="{{ search_query }}" onchange="this.form.submit()">
+    
+    <div class="date-group">
+        <input type="date" name="start_date" value="{{ start_date }}" onchange="this.form.submit()">
+        <input type="date" name="end_date" value="{{ end_date }}" onchange="this.form.submit()">
+    </div>
+</form>
+
+
+    <!-- Pagination Links -->
+    <div class="pagination">
+        {% if page_obj.has_previous %}
+            <a href="?page=1&search={{ search_query }}&start_date={{ start_date }}&end_date={{ end_date }}">&laquo; First</a>
+            <a href="?page={{ page_obj.previous_page_number }}&search={{ search_query }}&start_date={{ start_date }}&end_date={{ end_date }}">Previous</a>
+        {% endif %}
+        
+        {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+                <span class="active">{{ num }}</span>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <a href="?page={{ num }}&search={{ search_query }}&start_date={{ start_date }}&end_date={{ end_date }}">{{ num }}</a>
+            {% endif %}
+        {% endfor %}
+        
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&search={{ search_query }}&start_date={{ start_date }}&end_date={{ end_date }}">Next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}&search={{ search_query }}&start_date={{ start_date }}&end_date={{ end_date }}">Last &raquo;</a>
+        {% endif %}
+    </div>
+
+    <!-- Table -->
+    <div style="overflow: scroll;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Added Date</th>
+                    <th>Title</th>
+                    <th>Description</th>
+                    <th>URL</th>
+                    <th>Product Type</th>
+                    <th>Product Category</th>
+                    <th>Priority</th>
+                    <th>Language</th>
+                    <th>Duration</th>
+                    <th>Host</th>
+                    <th>Thumbnail Image</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in page_obj %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ item.added_date|date:"d-m-Y" }}</td>
+                    <td>{{ item.title }}</td>
+                    <td>{{ item.remark }}</td>
+                    <td><a href="{{ item.url }}" target="_blank" style="color: white;">{{ item.url }}</a></td>
+                    <td>{{ item.product_type.name }}</td>
+                    <td>{{ item.product_category.name }}</td>
+                    <td>{{ item.priority }}</td>
+                    <td>{{ item.language }}</td>
+                    <td>{{ item.duration }}</td>
+                    <td>{{ item.host }}</td>
+                    <td>
+                        {% if item.thumbnail %}
+                            <img src="{{ item.thumbnail.url }}" alt="{{ item.title }}" style="max-width: 100px;">
+                        {% else %}
+                            <img src="{% static 'default-thumbnail.jpg' %}" alt="No Thumbnail" style="max-width: 100px;">
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="12" class="text-center">No information items found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

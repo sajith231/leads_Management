@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .allbody {
+        margin-top: 5%;
+    }
+    
+    @media (max-width: 768px) {
+        .allbody {
+            margin-top: 15%;
+        }
+    }
+    
+    .summary-card {
+        transition: all 0.3s ease;
+    }
+    
+    .summary-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+    
+    .table-responsive {
+        overflow-x: auto;
+    }
+    
+    .sticky-header {
+        position: sticky;
+        left: 0;
+        background-color: white;
+        z-index: 2;
+    }
+    
+    .download-btn {
+        background-color: #4CAF50;
+        color: white;
+        padding: 10px 16px;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .download-btn:hover {
+        background-color: #45a049;
+    }
+</style>
+
+<div class="allbody">
+    <div class="container-fluid py-4">
+        <!-- Header Section with Filters -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h2 class="card-title mb-0">Monthly Attendance Summary</h2>
+                    </div>
+                    
+                    <div class="col-md-6 text-end">
+                        <div class="input-group" style="max-width: 300px; margin-left: auto;">
+                            <input type="month" class="form-control" id="monthFilter" 
+                                   value="{{ current_year }}-{{ current_month }}">
+                            <button class="btn btn-primary" onclick="filterByMonth()">Go</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Download Button -->
+        <button class="download-btn" onclick="downloadAsPDF()">
+            <i class="fas fa-download"></i> Download as PDF
+        </button>
+
+        <!-- Summary Table -->
+        <div class="card shadow-sm" id="attendanceTable">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered">
+                        <thead class="table-light">
+                        <tr>
+                            <th>No</th>
+                            <th class="sticky-header">Employee Name</th>
+                            <th>Number Of Days</th>
+                            <th>Working Days</th>
+                            <th>Full Days(Unverified)</th>
+                            <th>Verified Full Days</th>
+                            <th>Half Days(Unverified)</th>
+                            <th>Verified Half Days</th>
+                            <th>Leaves</th>
+                            <th>Not Marked</th>
+                            <th>Holidays</th>
+                            <th style="background-color: whitesmoke;">Total</th>
+                            <th>Action</th>
+                        </tr>
+                    <tbody>
+                    {% for employee in employee_summaries %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td class="sticky-header" style="background-color: white;">{{ employee.name }}</td>
+                        <td>{{ employee.number_of_days }}</td>
+                        <td>{{ employee.working_days }}</td>
+                        <td>{{ employee.full_days }}</td>
+                        <td>{{ employee.verified_full_days }}</td>
+                        <td>{{ employee.half_days }}</td>
+                        <td>{{ employee.verified_half_days }}</td>
+                        <td>{{ employee.leaves }}</td>
+                        <td>{{ employee.not_marked }}</td>
+                        <td>{{ employee.holidays }}</td>
+                        <td style="background-color: whitesmoke;">{{ employee.total_attendance }}</td>
+                        <td>
+                            <a href="{% url 'attendance_summary' employee.id %}?year={{ current_year }}&month={{ current_month }}"
+                            class="btn btn-sm btn-primary">
+                                View Details
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function filterByMonth() {
+        const monthFilter = document.getElementById('monthFilter').value;
+        const [year, month] = monthFilter.split('-');
+        window.location.href = `{% url 'attendance_total_summary' %}?year=${year}&month=${month}`;
+    }
+
+    function downloadAsPDF() {
+        // Clone the table element to avoid modifying the original
+        const element = document.getElementById('attendanceTable').cloneNode(true);
+        
+        // Remove the Action header and all Action cells
+        const headers = element.querySelectorAll('th');
+        const rows = element.querySelectorAll('tr');
+        
+        // Find the Action header index
+        let actionIndex = -1;
+        headers.forEach((header, index) => {
+            if (header.textContent.trim() === 'Action') {
+                actionIndex = index;
+            }
+        });
+        
+        // If Action column exists, remove it from all rows
+        if (actionIndex !== -1) {
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('th, td');
+                if (cells.length > actionIndex) {
+                    cells[actionIndex].remove();
+                }
+            });
+        }
+        
+        // Configuration for html2pdf
+        const opt = {
+            margin: 10,
+            filename: `Attendance_Summary_${new Date().toISOString().slice(0, 10)}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+        };
+
+        // Use html2pdf to generate and download the PDF
+        html2pdf().from(element).set(opt).save();
+    }
+</script>
+
+<!-- Include html2pdf library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+{% endblock %}

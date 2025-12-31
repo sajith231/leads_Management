@@ -1,0 +1,513 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid px-3 px-md-4 py-4">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-10 col-lg-9 col-xl-8 col-xxl-7">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <h3 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Add New Collection</h3>
+        </div>
+        <div class="card-body p-4 p-md-5">
+          {% if error %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+              {{ error }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endif %}
+
+          <!-- USER INFO DISPLAY -->
+          {% if user.is_authenticated %}
+            <div class="alert alert-info border-0 mb-4" style="background-color: #e7f3ff;">
+              <div class="d-flex align-items-center">
+                <i class="fas fa-user-circle fs-4 me-3 text-primary"></i>
+                <div>
+                  <div class="fw-semibold text-dark">Creating collection as:</div>
+                  <div class="text-primary fs-6">
+                    {% if user.get_full_name %}
+                      {{ user.get_full_name }}
+                    {% elif user.first_name %}
+                      {{ user.first_name }}{% if user.last_name %} {{ user.last_name }}{% endif %}
+                    {% else %}
+                      {{ user.username }}
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- CLIENT NAME (improved dropdown with search) -->
+            <div class="row mb-4">
+              <div class="col-12 col-md-6 mb-3 mb-md-0">
+                <label for="client_name_input" class="form-label fs-6">
+                  <i class="fas fa-user me-2"></i>Client Name <span class="text-danger">*</span>
+                </label>
+                <div class="client-dropdown-container position-relative">
+                  <input
+                    type="text"
+                    class="form-control form-control-lg"
+                    id="client_name_input"
+                    name="client_name"
+                    placeholder="Search and select client..."
+                    autocomplete="off"
+                    required
+                  />
+                  <div class="dropdown-arrow">
+                    <i class="fas fa-chevron-down"></i>
+                  </div>
+                  <div class="client-dropdown-menu" id="client_dropdown_menu">
+                    {% for c in clients_json|dictsort:"name" %}
+                      <div class="client-dropdown-item" data-name="{{ c.name }}" data-branch="{{ c.branch }}">
+                        <div class="client-name">{{ c.name }}</div>
+                        <div class="client-details">{{ c.address }} ({{ c.branch }})</div>
+                      </div>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+
+            <!-- BRANCH DROPDOWN (dynamic from departments) -->
+<div class="col-12 col-md-6">
+  <label for="branch" class="form-label fs-6">
+    <i class="fas fa-building me-2"></i>Branch <span class="text-danger">*</span>
+  </label>
+  <select class="form-select form-select-lg" id="branch" name="branch" required>
+    <option value="" disabled selected>Select branch</option>
+    {% for dept in departments %}
+      <option value="{{ dept.name }}">{{ dept.name }}</option>
+    {% endfor %}
+  </select>
+</div>
+            <!-- =====  NEW : Collection Type  ===== -->
+           <div class="row mb-4">
+  <div class="col-12">
+    <label for="id_collection_type" class="form-label fs-6">
+      <i class="fas fa-credit-card me-2"></i>Collection Type
+    </label>
+    <select class="form-select form-select-lg" id="id_collection_type" name="collection_type" required>
+      <option value="cash" selected>By Cash</option>
+      <option value="upi">UPI</option>
+      <option value="neft">NEFT Payment</option>   <!-- << NEW -->
+      <option value="cheque">Cheque</option>
+    </select>
+  </div>
+</div>
+            <!-- ==================================== -->
+
+            <!-- AMOUNT & PAID FOR -->
+            <div class="row mb-4">
+              <div class="col-12 col-md-6 mb-3 mb-md-0">
+                <label for="amount" class="form-label fs-6">
+                  <i class="fas fa-rupee-sign me-2"></i>Amount <span class="text-danger">*</span>
+                </label>
+                <div class="input-group input-group-lg">
+                  <span class="input-group-text">₹</span>
+                  <input type="number" step="0.01" class="form-control" id="amount" name="amount" placeholder="0.00" required>
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <label for="paid_for" class="form-label fs-6">
+                  <i class="fas fa-tag me-2"></i>Paid For <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control form-control-lg" id="paid_for" name="paid_for" placeholder="What was this payment for?" required>
+              </div>
+            </div>
+
+            <!-- SCREENSHOT (conditional) -->
+            <div class="mb-4" id="screenshot-block" style="display:none;">
+              <label for="payment_screenshot" class="form-label fs-6">
+                <i class="fas fa-image me-2"></i>Payment Proof <span class="text-danger">*</span>
+              </label>
+              <input type="file" class="form-control form-control-lg" id="payment_screenshot" name="payment_screenshot" accept="image/*">
+              <div class="form-text mt-2">
+                <i class="fas fa-info-circle me-1"></i>
+                Please upload a screenshot / proof. Max 5 MB (JPG, PNG, GIF)
+              </div>
+            </div>
+
+            <!-- NOTES -->
+            <div class="mb-5">
+              <label for="notes" class="form-label fs-6">
+                <i class="fas fa-sticky-note me-2"></i>Additional Notes
+              </label>
+              <textarea class="form-control form-control-lg" id="notes" name="notes" rows="4" placeholder="Any additional information or notes..."></textarea>
+            </div>
+
+            <!-- BUTTONS -->
+            <div class="d-grid gap-3 d-md-flex justify-content-md-end">
+              <a href="{% url 'collections_list' %}" class="btn btn-secondary btn-lg me-md-3">
+                <i class="fas fa-times me-2"></i>Cancel
+              </a>
+              <button type="submit" class="btn btn-primary btn-lg px-4">
+                <i class="fas fa-save me-2"></i>Save Collection
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =====  JS : toggle screenshot block  ===== -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const typeSel = document.getElementById('id_collection_type');
+  const shotBlk = document.getElementById('screenshot-block');
+  const shotInp = document.getElementById('payment_screenshot');
+
+  function toggleShot() {
+    const need = ['online','cheque'].includes(typeSel.value);
+    shotBlk.style.display = need ? 'block' : 'none';
+    shotInp.required = need;
+  }
+  typeSel.addEventListener('change', toggleShot);
+  toggleShot();          // run once on load
+});
+</script>
+
+<!-- =====  existing enhanced JS  ===== -->
+<!-- =====  JS : toggle screenshot block  + all other goodies  ===== -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  /* ----------  1.  screenshot show/hide logic  ---------- */
+  const typeSel  = document.getElementById('id_collection_type');
+  const shotBlk  = document.getElementById('screenshot-block');
+  const shotInp  = document.getElementById('payment_screenshot');
+
+  function toggleShot() {
+    /*  UPI / NEFT / Cheque  all need proof  */
+    const need = ['upi','neft','cheque'].includes(typeSel.value);
+    shotBlk.style.display = need ? 'block' : 'none';
+    shotInp.required = need;
+  }
+  typeSel.addEventListener('change', toggleShot);
+  toggleShot();          // run once on load
+
+  /* ----------  2.  file-size validation  ---------- */
+  shotInp.addEventListener('change', function () {
+    const max = 5 * 1024 * 1024;          // 5 MB
+    if (this.files[0] && this.files[0].size > max) {
+      alert('File size must be less than 5MB');
+      this.value = '';
+    }
+  });
+
+  /* ----------  3.  amount auto-format (2 decimals)  ---------- */
+  const amountInput = document.getElementById('amount');
+  amountInput.addEventListener('blur', function () {
+    if (this.value) this.value = parseFloat(this.value).toFixed(2);
+  });
+
+  /* ----------  4.  enhanced client dropdown  ---------- */
+  const clientInput   = document.getElementById('client_name_input');
+  const dropdownMenu  = document.getElementById('client_dropdown_menu');
+  const dropdownArrow = document.querySelector('.dropdown-arrow');
+  const branchSelect  = document.getElementById('branch');
+
+  let isDropdownOpen = false;
+  let selectedIndex  = -1;
+  const allItems     = Array.from(dropdownMenu.querySelectorAll('.client-dropdown-item'));
+  let filteredItems  = [...allItems];
+
+  function showDropdown() {
+    dropdownMenu.style.display = 'block';
+    dropdownArrow.style.transform = 'rotate(180deg)';
+    isDropdownOpen = true;
+  }
+  function hideDropdown() {
+    dropdownMenu.style.display = 'none';
+    dropdownArrow.style.transform = 'rotate(0deg)';
+    isDropdownOpen = false;
+    selectedIndex = -1;
+    clearHighlight();
+  }
+  function clearHighlight() {
+    allItems.forEach(it => it.classList.remove('highlighted'));
+  }
+  function highlightItem(idx) {
+    clearHighlight();
+    if (idx >= 0 && idx < filteredItems.length) filteredItems[idx].classList.add('highlighted');
+  }
+  function selectItem(item) {
+    clientInput.value = item.getAttribute('data-name');
+    branchSelect.value = item.getAttribute('data-branch');
+    hideDropdown();
+  }
+  function filterItems(term) {
+    const t = term.toLowerCase();
+    allItems.forEach(it => {
+      const name = it.getAttribute('data-name').toLowerCase();
+      const det  = it.querySelector('.client-details').textContent.toLowerCase();
+      it.style.display = (name.includes(t) || det.includes(t)) ? 'block' : 'none';
+    });
+    filteredItems = allItems.filter(it => it.style.display !== 'none');
+    selectedIndex = -1;
+  }
+
+  /* -----  event wiring  ----- */
+  clientInput.addEventListener('click', () => { filterItems(clientInput.value); showDropdown(); });
+  clientInput.addEventListener('input', () => { filterItems(clientInput.value); if (!isDropdownOpen) showDropdown(); });
+  clientInput.addEventListener('keydown', e => {
+    if (!isDropdownOpen) return;
+    switch (e.key) {
+      case 'ArrowDown': e.preventDefault(); selectedIndex = Math.min(selectedIndex + 1, filteredItems.length - 1); highlightItem(selectedIndex); break;
+      case 'ArrowUp':   e.preventDefault(); selectedIndex = Math.max(selectedIndex - 1, -1); highlightItem(selectedIndex); break;
+      case 'Enter':     e.preventDefault(); if (selectedIndex >= 0) selectItem(filteredItems[selectedIndex]); break;
+      case 'Escape':    hideDropdown(); break;
+    }
+  });
+  dropdownArrow.addEventListener('click', () => isDropdownOpen ? hideDropdown() : (filterItems(clientInput.value), showDropdown()));
+  dropdownMenu.addEventListener('click', e => {
+    const item = e.target.closest('.client-dropdown-item');
+    if (item) selectItem(item);
+  });
+  document.addEventListener('click', e => { if (!e.target.closest('.client-dropdown-container')) hideDropdown(); });
+  dropdownMenu.addEventListener('mouseover', e => {
+    const item = e.target.closest('.client-dropdown-item');
+    if (item) { clearHighlight(); item.classList.add('highlighted'); selectedIndex = filteredItems.indexOf(item); }
+  });
+});
+</script>
+
+<!-- =====  existing enhanced CSS  ===== -->
+<style>
+.card{border:none;border-radius:15px}
+.card-header{border-radius:15px 15px 0 0 !important;border:none}
+.form-control:focus{border-color:#0d6efd;box-shadow:0 0 0 .2rem rgba(13,110,253,.25)}
+.btn{border-radius:8px;padding:10px 20px}
+.alert{border-radius:10px}
+.input-group-text{background-color:#f8f9fa;border-color:#dee2e6}
+.form-label{font-weight:500;margin-bottom:.5rem}
+.text-danger{color:#dc3545!important}
+
+/* User Info Alert Styling */
+.alert-info {
+  background: linear-gradient(135deg, #e7f3ff 0%, #f0f8ff 100%);
+  border: 1px solid #b6d7ff;
+  box-shadow: 0 2px 8px rgba(13, 110, 253, 0.1);
+}
+
+.alert-info .fas.fa-user-circle {
+  color: #0d6efd;
+  text-shadow: 0 1px 2px rgba(13, 110, 253, 0.2);
+}
+
+/* Enhanced Client Dropdown Styles */
+.client-dropdown-container {
+  position: relative;
+}
+
+.client-dropdown-container .form-control {
+  padding-right: 45px;
+}
+
+.dropdown-arrow {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #6c757d;
+  transition: transform 0.3s ease;
+  z-index: 2;
+  font-size: 1.1rem;
+}
+
+.dropdown-arrow:hover {
+  color: #0d6efd;
+}
+
+.client-dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 300px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  z-index: 1000;
+  margin-top: 4px;
+}
+
+.client-dropdown-item {
+  padding: 15px 18px;
+  cursor: pointer;
+  border-bottom: 1px solid #f8f9fa;
+  transition: all 0.2s ease;
+}
+
+.client-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.client-dropdown-item:hover,
+.client-dropdown-item.highlighted {
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  margin: 3px 6px;
+}
+
+.client-dropdown-item.highlighted {
+  background-color: #e7f3ff;
+  border-color: #b6d7ff;
+}
+
+.client-name {
+  font-weight: 600;
+  color: #212529;
+  margin-bottom: 3px;
+  font-size: 1rem;
+}
+
+.client-details {
+  font-size: 0.9rem;
+  color: #6c757d;
+}
+
+/* Scrollbar styling for dropdown */
+.client-dropdown-menu::-webkit-scrollbar {
+  width: 6px;
+}
+
+.client-dropdown-menu::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.client-dropdown-menu::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.client-dropdown-menu::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Animation for smooth opening */
+.client-dropdown-menu {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+}
+
+.client-dropdown-menu[style*="display: block"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  .container-fluid {
+    padding: 1rem !important;
+  }
+  
+  .card-body {
+    padding: 1.5rem !important;
+  }
+  
+  .card-header {
+    padding: 1rem 1.5rem !important;
+  }
+  
+  .card-header h3 {
+    font-size: 1.3rem;
+  }
+  
+  .form-control-lg, .form-select-lg {
+    font-size: 1rem;
+    padding: 0.75rem;
+  }
+  
+  .btn-lg {
+    padding: 12px 24px;
+    font-size: 1rem;
+  }
+  
+  .client-dropdown-menu {
+    max-height: 200px;
+  }
+  
+  .client-dropdown-item {
+    padding: 12px 15px;
+  }
+  
+  .form-label {
+    font-size: 0.95rem;
+  }
+
+  .alert-info {
+    padding: 0.75rem;
+  }
+
+  .alert-info .d-flex {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+
+  .alert-info .fas.fa-user-circle {
+    margin-bottom: 0.5rem;
+    margin-right: 0 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .container-fluid {
+    padding: 0.5rem !important;
+  }
+  
+  .card {
+    border-radius: 15px;
+  }
+  
+  .card-header {
+    border-radius: 15px 15px 0 0 !important;
+  }
+  
+  .card-body {
+    padding: 1rem !important;
+  }
+  
+  .client-dropdown-menu {
+    max-height: 180px;
+  }
+}
+
+/* Large Screen Optimization */
+@media (min-width: 1400px) {
+  .form-control-lg, .form-select-lg {
+    font-size: 1.2rem;
+    padding: 1rem 1.25rem;
+  }
+  
+  .btn-lg {
+    font-size: 1.2rem;
+    padding: 18px 36px;
+  }
+  
+  .card-header h3 {
+    font-size: 1.8rem;
+  }
+  
+  .client-dropdown-item {
+    padding: 18px 22px;
+  }
+  
+  .client-name {
+    font-size: 1.1rem;
+  }
+  
+  .client-details {
+    font-size: 1rem;
+  }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Edit Location</h2>
+    <form method="post" id="edit-location-form">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="{{ form.name.id_for_label }}" class="form-label">Location Name</label>
+            {{ form.name }}
+            {% for error in form.name.errors %}
+            <div class="text-danger">{{ error }}</div>
+            {% endfor %}
+        </div>
+        <div class="mb-3">
+            <label for="{{ form.district.id_for_label }}" class="form-label">District</label>
+            {{ form.district }}
+            {% for error in form.district.errors %}
+            <div class="text-danger">{{ error }}</div>
+            {% endfor %}
+        </div>
+        <div class="mb-3">
+            <label for="{{ form.area.id_for_label }}" class="form-label">Area</label>
+            {{ form.area }}
+            {% for error in form.area.errors %}
+            <div class="text-danger">{{ error }}</div>
+            {% endfor %}
+        </div>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <a href="{% url 'all_locations' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+
+<script>
+    // Filter areas dynamically based on the selected district
+    document.getElementById('{{ form.district.id_for_label }}').addEventListener('change', function() {
+        const districtId = this.value;
+        const areaSelect = document.getElementById('{{ form.area.id_for_label }}');
+
+        if (districtId) {
+            fetch(`/load-areas/?district_id=${districtId}`)
+                .then(response => response.json())
+                .then(data => {
+                    areaSelect.innerHTML = '<option value="">Select Area</option>';
+                    data.forEach(area => {
+                        areaSelect.innerHTML += `<option value="${area.id}">${area.name}</option>`;
+                    });
+                })
+                .catch(error => console.error('Error fetching areas:', error));
+        } else {
+            areaSelect.innerHTML = '<option value="">Select Area</option>';
+        }
+    });
+</script>
+</div>
+{% endblock %}

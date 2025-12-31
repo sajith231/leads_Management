@@ -1,0 +1,370 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- Add Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<a href="{% url 'document_list' %}" class="btn btn-secondary">Back to Documents</a>
+<div class="container mt-4">
+    <h2>{{ document.name }}</h2>
+    <p>{{ document.description }}</p>
+
+   <div style="display: flex;"> <h3>Documentation Details:</h3>
+   <span style="width: 55%;margin-left: 20%;"><input type="text" id="searchField" class="form-control mb-3" placeholder="Search by Name..." onkeyup="filterFields()"></span></div>
+    
+    <div id="settingsContainer">
+    {% for setting in document.settings.all %}
+        <div class="card mb-3" data-setting-id="{{ setting.id }}">
+            <div class="card-header handle">
+                <h4>{{ setting.name }}</h4>
+            </div>
+            <div class="card-body">
+                {% if setting.attachment %}
+                <p>
+                    <strong>Attachment:</strong>
+                    <button class="btn btn-link" onclick="showAttachment('{% url 'view_setting_attachment' setting_id=setting.id %}', '{{ setting.name }}')">
+                        View
+                    </button>
+                    <a href="{{ setting.attachment.url }}" class="btn btn-link" download>Download</a>
+                </p>
+                {% endif %}
+                {% if setting.url %}
+                <p><strong>URL:</strong> <a href="{{ setting.url }}">{{ setting.url }}</a></p>
+                {% endif %}
+
+                {% if setting.fields.all %}
+                <h5>Headings:</h5>
+                <div class="field-box-container" data-setting-id="{{ setting.id }}">
+                    {% for field in setting.fields.all %}
+                    <div class="field-box field-item" data-field-id="{{ field.id }}">
+                        <div class="field-handle">
+                            <i class="fas fa-grip-vertical"></i>
+                        </div>
+                        <div class="field-content">
+                            <p><strong>Name:</strong> <span class="field-name">{{ field.field_name }}</span></p>
+                            <p><strong>Value:</strong> {{ field.field_value }}</p>
+                            <p><strong>Purpose:</strong> {{ field.purpose }}</p>
+                            <p>
+                                <strong>Attachment:</strong>
+                                {% if field.attachment %}
+                                <button class="btn btn-link" onclick="showAttachment('{% url 'view_field_attachment' field_id=field.id %}', '{{ field.field_name }}')">
+                                    View
+                                </button>
+                                <a href="{{ field.attachment.url }}" class="btn btn-link" download>Download</a>
+                                {% else %}
+                                <span class="text-muted">No attachment</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    {% empty %}
+        <p>No settings configured</p>
+    {% endfor %}
+    </div>
+</div>
+
+<!-- Attachment Viewer Modal -->
+<div class="modal fade" id="attachmentModal" tabindex="-1" aria-labelledby="attachmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="attachmentModalLabel">View Attachment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="iframe-container">
+                    <iframe id="attachmentViewer" style="width: 100%; height: 100%; border: none;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .field-box-container {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .field-box {
+        background-color: #f8f9fa;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+        display: flex;
+        gap: 10px;
+        transition: all 0.2s ease;
+    }
+
+    .field-handle {
+        cursor: move;
+        padding: 10px;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        background: #e9ecef;
+        border-radius: 4px;
+        transition: background-color 0.2s ease;
+    }
+
+    .field-handle:hover {
+        background: #dee2e6;
+        color: #495057;
+    }
+
+    .field-content {
+        flex: 1;
+    }
+
+    .field-box.sortable-ghost {
+        opacity: 0.5;
+        background: #e0e0e0;
+        transform: scale(0.98);
+    }
+
+    .field-box.sortable-chosen {
+        background: #d1e7fd;
+        transform: scale(1.02);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .field-box.sortable-drag {
+        opacity: 0.7;
+        cursor: grabbing;
+    }
+
+    .field-box:hover {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .iframe-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 80vh;
+        background-color: #f8f9fa;
+    }
+
+    #attachmentViewer {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+
+    .handle {
+        cursor: move;
+        cursor: -webkit-grabbing;
+    }
+
+    .card {
+        transition: transform 0.2s ease;
+    }
+
+    .card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+</style>
+
+<!-- Add Sortable.js library -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+<script>
+function showAttachment(url, title) {
+    const modal = new bootstrap.Modal(document.getElementById('attachmentModal'));
+    const viewer = document.getElementById('attachmentViewer');
+    const modalTitle = document.getElementById('attachmentModalLabel');
+    
+    modalTitle.textContent = `View Attachment: ${title}`;
+    viewer.src = url;
+    
+    modal.show();
+}
+
+function filterFields() {
+    let input = document.getElementById("searchField").value.toLowerCase();
+    let fieldBoxes = document.querySelectorAll(".field-item");
+
+    fieldBoxes.forEach(box => {
+        let fieldName = box.querySelector(".field-name").textContent.toLowerCase();
+        if (fieldName.includes(input)) {
+            box.style.display = "block";
+        } else {
+            box.style.display = "none";
+        }
+    });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    // Initialize Sortable for settings container
+    const settingsContainer = document.getElementById("settingsContainer");
+    
+    if (settingsContainer) {
+        new Sortable(settingsContainer, {
+            animation: 150,
+            handle: '.handle',
+            ghostClass: 'sortable-ghost',
+            chosenClass: 'sortable-chosen',
+            dragClass: 'sortable-drag',
+            onEnd: function (evt) {
+                const settingIds = Array.from(settingsContainer.children)
+                    .filter(el => el.dataset.settingId)
+                    .map(el => el.dataset.settingId);
+
+                // Show loading state
+                const loadingToast = showToast('Saving positions...', 'info');
+
+                // Send the new order to the server
+                fetch(`/update_setting_positions/{{ document.id }}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        positions: settingIds
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        showToast('Positions saved successfully!', 'success');
+                    } else {
+                        showToast('Error saving positions: ' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    showToast('Error saving positions: ' + error, 'error');
+                    console.error('Error saving positions:', error);
+                })
+                .finally(() => {
+                    if (loadingToast) {
+                        loadingToast.close();
+                    }
+                });
+            }
+        });
+    }
+
+    // Initialize Sortable for each field container
+    document.querySelectorAll('.field-box-container').forEach(container => {
+        new Sortable(container, {
+            animation: 150,
+            handle: '.field-handle',
+            ghostClass: 'sortable-ghost',
+            chosenClass: 'sortable-chosen',
+            dragClass: 'sortable-drag',
+            onEnd: function (evt) {
+                const settingId = container.dataset.settingId;
+                const fieldIds = Array.from(container.children)
+                    .filter(el => el.classList.contains('field-box'))
+                    .map(el => el.dataset.fieldId);
+
+                console.log('Saving field positions:', fieldIds, 'Setting ID:', settingId);
+
+                // Show loading state
+                const loadingToast = showToast('Saving field positions...', 'info');
+
+                // Send the new order to the server
+                fetch(`/update_field_positions/${settingId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        positions: fieldIds
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        showToast('Field positions saved successfully!', 'success');
+                    } else {
+                        showToast('Error saving field positions: ' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    showToast('Error saving field positions: ' + error, 'error');
+                    console.error('Error saving field positions:', error);
+                })
+                .finally(() => {
+                    if (loadingToast) {
+                        loadingToast.close();
+                    }
+                });
+            }
+        });
+    });
+});
+
+// Helper function to show toast notifications
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast position-fixed top-0 end-0 m-3 ${type}`;
+    toast.style.zIndex = '1050';
+    toast.innerHTML = `
+        <div class="toast-header">
+            <strong class="me-auto">${type.charAt(0).toUpperCase() + type.slice(1)}</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body">
+            ${message}
+        </div>
+    `;
+    document.body.appendChild(toast);
+    
+    const bsToast = new bootstrap.Toast(toast, {
+        autohide: true,
+        delay: 3000
+    });
+    bsToast.show();
+    
+    toast.addEventListener('hidden.bs.toast', () => {
+        toast.remove();
+    });
+    
+    return bsToast;
+}
+
+// Helper function to get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Add toast styles
+const toastStyles = document.createElement('style');
+toastStyles.textContent = `
+    .toast.success { background-color: #d4edda; }
+    .toast.error { background-color: #f8d7da; }
+    .toast.info { background-color: #cce5ff; }
+`;
+document.head.appendChild(toastStyles);
+</script>
+{% endblock %}

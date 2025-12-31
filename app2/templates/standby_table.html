@@ -1,0 +1,937 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  
+  /* Header */
+  .header-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    margin-bottom: 15px;
+    margin-top: 3%;
+  }
+
+  /* Customer Modal Styles */
+  #customerModal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+  }
+
+  #customerModal .modal-content {
+    background: #fff;
+    border-radius: 12px;
+    position: relative;
+    max-width: 500px;
+    width: 90%;
+    padding: 25px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  }
+
+  .return-btn {
+    font-weight: bold;
+    color: #1e06f5;
+  }
+  .return-btn:hover {
+    color: #8270d4;
+  }
+
+  #customerDetails strong {
+    color: #146fca;
+    display: inline-block;
+    min-width: 140px;
+    text-align: right;
+    margin-right: 10px;
+  }
+
+  #customerDetails div {
+    margin-bottom: 10px;
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 6px;
+  }
+
+  .header-container h2 {
+    margin: 0;
+    font-size: 28px;
+    color: #060606;
+    font-weight: bold;
+    width: 100%;
+    text-align: center;
+  }
+  .add-btn {
+    position: absolute;
+    right: 0;
+    background: black;
+    color: #fff;
+    padding: 10px 18px;
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: bold;
+    transition: background 0.3s ease;
+  }
+  .add-btn:hover {
+    background: #333;
+  }
+
+  /* Search and Filters */
+  .filters-container {
+    margin-bottom: 20px;
+    background: #fff;
+    padding: 15px;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  }
+  
+  .filter-row {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  
+  .search-input {
+    flex: 1;
+    min-width: 250px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+  
+  .status-filter {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+    min-width: 150px;
+  }
+
+  /* Table */
+  .table-container {
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+  }
+  th, td {
+    border: 1px solid #ddd;
+    padding: 12px;
+    font-size: 14px;
+    text-align: left;
+    vertical-align: middle;
+  }
+  th {
+    background: black;
+    color: #fff;
+    font-weight: bold;
+    text-transform: uppercase;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  
+  tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+  
+  tbody tr:hover {
+    background-color: #f0f8ff;
+  }
+
+  /* Status Badges */
+  .status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .badge-success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+  }
+  
+  .badge-warning {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+  }
+  
+  .status-badge:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  /* Status Dropdown */
+  .status-dropdown {
+    position: relative;
+    display: inline-block;
+  }
+  
+  .status-dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #fff;
+    min-width: 160px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    border-radius: 6px;
+    z-index: 1000;
+    border: 1px solid #ddd;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  
+  .status-dropdown-content a {
+    color: #333;
+    padding: 10px 16px;
+    text-decoration: none;
+    display: block;
+    font-size: 13px;
+    transition: background 0.3s;
+  }
+  
+  .status-dropdown-content a:hover {
+    background-color: #f1f1f1;
+  }
+
+  /* Icon Buttons */
+  .icon-btn {
+    font-size: 18px;
+    cursor: pointer;
+    color: #0056b3;
+    transition: color 0.3s;
+    margin-right: 5px;
+  }
+  .icon-btn:hover {
+    color: #003d82;
+  }
+  
+  .notes-icon {
+    color: #28a745;
+  }
+  .images-icon {
+    color: #17a2b8;
+  }
+
+  /* Action buttons */
+  .action-btn {
+    background: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    margin-right: 8px;
+    transition: color 0.3s;
+  }
+  
+  .edit-btn { color: #ffc107; }
+  .edit-btn:hover { color: #e0a800; }
+  
+  .delete-btn { color: #dc3545; }
+  .delete-btn:hover { color: #c82333; }
+
+  /* Modals */
+  #notesModal, #imageModal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7);
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+  }
+
+  /* Modal content */
+  .modal-content {
+    background: #fff;
+    border-radius: 12px;
+    position: relative;
+    max-width: 90%;
+    max-height: 90%;
+    padding: 25px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    overflow: hidden;
+  }
+
+  .close-btn {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    cursor: pointer;
+    font-size: 28px;
+    color: #666;
+    font-weight: bold;
+    transition: color 0.3s;
+  }
+  .close-btn:hover {
+    color: #000;
+  }
+
+  /* Notes Modal Styling */
+  .notes-modal-content {
+    max-width: 300px;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    height: 30%;
+  }
+  
+  .modal-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #eee;
+    flex-shrink: 0;
+  }
+  
+  .modal-header h3 {
+    margin: 0;
+    color: #333;
+    font-size: 20px;
+  }
+  
+  .modal-header .fa-pen-to-square {
+    margin-right: 10px;
+    color: #28a745;
+    font-size: 18px;
+  }
+
+  /* Notes content */
+  #modalText {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    text-align: left;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #f8f9fa;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #333;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    flex-grow: 1;
+  }
+
+  /* Scrollbar Styling */
+  .table-container::-webkit-scrollbar,
+  #modalText::-webkit-scrollbar,
+  .status-dropdown-content::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .table-container::-webkit-scrollbar-track,
+  #modalText::-webkit-scrollbar-track,
+  .status-dropdown-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+
+  .table-container::-webkit-scrollbar-thumb,
+  #modalText::-webkit-scrollbar-thumb,
+  .status-dropdown-content::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+  }
+
+  .table-container::-webkit-scrollbar-thumb:hover,
+  #modalText::-webkit-scrollbar-thumb:hover,
+  .status-dropdown-content::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+  }
+
+  /* Empty state */
+  .empty-notes {
+    color: #6c757d;
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+  }
+
+  /* Image Slider */
+  .slider-container {
+    position: relative;
+    max-width: 800px;
+    margin: auto;
+  }
+
+  .slider-image {
+    max-width: 100%;
+    max-height: 70vh;
+    border-radius: 8px;
+    object-fit: contain;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  }
+
+  .nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    border: none;
+    font-size: 24px;
+    padding: 12px 16px;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: background 0.3s;
+  }
+  .nav-btn:hover {
+    background: rgba(0,0,0,0.8);
+  }
+  .prev-btn { left: 10px; }
+  .next-btn { right: 10px; }
+  
+  /* Image counter */
+  .image-counter {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.6);
+    color: white;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 14px;
+  }
+
+  /* No data styling */
+  .no-data {
+    text-align: center;
+    color: #6c757d;
+    font-style: italic;
+    padding: 40px;
+    background: #f8f9fa;
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .table-container {
+      overflow-x: auto;
+      max-height: 60vh;
+    }
+    
+    table {
+      min-width: 900px;
+    }
+    
+    .modal-content {
+      margin: 10px;
+      max-width: calc(100% - 20px);
+      max-height: calc(100% - 20px);
+    }
+    
+    .filter-row {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    
+    .search-input, .status-filter {
+      min-width: auto;
+      width: 100%;
+    }
+
+    #modalText {
+      max-height: 300px;
+    }
+  }
+</style>
+
+<!-- Header -->
+<div class="header-container">
+  <h2>StandBy Product Management</h2>
+  <a href="{% url 'add' %}" class="add-btn"><i class="fas fa-plus"></i> Add New</a>
+</div>
+
+<!-- Search and Filters -->
+<div class="filters-container">
+  <form method="get" action="" id="filter-form">
+    <div class="filter-row">
+      <input type="text" name="search" id="search-input" 
+             value="{{ request.GET.search }}" 
+             placeholder="Search by Name or Serial Number..." 
+             class="search-input" autocomplete="off">
+      
+      <select name="status" id="status-filter" class="status-filter">
+        <option value="">All Status</option>
+        <option value="in_stock" {% if request.GET.status == 'in_stock' %}selected{% endif %}>In Stock</option>
+        <option value="with_customer" {% if request.GET.status == 'with_customer' %}selected{% endif %}>With Customer</option>
+      </select>
+    </div>
+  </form>
+</div>
+
+<!-- Table -->
+<div class="table-container">
+<table>
+<thead>
+<tr>
+  <th>Sl.No.</th>
+  <th>Created Date</th>
+  <th>Created By</th>
+  <th>Item Name</th>
+  <th>Serial Number</th>
+  <th>Status</th>
+  <th>Notes</th>
+  <th>Images</th>
+  <th>Stock</th>
+  <th>Actions</th>
+</tr>
+</thead>
+<tbody>
+{% for item in items %}
+<tr>
+    <td>{{ forloop.counter }}</td>
+    <td>{{ item.created_at|date:"d M Y" }}</td>
+    <td>{{ item.created_by.username|default:"System" }}</td>
+    <td><strong>{{ item.name }}</strong></td>
+    <td><code>{{ item.serial_number }}</code></td>
+    <td>
+  <div class="status-dropdown">
+    <span class="status-badge {{ item.get_status_display_class }}" 
+          onclick="toggleStatusDropdown({{ item.id }})">
+      {{ item.get_status_display }}
+    </span>
+    <div class="status-dropdown-content" id="dropdown-{{ item.id }}">
+      <a href="#" onclick="updateStatus({{ item.id }}, 'in_stock', event)">
+        <span class="status-badge badge-success">In Stock</span>
+      </a>
+      <a href="#" onclick="updateStatus({{ item.id }}, 'with_customer', event)">
+        <span class="status-badge badge-warning">With Customer</span>
+      </a>
+    </div>
+  </div>
+
+  {% if item.status == 'with_customer' %}
+    <a href="#" class="icon-btn" style="color:#007bff;" title="View Customer Info" 
+       onclick="viewCustomerInfo({{ item.id }})">
+      <i class="fas fa-eye"></i>
+    </a>
+  {% endif %}
+</td>
+
+    <!-- Notes Column - Only show original standby item notes -->
+    <td>
+        {% if item.standby_notes and item.standby_notes|length > 0 %}
+            <i class="fa-solid fa-note-sticky icon-btn notes-icon" 
+               title="View Notes" 
+               onclick="openNotesModal('{{ item.name|escapejs }}', `{{ item.standby_notes|escapejs }}`)"></i>
+        {% else %}
+            <span style="color:#888;">—</span>
+        {% endif %}
+    </td>
+
+    <!-- Images Column - Only show original standby item images -->
+    <td>
+        {% if item.standby_images %}
+            <i class="fas fa-images icon-btn images-icon" 
+               title="View Images ({{ item.standby_images.count }} image{{ item.standby_images.count|pluralize }})"
+               onclick="openImageModal({{ item.id }})"></i>
+            {% for img in item.standby_images %}
+                <input type="hidden" class="image-url" data-item="{{ item.id }}" value="{{ img.image.url }}">
+            {% endfor %}
+        {% else %}
+            <span style="color:#888;">—</span>
+        {% endif %}
+    </td>
+    
+    <td><strong>{{ item.stock }}</strong></td>
+    <td>
+        <a href="{% url 'item_edit' item.id %}" class="action-btn edit-btn" title="Edit Item">
+            <i class="fas fa-edit"></i>
+        </a>
+        <form action="{% url 'item_delete' item.id %}" method="POST" style="display:inline;" 
+              onsubmit="return confirm('Are you sure you want to delete this item?');">
+            {% csrf_token %}
+            <button type="submit" class="action-btn delete-btn" title="Delete Item">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+
+{% if item.status == 'with_customer' %}
+  <a href="{% url 'standby_return_item' item.id %}" class="action-btn return-btn" 
+     title="Return Item">
+      <i class="fas fa-undo-alt"></i>
+  </a>
+{% endif %}
+
+        </form>
+    </td>
+</tr>
+{% empty %}
+<tr>
+  <td colspan="10" class="no-data">
+    <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 10px; color: #ccc;"></i><br>
+    No items found
+    {% if request.GET.search %}
+      <br><small>Try adjusting your search terms</small>
+    {% endif %}
+  </td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+
+<!-- Notes Modal -->
+<div id="notesModal">
+  <div class="modal-content notes-modal-content">
+    <span class="close-btn" onclick="closeNotesModal()">&times;</span>
+    <div class="modal-header">
+      <h3 id="modalTitle">
+        <i class="fa-solid fa-pen-to-square"></i>
+        <span id="modalItemName"></span> - Notes
+      </h3>
+    </div>
+    <div id="modalText"></div>
+  </div>
+</div>
+
+<!-- Customer Info Modal -->
+<div id="customerModal" class="modal">
+  <div class="modal-content" style="max-width: 500px;">
+    <span class="close-btn" onclick="closeCustomerModal()">&times;</span>
+    <div class="modal-header">
+      <h3>
+        <i class="fas fa-user"></i>
+        Customer Information
+      </h3>
+    </div>
+    <div id="customerDetails" style="padding: 20px; text-align: left; line-height: 1.6;">
+      <!-- Customer details will be loaded here -->
+    </div>
+    <div style="padding: 15px; border-top: 1px solid #eee; text-align: center;">
+      <button onclick="closeCustomerModal()" style="padding: 8px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Image Modal (Slider) -->
+<div id="imageModal">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeImageModal()">&times;</span>
+    <div class="slider-container">
+      <button class="nav-btn prev-btn" onclick="prevImage()" id="prevBtn">&#10094;</button>
+      <img id="sliderImage" class="slider-image" src="" alt="Image Preview">
+      <button class="nav-btn next-btn" onclick="nextImage()" id="nextBtn">&#10095;</button>
+      <div class="image-counter" id="imageCounter">1 / 1</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Search functionality with debounce
+const searchInput = document.getElementById('search-input');
+const statusFilter = document.getElementById('status-filter');
+const filterForm = document.getElementById('filter-form');
+let searchTimer;
+
+searchInput.addEventListener('input', function() {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+        filterForm.submit();
+    }, 500);
+});
+
+statusFilter.addEventListener('change', function() {
+    filterForm.submit();
+});
+
+// Clear search on Escape key
+searchInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        this.value = '';
+        filterForm.submit();
+    }
+});
+
+/* Status Management */
+function toggleStatusDropdown(itemId) {
+    // Close all other dropdowns first
+    document.querySelectorAll('.status-dropdown-content').forEach(dropdown => {
+        if (dropdown.id !== `dropdown-${itemId}`) {
+            dropdown.style.display = 'none';
+        }
+    });
+    
+    // Toggle current dropdown
+    const dropdown = document.getElementById(`dropdown-${itemId}`);
+    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+}
+
+function updateStatus(itemId, newStatus, event) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    // Close dropdown
+    document.getElementById(`dropdown-${itemId}`).style.display = 'none';
+    
+    // Show loading indicator
+    const statusBadge = document.querySelector(`#dropdown-${itemId}`).previousElementSibling;
+    const originalText = statusBadge.textContent;
+    statusBadge.textContent = 'Updating...';
+    statusBadge.className = 'status-badge badge-secondary';
+    
+    // Send AJAX request
+    fetch(`/api/standby/update-status/${itemId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({ status: newStatus })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            statusBadge.textContent = data.new_status;
+            statusBadge.className = `status-badge ${data.status_class}`;
+            
+            // Show success message
+            showNotification('Status updated successfully!', 'success');
+        } else {
+            // Revert on error
+            statusBadge.textContent = originalText;
+            showNotification(data.error || 'Failed to update status', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        statusBadge.textContent = originalText;
+        showNotification('Network error occurred', 'error');
+    });
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.status-dropdown')) {
+        document.querySelectorAll('.status-dropdown-content').forEach(dropdown => {
+            dropdown.style.display = 'none';
+        });
+    }
+});
+
+function viewCustomerInfo(itemId) {
+  fetch(`/app5/standby_get_customer_info/${itemId}/`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        const info = data.data;
+        document.getElementById('customerDetails').innerHTML = `
+          <p><strong>Item Name:</strong> ${info.item_name}</p>
+          <p><strong>Serial No.:</strong> ${info.serial_number}</p>
+          <p><strong>Customer:</strong> ${info.customer_name}</p>
+          <p><strong>Place:</strong> ${info.customer_place}</p>
+          <p><strong>Phone:</strong> ${info.customer_phone}</p>
+          <p><strong>Issued Date:</strong> ${info.issued_date}</p>
+        `;
+        document.getElementById('customerModal').style.display = 'block';
+      } else {
+        alert(data.error || 'No customer info available.');
+      }
+    })
+    .catch(error => console.error('Error fetching customer info:', error));
+}
+
+function closeCustomerModal() {
+  document.getElementById('customerModal').style.display = 'none';
+}
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeCustomerModal();
+  }
+});
+
+
+// Notification function
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 5px;
+        color: white;
+        font-weight: bold;
+        z-index: 10000;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        ${type === 'success' ? 'background: #28a745;' : 'background: #dc3545;'}
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    // Fade in
+    setTimeout(() => notification.style.opacity = '1', 100);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => document.body.removeChild(notification), 300);
+    }, 3000);
+}
+
+/* Notes Modal */
+const notesModal = document.getElementById('notesModal');
+const modalItemName = document.getElementById('modalItemName');
+const modalText = document.getElementById('modalText');
+
+function openNotesModal(itemName, notes) {
+    modalItemName.textContent = itemName;
+    
+    if (notes && notes.trim().length > 0) {
+        modalText.textContent = notes.trim();
+        modalText.className = '';
+    } else {
+        modalText.innerHTML = '<div class="empty-notes">No notes available for this item.</div>';
+    }
+    
+    notesModal.style.display = 'flex';
+    
+    setTimeout(() => {
+        modalText.focus();
+    }, 100);
+}
+
+function closeNotesModal() { 
+    notesModal.style.display = 'none'; 
+}
+
+
+
+function viewCustomerInfo(itemId) {
+  fetch(`/app2/standby/customer-info/${itemId}/`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        const d = data.data;
+        document.getElementById('customerDetails').innerHTML = `
+          <strong>Item:</strong> ${d.item_name}<br>
+          <strong>Serial Number:</strong> ${d.serial_number}<br>
+          <strong>Customer Name:</strong> ${d.customer_name}<br>
+          <strong>Place:</strong> ${d.customer_place}<br>
+          <strong>Phone:</strong> ${d.customer_phone}<br>
+          <strong>Issued Date:</strong> ${d.issued_date}
+        `;
+        document.getElementById('customerModal').style.display = 'flex';
+      } else {
+        alert(data.error || 'Unable to fetch customer info.');
+      }
+    })
+    .catch(err => alert('Error: ' + err));
+}
+
+function closeCustomerModal() {
+  document.getElementById('customerModal').style.display = 'none';
+}
+
+
+/* Image Modal with Slider */
+const imageModal = document.getElementById('imageModal');
+const sliderImage = document.getElementById('sliderImage');
+const imageCounter = document.getElementById('imageCounter');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+let images = [];
+let currentIndex = 0;
+
+function openImageModal(itemId) {
+    const imgElements = document.querySelectorAll(`.image-url[data-item='${itemId}']`);
+    images = Array.from(imgElements).map(el => el.value);
+    
+    if (images.length === 0) return;
+    
+    currentIndex = 0;
+    updateSlider();
+    imageModal.style.display = 'flex';
+}
+
+function closeImageModal() {
+    imageModal.style.display = 'none';
+}
+
+function updateSlider() {
+    if (images.length === 0) return;
+    
+    sliderImage.src = images[currentIndex];
+    imageCounter.textContent = `${currentIndex + 1} / ${images.length}`;
+    
+    prevBtn.style.display = images.length > 1 ? 'block' : 'none';
+    nextBtn.style.display = images.length > 1 ? 'block' : 'none';
+}
+
+function nextImage() {
+    if (images.length > 1) {
+        currentIndex = (currentIndex + 1) % images.length;
+        updateSlider();
+    }
+}
+
+function prevImage() {
+    if (images.length > 1) {
+        currentIndex = (currentIndex - 1 + images.length) % images.length;
+        updateSlider();
+    }
+}
+
+// Keyboard navigation for image slider
+document.addEventListener('keydown', function(e) {
+    if (imageModal.style.display === 'flex') {
+        if (e.key === 'ArrowRight') nextImage();
+        if (e.key === 'ArrowLeft') prevImage();
+        if (e.key === 'Escape') closeImageModal();
+    }
+    if (notesModal.style.display === 'flex') {
+        if (e.key === 'Escape') closeNotesModal();
+    }
+});
+
+// Close modals when clicking outside
+window.onclick = function(e) {
+    if (e.target === notesModal) closeNotesModal();
+    if (e.target === imageModal) closeImageModal();
+};
+
+// Handle image loading errors
+sliderImage.addEventListener('error', function() {
+    this.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDMwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMTcuNSA4NS41TDE0Mi41IDExMC41TDE4Mi41IDcwLjVMMjE3LjUgMTA1LjVWMTMwLjVIODIuNVY4NS41SDE0Mi41IiBzdHJva2U9IiM5Q0E0QTgiLz4KPGNpcmNsZSBjeD0iMTEwIiBjeT0iNzAiIHI9IjEwIiBzdHJva2U9IiM5Q0E0QTgiLz4KPHRleHQgeD0iMTUwIiB5PSIxNjAiIGZpbGw9IiM2QjcyODAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+SW1hZ2UgTm90IEZvdW5kPC90ZXh0Pgo8L3N2Zz4K';
+});
+
+console.log('StandBy Product Management System with Status Tracking Loaded Successfully! 🚀');
+</script>
+
+{% endblock %}

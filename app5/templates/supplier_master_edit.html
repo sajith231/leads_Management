@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Supplier Record</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body {
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      color: #333; line-height: 1.6; padding: 20px; min-height: 100vh;
+      display: flex; justify-content: center; align-items: center;
+    }
+    .container { width: 100%; max-width: 600px; background: #dadaf1; padding: 30px; border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); }
+    header { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #eaeaea; }
+    h1 { color: #061262; margin-bottom: 10px; }
+    .description { color: #061262; font-size: 1.1em; }
+    .form-group { margin-bottom: 20px; }
+    label { display: block; margin-bottom: 8px; font-weight: bold; color: #0b0b0b; }
+    .input-with-icon { position: relative; }
+    .input-with-icon i { 
+      position: absolute; 
+      left: 15px; 
+      top: 50%; 
+      transform: translateY(-50%); 
+      color: #061262; 
+      z-index: 1;
+    }
+    .input-with-icon input, .input-with-icon textarea { 
+      padding-left: 45px; 
+      width: 100%; 
+    }
+    input, textarea { 
+      padding: 12px 15px; 
+      border: 1px solid #ddd; 
+      border-radius: 5px; 
+      font-size: 16px; 
+      transition: border 0.3s; 
+    }
+    input:focus, textarea:focus { 
+      border-color: #3498db; 
+      outline: none; 
+      box-shadow: 0 0 5px rgba(52, 152, 219, 0.5); 
+    }
+    textarea { 
+      min-height: 100px; 
+      resize: vertical; 
+    }
+    /* Special styling for textarea to align icon properly */
+    .textarea-container {
+      position: relative;
+    }
+    .textarea-container i {
+      position: absolute;
+      left: 15px;
+      top: 18px; /* Adjusted for better alignment with textarea */
+      color: #061262;
+      z-index: 1;
+    }
+    .textarea-container textarea {
+      padding-left: 45px;
+      width: 100%;
+    }
+    .required::after { content: " *"; color: #e74c3c; }
+    .form-actions { margin-top: 30px; display: flex; justify-content: center; gap: 10px; }
+    button { color: white; border: none; padding: 10px 20px; font-size: 14px; border-radius: 5px; cursor: pointer;
+      transition: background 0.3s; display: inline-flex; justify-content: center; align-items: center; gap: 8px; }
+    .btn-primary { background: #061262; } .btn-primary:hover { background: #061262; }
+    .btn-secondary { background: #0b0b0b; } .btn-secondary:hover { background: #636e72; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Edit Supplier Record</h1>
+      <p class="description">Update existing supplier information</p>
+    </header>
+
+    <form method="POST" action="{% url 'app5:supplier_master_edit' supplier.id %}">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="name" class="required">Supplier Name</label>
+        <div class="input-with-icon">
+          <i class="fas fa-building"></i>
+          <input type="text" id="name" name="name" value="{{ supplier.name }}" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="place" class="required">Place</label>
+        <div class="input-with-icon">
+          <i class="fas fa-map-marker-alt"></i>
+          <input type="text" id="place" name="place" value="{{ supplier.place }}" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="phone" class="required">Phone Number</label>
+        <div class="input-with-icon">
+          <i class="fas fa-phone"></i>
+          <input type="tel" id="phone" name="phone" value="{{ supplier.phone }}" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="address" class="required">Address</label>
+        <div class="textarea-container">
+          <i class="fas fa-address-card"></i>
+          <textarea id="address" name="address" required>{{ supplier.address }}</textarea>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" onclick="window.history.back()">
+          <i class="fas fa-arrow-left"></i> Back
+        </button>
+        <button type="submit" class="btn-primary">
+          <i class="fas fa-save"></i> Update
+        </button>
+      </div>
+    </form>
+  </div>
+</body>
+</html> 
