@@ -5277,357 +5277,365 @@ def requirement_list(request):
     import logging
     
     logger = logging.getLogger(__name__)
-    logger.info("Loading requirement list page...")
+    logger.info("=" * 60)
+    logger.info("REQUIREMENT LIST VIEW - START")
+    logger.info("=" * 60)
     
     items_list = []
     section_counts = {}
     
+    # ==================== ITEMS LOADING ====================
     try:
         # ✅ Try to import from purchase_order app first
         try:
             from purchase_order.models import Item as POItem
             items_qs = POItem.objects.filter(is_active=True).order_by('section', 'name')
-            logger.info(f"✅ Using purchase_order.Item model")
+            logger.info(f"✅ Using purchase_order.Item model - {items_qs.count()} items found")
             using_po_items = True
         except (ImportError, Exception) as e:
             # ✅ Fallback to app5 Item model (NO section field)
             logger.info(f"⚠️ purchase_order.Item not available: {e}")
-            from .models import Item as App5Item
-            items_qs = App5Item.objects.all().order_by('name')
-            logger.info(f"✅ Using app5.Item model (no section or is_active fields)")
-            using_po_items = False
+            try:
+                from .models import Item as App5Item
+                items_qs = App5Item.objects.all().order_by('name')
+                logger.info(f"✅ Using app5.Item model - {items_qs.count()} items found")
+                using_po_items = False
+            except Exception as e2:
+                logger.error(f"❌ Both item models failed: {e2}")
+                items_qs = []
+                using_po_items = False
         
-        total_items = items_qs.count()
-        logger.info(f"Found {total_items} items")
-        
-        if total_items == 0:
-            logger.warning("⚠️ No items found in database!")
-        
-        # Create items list for template
+        # Process items into structured format
         section_values = set()
+        items_processed = 0
         
         for item in items_qs:
-            # ✅ Get section value (only for purchase_order items)
-            if using_po_items and hasattr(item, 'section'):
-                section_value = getattr(item, 'section', None)
-                
-                if not section_value or str(section_value).strip() == '':
-                    section_value = 'GENERAL'
-                else:
-                    section_value = str(section_value).upper().strip()
+            try:
+                # ✅ Get section value (only for purchase_order items)
+                if using_po_items and hasattr(item, 'section'):
+                    section_value = getattr(item, 'section', None)
                     
-                    # Standardize section names
-                    if 'HARDWARE' in section_value:
-                        section_value = 'HARDWARE'
-                    elif 'SOFTWARE' in section_value:
-                        section_value = 'SOFTWARE'
-                    elif 'PAPER' in section_value or 'ROLL' in section_value:
-                        section_value = 'PAPER_ROLLS'
-                    elif 'GENERAL' in section_value:
+                    if not section_value or str(section_value).strip() == '':
                         section_value = 'GENERAL'
-            else:
-                # ✅ Default section for app5 items
-                section_value = 'GENERAL'
-            
-            section_values.add(section_value)
-            section_display = section_value.replace('_', ' ').title()
-            
-            # ✅ Get item attributes safely
-            item_dict = {
-                'id': item.id,
-                'name': item.name,
-                'unit_of_measure': getattr(item, 'unit_of_measure', 'pcs'),
-                'mrp': float(getattr(item, 'mrp', 0)),
-                'purchase_price': float(getattr(item, 'purchase_price', 0)),
-                'cost': float(getattr(item, 'cost', 0)),
-                'section': section_value,
-                'section_display': section_display,
-                'tax_percentage': float(getattr(item, 'tax_percentage', 0)),
-                'hsn_code': getattr(item, 'hsn_code', ''),
-                'description': getattr(item, 'description', ''),
-            }
-            
-            items_list.append(item_dict)
-            
-            # Debug log for first 5 items
-            if len(items_list) <= 5:
-                logger.info(f"Item {len(items_list)}: '{item.name}' → Section: '{section_value}'")
+                    else:
+                        section_value = str(section_value).upper().strip()
+                        
+                        # Standardize section names
+                        if 'HARDWARE' in section_value:
+                            section_value = 'HARDWARE'
+                        elif 'SOFTWARE' in section_value:
+                            section_value = 'SOFTWARE'
+                        elif 'PAPER' in section_value or 'ROLL' in section_value:
+                            section_value = 'PAPER_ROLLS'
+                        elif 'GENERAL' in section_value:
+                            section_value = 'GENERAL'
+                else:
+                    # ✅ Default section for app5 items
+                    section_value = 'GENERAL'
+                
+                section_values.add(section_value)
+                section_display = section_value.replace('_', ' ').title()
+                
+                # ✅ Get item attributes safely with defaults
+                item_dict = {
+                    'id': getattr(item, 'id', 0),
+                    'name': getattr(item, 'name', 'Unknown Item'),
+                    'unit_of_measure': getattr(item, 'unit_of_measure', 'pcs'),
+                    'mrp': float(getattr(item, 'mrp', 0) or 0),
+                    'purchase_price': float(getattr(item, 'purchase_price', 0) or 0),
+                    'cost': float(getattr(item, 'cost', 0) or 0),
+                    'section': section_value,
+                    'section_display': section_display,
+                    'tax_percentage': float(getattr(item, 'tax_percentage', 0) or 0),
+                    'hsn_code': getattr(item, 'hsn_code', ''),
+                    'description': getattr(item, 'description', ''),
+                    'is_active': getattr(item, 'is_active', True) if hasattr(item, 'is_active') else True,
+                }
+                
+                items_list.append(item_dict)
+                items_processed += 1
+                
+            except Exception as e:
+                logger.warning(f"❌ Error processing item {getattr(item, 'id', '?')}: {e}")
         
-        logger.info(f"✅ Processed {len(items_list)} items")
-        logger.info(f"✅ Unique sections found: {sorted(section_values)}")
+        logger.info(f"✅ Processed {items_processed} items successfully")
+        logger.info(f"✅ Unique sections: {sorted(section_values)}")
         
         # Get section statistics
-        section_counts = {}
         for section in ['GENERAL', 'HARDWARE', 'SOFTWARE', 'PAPER_ROLLS']:
             count = sum(1 for item in items_list if item['section'] == section)
             section_counts[section] = {
                 'label': section.replace('_', ' ').title(),
-                'count': count
+                'count': count,
+                'percentage': round((count / max(len(items_list), 1)) * 100, 1)
             }
-            logger.info(f"  {section}: {count} items")
-        
+            
     except Exception as e:
-        logger.error(f"❌ Error loading items: {e}", exc_info=True)
+        logger.error(f"❌ Critical error loading items: {e}", exc_info=True)
         items_list = []
         section_counts = {}
-
-    # ------------------------------
-    # ACTIVE USERS
-    # ------------------------------
+    
+    # ==================== ACTIVE USERS ====================
     active_users_list = []
     try:
+        # Try multiple user model imports
         try:
             from .models import User
-        except:
-            from app1.models import User
-
-        fields = [f.name for f in User._meta.get_fields()]
-
-        if "status" in fields:
+        except ImportError:
+            try:
+                from app1.models import User
+            except ImportError:
+                from django.contrib.auth import get_user_model
+                User = get_user_model()
+        
+        # Determine filtering field
+        user_fields = [f.name for f in User._meta.get_fields()] if hasattr(User, '_meta') else []
+        
+        if "status" in user_fields:
             active_users_qs = User.objects.filter(status__iexact="active").order_by("name")
-        elif "is_active" in fields:
+        elif "is_active" in user_fields:
             active_users_qs = User.objects.filter(is_active=True).order_by("first_name", "last_name")
         else:
             active_users_qs = User.objects.all().order_by("name")
-
+        
         # Process users
         for u in active_users_qs:
-            name = None
-            
-            if hasattr(u, 'name') and u.name:
-                name = u.name.strip()
-            elif hasattr(u, 'get_full_name'):
-                try:
-                    full_name = u.get_full_name().strip()
-                    if full_name:
-                        name = full_name
-                except:
-                    pass
-            
-            if not name:
-                first_name = getattr(u, 'first_name', '').strip()
-                last_name = getattr(u, 'last_name', '').strip()
-                if first_name or last_name:
-                    name = f"{first_name} {last_name}".strip()
-            
-            if not name:
-                name = getattr(u, 'username', f'User #{u.id}')
-
-            active_users_list.append({
-                "id": u.id,
-                "name": name,
-                "phone": getattr(u, "phone_number", "") or getattr(u, "phone", "") or "",
-                "department": getattr(u, "department", "") or "",
-                "designation": getattr(u, "designation", "") or "",
-                "username": getattr(u, "username", ""),
-                "email": getattr(u, "email", ""),
-                "user_id": getattr(u, "userid", ""),
-            })
-            
+            try:
+                # Get display name
+                name = None
+                
+                if hasattr(u, 'name') and u.name:
+                    name = str(u.name).strip()
+                elif hasattr(u, 'get_full_name'):
+                    try:
+                        full_name = u.get_full_name().strip()
+                        if full_name:
+                            name = full_name
+                    except:
+                        pass
+                
+                if not name:
+                    first_name = getattr(u, 'first_name', '').strip()
+                    last_name = getattr(u, 'last_name', '').strip()
+                    if first_name or last_name:
+                        name = f"{first_name} {last_name}".strip()
+                
+                if not name:
+                    name = getattr(u, 'username', f'User #{getattr(u, "id", "?")}')
+                
+                # Build user dict
+                active_users_list.append({
+                    "id": getattr(u, 'id', 0),
+                    "name": name,
+                    "phone": getattr(u, "phone_number", "") or getattr(u, "phone", "") or "",
+                    "department": getattr(u, "department", "") or "",
+                    "designation": getattr(u, "designation", "") or "",
+                    "username": getattr(u, "username", ""),
+                    "email": getattr(u, "email", ""),
+                    "user_id": getattr(u, "userid", ""),
+                })
+                
+            except Exception as e:
+                logger.warning(f"❌ Error processing user: {e}")
+        
         logger.info(f"✅ Loaded {len(active_users_list)} active users")
-
+        
     except Exception as e:
         logger.error(f"❌ Error loading users: {e}")
         active_users_list = []
-
-    # ------------------------------
-    # 🔥 FIXED: LOAD ACTIVE LEADS WITH ALL REQUIRED FIELDS
-    # ------------------------------
+    
+    # ==================== ACTIVE LEADS ====================
     active_leads_list = []
     try:
+        # Try multiple lead model imports
         try:
             from .models import Lead
-        except:
-            from app1.models import Lead
-
-        # Get active leads with proper filtering
-        leads_qs = Lead.objects.filter(
-            status__iexact="Active"
-        ).exclude(
-            Q(ticket_number__isnull=True) | Q(ticket_number__exact='')
-        ).order_by("-created_at")
-
-        # Track unique ticket numbers
-        seen_tickets = set()
-        
-        for l in leads_qs:
-            # Get ticket number
-            ticket = getattr(l, "ticket_number", "") or f"TKT-{l.id:06d}"
-            ticket = str(ticket).strip()
-            
-            # Skip if empty or duplicate
-            if not ticket or ticket in seen_tickets:
-                continue
-                
-            seen_tickets.add(ticket)
-            
-            # Get owner name with multiple fallbacks
-            owner_name = ""
-            for field_name in ['ownerName', 'name', 'customer_name', 'contact_name']:
-                if hasattr(l, field_name):
-                    value = getattr(l, field_name, "")
-                    if value and str(value).strip():
-                        owner_name = str(value).strip()
-                        break
-            
-            if not owner_name:
-                owner_name = f"Lead #{l.id}"
-            
-            # Get phone number
-            phone_no = ""
-            for field_name in ['phoneNo', 'phone', 'phone_number', 'mobile']:
-                if hasattr(l, field_name):
-                    value = getattr(l, field_name, "")
-                    if value and str(value).strip():
-                        phone_no = str(value).strip()
-                        break
-            
-            # Get status
-            status = "Active"
-            if hasattr(l, 'status'):
-                status_value = getattr(l, "status", "")
-                if status_value:
-                    status = str(status_value).title()
-            
-            # Get priority
-            priority = "Medium"
-            if hasattr(l, 'priority'):
-                priority_value = getattr(l, "priority", "")
-                if priority_value:
-                    priority = str(priority_value).title()
-            
-            # 🔥 GET REQUIREMENTS COUNT FOR THIS LEAD
-            requirements_count = 0
+        except ImportError:
             try:
-                from .models import RequirementItem
-                requirements_count = RequirementItem.objects.filter(
-                    Q(ticket_number=ticket) |
-                    Q(owner_name=owner_name, phone_no=phone_no)
-                ).count()
-            except Exception as e:
-                logger.debug(f"Could not get requirements count: {e}")
-            
-            # 🔥 CRITICAL: Add ALL fields needed for requirement saving
-            lead_entry = {
-                "id": l.id,
-                "ticket_number": ticket,
-                "ownerName": owner_name,
-                "phoneNo": phone_no,
-                "email": getattr(l, "email", "") or "",
-                "status": status,
-                "priority": priority,
-                "customerType": getattr(l, "customerType", "Business"),
-                "place": getattr(l, "place", "") or getattr(l, "individualPlace", "") or "",
-                "business": getattr(l, "business", "") or "",
-                "company": getattr(l, "name", "") or getattr(l, "business", "") or "",
-                "requirements_count": requirements_count,
-                "created_at": getattr(l, "created_at", None),
-                
-                # 🔥 ADD COMPUTED DISPLAY NAME
-                "display_name": owner_name,
-                "ticket_display": f"{ticket} - {owner_name}",
-            }
-            
-            active_leads_list.append(lead_entry)
-            
-            # Debug first 5 leads
-            if len(active_leads_list) <= 5:
-                logger.info(f"Lead {len(active_leads_list)}: Ticket={ticket}, Name={owner_name}, Phone={phone_no}, Reqs={requirements_count}")
+                from app1.models import Lead
+            except ImportError:
+                Lead = None
         
-        # Sort by priority and date
-        priority_order = {"High": 1, "Medium": 2, "Low": 3}
-        active_leads_list.sort(key=lambda x: (
-            priority_order.get(x.get("priority", "Medium"), 3),
-            x.get("created_at") or "",
-        ))
-        
-        logger.info(f"✅ Loaded {len(active_leads_list)} active leads with valid tickets")
-        
+        if Lead:
+            # Get active leads with proper filtering
+            leads_qs = Lead.objects.filter(
+                status__iexact="Active"
+            ).exclude(
+                Q(ticket_number__isnull=True) | Q(ticket_number__exact='')
+            ).order_by("-created_at")  # Already sorted by created_at descending
+            
+            seen_tickets = set()
+            leads_processed = 0
+            
+            for l in leads_qs:
+                try:
+                    # Get ticket number
+                    ticket = getattr(l, "ticket_number", "") or f"TKT-{l.id:06d}"
+                    ticket = str(ticket).strip()
+                    
+                    # Skip if empty or duplicate
+                    if not ticket or ticket in seen_tickets:
+                        continue
+                    
+                    seen_tickets.add(ticket)
+                    
+                    # Get owner name with multiple fallbacks
+                    owner_name = ""
+                    for field_name in ['ownerName', 'name', 'customer_name', 'contact_name', 'firstName']:
+                        if hasattr(l, field_name):
+                            value = getattr(l, field_name, "")
+                            if value and str(value).strip():
+                                owner_name = str(value).strip()
+                                break
+                    
+                    if not owner_name:
+                        owner_name = f"Lead #{l.id}"
+                    
+                    # Get phone number
+                    phone_no = ""
+                    for field_name in ['phoneNo', 'phone', 'phone_number', 'mobile']:
+                        if hasattr(l, field_name):
+                            value = getattr(l, field_name, "")
+                            if value and str(value).strip():
+                                phone_no = str(value).strip()
+                                break
+                    
+                    # Get requirements count for this lead
+                    requirements_count = 0
+                    try:
+                        from .models import RequirementItem
+                        requirements_count = RequirementItem.objects.filter(
+                            Q(ticket_number=ticket) |
+                            Q(owner_name=owner_name, phone_no=phone_no)
+                        ).count()
+                    except Exception as e:
+                        logger.debug(f"Could not get requirements count: {e}")
+                    
+                    # Build lead dict with all required fields
+                    lead_entry = {
+                        "id": l.id,
+                        "ticket_number": ticket,
+                        "ownerName": owner_name,
+                        "phoneNo": phone_no,
+                        "email": getattr(l, "email", "") or "",
+                        "status": getattr(l, "status", "Active"),
+                        "priority": getattr(l, "priority", "Medium"),
+                        "customerType": getattr(l, "customerType", "Business"),
+                        "place": getattr(l, "place", "") or getattr(l, "individualPlace", "") or "",
+                        "business": getattr(l, "business", "") or "",
+                        "company": getattr(l, "name", "") or getattr(l, "business", "") or "",
+                        "requirements_count": requirements_count,
+                        "created_at": getattr(l, "created_at", None),
+                        "display_name": owner_name,
+                        "ticket_display": f"{ticket} - {owner_name}",
+                    }
+                    
+                    active_leads_list.append(lead_entry)
+                    leads_processed += 1
+                    
+                except Exception as e:
+                    logger.warning(f"❌ Error processing lead {getattr(l, 'id', '?')}: {e}")
+            
+            # ===== FIXED: Sort by created_at descending (consistent with lead_form) =====
+            # The query is already sorted by "-created_at", but let's ensure the list matches
+            # Don't re-sort with priority logic - keep the original query order
+            # This ensures leads appear in the same order as in lead_form
+            
+            logger.info(f"✅ Loaded {leads_processed} active leads with valid tickets")
+        else:
+            logger.warning("⚠️ Lead model not found")
+            
     except Exception as e:
         logger.error(f"❌ Error loading leads: {e}", exc_info=True)
         active_leads_list = []
     
-    # ------------------------------
-    # Load existing requirements map
-    # ------------------------------
-    # ------------------------------
-# Load existing requirements map (KEYED BY LEAD ID)
-# ------------------------------
-    # ------------------------------
-    # Load existing requirements map (KEYED BY LEAD ID)
-    # ------------------------------
+    # ==================== REQUIREMENTS MAP ====================
     lead_requirements_map = {}
     try:
-        from .models import RequirementItem, Lead
-
+        from .models import RequirementItem
+        
         requirements = RequirementItem.objects.select_related('item').all()
-
+        requirements_loaded = 0
+        
         for req in requirements:
-            ticket = getattr(req, 'ticket_number', None)
-            if not ticket:
-                continue
-
-            lead = Lead.objects.filter(ticket_number=ticket).first()
-            if not lead:
-                continue
-
-            lead_id = lead.id
-            lead_requirements_map.setdefault(lead_id, [])
-
-            # Section resolve
-            section_value = 'GENERAL'
-            if req.item and hasattr(req.item, 'section'):
-                section_value = str(req.item.section).upper().strip()
-
-            if 'HARDWARE' in section_value:
-                section_value = 'HARDWARE'
-            elif 'SOFTWARE' in section_value:
-                section_value = 'SOFTWARE'
-            elif 'PAPER' in section_value or 'ROLL' in section_value:
-                section_value = 'PAPER_ROLLS'
-
-            lead_requirements_map[lead_id].append({
-                'id': req.id,
-                'item_id': req.item.id if req.item else None,
-                'item_name': req.item.name if req.item else '',
-                'section': section_value,
-                'quantity': int(req.quantity or 1),
-                'price': float(req.price or 0),
-                'unit': req.unit or '',
-                'total': float(req.total or 0),
-            })
-
-        logger.info(f"✅ Loaded requirements for {len(lead_requirements_map)} leads")
-
+            try:
+                ticket = getattr(req, 'ticket_number', None)
+                if not ticket:
+                    continue
+                
+                # Find corresponding lead
+                lead_match = None
+                for lead in active_leads_list:
+                    if lead.get('ticket_number') == ticket:
+                        lead_match = lead
+                        break
+                
+                if not lead_match:
+                    continue
+                
+                lead_id = lead_match['id']
+                lead_requirements_map.setdefault(lead_id, [])
+                
+                # Get section
+                section_value = 'GENERAL'
+                if req.item and hasattr(req.item, 'section'):
+                    section_raw = str(req.item.section).upper().strip()
+                    if 'HARDWARE' in section_raw:
+                        section_value = 'HARDWARE'
+                    elif 'SOFTWARE' in section_raw:
+                        section_value = 'SOFTWARE'
+                    elif 'PAPER' in section_raw or 'ROLL' in section_raw:
+                        section_value = 'PAPER_ROLLS'
+                    else:
+                        section_value = section_raw
+                
+                lead_requirements_map[lead_id].append({
+                    'id': req.id,
+                    'item_id': req.item.id if req.item else None,
+                    'item_name': req.item.name if req.item else getattr(req, 'item_name', ''),
+                    'section': section_value,
+                    'quantity': int(req.quantity or 1),
+                    'price': float(req.price or 0),
+                    'unit': req.unit or '',
+                    'total': float(req.total or 0),
+                })
+                requirements_loaded += 1
+                
+            except Exception as e:
+                logger.warning(f"❌ Error processing requirement {getattr(req, 'id', '?')}: {e}")
+        
+        logger.info(f"✅ Loaded {requirements_loaded} requirements for {len(lead_requirements_map)} leads")
+        
     except Exception as e:
-        logger.warning(f"Could not load requirements: {e}")
-
-    # ------------------------------
-    # CONTEXT  ✅ MUST BE INSIDE FUNCTION
-    # ------------------------------
+        logger.warning(f"⚠️ Could not load requirements: {e}")
+    
+    # ==================== FINAL CONTEXT ====================
     context = {
         "items": items_list,
         "active_users": active_users_list,
         "active_leads": active_leads_list,
-        "active_users_json": json.dumps(active_users_list, default=str),
-        "active_leads_json": json.dumps(active_leads_list, default=str),
-        "items_json": json.dumps(items_list, default=str),
-        "lead_requirements_map": json.dumps(lead_requirements_map, default=str),
+        "active_users_json": json.dumps(active_users_list, default=str, ensure_ascii=False),
+        "active_leads_json": json.dumps(active_leads_list, default=str, ensure_ascii=False),
+        "items_json": json.dumps(items_list, default=str, ensure_ascii=False),
+        "lead_requirements_map": json.dumps(lead_requirements_map, default=str, ensure_ascii=False),
         "section_counts": section_counts,
         "server_time": timezone.now().strftime('%Y-%m-%d %H:%M:%S'),
         "users_count": len(active_users_list),
         "leads_count": len(active_leads_list),
         "items_count": len(items_list),
+        "requirements_count": sum(len(reqs) for reqs in lead_requirements_map.values()),
     }
-
+    
     logger.info("=" * 60)
     logger.info("REQUIREMENT LIST - FINAL SUMMARY")
     logger.info("=" * 60)
     logger.info(f"Users: {len(active_users_list)}")
     logger.info(f"Leads: {len(active_leads_list)}")
     logger.info(f"Items: {len(items_list)}")
+    logger.info(f"Requirements mapped: {sum(len(reqs) for reqs in lead_requirements_map.values())}")
+    logger.info(f"Sections: {[f'{k}: {v['count']}' for k, v in section_counts.items()]}")
     logger.info("=" * 60)
-
+    
     return render(request, "requirement_list.html", context)
 
 
