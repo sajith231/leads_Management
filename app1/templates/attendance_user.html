@@ -1616,6 +1616,28 @@ function loadBreakStatus() {
         });
 }
 
+
+// Load user's early requests
+function loadEarlyRequests() {
+    fetch('/early_request/list/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.early_requests) {
+                allEarlyRequests = data.early_requests.sort((a, b) => {
+                    return new Date(b.created_at) - new Date(a.created_at);
+                });
+                updateEarlyRequestsTable(1, 'all');
+                new bootstrap.Modal(document.getElementById('viewEarlyRequestsModal')).show();
+            } else {
+                alert('Error loading early requests');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading early requests:', error);
+            alert('Error loading early requests');
+        });
+}
+
 // Call this when page loads
 document.addEventListener('DOMContentLoaded', function() {
     loadBreakStatus();
