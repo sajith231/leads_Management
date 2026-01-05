@@ -40,6 +40,25 @@
             gap: 15px;
         }
 
+        .sender-info-box {
+            margin: 20px 0;
+            padding: 15px;
+            border-left: 4px solid #2c3e50;
+            background-color: #f8f9fa;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .sender-label {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .sender-details {
+            color: #555;
+        }
+
         .controls-left h1 {
             font-size: 24px;
             color: #2c3e50;
@@ -186,6 +205,20 @@
             margin: 0 auto 20px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             border: 5px solid #ecf0f1;
+            overflow: hidden;
+        }
+
+        /* Logo image styles */
+        .logo-placeholder img,
+        .logo-circle img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: inherit;
+        }
+
+        .logo-circle img {
+            object-fit: cover;
         }
 
         .project-proposal-title {
@@ -262,9 +295,9 @@
         .cover-footer {
             position: absolute;
             bottom: 40px;
-            left: 0;
-            right: 0;
-            text-align: center;
+            left: 2p;
+            right: 2px;
+            text-align:center;
             font-size: 14px;
             color: #7f8c8d;
             padding: 0 20px;
@@ -320,7 +353,7 @@
             background: #f8f9fa;
             border-radius: 10px;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            border-left: 4px solid #3498db;
+          
         }
 
         .terms-content-page h5 {
@@ -530,6 +563,7 @@
             color: white;
             font-size: 28px;
             font-weight: bold;
+            overflow: hidden;
         }
 
         .company-name {
@@ -833,7 +867,7 @@
             <!-- IMC Cover Page -->
             <div class="cover-page">
                 <div class="imc-header">
-                    <div class="imc-company-name">IMC BUSINESS SOLUTIONS</div>
+                    <div class="imc-company-name" id="dynamic-cover-company-name">YOUR COMPANY NAME</div>
                     <div class="imc-tagline">Comprehensive Business Solutions Platform</div>
                     <div class="imc-contact-info">
                         Palakunnumal Building, Kalpetta, Wayanad - 673121<br>
@@ -850,31 +884,11 @@
                     <h2 style="font-size: 24px; color: #2c3e50; margin-bottom: 10px;">PROFESSIONAL QUOTATION</h2>
                 </div>
                 
-                <h1 class="project-proposal-title">Project Proposal</h1>
-
-                <div class="client-info-box">
-                    
-                    <div class="client-name" id="dynamic-client-name">{{ quotation.customer_name|default:"Customer Name" }}</div>
-                   
-                    <div class="client-phone" id="dynamic-client-phone">
-                        Phone No: {{ quotation.customer_phone|default:"Phone Number" }}
-                        {% if quotation.customer_email %} | Email: <span id="dynamic-client-email">{{ quotation.customer_email }}</span>{% endif %}
-                        {% if quotation.lead and quotation.lead.ticket_number %} | Ticket: <span id="dynamic-client-ticket">{{ quotation.lead.ticket_number }}</span>{% endif %}
-                    </div>
-                </div>
-
-                <div class="proposal-details">
-                    <div class="proposal-number">Proposal Number: {{ quotation.quotation_number|default:"QTN0000" }}</div>
-                    <div class="proposal-date">Date: {{ quotation.created_at|date:"d/m/Y"|default:"Current Date" }}</div>
-                    {% if quotation.valid_until %}
-                    <div class="proposal-date">Valid Until: {{ quotation.valid_until|date:"d/m/Y" }}</div>
-                    {% endif %}
-                </div>
-
                 <div class="cover-footer">
                     <p><strong>Warm Greetings from IMC BUSINESS SOLUTIONS</strong></p>
-                    <p>We are expecting to have journey together to reach in your success.</p>
-                    <p>Thank you for the time you have given in allowing us to discuss with you.</p>
+                    <p>   Thank you for the time you have given in allowing us to discuss with you the opportunity how our software may assist your organization further progressing your productivity and outputs. As agreed, we are submitting to you information about us and our proposed plan to action for your review.
+                       IMC Business Solutions is a comprehensive platform that supports overall Business solutions Like ERP Softwares, Web Solutions ,Mobile applications , Digital Marketing, Branding and Business Consultation.
+                       Here we Attaching the detailed Quotation. We are expecting to have journey together to reach in your success.</p>
                 </div>
             </div>
 
@@ -948,24 +962,39 @@
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
                         <div>
                             <strong>Customer Name:</strong><br>
-                            <span id="dynamic-customer-name">{{ quotation.customer_name|default:"Not Specified" }}</span>
+                            <span id="dynamic-customer-name">{{ quotation.client_name|default:"Not Specified" }}</span>
                         </div>
                         
                         <div>
                             <strong>Customer Phone:</strong><br>
-                            <span id="dynamic-customer-phone">{{ quotation.customer_phone|default:"Not Specified" }}</span>
+                            <span id="dynamic-customer-phone">{{ quotation.client_phone|default:"Not Specified" }}</span>
                         </div>
                         
                         {% if quotation.customer_gst %}
                         <div>
                             <strong>GST Number:</strong><br>
-                            {{ quotation.customer_gst }}
+                            {{ quotation.customer_gst|default:"Not Specified" }}
                         </div>
                         {% endif %}
+                        
                         {% if quotation.lead and quotation.lead.ticket_number %}
                         <div>
                             <strong>Ticket Number:</strong><br>
-                            <span id="dynamic-customer-ticket">{{ quotation.lead.ticket_number }}</span>
+                            <span id="dynamic-customer-ticket">{{ quotation.lead.ticket_number|default:"Not Specified" }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if quotation.customer_email %}
+                        <div>
+                            <strong>Email:</strong><br>
+                            {{ quotation.customer_email|default:"Not Specified" }}
+                        </div>
+                        {% endif %}
+                        
+                        {% if quotation.customer_address %}
+                        <div>
+                            <strong>Address:</strong><br>
+                            {{ quotation.customer_address|default:"Not Specified" }}
                         </div>
                         {% endif %}
                     </div>
@@ -1092,7 +1121,7 @@
             <div class="terms-page">
                 <div class="terms-header">
                     <h2 class="terms-title">TERMS & CONDITIONS</h2>
-                    <div class="terms-subtitle">IMC BUSINESS SOLUTIONS</div>
+                    <div class="company-name" id="dynamic-company-name">YOUR COMPANY NAME</div>
                 </div>
 
                 <div class="terms-content-page">
@@ -1128,7 +1157,7 @@
                 </div>
 
                 <div class="terms-footer">
-                    <p><strong>IMC BUSINESS SOLUTIONS</strong></p>
+                    <div class="imc-company-name" id="dynamic-terms-company-name">YOUR COMPANY NAME</div>
                     <p>Palakunnumal Building, Kalpetta, Wayanad - 673121</p>
                     <p>Phone: 7593820007, 7593820005, 7306197537 | Email: info@imcbsglobal.com | Website: www.imcbs.com</p>
                 </div>
@@ -1215,83 +1244,191 @@
             
             // Update client name elements
             if (clientData.name && clientData.name.trim()) {
-                document.getElementById('dynamic-client-name').textContent = clientData.name;
                 document.getElementById('dynamic-customer-name').textContent = clientData.name;
                 console.log('Updated client name:', clientData.name);
             }
             
             // Update client phone
             if (clientData.phone && clientData.phone.trim()) {
-                document.getElementById('dynamic-client-phone').textContent = 'Phone No: ' + clientData.phone;
                 document.getElementById('dynamic-customer-phone').textContent = clientData.phone;
                 console.log('Updated client phone:', clientData.phone);
             }
             
             // Update client email
             if (clientData.email && clientData.email.trim()) {
-                const emailSpan = document.getElementById('dynamic-client-email');
-                if (emailSpan) {
-                    emailSpan.textContent = clientData.email;
-                }
-                document.getElementById('dynamic-customer-email').textContent = clientData.email;
                 console.log('Updated client email:', clientData.email);
             }
             
             // Update client ticket
             if (clientData.ticket && clientData.ticket.trim()) {
-                const ticketSpan = document.getElementById('dynamic-client-ticket');
-                if (ticketSpan) {
-                    ticketSpan.textContent = clientData.ticket;
-                }
-                const customerTicketSpan = document.getElementById('dynamic-customer-ticket');
-                if (customerTicketSpan) {
-                    customerTicketSpan.textContent = clientData.ticket;
-                }
+                document.getElementById('dynamic-customer-ticket').textContent = clientData.ticket;
                 console.log('Updated client ticket:', clientData.ticket);
             }
         }
 
-        function updateBranchInfo(branchData) {
-            console.log('Updating branch info with:', branchData);
-            
-            // Update branch name elements
-            if (branchData.name && branchData.name.trim()) {
-                document.getElementById('dynamic-branch-name').textContent = branchData.name;
-                document.getElementById('dynamic-branch-name-2').textContent = branchData.name;
-                document.getElementById('dynamic-signature-branch').textContent = branchData.name;
-                document.getElementById('dynamic-company-name').textContent = branchData.name;
-                document.getElementById('dynamic-signature-company').textContent = branchData.name;
-                console.log('Updated branch name:', branchData.name);
+        // Function to update branch information with logo
+        // Function to update branch information with logo
+function updateBranchInfo(branchData) {
+    console.log('Updating branch info with:', branchData);
+    
+    // Update ALL company name elements on the page
+    if (branchData.name && branchData.name.trim()) {
+        // Update all company name fields using multiple selectors
+        const companyNameElements = document.querySelectorAll(
+            '.company-name, .imc-company-name, #dynamic-company-name, #dynamic-signature-company'
+        );
+        companyNameElements.forEach(element => {
+            element.textContent = branchData.name;
+            console.log('Updated element:', element.className || element.id, 'to:', branchData.name);
+        });
+        
+        // Update branch name fields
+        const branchNameElements = [
+            'dynamic-branch-name',
+            'dynamic-branch-name-2',
+            'dynamic-signature-branch'
+        ];
+        
+        branchNameElements.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = branchData.name;
+                console.log('Updated branch field:', id, 'to:', branchData.name);
             }
-            
-            // Update branch address
-            if (branchData.address && branchData.address.trim()) {
-                let address = branchData.address;
-                if (branchData.city) address += ', ' + branchData.city;
-                if (branchData.state) address += ', ' + branchData.state;
-                if (branchData.pincode) address += ' - ' + branchData.pincode;
-                document.getElementById('dynamic-branch-address').textContent = address;
-                console.log('Updated branch address:', address);
+        });
+        
+        console.log('✅ Updated all company/branch names to:', branchData.name);
+    }
+    
+    // Update branch address
+    if (branchData.address && branchData.address.trim()) {
+        let address = branchData.address;
+        if (branchData.city) address += ', ' + branchData.city;
+        if (branchData.state) address += ', ' + branchData.state;
+        
+        const addressElement = document.getElementById('dynamic-branch-address');
+        if (addressElement) {
+            addressElement.textContent = address;
+            console.log('✅ Updated branch address:', address);
+        }
+    }
+    
+    // Update branch phone
+    if (branchData.contact && branchData.contact.trim()) {
+        const phoneElements = [
+            'dynamic-branch-phone',
+            'dynamic-footer-phone'
+        ];
+        
+        phoneElements.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = branchData.contact;
+                console.log('✅ Updated phone:', id, 'to:', branchData.contact);
             }
-            
-            // Update branch phone
-            if (branchData.contact && branchData.contact.trim()) {
-                document.getElementById('dynamic-branch-phone').textContent = branchData.contact;
-                document.getElementById('dynamic-footer-phone').textContent = branchData.contact;
-                console.log('Updated branch phone:', branchData.contact);
+        });
+    }
+    
+    // Update branch email
+    if (branchData.email && branchData.email.trim()) {
+        const emailElements = [
+            'dynamic-branch-email',
+            'dynamic-footer-email'
+        ];
+        
+        emailElements.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = branchData.email;
+                console.log('✅ Updated email:', id, 'to:', branchData.email);
             }
+        });
+    }
+    
+    // Update branch GST
+    if (branchData.gst && branchData.gst.trim()) {
+        const gstElement = document.getElementById('dynamic-branch-gst');
+        if (gstElement) {
+            gstElement.textContent = branchData.gst;
+            console.log('✅ Updated GST:', branchData.gst);
+        }
+    }
+    
+    // Update branch logo
+    updateBranchLogo(branchData);
+    
+    // Debug: Check which elements were found
+    console.log('🔍 Found company name elements:');
+    const foundElements = document.querySelectorAll('.company-name, .imc-company-name');
+    foundElements.forEach((el, index) => {
+        console.log(`${index + 1}. ${el.className} - Text: "${el.textContent}"`);
+    });
+}
+
+        // Function to update branch logo
+        function updateBranchLogo(branchData) {
+            const logoPlaceholders = document.querySelectorAll('.logo-placeholder, .logo-circle');
             
-            // Update branch email
-            if (branchData.email && branchData.email.trim()) {
-                document.getElementById('dynamic-branch-email').textContent = branchData.email;
-                document.getElementById('dynamic-footer-email').textContent = branchData.email;
-                console.log('Updated branch email:', branchData.email);
-            }
-            
-            // Update branch GST
-            if (branchData.gst && branchData.gst.trim()) {
-                document.getElementById('dynamic-branch-gst').textContent = branchData.gst;
-                console.log('Updated branch GST:', branchData.gst);
+            if (branchData.logo_url && branchData.logo_url.trim()) {
+                // Replace logo placeholders with actual logo
+                logoPlaceholders.forEach(placeholder => {
+                    // Save the original icon HTML to restore later if needed
+                    const originalIcon = placeholder.innerHTML;
+                    
+                    // Create image element
+                    const img = document.createElement('img');
+                    img.src = branchData.logo_url;
+                    img.alt = branchData.name || 'Branch Logo';
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.objectFit = 'contain';
+                    img.style.borderRadius = placeholder.classList.contains('logo-circle') ? '50%' : '10px';
+                    
+                    // Clear and add image
+                    placeholder.innerHTML = '';
+                    placeholder.appendChild(img);
+                    
+                    // Add error handling
+                    img.onerror = function() {
+                        console.error('Failed to load logo:', branchData.logo_url);
+                        placeholder.innerHTML = originalIcon; // Restore original icon
+                        if (placeholder.classList.contains('logo-placeholder')) {
+                            placeholder.style.background = 'linear-gradient(135deg, #3498db, #2980b9)';
+                            placeholder.style.color = 'white';
+                        } else if (placeholder.classList.contains('logo-circle')) {
+                            placeholder.style.background = 'linear-gradient(135deg, #2c3e50, #34495e)';
+                            placeholder.style.color = 'white';
+                        }
+                        placeholder.style.display = 'flex';
+                        placeholder.style.alignItems = 'center';
+                        placeholder.style.justifyContent = 'center';
+                    };
+                    
+                    // Style adjustments for logo
+                    placeholder.style.background = 'transparent';
+                    placeholder.style.border = placeholder.classList.contains('logo-circle') ? '5px solid #ecf0f1' : 'none';
+                });
+                console.log('Updated branch logo:', branchData.logo_url);
+            } else {
+                // Use default icon if no logo
+                logoPlaceholders.forEach(placeholder => {
+                    if (placeholder.classList.contains('logo-placeholder')) {
+                        placeholder.innerHTML = '<i class="fas fa-building"></i>';
+                        placeholder.style.background = 'linear-gradient(135deg, #3498db, #2980b9)';
+                        placeholder.style.color = 'white';
+                        placeholder.style.display = 'flex';
+                        placeholder.style.alignItems = 'center';
+                        placeholder.style.justifyContent = 'center';
+                    } else if (placeholder.classList.contains('logo-circle')) {
+                        placeholder.innerHTML = '<i class="fas fa-chart-line"></i>';
+                        placeholder.style.background = 'linear-gradient(135deg, #2c3e50, #34495e)';
+                        placeholder.style.color = 'white';
+                        placeholder.style.display = 'flex';
+                        placeholder.style.alignItems = 'center';
+                        placeholder.style.justifyContent = 'center';
+                    }
+                });
+                console.log('No logo available, using default icon');
             }
         }
     </script>

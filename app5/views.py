@@ -7717,6 +7717,7 @@ def download_quotation(request, quotation_id):
             try:
                 department = Department.objects.get(id=int(branch_id), is_active=True)
                 branch = {
+                    'id': department.id,
                     'name': department.name,
                     'code': f"DEPT-{department.id:03d}",
                     'address': department.address or '',
@@ -7727,62 +7728,42 @@ def download_quotation(request, quotation_id):
                     'alternate_number': department.alternate_number or '',
                     'email': department.email or '',
                     'gst_number': department.gst_number or '',
-                    'logo': department.logo.url if department.logo else None,
+                    # ✅ FIXED: Properly handle logo URL
+                    'logo_url': department.logo.url if department.logo else '',
+                    'has_logo': bool(department.logo),
                     'type': 'department',
-                    'full_address': department.get_full_address() if hasattr(department, 'get_full_address') else '',
                 }
             except Department.DoesNotExist:
-                # If specified department doesn't exist, use default
                 branch = get_default_department()
         else:
-            # No branch specified, use default
             branch = get_default_department()
             
     except ImportError:
-        # Purchase order app not available, use fallback branches
         branch = get_fallback_branch(branch_id)
     
     # Get all items for this quotation
     items = quotation.items.all()
     
-    # Initialize totals
+    # Calculate totals (existing code)
     subtotal = 0
     total_tax = 0
     grand_total = 0
     
-    # Calculate item-wise totals
     for item in items:
-        # Get sale price and quantity
         sale_price = getattr(item, 'sales_price', 0) or 0
         quantity = getattr(item, 'quantity', 1) or 1
-        
-        # Calculate item total (quantity * sale_price)
         item_total = quantity * sale_price
-        
-        # Add to subtotal
         subtotal += item_total
         
-        # Calculate tax if applicable
         if hasattr(item, 'tax_percentage'):
             tax_percentage = getattr(item, 'tax_percentage', 0) or 0
             item_tax = (item_total * tax_percentage) / 100
             total_tax += item_tax
-        elif hasattr(item, 'tax'):
-            # Alternative tax field
-            tax_percentage = getattr(item, 'tax', 0) or 0
-            item_tax = (item_total * tax_percentage) / 100
-            total_tax += item_tax
     
-    # Calculate discount if exists
     discount_amount = getattr(quotation, 'discount_amount', 0) or 0
-    
-    # Calculate shipping charges if exists
     shipping_charges = getattr(quotation, 'shipping_charges', 0) or 0
-    
-    # Calculate grand total (subtotal + tax - discount + shipping)
     grand_total = subtotal + total_tax - discount_amount + shipping_charges
     
-    # Format currency values
     def format_currency(value):
         return f"₹{value:,.2f}"
     
@@ -7800,7 +7781,6 @@ def download_quotation(request, quotation_id):
         
         branch['full_address_display'] = ', '.join(address_parts)
         
-        # Build contact info
         contact_info = []
         if branch.get('contact_number'):
             contact_info.append(f"📞 {branch['contact_number']}")
@@ -7813,15 +7793,12 @@ def download_quotation(request, quotation_id):
         
         branch['contact_info'] = ' | '.join(contact_info)
     
-    # Create context with calculated values
     context = {
         'quotation': quotation,
-        'branch': branch,  # Pass selected branch/department to template
+        'branch': branch,
         'items': items,
-        
-        # Calculated values with formatting
         'subtotal': format_currency(subtotal),
-        'subtotal_raw': subtotal,  # Keep raw for calculations if needed
+        'subtotal_raw': subtotal,
         'total_tax': format_currency(total_tax),
         'total_tax_raw': total_tax,
         'discount_amount': format_currency(discount_amount),
@@ -7830,30 +7807,19 @@ def download_quotation(request, quotation_id):
         'shipping_charges_raw': shipping_charges,
         'grand_total': format_currency(grand_total),
         'grand_total_raw': grand_total,
-        
-        # Additional useful data
         'item_count': items.count(),
         'today': timezone.now().date(),
         'valid_until': getattr(quotation, 'valid_until', None) or (timezone.now() + timezone.timedelta(days=30)).date(),
-        
-        # Quotation metadata
         'quotation_number': getattr(quotation, 'quotation_number', f"QT-{quotation.id:06d}"),
         'client_name': getattr(quotation, 'client_name', ''),
         'client_email': getattr(quotation, 'client_email', ''),
         'client_phone': getattr(quotation, 'client_phone', ''),
         'client_address': getattr(quotation, 'client_address', ''),
-        
-        # Company info (from branch/department)
         'company_name': branch['name'] if branch else 'Our Company',
         'company_address': branch.get('full_address_display', '') if branch else '',
         'company_contact': branch.get('contact_info', '') if branch else '',
         'company_gst': branch.get('gst_number', '') if branch else '',
     }
-    
-    # Check if we should return PDF or HTML
-    if request.GET.get('format') == 'pdf':
-        # Generate PDF (you'll need to implement this)
-        return generate_quotation_pdf(context)
     
     return render(request, 'quotation_download.html', context)
 
@@ -7863,11 +7829,11 @@ def get_default_department():
     try:
         from purchase_order.models import Department
         
-        # Try to get the first active department
         default_dept = Department.objects.filter(is_active=True).first()
         
         if default_dept:
             return {
+                'id': default_dept.id,
                 'name': default_dept.name,
                 'code': f"DEPT-{default_dept.id:03d}",
                 'address': default_dept.address or '',
@@ -7878,13 +7844,14 @@ def get_default_department():
                 'alternate_number': default_dept.alternate_number or '',
                 'email': default_dept.email or '',
                 'gst_number': default_dept.gst_number or '',
-                'logo': default_dept.logo.url if default_dept.logo else None,
+                # ✅ FIXED: Properly handle logo URL
+                'logo_url': default_dept.logo.url if default_dept.logo else '',
+                'has_logo': bool(default_dept.logo),
                 'type': 'department',
             }
     except (ImportError, AttributeError):
         pass
     
-    # Fallback if no departments exist
     return {
         'name': 'Main Branch',
         'code': 'BR-001',
@@ -7894,6 +7861,8 @@ def get_default_department():
         'contact_number': '+91 1234567890',
         'email': 'info@company.com',
         'gst_number': 'GSTINXXXXXXX',
+        'logo_url': '',
+        'has_logo': False,
         'type': 'default',
     }
 
