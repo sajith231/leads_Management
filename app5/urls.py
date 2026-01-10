@@ -91,18 +91,17 @@ urlpatterns = [
    path('lead/edit/<int:lead_id>/', views.lead_edit, name='lead_edit'),
    path('lead/delete/<int:lead_id>/', views.lead_delete, name='lead_delete'),
    path('api/lead/<int:lead_id>/', views.lead_detail_api, name='lead_detail_api'),
-   path('requirements-list/', views.requirement_list, name='requirement_list'),
-   path('requirements/save/', views.requirement_form, name='requirement_form'),
-   
+   # In your urlpatterns list, add:
+   path('lead/update/<int:lead_id>/', views.lead_edit, name='lead_update'),    
    
    # Lead Assignment URLs
     path('lead-assign-list/', views.lead_assign_list_view, name='lead_assign_list'),
     path('assign-lead/', views.assign_lead_view, name='assign_lead'),
-    path('requirements-list/', views.requirement_list, name='requirements_list'),
+    
     path("get-item-details/", views.get_item_details, name="get_item_details"),
 
     # endpoint for saving the form
-    path('requirements/save/', views.requirement_form, name='requirement_form'),
+    
     path('edit-requirement/<int:lead_id>/', views.edit_requirement, name='edit_requirement'),
     path('update-requirement/<int:lead_id>/', views.update_requirement, name='update_requirement'),
     

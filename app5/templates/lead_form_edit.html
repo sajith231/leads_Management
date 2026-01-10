@@ -1,12 +1,11 @@
-{% load static %}
-<!DOCTYPE html>
+
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Lead - Compact Customer Information Form</title>
+    <title>Edit Lead Information</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Include all CSS from previous file - it's the same */
+        /* Copy all the same styles from lead_form.html */
         * {
             margin: 0;
             padding: 0;
@@ -65,7 +64,6 @@
             color:black;
             padding: 15px 20px;
             text-align: center;
-            position: relative;
         }
         
         .form-header h1 {
@@ -136,45 +134,6 @@
             transition: 0.2s ease-in-out;
         }
 
-        /* ========================================
-   SELECTED LEAD HIGHLIGHTING
-   ======================================== */
-.lead-item.selected {
-    background: linear-gradient(135deg, #e3f2fd, #bbdefb) !important;
-    border-left: 5px solid #2575fc !important;
-    transform: translateX(5px);
-    box-shadow: 0 4px 15px rgba(37, 117, 252, 0.3) !important;
-    transition: all 0.3s ease;
-}
-
-.lead-item.selected .lead-name {
-    color: #1565c0;
-    font-weight: 700;
-}
-
-.lead-item.selected .lead-avatar {
-    background: linear-gradient(135deg, #2575fc, #6a11cb);
-    color: white;
-    font-weight: bold;
-}
-
-.lead-item.selected::before {
-    content: "✓";
-    position: absolute;
-    right: 10px;
-    top: 10px;
-    background: #4CAF50;
-    color: white;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 14px;
-}
-
         .status-select:focus {
             border-color: #0a57d1;
             background: white;
@@ -206,6 +165,7 @@
         
         input, select, textarea {
             width: 100%;
+            
             padding: 8px 10px;
             border: 1px solid #ddd;
             border-radius: 6px;
@@ -587,7 +547,7 @@
             border-color: #adb5bd;
         }
         
-        .lead-directory-container {
+            .lead-directory-container {
             background: white;
             border-radius: 10px;
             box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
@@ -1162,44 +1122,6 @@
             flex: 1;
             min-width: 0;
         }
-        /* ========================================
-   SELECTED LEAD HIGHLIGHTING
-   ======================================== */
-.lead-item.selected {
-    background: linear-gradient(135deg, #e3f2fd, #bbdefb) !important;
-    border-left: 5px solid #2575fc !important;
-    transform: translateX(5px);
-    box-shadow: 0 4px 15px rgba(37, 117, 252, 0.3) !important;
-    transition: all 0.3s ease;
-}
-
-.lead-item.selected .lead-name {
-    color: #1565c0;
-    font-weight: 700;
-}
-
-.lead-item.selected .lead-avatar {
-    background: linear-gradient(135deg, #2575fc, #6a11cb);
-    color: white;
-    font-weight: bold;
-}
-
-.lead-item.selected::before {
-    content: "✓";
-    position: absolute;
-    right: 10px;
-    top: 10px;
-    background: #4CAF50;
-    color: white;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 14px;
-}
         
         .lead-priority-indicator {
             font-size: 12px;
@@ -1303,7 +1225,7 @@
         .campaign-badge {
             display: inline-block;
             
-            
+            color: white;
             padding: 2px 6px;
             border-radius: 3px;
             font-size: 10px;
@@ -1479,7 +1401,7 @@
 
         /* API indicator in dropdown */
         .select-option .campaign-badge {
-            background: #f8f9fa;
+           
             color: white;
             font-size: 10px;
             padding: 1px 6px;
@@ -1492,7 +1414,7 @@
             margin-left: 5px;
             font-size: 10px;
             padding: 2px 6px;
-            background: #f5f6f7;
+            
             color: white;
             border-radius: 3px;
             vertical-align: middle;
@@ -1528,172 +1450,178 @@
             color: #4a6fdc;
         }
 
+        /* First letter search styles */
        
-        
 
-        .lead-info-display {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
 
-        .lead-info-row-display {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 10px;
-        }
 
-        .lead-info-item {
-            flex: 1;
-            min-width: 200px;
-        }
+        /* ========================================
+   SELECTED LEAD HIGHLIGHTING
+   ======================================== */
+.lead-item.selected {
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb) !important;
+    border-left: 5px solid #2575fc !important;
+    transform: translateX(5px);
+    box-shadow: 0 4px 15px rgba(37, 117, 252, 0.3) !important;
+    transition: all 0.3s ease;
+}
 
-        .lead-info-label {
-            font-size: 12px;
-            color: #6c757d;
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
+.lead-item.selected .lead-name {
+    color: #1565c0;
+    font-weight: 700;
+}
 
-        .lead-info-value {
-            font-size: 14px;
-            color: #333;
-            font-weight: 500;
-            padding: 5px 10px;
-            background: white;
-            border-radius: 4px;
-            border: 1px solid #e9ecef;
-        }
+.lead-item.selected .lead-avatar {
+    background: linear-gradient(135deg, #2575fc, #6a11cb);
+    color: white;
+    font-weight: bold;
+}
 
-        .history-btn {
-            background: linear-gradient(135deg, #6c757d, #495057);
-            color: white;
-        }
+.lead-item.selected::before {
+    content: "✓";
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    background: #4CAF50;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+}
 
-        .history-btn:hover {
-            background: linear-gradient(135deg, #495057, #6c757d);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        }
+        /* ========================================
+   REQUIREMENTS SECTION STYLES
+   ======================================== */
+.requirements-section {
+    background: #fff5e6;
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+    border: 1px solid #ffcc80;
+}
 
-        /* API Status Indicator */
-        .api-status {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
+.section-info-badge {
+    background: #ff9800;
+    color: white;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: 10px;
+}
 
-        .api-status .status-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            display: inline-block;
-        }
+.add-btn {
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.2s;
+}
 
-        .api-status.connected .status-indicator {
-            background: #4CAF50;
-            animation: pulse 2s infinite;
-        }
+.add-btn:hover {
+    background: linear-gradient(135deg, #45a049, #4CAF50);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+}
 
-        .api-status.disconnected .status-indicator {
-            background: #f44336;
-        }
+.table-container {
+    overflow-x: auto;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #eee;
+    margin-top: 15px;
+}
 
-        .api-status.loading .status-indicator {
-            background: #FFC107;
-        }
+#requirements-table {
+    width: 100%;
+    border-collapse: collapse;
+}
 
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
+#requirements-table th {
+    background: #f5f5f5;
+    padding: 12px 10px;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 2px solid #ddd;
+}
 
-        /* API Customer Highlight */
-        .api-customer-highlight {
-            background: linear-gradient(90deg, rgba(74, 111, 220, 0.1), transparent);
-            border-left: 3px solid #4a6fdc;
-        }
+#requirements-table td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    font-size: 13px;
+}
 
-        /* Auto-fill Notification */
-        .auto-fill-notification {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: white;
-            border: 2px solid #4CAF50;
-            border-radius: 8px;
-            padding: 15px 20px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            z-index: 10000;
-            max-width: 400px;
-            animation: slideUp 0.3s ease-out;
-            display: none;
-        }
+#requirements-table tbody tr:hover {
+    background: #f9f9f9;
+}
 
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(50px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+#requirements-table select,
+#requirements-table input {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 13px;
+    background: white;
+}
 
-        .auto-fill-notification .close-btn {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            background: none;
-            border: none;
-            color: #666;
-            cursor: pointer;
-            font-size: 16px;
-            padding: 0;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+#requirements-table select:focus,
+#requirements-table input:focus {
+    outline: none;
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+}
 
-        /* API Refresh Button */
-        .api-refresh-btn {
-            position: absolute;
-            right: 40px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: #4a6fdc;
-            cursor: pointer;
-            font-size: 12px;
-            padding: 4px 8px;
-            border-radius: 4px;
-            transition: all 0.2s;
-        }
+#requirements-table .price-cell,
+#requirements-table .total-cell {
+    font-family: monospace;
+    text-align: right;
+    font-weight: 600;
+}
 
-        .api-refresh-btn:hover {
-            background: rgba(74, 111, 220, 0.1);
-        }
+.remove-btn {
+    background: #ff4444;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+}
 
-        .api-refresh-btn.loading {
-            animation: spin 1s linear infinite;
-        }
+.remove-btn:hover {
+    background: #cc0000;
+}
+
+.total-row {
+    background: #f8f9fa !important;
+    border-top: 2px solid #ddd;
+}
+
+#grand-total {
+    color: #4CAF50;
+    font-size: 15px;
+}
 
         @media (max-width: 1200px) {
             .single-line-sections {
@@ -1885,15 +1813,6 @@
                 font-size: 8px;
                 padding: 2px 4px;
             }
-
-            /* API status mobile */
-            .api-status {
-                position: relative;
-                top: 0;
-                right: 0;
-                margin-top: 10px;
-                justify-content: center;
-            }
         }
         
         @media (max-width: 576px) {
@@ -1989,6 +1908,146 @@
                 padding: 2px 4px;
             }
         }
+        
+        /* Edit Page Specific Styles */
+        .lead-info-banner {
+            background: linear-gradient(135deg, #4a6fdc, #6a11cb);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .lead-id-badge {
+            background: white;
+            color: #4a6fdc;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        
+        .lead-status-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        
+        .lead-date-info {
+            display: flex;
+            gap: 15px;
+            font-size: 13px;
+        }
+        
+        .lead-date-info span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .update-btn {
+            background: linear-gradient(135deg, #ff9800, #ff5722);
+            color: white;
+            box-shadow: 0 3px 8px rgba(255, 152, 0, 0.3);
+        }
+        
+        .update-btn:hover {
+            background: linear-gradient(135deg, #ff5722, #ff9800);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(255, 152, 0, 0.4);
+        }
+        
+        .delete-btn {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+        }
+        
+        .delete-btn:hover {
+            background: linear-gradient(135deg, #d32f2f, #f44336);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(244, 67, 54, 0.4);
+        }
+        
+        .confirmation-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .confirmation-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        
+        .confirmation-content h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+        
+        .confirmation-content p {
+            color: #666;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+        
+        .confirmation-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        .confirm-delete-btn {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            flex: 1;
+        }
+        
+        .cancel-delete-btn {
+            background: linear-gradient(135deg, #6c757d, #5a6268);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            flex: 1;
+        }
+        
+        .form-section-disabled {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        
+        .readonly-field {
+            background-color: #f5f5f5 !important;
+            cursor: not-allowed !important;
+        }
     </style>
 </head>
 <body>
@@ -2020,7 +2079,7 @@
                     <!-- Directory Tabs -->
                     <div class="directory-tabs">
                         <button class="directory-tab active" data-tab="leads">Active Leads</button>
-                        
+                       
                     </div>
                     
                     <!-- UPDATED SEARCH AND FILTER - Combined in one row -->
@@ -2046,11 +2105,13 @@
                     <div class="lead-list active" id="leadList">
                         {% if active_leads_data %}
                             {% for lead in active_leads_data %}
-                            <div class="lead-item" data-id="{{ lead.id }}" {% if lead.id == lead_data.id %}class="selected"{% endif %}>
+                           <div class="lead-item" 
+                                data-id="{{ lead.id }}" 
+                                data-index="{{ forloop.counter0 }}"
+                                onclick="openLead('{{ lead.id }}', {{ forloop.counter0 }})">
                                 <div class="lead-avatar">
                                     {{ lead.ownerName|default:""|slice:":2"|upper }}
                                 </div>
-
                                 <div class="lead-details">
                                     <div class="lead-header">
                                         <div class="lead-name-container">
@@ -2063,42 +2124,31 @@
                                             <span class="lead-name">{{ lead.ownerName }}</span>
                                         </div>
                                         
-                                        <!-- FIXED: DATE AND TIME ELAPSED CONTAINER -->
+                                        <!-- DATE AND TIME ELAPSED CONTAINER -->
                                         <div class="date-time-container">
-                                            <!-- Lead Date -->
-                                            {% if lead.date %}
-                                            <div class="lead-date-compact" title="Lead Date: {{ lead.date|date:'l, d F Y' }}">
-                                                <i class="far fa-calendar-check"></i>
-                                                {{ lead.date|date:"d M" }}
+                                            {% if lead.created_at %}
+                                            <div class="lead-date-compact" title="Created: {{ lead.created_at|date:'l, d F Y' }}">
+                                                <i class="far fa-calendar-alt"></i>
+                                                {{ lead.created_at|date:"d M" }}
                                             </div>
                                             {% endif %}
                                             
                                             <!-- TIME ELAPSED BADGE - Place it right below the date -->
                                             <div class="time-elapsed-badge" 
-                                                 data-created="{{ lead.created_at|date:'c'|default:lead.date|date:'c' }}"
-                                                 style="display: inline-flex;">
+                                                 data-created="{{ lead.created_at|date:'c'|default:lead.date|date:'c' }}">
                                                 <i class="fas fa-clock"></i>
-                                                <span class="elapsed-text">Calculating...</span>
+                                                <span class="elapsed-text">{{ lead.time_elapsed|default:"Calculating..." }}</span>
                                             </div>
                                         </div>
                                     </div>
-
-                                    <!-- Created Date and Time -->
-                                    {% if lead.created_at %}
-                                    <div class="lead-datetime">
-                                        <i class="far fa-calendar-alt"></i>
-                                        Created {{ lead.created_at|date:"d M Y" }} at {{ lead.created_at|time:"H:i" }}
-                                    </div>
-                                    {% elif lead.date %}
-                                    <div class="lead-datetime">
-                                        <i class="far fa-calendar-alt"></i>
-                                        {{ lead.date|date:"d M Y" }}
-                                    </div>
-                                    {% endif %}
-                                    
                                     <div class="lead-phone">{{ lead.phoneNo }}</div>
                                     <div class="lead-ticket">{{ lead.ticket_number }}</div>
-                                    
+                                    {% if lead.created_at %}
+                                    <div class="lead-datetime">
+                                        <i class="far fa-clock"></i>
+                                        Created at {{ lead.created_at|time:"H:i" }}
+                                    </div>
+                                    {% endif %}
                                     <div class="lead-info-row">
                                         <div class="lead-status">Status: {{ lead.status }}</div>
                                         <span style="color: {% if lead.priority == 'High' %}#ff4444{% elif lead.priority == 'Medium' %}#ffaa00{% else %}#22c55e{% endif %}; font-weight: 600; font-size: 10px; padding: 2px 8px; border-radius: 10px; background: {% if lead.priority == 'High' %}#ff444415{% elif lead.priority == 'Medium' %}#ffaa0015{% else %}#22c55e15{% endif %};">
@@ -2127,14 +2177,12 @@
                                 <div class="employee-avatar">
                                     {{ u.name|slice:":2"|upper }}
                                 </div>
-
                                 <div class="employee-details">
                                     <div class="employee-name">{{ u.name }}</div>
                                     <div class="employee-role">
                                         {{ u.department }}{% if u.designation %} - {{ u.designation }}{% endif %}
                                     </div>
                                 </div>
-
                                 <button class="assign-btn" data-id="{{ u.id }}" data-name="{{ u.name|escapejs }}" data-role="employee-assign">
                                     Assign
                                 </button>
@@ -2173,59 +2221,61 @@
             <!-- Right Column - Lead Form -->
             <div class="form-column">
                 <div class="form-container">
-                    <div class="form-header">
-                        <h1>Edit Lead Form</h1>
-                        <p>Edit the lead information below</p>
-                        
-                        <!-- API Status Indicator -->
-                        <div id="apiStatus" class="api-status {% if api_data_count > 0 %}connected{% else %}disconnected{% endif %}">
-                            <span class="status-indicator"></span>
-                            <span class="api-count">{{ api_data_count }}</span>
-                            <span class="api-label">API Customers</span>
-                            <button id="apiRefreshBtn" class="api-refresh-btn" title="Refresh API data">
-                                <i class="fas fa-sync-alt"></i>
+                    <!-- Lead Information Banner -->
+                    <div class="lead-info-banner">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+                                <h2 style="margin: 0; font-size: 18px;">Edit Lead</h2>
+                                <span class="lead-id-badge">ID: {{ lead.id }}</span>
+                                <span class="lead-status-badge">{{ lead.status }}</span>
+                            </div>
+                            <div class="lead-date-info">
+                                {% if lead.created_at %}
+                                <span><i class="far fa-calendar-plus"></i> Created: {{ lead.created_at|date:"d M Y" }}</span>
+                                {% endif %}
+                                {% if lead.updated_at %}
+                                <span><i class="fas fa-edit"></i> Last Updated: {{ lead.updated_at|date:"d M Y" }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <!-- <button type="button" class="update-btn" onclick="submitForm()">
+                                <i class="fas fa-save"></i> Update Lead
+                            </button> -->
+                            <button type="button" class="delete-btn" onclick="showDeleteConfirmation()">
+                                <i class="fas fa-trash"></i> Delete
                             </button>
                         </div>
                     </div>
                     
                     <!-- Navigation Menu -->
-                    <!-- ========================================
-     NAVIGATION MENU
-     ======================================== -->
-<div class="form-navigation">
-    <ul class="nav-menu">
-        <li class="nav-item">
-            <a href="{% url 'app5:lead' %}" class="nav-link">
-                <i class="fas fa-phone-alt"></i>
-                Lead Form
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{% url 'app5:requirements_list' %}" class="nav-link">
-                <i class="fas fa-clipboard-list"></i>
-                Requirements
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{% url 'app5:event_form' %}" class="nav-link">
-                <i class="fas fa-calendar"></i>
-                Event
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{% url 'app5:quotation_form' %}" class="nav-link">
-                <i class="fas fa-file-invoice-dollar"></i>
-                Quotation
-            </a>
-        </li>
-    </ul>
-</div>
+                    <div class="form-navigation">
+                        <ul class="nav-menu">
+                            <li class="nav-item">
+                                <a href="{% url 'app5:lead' %}" class="nav-link">
+                                    <i class="fas fa-phone-alt"></i>
+                                    Lead Form
+                                </a>
+                            </li>
+                           
+                            <li class="nav-item">
+                                <a href="{% url 'app5:event_form' %}" class="nav-link">
+                                    <i class="fas fa-calendar"></i>
+                                    Event
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'app5:quotation_form' %}" class="nav-link">
+                                    <i class="fas fa-file-invoice-dollar"></i>
+                                    Quotation
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                     
                     <div class="form-body">
-                        <form id="customerForm" method="POST" action="{% url 'app5:lead_edit' lead_id=lead_data.id|default:0 %}">
+                        <form id="customerForm" method="POST" action="{% url 'app5:lead_edit' lead.id %}">
                             {% csrf_token %}
-                            <input type="hidden" name="lead_id" value="{{ lead_data.id|default:0 }}">
-                            <input type="hidden" name="ticket_number" value="{{ lead_data.ticket_number|default:'' }}">
                             
                             <!-- Communication Details Section -->
                             <div class="form-section" id="communication-details">
@@ -2237,16 +2287,16 @@
                                     <div class="status-inline">
                                         <select id="status" name="status" class="status-select" required>
                                             <option value="">Status</option>
-                                            <option value="Active" {% if lead_data.status == "Active" %}selected{% endif %}>🟢Active</option>
-                                            <option value="Inactive" {% if lead_data.status == "Inactive" %}selected{% endif %}>🔴Inactive</option>
-                                            <option value="Installed" {% if lead_data.status == "Installed" %}selected{% endif %}>🟡 Installed</option>
+                                            <option value="Active" {% if lead.status == "Active" %}selected{% endif %}>🟢Active</option>
+                                            <option value="Inactive" {% if lead.status == "Inactive" %}selected{% endif %}>🔴Inactive</option>
+                                            <option value="Installed" {% if lead.status == "Installed" %}selected{% endif %}>🟡 Installed</option>
                                         </select>
 
                                         <select id="priority" name="priority" class="status-select" required>
-                                        <option value="">Priority</option>
-                                        <option value="High" {% if lead_data.priority == "High" %}selected{% endif %}>🔴 High</option>
-                                        <option value="Medium" {% if lead_data.priority == "Medium" or not lead_data.priority %}selected{% endif %}>🟡 Medium</option>
-                                        <option value="Low" {% if lead_data.priority == "Low" %}selected{% endif %}>🟢  Low</option>
+                                            <option value="">Priority</option>
+                                            <option value="High" {% if lead.priority == "High" %}selected{% endif %}>🔴 High</option>
+                                            <option value="Medium" {% if lead.priority == "Medium" or not lead.priority %}selected{% endif %}>🟡 Medium</option>
+                                            <option value="Low" {% if lead.priority == "Low" %}selected{% endif %}>🟢 Low</option>
                                         </select>
                                     </div>
                                 </div>
@@ -2254,17 +2304,17 @@
                                 <div class="form-row">
                                     <div class="form-group">
                                         <label for="ownerName">Owner Name *</label>
-                                       <input type="text" id="ownerName" name="ownerName" placeholder="Enter owner name" value="{{ lead_data.ownerName|default:'' }}" required>
+                                        <input type="text" id="ownerName" name="ownerName" placeholder="Enter owner name" required value="{{ lead.ownerName }}">
                                     </div>
                                     
                                     <div class="form-group">
                                         <label for="phoneNo">Phone Number *</label>
-                                         <input type="tel" id="phoneNo" name="phoneNo" placeholder="Enter phone number" value="{{ lead_data.phoneNo|default:'' }}" required>
+                                        <input type="tel" id="phoneNo" name="phoneNo" placeholder="Enter phone number" required value="{{ lead.phoneNo }}">
                                     </div>
                                     
                                     <div class="form-group">
                                         <label for="email">Email Address</label>
-                                         <input type="email" id="email" name="email" placeholder="Enter Email Address" value="{{ lead_data.email|default:'' }}">
+                                        <input type="email" id="email" name="email" placeholder="Enter Email Address" value="{{ lead.email }}">
                                     </div>
                                 </div>
                             </div>
@@ -2283,8 +2333,7 @@
                                             <div class="toggle-container">
                                                 <span class="toggle-label">New</span>
                                                 <label class="toggle-switch">
-                                                    <input type="checkbox" id="customerTypeToggle" name="customerTypeToggle" 
-                                                           {% if lead_data.customerType != "Individual" %}checked{% endif %}>
+                                                    <input type="checkbox" id="customerTypeToggle" name="customerTypeToggle" {% if lead.customerType == "Business" or not lead.customerType %}checked{% endif %}>
                                                     <span class="toggle-slider"></span>
                                                 </label>
                                                 <span class="toggle-label">Exist</span>
@@ -2293,32 +2342,31 @@
                                     </div>
                                     
                                     <!-- Business fields (shown by default) -->
-                                    <div class="business-fields" {% if lead_data.customerType == "Individual" %}style="display: none;"{% endif %}>
+                                    <div class="business-fields">
                                         <!-- Searchable Firm Name Field with API Data -->
                                         <div class="compact-form-group">
                                             <label for="name">
                                                 Firm Name * 
                                                 <span id="firmSourceBadge" class="campaign-badge">
-                                                    <i class="fas fa-database"></i> 
+                                                   
                                                 </span>
                                             </label>
                                             <div class="select-search-container" id="firmNameContainer">
                                                 <input type="text" class="select-search-input" id="nameSearch" 
                                                        placeholder="Search from {{ api_data_count }} API customers or type new firm..." 
-                                                       title="Connected to customer API - {{ api_data_count }} records available"
-                                                       value="{% if lead_data.customerType != 'Individual' %}{{ lead_data.name|default:'' }}{% endif %}">
+                                                       title="Connected to customer API - {{ api_data_count }} records available" value="{{ lead.name }}">
                                                 <i class="fas fa-times select-clear-icon" id="firmNameClear"></i>
                                                 <i class="fas fa-chevron-down select-search-icon"></i>
+                                                <!-- First letter search buttons will be added here by JavaScript -->
                                                 <div class="select-options" id="firmNameOptions"></div>
                                             </div>
-                                            <input type="text" id="name" name="name" style="display: none;" 
-                                                   value="{% if lead_data.customerType != 'Individual' %}{{ lead_data.name|default:'' }}{% endif %}">
+                                            <input type="text" id="name" name="name" style="display: none;" value="{{ lead.name }}">
                                             
                                             <!-- API Customer Details (hidden by default) -->
                                             <div id="apiCustomerDetails" class="campaign-details-section" style="display: none; margin-top: 8px;">
                                                 <div class="campaign-detail-item">
                                                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                                                        <strong>API Customer Details</strong>
+                                                        <strong>Customer Details</strong>
                                                         <button type="button" onclick="closeApiCustomerDetails()" style="background: none; border: none; color: #666; cursor: pointer;">
                                                             <i class="fas fa-times"></i>
                                                         </button>
@@ -2332,12 +2380,12 @@
                                         
                                         <div class="compact-form-group">
                                             <label for="address">Address</label>
-                                            <input type="text" id="address" name="address" value="{{ lead_data.address|default:'' }}">
+                                            <input type="text" id="address" name="address" value="{{ lead.address }}">
                                         </div>
                                         
                                         <div class="compact-form-group">
                                             <label for="place">Place *</label>
-                                            <input type="text" id="place" name="place" value="{{ lead_data.place|default:'' }}" required>
+                                            <input type="text" id="place" name="place" required value="{{ lead.place }}">
                                         </div>
                                         
                                         <div class="compact-form-group">
@@ -2345,7 +2393,7 @@
                                             <select id="District" name="District">
                                                 <option value="">Select District</option>
                                                 {% for district in districts %}
-                                                <option value="{{ district.name }}" {% if lead_data.District == district.name %}selected{% endif %}>{{ district.name }}</option>
+                                                <option value="{{ district.name }}" {% if lead.District == district.name %}selected{% endif %}>{{ district.name }}</option>
                                                 {% endfor %}
                                             </select>
                                         </div>
@@ -2355,32 +2403,32 @@
                                             <select id="State" name="State">
                                                 <option value="">Select State</option>
                                                 {% for state in states %}
-                                                <option value="{{ state.name }}" {% if lead_data.State == state.name %}selected{% endif %}>{{ state.name }}</option>
+                                                <option value="{{ state.name }}" {% if lead.State == state.name %}selected{% endif %}>{{ state.name }}</option>
                                                 {% endfor %}
                                             </select>
                                         </div>
                                         
                                         <div class="compact-form-group">
                                             <label for="pinCode">Pin Code *</label>
-                                            <input type="text" id="pinCode" name="pinCode" value="{{ lead_data.pinCode|default:'' }}" required>
+                                            <input type="text" id="pinCode" name="pinCode" required value="{{ lead.pinCode }}">
                                         </div>
                                     </div>
                                     
                                     <!-- Individual fields (hidden by default) -->
-                                    <div class="individual-fields" {% if lead_data.customerType == "Individual" %}style="display: block;"{% endif %}>
+                                    <div class="individual-fields">
                                         <div class="compact-form-group">
                                             <label for="firstName">Firm Name *</label>
-                                            <input type="text" id="firstName" name="firstName" value="{{ lead_data.firstName|default:'' }}">
+                                            <input type="text" id="firstName" name="firstName" value="{{ lead.firstName }}">
                                         </div>
                                         
                                         <div class="compact-form-group">
                                             <label for="individualAddress">Address</label>
-                                            <input type="text" id="individualAddress" name="individualAddress" value="{{ lead_data.individualAddress|default:'' }}">
+                                            <input type="text" id="individualAddress" name="individualAddress" value="{{ lead.individualAddress }}">
                                         </div>
                                         
                                         <div class="compact-form-group">
                                             <label for="individualPlace">Place *</label>
-                                            <input type="text" id="individualPlace" name="individualPlace" value="{{ lead_data.individualPlace|default:'' }}">
+                                            <input type="text" id="individualPlace" name="individualPlace" value="{{ lead.individualPlace }}">
                                         </div>
                                         
                                         <div class="compact-form-group">
@@ -2388,7 +2436,7 @@
                                             <select id="individualDistrict" name="individualDistrict">
                                                 <option value="">Select District</option>
                                                 {% for district in districts %}
-                                                <option value="{{ district.name }}" {% if lead_data.individualDistrict == district.name %}selected{% endif %}>{{ district.name }}</option>
+                                                <option value="{{ district.name }}" {% if lead.individualDistrict == district.name %}selected{% endif %}>{{ district.name }}</option>
                                                 {% endfor %}
                                             </select>
                                         </div>
@@ -2398,14 +2446,14 @@
                                             <select id="individualState" name="individualState">
                                                 <option value="">Select State</option>
                                                 {% for state in states %}
-                                                <option value="{{ state.name }}" {% if lead_data.individualState == state.name %}selected{% endif %}>{{ state.name }}</option>
+                                                <option value="{{ state.name }}" {% if lead.individualState == state.name %}selected{% endif %}>{{ state.name }}</option>
                                                 {% endfor %}
                                             </select>
                                         </div>
                                         
                                         <div class="compact-form-group">
                                             <label for="individualPinCode">Pin Code *</label>
-                                            <input type="text" id="individualPinCode" name="individualPinCode" value="{{ lead_data.individualPinCode|default:'' }}">
+                                            <input type="text" id="individualPinCode" name="individualPinCode" value="{{ lead.individualPinCode }}">
                                         </div>
                                     </div>
                                 </div>
@@ -2420,30 +2468,27 @@
                                         <div class="header-controls">
                                             <div class="date-field-compact">
                                                 <label for="date">Date</label>
-                                                <input type="date" id="date" name="date" value="{{ lead_data.date|date:'Y-m-d'|default:today|date:'Y-m-d' }}">
+                                                <input type="date" id="date" name="date" value="{{ lead.date|date:'Y-m-d' }}">
                                             </div>
                                         </div>
                                     </div>
 
                                      <div class="compact-form-group">
-    <label for="requirement">Branch</label>
-    <select id="requirement" name="requirement">
-        <option value="">Select Branch</option>
-        {% for department in departments %}
-        <option value="{{ department.id }}" 
-                {% if lead_data.requirement == department.id|stringformat:"s" or lead_data.requirement == department.id %}selected{% endif %}>
-            {{ department.name }}
-        </option>
-        {% endfor %}
-    </select>
-</div>
+                                        <label for="requirement">Branch</label>
+                                        <select id="requirement" name="requirement">
+                                            <option value="">Select Branch</option>
+                                            {% for department in departments %}
+                                            <option value="{{ department.id }}" {% if lead.requirement == department.id|stringformat:"i" or lead.requirement == department.name %}selected{% endif %}>{{ department.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
 
                                     <div class="compact-form-group">
                                         <label for="business">Business Nature</label>
                                         <select id="business" name="business">
                                             <option value="">Select Business Nature</option>
                                             {% for nature in business_natures %}
-                                            <option value="{{ nature.name }}" {% if lead_data.business == nature.name %}selected{% endif %}>{{ nature.name }}</option>
+                                            <option value="{{ nature.name }}" {% if lead.business == nature.name %}selected{% endif %}>{{ nature.name }}</option>
                                             {% endfor %}
                                         </select>
                                     </div>
@@ -2452,10 +2497,7 @@
                                     <div class="compact-form-group">
                                         <label for="refFrom">Reference From</label>
                                         <div class="select-search-container" id="refFromContainer">
-                                            <input type="text" class="select-search-input" id="refFromSearch" 
-                                                   placeholder="Search or select reference..." 
-                                                   readonly
-                                                   value="{{ lead_data.refFrom|default:'' }}">
+                                            <input type="text" class="select-search-input" id="refFromSearch" placeholder="Search or select reference..." readonly value="{{ lead.refFrom }}">
                                             <i class="fas fa-times select-clear-icon" id="refFromClear"></i>
                                             <i class="fas fa-chevron-down select-search-icon"></i>
                                             <div class="select-options" id="refFromOptions"></div>
@@ -2463,24 +2505,21 @@
                                         <select id="refFrom" name="refFrom" style="display: none;">
                                             <option value="">Select Reference</option>
                                             {% for ref in references %}
-                                            <option value="{{ ref.ref_name }}" {% if lead_data.refFrom == ref.ref_name %}selected{% endif %}>{{ ref.ref_name }}</option>
+                                            <option value="{{ ref.ref_name }}" {% if lead.refFrom == ref.ref_name %}selected{% endif %}>{{ ref.ref_name }}</option>
                                             {% empty %}
                                             {% endfor %}
                                         </select>
                                     </div>
                                     
                                     <div class="compact-form-group">
-    <label for="marketedBy">Marketed By</label>
-    <select id="marketedBy" name="marketedBy" class="form-select">
-        <option value="">-- Select Active User --</option>
-        {% for user in active_users %}
-            <option value="{{ user.id }}" 
-                    {% if lead_data.marketedBy == user.id|stringformat:"s" or lead_data.marketedBy == user.id %}selected{% endif %}>
-                {{ user.name }}
-            </option>
-        {% endfor %}
-    </select>
-</div>
+                                        <label for="marketedBy">Marketed By</label>
+                                        <select id="marketedBy" name="marketedBy" class="form-select">
+                                            <option value="">-- Select Active User --</option>
+                                            {% for user in active_users %}
+                                                <option value="{{ user.id }}" {% if lead.marketedBy == user.id|stringformat:"i" or lead.marketed_by_name == user.name %}selected{% endif %}>{{ user.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
                                     
                                     <!-- CAMPAIGN DETAILS FIELD WITH DISPLAY -->
                                     <div class="compact-form-group">
@@ -2496,7 +2535,7 @@
                                                         data-name="{{ campaign.campaign_name }}"
                                                         data-software="{{ campaign.software_name }}"
                                                         data-leads="{{ campaign.total_leads|default:0 }}"
-                                                        {% if lead_data.campaign == campaign.campaign_unique_id %}selected{% endif %}>
+                                                        {% if lead.campaign == campaign.campaign_unique_id %}selected{% endif %}>
                                                     {{ campaign.campaign_unique_id }} - {{ campaign.campaign_name }}
                                                     {% if campaign.software_name %} ({{ campaign.software_name }}){% endif %}
                                                 </option>
@@ -2514,12 +2553,12 @@
                                     
                                     <div class="compact-form-group">
                                         <label for="Consultant">Consultant</label>
-                                        <input type="text" id="Consultant" name="Consultant" placeholder="Enter consultant name" value="{{ lead_data.Consultant }}">
+                                        <input type="text" id="Consultant" name="Consultant" placeholder="Enter consultant name" value="{{ lead.Consultant }}">
                                     </div>
                                     
                                     <div class="compact-form-group">
                                         <label for="details">Notes</label>
-                                        <input type="text" id="details" name="details" placeholder="Enter details" value="{{ lead_data.details }}">
+                                        <input type="text" id="details" name="details" placeholder="Enter details" value="{{ lead.details }}">
                                     </div>
                                 </div>
                             </div>
@@ -2527,16 +2566,114 @@
                             <!-- Hidden field to store assignment type -->
                             <input type="hidden" id="assignmentType" name="assignmentType" value="">
                             
+                            <!-- ===== Requirements Section ===== -->
+                            <div class="requirements-section" id="requirements-section" style="margin-top: 20px;">
+                                <div class="section-header-compact">
+                                    <div class="section-title-compact">
+                                        <i class="fas fa-clipboard-list"></i>
+                                        <span>Requirements List</span>
+                                        <span id="itemsCountBadge" class="section-info-badge">0 items</span>
+                                    </div>
+                                    <button type="button" class="add-btn" id="add-item-btn">
+                                        <i class="fas fa-plus"></i> Add Item
+                                    </button>
+                                </div>
+
+                                <!-- Item Options Template -->
+                                <template id="item-options">
+                                    {% for section, items in items_by_section.items %}
+                                        {% for item in items %}
+                                            <option
+                                                value="{{ item.id }}"
+                                                data-name="{{ item.name }}"
+                                                data-section="{{ section }}"
+                                                data-unit="{{ item.unit|default:'pcs' }}"
+                                                data-price="{{ item.price|default:'0' }}"
+                                                data-hsn="{{ item.hsn|default:'' }}"
+                                                data-description="{{ item.description|default:'' }}"
+                                            >
+                                                {{ item.name }}
+                                            </option>
+                                        {% endfor %}
+                                    {% endfor %}
+                                </template>
+
+                                <div class="table-container" style="margin-top: 15px;">
+                                    <table id="requirements-table">
+                                        <thead>
+                                            <tr>
+                                                <th width="5%">#</th>
+                                                <th width="25%">Section</th>
+                                                <th width="35%">Item Name</th>
+                                                <th width="10%">Unit</th>
+                                                <th width="15%">Price</th>
+                                                <th width="10%">Qty</th>
+                                                <th width="15%">Total</th>
+                                                <th width="10%">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="table-body">
+                                            <!-- Rows will be added dynamically -->
+                                           {% if lead.requirements.all %}
+    {% for requirement in lead.requirements.all %}
+                                                    <tr id="row-{{ forloop.counter }}">
+                                                        <td>{{ forloop.counter }}</td>
+                                                        <td>
+                                                            <select class="section-select">
+                                                                <option value="">Select Section</option>
+                                                                {% for section_name in items_by_section.keys %}
+                                                                    <option value="{{ section_name }}" {% if requirement.section == section_name %}selected{% endif %}>{{ section_name }}</option>
+                                                                {% endfor %}
+                                                            </select>
+                                                        </td>
+                                                        <td>
+                                                            <select class="item-select">
+                                                                <option value="">Select Item</option>
+                                                                <!-- Options will be populated by JavaScript -->
+                                                            </select>
+                                                        </td>
+                                                        <td><input type="text" class="unit-input" readonly value="{{ requirement.unit }}"></td>
+                                                        <td><input type="number" class="price-input" step="0.01" min="0" value="{{ requirement.price }}"></td>
+                                                        <td><input type="number" class="qty-input" min="1" value="{{ requirement.quantity }}"></td>
+                                                        <td><input type="text" class="total-input" readonly value="{{ requirement.total_price }}"></td>
+                                                        <td>
+                                                            <button type="button" class="remove-btn">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                            {% endif %}
+                                        </tbody>
+                                        <tfoot>
+                                            <tr class="total-row">
+                                                <td colspan="6" style="text-align: right; font-weight:700; font-size: 14px;">Grand Total:</td>
+                                                <td id="grand-total" style="font-weight:700; font-size: 14px;">{{ lead.total_requirements_price|default:"0.00" }}</td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+
+                                <!-- Hidden fields for requirements -->
+                                <input type="hidden" name="requirement_ids" id="hiddenRequirementIds" value="{{ lead.requirement_ids }}">
+                                <input type="hidden" name="requirement_details" id="hiddenRequirementDetails" value="{{ lead.requirement_details_json }}">
+                            </div>
+                            <!-- ===== end Requirements Section ===== -->
+                            
                             <!-- Form Actions -->
                             <div class="btn-group" id="form-actions">
-                                <button type="submit" class="submit-btn">
+                                <button type="button" class="submit-btn update-btn" onclick="submitForm()">
                                     <i class="fas fa-save"></i>
                                     &nbsp; Update Lead
                                 </button>
-                                
+                                <!-- <button type="button" class="clear-btn" id="clearFormBtn">
+                                    <i class="fas fa-eraser"></i>
+                                    &nbsp; Reset Changes
+                                </button> -->
                                 <button type="button" class="reset-btn" onclick="window.location.href='{% url 'app5:lead_report' %}'">
                                     <i class="fas fa-arrow-left"></i>
-                                    &nbsp; Back to List
+                                    &nbsp; Back to Leads
                                 </button>
                             </div>
                         </form>
@@ -2546,2623 +2683,222 @@
         </div>
     </div>
 
-    <!-- Update Confirmation Modal -->
-    <div id="updateModal" class="modal">
+    <!-- Self-Assigned Modal -->
+    <div id="assignmentModal" class="modal">
         <div class="modal-content">
-            <h3>Confirm Update</h3>
-            <p>Are you sure you want to update this lead? This will create a history record.</p>
+            <h3>Select Assignment Type</h3>
+            <p>How would you like to handle this lead?</p>
             
             <div class="modal-buttons">
-                <button type="button" id="confirmUpdateBtn" class="modal-btn self-assign-btn">
-                    <i class="fas fa-check"></i> Confirm Update
+                <button type="button" id="selfAssignedBtn" class="modal-btn self-assign-btn">
+                    <i class="fas fa-user-check"></i> Self Assigned
                 </button>
-                <button type="button" id="cancelUpdateBtn" class="modal-btn unassign-btn">
+                <button type="button" id="unassignedBtn" class="modal-btn unassign-btn">
+                    <i class="fas fa-users"></i> Unassigned
+                </button>
+            </div>
+            
+            <button type="button" id="cancelModalBtn" class="cancel-btn">
+                Cancel
+            </button>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteConfirmationModal" class="confirmation-modal">
+        <div class="confirmation-content">
+            <h3><i class="fas fa-exclamation-triangle" style="color: #f44336; margin-right: 10px;"></i>Confirm Delete</h3>
+            <p>Are you sure you want to delete this lead? This action cannot be undone.</p>
+            <p style="font-size: 14px; color: #333; margin-bottom: 15px;">
+                <strong>Lead:</strong> {{ lead.ownerName }}<br>
+                <strong>Phone:</strong> {{ lead.phoneNo }}
+            </p>
+            <div class="confirmation-buttons">
+                <button type="button" class="confirm-delete-btn" onclick="deleteLead()">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+                <button type="button" class="cancel-delete-btn" onclick="hideDeleteConfirmation()">
                     <i class="fas fa-times"></i> Cancel
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Auto-fill Notification -->
-    <div id="autoFillNotification" class="auto-fill-notification">
-        <button class="close-btn" onclick="closeAutoFillNotification()">
-            <i class="fas fa-times"></i>
-        </button>
-        <div id="autoFillMessage"></div>
+    <!-- Success/Error Modal -->
+    <div id="messageModal" class="modal">
+        <div class="modal-content">
+            <h3 id="messageTitle">Success</h3>
+            <p id="messageText">Lead updated successfully!</p>
+            <button type="button" class="cancel-btn" onclick="hideMessageModal()">
+                OK
+            </button>
+        </div>
     </div>
 
     <script>
+        // Copy all JavaScript functions from lead_form.html, but add edit-specific functionality
+        
         document.addEventListener('DOMContentLoaded', function() {
-            // Set today's date as default if not already set
-            const today = new Date().toISOString().split('T')[0];
-            const dateField = document.getElementById('date');
-            if (dateField && !dateField.value) {
-                dateField.value = today;
-            }
-            
-            // Toggle functionality for Individual/Business
-            const customerTypeToggle = document.getElementById('customerTypeToggle');
-            const businessFields = document.querySelector('.business-fields');
-            const individualFields = document.querySelector('.individual-fields');
-            
-            // Modal elements
-            const updateModal = document.getElementById('updateModal');
-            const confirmUpdateBtn = document.getElementById('confirmUpdateBtn');
-            const cancelUpdateBtn = document.getElementById('cancelUpdateBtn');
-            const assignmentTypeField = document.getElementById('assignmentType');
-            
-            // Pagination elements
-            const prevPageBtn = document.getElementById('prevPage');
-            const nextPageBtn = document.getElementById('nextPage');
-            const paginationNumbers = document.getElementById('paginationNumbers');
-            const paginationInfo = document.getElementById('paginationInfo');
-            
-            // API elements
-            const apiStatus = document.getElementById('apiStatus');
-            const apiRefreshBtn = document.getElementById('apiRefreshBtn');
-            const apiCountElement = document.querySelector('.api-count');
-            const autoFillNotification = document.getElementById('autoFillNotification');
-            const autoFillMessage = document.getElementById('autoFillMessage');
-            
-            // Pagination configuration
-            const itemsPerPage = 10;
-            let currentPage = 1;
-            let totalPages = 1;
-            let currentItems = [];
-            let filteredItems = [];
-            
-            // Searchable Select Variables
-            let isRefFromOpen = false;
-            let currentRefFromIndex = -1;
-            
-            // Firm Name searchable select Variables
-            let isFirmNameOpen = false;
-            let currentFirmNameIndex = -1;
-            
-            // API Customer Tooltip
-            let apiCustomerTooltip = null;
-            
-            // Create lookup maps for marketedBy and branch
-            const marketedByMap = {
-                {% for user in active_users %}
-                "{{ user.id }}": "{{ user.name|escapejs }}",
-                {% endfor %}
-            };
-
-            const branchMap = {
-                {% for department in departments %}
-                "{{ department.id }}": "{{ department.name|escapejs }}",
-                {% endfor %}
-            };
-
-            // Existing firms data
-            const existingFirms = [
-                {% for firm in existing_firms %}
-                "{{ firm|escapejs }}",
-                {% empty %}
-                "ABC Corporation",
-                "XYZ Enterprises",
-                "Global Solutions Ltd",
-                "Tech Innovators Inc",
-                "Prime Services Co",
-                "Sunrise Industries",
-                "Oceanic Enterprises",
-                "Mountain View Inc",
-                "Valley Tech Solutions",
-                "City Manufacturing Ltd"
-                {% endfor %}
-            ];
-
-            // Campaign data map with complete structure
-            const campaignMap = {};
-            {% for campaign in campaigns %}
-                {% if campaign.campaign_unique_id %}
-                    campaignMap["{{ campaign.campaign_unique_id|escapejs }}"] = {
-                        id: "{{ campaign.campaign_unique_id|escapejs }}",
-                        name: "{{ campaign.campaign_name|escapejs }}",
-                        software: "{{ campaign.software_name|escapejs|default:'' }}",
-                        leads: "{{ campaign.total_leads|default:0|escapejs }}"
-                    };
-                {% endif %}
-            {% endfor %}
-
-            // Lead data
-            const leads = [
-                {% for lead in active_leads_data %}
-                {
-                    id: {{ lead.id }},
-                    ownerName: "{{ lead.ownerName|escapejs }}",
-                    phoneNo: "{{ lead.phoneNo|escapejs }}",
-                    email: "{{ lead.email|escapejs }}",
-                    ticketNo: "{{ lead.ticket_number|escapejs }}",
-                    date: "{{ lead.date|date:'Y-m-d'|escapejs }}",
-                    createdAt: "{{ lead.created_at|date:'Y-m-d'|escapejs }}",
-                    createdTime: "{{ lead.created_at|time:'H:i'|escapejs }}",
-                    status: "{{ lead.status|escapejs }}",
-                    priority: "{{ lead.priority|default:'Medium'|escapejs }}",
-                    customerType: "{{ lead.customerType|escapejs }}",
-                    name: "{{ lead.name|escapejs }}",
-                    address: "{{ lead.address|escapejs }}",
-                    place: "{{ lead.place|escapejs }}",
-                    District: "{{ lead.District|escapejs }}",
-                    State: "{{ lead.State|escapejs }}",
-                    pinCode: "{{ lead.pinCode|escapejs }}",
-                    firstName: "{{ lead.firstName|escapejs }}",
-                    individualAddress: "{{ lead.individualAddress|escapejs }}",
-                    individualPlace: "{{ lead.individualPlace|escapejs }}",
-                    individualDistrict: "{{ lead.individualDistrict|escapejs }}",
-                    individualState: "{{ lead.individualState|escapejs }}",
-                    individualPinCode: "{{ lead.individualPinCode|escapejs }}",
-                    refFrom: "{{ lead.refFrom|escapejs }}",
-                    business: "{{ lead.business|escapejs }}",
-                    campaign: "{{ lead.campaign|default:''|escapejs }}",
-                    campaign_display: "{{ lead.campaign_display|default:''|escapejs }}",
-                    marketedBy: "{{ lead.marketedBy|escapejs }}",
-                    Consultant: "{{ lead.Consultant|escapejs }}",
-                    requirement: "{{ lead.requirement|escapejs }}",
-                    details: "{{ lead.details|escapejs }}",
-                    marketedByName: "{{ lead.marketed_by_name|default:lead.marketedBy|escapejs }}",
-                    branchName: "{{ lead.branch_name|default:lead.requirement|escapejs }}",
-                    campaignName: "{{ lead.campaign_display|default:lead.campaign|default:''|escapejs }}"
-                }{% if not forloop.last %},{% endif %}
-                {% endfor %}
-            ];
-
-            // Employee data
-            const employees = [
-                {% for u in active_users %}
-                {
-                    id: {{ u.id }},
-                    name: "{{ u.name|escapejs }}",
-                    department: "{{ u.department|escapejs }}",
-                    designation: "{{ u.designation|escapejs }}"
-                }{% if not forloop.last %},{% endif %}
-                {% endfor %}
-            ];
-
-            // API Customer Data - With robust error handling
-            let apiCustomerData = [];
-            try {
-                apiCustomerData = [
-                    {% for customer in api_customer_data %}
-                    {
-                        code: "{{ customer.code|escapejs }}",
-                        name: "{{ customer.name|escapejs }}",
-                        address: "{{ customer.address|escapejs }}",
-                        address3: "{{ customer.address3|escapejs }}",
-                        branch: "{{ customer.branch|escapejs }}",
-                        district: "{{ customer.district|escapejs }}",
-                        state: "{{ customer.state|escapejs }}",
-                        mobile: "{{ customer.mobile|escapejs }}",
-                        software: "{{ customer.software|escapejs }}",
-                        nature: "{{ customer.nature|escapejs }}",
-                        rout: "{{ customer.rout|escapejs }}",
-                        installationdate: "{{ customer.installationdate|escapejs }}"
-                    }{% if not forloop.last %},{% endif %}
-                    {% endfor %}
-                ];
-            } catch (error) {
-                console.error('Error loading API customer data:', error);
-                apiCustomerData = [];
-            }
-
-            console.log('📡 Edit Mode - Lead ID: {{ lead_data.id }}');
-            console.log('📊 Total leads:', leads.length);
-            console.log('👥 Total employees:', employees.length);
-            console.log('🎯 Campaigns available:', Object.keys(campaignMap).length);
-            console.log('🏢 Existing firms:', existingFirms.length);
-            console.log('📡 API Customers:', apiCustomerData.length);
-
-            // Update API status display
-            function updateApiStatus() {
-                if (apiCustomerData.length > 0) {
-                    apiStatus.className = 'api-status connected';
-                    apiCountElement.textContent = apiCustomerData.length;
-                } else {
-                    apiStatus.className = 'api-status disconnected';
-                    apiCountElement.textContent = '0';
-                }
-            }
-
-            // Debug: Check if current lead exists in leads array
-            const currentLeadId = {{ lead_data.id }};
-            console.log('Current lead ID:', currentLeadId);
-            console.log('Is current lead in leads array?', leads.some(l => l.id == currentLeadId));
-
-            // Initialize API status
-            updateApiStatus();
-
-            // ========== DATE FUNCTIONS ==========
-
-            function formatDateForDisplay(dateString) {
-                if (!dateString) return { short: '', full: '', tooltip: '' };
-                
-                try {
-                    const dateObj = new Date(dateString);
-                    if (isNaN(dateObj.getTime())) {
-                        return {
-                            short: dateString,
-                            full: dateString,
-                            tooltip: dateString
-                        };
-                    }
-                    
-                    const short = dateObj.toLocaleDateString('en-GB', {
-                        day: '2-digit',
-                        month: 'short'
-                    });
-                    
-                    const full = dateObj.toLocaleDateString('en-GB', {
-                        day: '2-digit',
-                        month: 'long',
-                        year: 'numeric'
-                    });
-                    
-                    const tooltip = dateObj.toLocaleDateString('en-GB', {
-                        weekday: 'long',
-                        day: '2-digit',
-                        month: 'long',
-                        year: 'numeric'
-                    });
-                    
-                    const time = dateObj.toLocaleTimeString('en-GB', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: true
-                    });
-                    
-                    return {
-                        short: short,
-                        full: full,
-                        tooltip: tooltip,
-                        time: time,
-                        dateObj: dateObj
-                    };
-                } catch (e) {
-                    return {
-                        short: dateString,
-                        full: dateString,
-                        tooltip: dateString
-                    };
-                }
-            }
-            
-            function updateDirectoryDateDisplay() {
-                const now = new Date();
-                
-                const currentDateDisplay = now.toLocaleDateString('en-GB', {
-                    weekday: 'short',
-                    day: '2-digit',
-                    month: 'short',
-                    year: 'numeric'
-                });
-                
-                const timeDisplay = now.toLocaleTimeString('en-GB', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: true
-                });
-                
-                const todayDisplay = now.toLocaleDateString('en-GB', {
-                    day: '2-digit',
-                    month: 'short'
-                });
-                
-                const currentDateElement = document.getElementById('currentDate');
-                const todayDateElement = document.getElementById('todayDate');
-                
-                if (currentDateElement) {
-                    currentDateElement.innerHTML = `<i class="far fa-calendar-alt"></i> ${currentDateDisplay}`;
-                }
-                
-                if (todayDateElement) {
-                    todayDateElement.innerHTML = `<i class="far fa-clock"></i> ${todayDisplay} ${timeDisplay}`;
-                }
-            }
-            
-            function initializeDateDisplay() {
-                updateDirectoryDateDisplay();
-                setInterval(updateDirectoryDateDisplay, 60000);
-            }
-
-            // ========== TIME ELAPSED FUNCTIONS ==========
-
-            function updateAllTimeElapsedBadges() {
-                const timeElapsedBadges = document.querySelectorAll('.time-elapsed-badge');
-                const now = new Date();
-                
-                timeElapsedBadges.forEach(badge => {
-                    const createdDateStr = badge.getAttribute('data-created');
-                    const elapsedText = badge.querySelector('.elapsed-text');
-                    
-                    if (!createdDateStr || !elapsedText) return;
-                    
-                    try {
-                        const createdDate = new Date(createdDateStr);
-                        
-                        // Check if date is valid
-                        if (isNaN(createdDate.getTime())) {
-                            elapsedText.textContent = 'Invalid date';
-                            badge.className = 'time-elapsed-badge time-old';
-                            return;
-                        }
-                        
-                        const diffMs = now - createdDate;
-                        const diffSeconds = Math.floor(diffMs / 1000);
-                        const diffMinutes = Math.floor(diffSeconds / 60);
-                        const diffHours = Math.floor(diffMinutes / 60);
-                        const diffDays = Math.floor(diffHours / 24);
-                        
-                        let elapsedTextValue = '';
-                        let badgeClass = 'time-elapsed-badge';
-                        
-                        // Determine time elapsed and badge class
-                        if (diffDays > 0) {
-                            if (diffDays === 1) elapsedTextValue = '1 day ago';
-                            else if (diffDays < 7) elapsedTextValue = `${diffDays} days ago`;
-                            else if (diffDays < 30) elapsedTextValue = `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? 's' : ''} ago`;
-                            else if (diffDays < 365) elapsedTextValue = `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) > 1 ? 's' : ''} ago`;
-                            else elapsedTextValue = `${Math.floor(diffDays / 365)} year${Math.floor(diffDays / 365) > 1 ? 's' : ''} ago`;
-                            
-                            // Color coding based on age
-                            if (diffDays < 1) {
-                                badgeClass += ' time-recent';
-                            } else if (diffDays < 3) {
-                                badgeClass += ' time-medium';
-                            } else {
-                                badgeClass += ' time-old';
-                            }
-                        } else if (diffHours > 0) {
-                            if (diffHours === 1) elapsedTextValue = '1 hour ago';
-                            else elapsedTextValue = `${diffHours} hours ago`;
-                            badgeClass += ' time-recent';
-                        } else if (diffMinutes > 0) {
-                            if (diffMinutes === 1) elapsedTextValue = '1 minute ago';
-                            else if (diffMinutes < 60) elapsedTextValue = `${diffMinutes} minutes ago`;
-                            else elapsedTextValue = '1 hour ago';
-                            badgeClass += ' time-recent';
-                        } else if (diffSeconds > 30) {
-                            elapsedTextValue = `${diffSeconds} seconds ago`;
-                            badgeClass += ' time-recent';
-                        } else {
-                            elapsedTextValue = 'Just now';
-                            badgeClass += ' time-recent';
-                        }
-                        
-                        elapsedText.textContent = elapsedTextValue;
-                        badge.className = badgeClass;
-                        badge.style.display = 'inline-flex';
-                        
-                    } catch (e) {
-                        console.error('Error calculating time elapsed:', e);
-                        elapsedText.textContent = 'Date error';
-                        badge.className = 'time-elapsed-badge time-old';
-                        badge.style.display = 'inline-flex';
-                    }
-                });
-            }
-
-            // ========== API CUSTOMER SEARCH FUNCTIONS ==========
-
-            function initializeFirmNameSearch() {
-                const firmNameInput = document.getElementById('name');
-                const firmNameSearch = document.getElementById('nameSearch');
-                const firmNameOptions = document.getElementById('firmNameOptions');
-                const firmNameClear = document.getElementById('firmNameClear');
-                
-                if (!firmNameInput || !firmNameSearch || !firmNameOptions) return;
-
-                const allFirms = [...new Set([...existingFirms, ...apiCustomerData.map(c => c.name)])];
-                
-                const firmDataMap = {};
-                apiCustomerData.forEach(customer => {
-                    firmDataMap[customer.name] = customer;
-                });
-
-                function populateFirmNameOptions(filter = '') {
-                    firmNameOptions.innerHTML = '';
-                    
-                    let filteredOptions = allFirms.filter(firm => 
-                        firm && firm.toLowerCase().includes(filter.toLowerCase())
-                    );
-                    
-                    filteredOptions.sort((a, b) => {
-                        const aExact = a.toLowerCase() === filter.toLowerCase();
-                        const bExact = b.toLowerCase() === filter.toLowerCase();
-                        if (aExact && !bExact) return -1;
-                        if (!aExact && bExact) return 1;
-                        return a.localeCompare(b);
-                    });
-                    
-                    filteredOptions.forEach((firm, index) => {
-                        const optionElement = document.createElement('div');
-                        optionElement.className = 'select-option';
-                        
-                        const isFromAPI = firmDataMap[firm];
-                        
-                        let optionContent = firm;
-                        if (isFromAPI) {
-                            optionContent = `
-                                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                                    <span>
-                                        <i class="fas fa-database" style="color: #4a6fdc; font-size: 11px; margin-right: 5px;"></i>
-                                        ${firm}
-                                    </span>
-                                    <span class="campaign-badge" style="background:white; font-size: 10px; padding: 1px 6px;">
-                                        API
-                                    </span>
-                                </div>
-                            `;
-                        }
-                        
-                        optionElement.innerHTML = optionContent;
-                        optionElement.dataset.value = firm;
-                        optionElement.dataset.index = index;
-                        optionElement.dataset.isApi = isFromAPI ? 'true' : 'false';
-                        
-                        optionElement.addEventListener('click', function() {
-                            selectFirmNameOption(this, false);
-                            
-                            if (isFromAPI) {
-                                showApiCustomerDetails(firmDataMap[firm]);
-                                autoFillFromApiCustomer(firmDataMap[firm]);
-                            } else {
-                                closeApiCustomerDetails();
-                            }
-                        });
-                        
-                        if (isFromAPI) {
-                            optionElement.addEventListener('mouseenter', function() {
-                                const customer = firmDataMap[firm];
-                                showApiCustomerTooltip(this, customer);
-                            });
-                            
-                            optionElement.addEventListener('mouseleave', function() {
-                                hideApiCustomerTooltip();
-                            });
-                        }
-                        
-                        firmNameOptions.appendChild(optionElement);
-                    });
-                    
-                    if (filter && !filteredOptions.some(f => f.toLowerCase() === filter.toLowerCase())) {
-                        const newOption = document.createElement('div');
-                        newOption.className = 'select-option new-firm';
-                        newOption.innerHTML = `
-                            <div style="display: flex; align-items: center;">
-                                <i class="fas fa-plus-circle" style="color: #4CAF50; margin-right: 8px;"></i>
-                                <div>
-                                    <strong>Create new firm:</strong><br>
-                                    <span style="font-size: 12px; color: #666;">"${filter}"</span>
-                                </div>
-                            </div>
-                        `;
-                        newOption.dataset.value = filter;
-                        
-                        newOption.addEventListener('click', function() {
-                            selectFirmNameOption(this, true);
-                            closeApiCustomerDetails();
-                            showAutoFillNotification(`New firm "${filter}" will be created`, 'info');
-                        });
-                        
-                        firmNameOptions.insertBefore(newOption, firmNameOptions.firstChild);
-                    }
-                    
-                    if (filteredOptions.length === 0 && !filter) {
-                        const noResults = document.createElement('div');
-                        noResults.className = 'no-results-option';
-                        noResults.innerHTML = `
-                            <div style="text-align: center; padding: 10px;">
-                                <i class="fas fa-database" style="font-size: 20px; color: #ccc; margin-bottom: 5px;"></i>
-                                <div>No firms found</div>
-                                <small style="color: #999;">API returned ${apiCustomerData.length} customers</small>
-                            </div>
-                        `;
-                        firmNameOptions.appendChild(noResults);
-                    }
-                    
-                    currentFirmNameIndex = -1;
-                }
-                
-                function showApiCustomerDetails(customer) {
-                    const detailsDiv = document.getElementById('apiCustomerDetails');
-                    const infoDiv = document.getElementById('apiCustomerInfo');
-                    
-                    let detailsHTML = `
-                        <div style="margin-bottom: 5px;">
-                            <strong><i class="fas fa-building"></i> ${customer.name}</strong>
-                        </div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 11px;">
-                    `;
-                    
-                   
-                    if (customer.mobile) detailsHTML += `<div><i class="fas fa-phone"></i> Mobile: ${customer.mobile}</div>`;
-                    if (customer.branch) detailsHTML += `<div><i class="fas fa-code-branch"></i> Branch: ${customer.branch}</div>`;
-                    
-                    
-                    detailsHTML += '</div>';
-                    
-                    infoDiv.innerHTML = detailsHTML;
-                    detailsDiv.style.display = 'block';
-                    
-                    const badge = document.getElementById('firmSourceBadge');
-                    badge.innerHTML = '<i class="fas fa-database"></i>';
-                    badge.style.background = '#4a6fdc';
-                }
-                
-                function autoFillFromApiCustomer(customer) {
-                    console.log('🔍 Auto-filling form from API customer:', customer.name);
-                    
-                    const fieldMappings = {
-                        'address': customer.address,
-                        'address3': customer.address3,
-                        'place': customer.address3 || customer.address,
-                        'District': customer.district,
-                        'State': customer.state,
-                        'phoneNo': customer.mobile || customer.phoneNo || '',
-                        'business': customer.nature,
-                        'software': customer.software,
-                        'branch': customer.branch,
-                    };
-                    
-                    let filledCount = 0;
-                    
-                    Object.entries(fieldMappings).forEach(([fieldId, value]) => {
-                        if (value && value.trim()) {
-                            const field = document.getElementById(fieldId);
-                            if (field) {
-                                const oldValue = field.value;
-                                field.value = value.trim();
-                                
-                                // Only count if value actually changed
-                                if (oldValue !== field.value) {
-                                    filledCount++;
-                                }
-                                
-                                field.dispatchEvent(new Event('change', { bubbles: true }));
-                                
-                                if (field.tagName === 'SELECT') {
-                                    for (let option of field.options) {
-                                        if (option.value.toLowerCase() === value.trim().toLowerCase() || 
-                                            option.text.toLowerCase() === value.trim().toLowerCase()) {
-                                            option.selected = true;
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    });
-                    
-                    // Handle business nature
-                    if (customer.nature && customer.nature.trim()) {
-                        const businessField = document.getElementById('business');
-                        if (businessField) {
-                            let found = false;
-                            for (let option of businessField.options) {
-                                if (option.value.toLowerCase() === customer.nature.trim().toLowerCase()) {
-                                    option.selected = true;
-                                    found = true;
-                                    filledCount++;
-                                    break;
-                                }
-                            }
-                            
-                            if (!found) {
-                                for (let option of businessField.options) {
-                                    if (option.text.toLowerCase().includes(customer.nature.trim().toLowerCase())) {
-                                        option.selected = true;
-                                        found = true;
-                                        filledCount++;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    
-                    // Handle branch
-                    if (customer.branch && customer.branch.trim()) {
-                        const requirementField = document.getElementById('requirement');
-                        if (requirementField) {
-                            for (let option of requirementField.options) {
-                                if (option.text.toLowerCase().includes(customer.branch.trim().toLowerCase())) {
-                                    option.selected = true;
-                                    filledCount++;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    
-                    // Handle state
-                    if (customer.state && customer.state.trim()) {
-                        const stateField = document.getElementById('State');
-                        if (stateField) {
-                            for (let option of stateField.options) {
-                                if (option.value.toLowerCase() === customer.state.trim().toLowerCase() || 
-                                    option.text.toLowerCase() === customer.state.trim().toLowerCase()) {
-                                    option.selected = true;
-                                    filledCount++;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    
-                    // Handle district
-                    if (customer.district && customer.district.trim()) {
-                        const districtField = document.getElementById('District');
-                        if (districtField) {
-                            for (let option of districtField.options) {
-                                if (option.value.toLowerCase() === customer.district.trim().toLowerCase() || 
-                                    option.text.toLowerCase() === customer.district.trim().toLowerCase()) {
-                                    option.selected = true;
-                                    filledCount++;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    
-                    // Handle software/consultant
-                    if (customer.software && customer.software.trim()) {
-                        const consultantField = document.getElementById('Consultant');
-                        if (consultantField) {
-                            consultantField.value = customer.software.trim();
-                            filledCount++;
-                        }
-                        
-                        const campaignField = document.getElementById('campaign');
-                        if (campaignField) {
-                            for (let option of campaignField.options) {
-                                if (option.text.toLowerCase().includes(customer.software.trim().toLowerCase())) {
-                                    option.selected = true;
-                                    displayCampaignDetails(campaignField);
-                                    filledCount++;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    
-                    // Handle installation date
-                    if (customer.installationdate) {
-                        const dateField = document.getElementById('date');
-                        if (dateField) {
-                            try {
-                                const date = new Date(customer.installationdate);
-                                if (!isNaN(date.getTime())) {
-                                    const formattedDate = date.toISOString().split('T')[0];
-                                    if (dateField.value !== formattedDate) {
-                                        dateField.value = formattedDate;
-                                        filledCount++;
-                                    }
-                                }
-                            } catch (e) {
-                                console.log('Could not parse installation date:', customer.installationdate);
-                            }
-                        }
-                    }
-                    
-                    highlightFilledFields();
-                    
-                    if (filledCount > 0) {
-                        showAutoFillNotification(`✅ Auto-filled ${filledCount} fields from API customer: ${customer.name}`, 'success');
-                    } else {
-                        showAutoFillNotification(`ℹ️ All fields already filled for: ${customer.name}`, 'info');
-                    }
-                    
-                    console.log(`📝 Auto-filled ${filledCount} fields for ${customer.name}`);
-                }
-                
-                function highlightFilledFields() {
-                    const highlighted = document.querySelectorAll('input, select');
-                    highlighted.forEach(field => {
-                        if (field.value && field.value.trim()) {
-                            field.style.borderColor = '#4CAF50';
-                            field.style.backgroundColor = '#f0fff0';
-                            
-                            setTimeout(() => {
-                                field.style.borderColor = '';
-                                field.style.backgroundColor = '';
-                            }, 3000);
-                        }
-                    });
-                }
-                
-                function closeApiCustomerDetails() {
-                    const detailsDiv = document.getElementById('apiCustomerDetails');
-                    detailsDiv.style.display = 'none';
-                    
-                    const badge = document.getElementById('firmSourceBadge');
-                    badge.innerHTML = '<i class="fas fa-database"></i> ';
-                    badge.style.background = '';
-                }
-                
-                function showApiCustomerTooltip(element, customer) {
-                    if (apiCustomerTooltip) {
-                        apiCustomerTooltip.remove();
-                    }
-                    
-                    apiCustomerTooltip = document.createElement('div');
-                    apiCustomerTooltip.className = 'api-customer-tooltip';
-                    apiCustomerTooltip.style.cssText = `
-                        position: absolute;
-                        background: white;
-                        border: 1px solid #4a6fdc;
-                        border-radius: 6px;
-                        padding: 10px;
-                        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                        z-index: 10000;
-                        max-width: 300px;
-                        font-size: 12px;
-                        pointer-events: none;
-                    `;
-                    
-                    let tooltipHTML = `
-                        <div style="color: #4a6fdc; font-weight: bold; margin-bottom: 5px;">
-                            <i class="fas fa-database"></i> API Customer
-                        </div>
-                        <div style="margin-bottom: 3px;"><strong>${customer.name}</strong></div>
-                    `;
-                    
-                    if (customer.code) tooltipHTML += `<div><small>Code: ${customer.code}</small></div>`;
-                    if (customer.branch) tooltipHTML += `<div><small>Branch: ${customer.branch}</small></div>`;
-                    if (customer.district) tooltipHTML += `<div><small>Location: ${customer.district}, ${customer.state}</small></div>`;
-                    
-                    tooltipHTML += `<div style="margin-top: 5px; color: #666; font-style: italic;">
-                        <small>Click to select and view full details</small>
-                    </div>`;
-                    
-                    apiCustomerTooltip.innerHTML = tooltipHTML;
-                    
-                    const rect = element.getBoundingClientRect();
-                    apiCustomerTooltip.style.top = `${rect.top - apiCustomerTooltip.offsetHeight - 5}px`;
-                    apiCustomerTooltip.style.left = `${rect.left}px`;
-                    
-                    document.body.appendChild(apiCustomerTooltip);
-                }
-                
-                function hideApiCustomerTooltip() {
-                    if (apiCustomerTooltip) {
-                        apiCustomerTooltip.remove();
-                        apiCustomerTooltip = null;
-                    }
-                }
-                
-                function selectFirmNameOption(optionElement, isNew = false) {
-                    const firmValue = optionElement.dataset.value;
-                    firmNameSearch.value = firmValue;
-                    firmNameInput.value = firmValue;
-                    
-                    document.querySelectorAll('#firmNameOptions .select-option').forEach(opt => {
-                        opt.classList.remove('selected');
-                    });
-                    
-                    optionElement.classList.add('selected');
-                    
-                    updateFirmNameClearButton();
-                    
-                    closeFirmNameDropdown();
-                    
-                    if (isNew) {
-                        showAutoFillNotification(`New firm "${firmValue}" will be created`, 'info');
-                        closeApiCustomerDetails();
-                    }
-                    
-                    console.log('Selected firm:', firmValue, 'From API:', optionElement.dataset.isApi === 'true');
-                }
-                
-                function updateFirmNameClearButton() {
-                    if (firmNameSearch.value) {
-                        firmNameClear.classList.add('active');
-                    } else {
-                        firmNameClear.classList.remove('active');
-                    }
-                }
-                
-                function openFirmNameDropdown() {
-                    firmNameOptions.classList.add('active');
-                    firmNameSearch.classList.add('active');
-                    firmNameSearch.readOnly = false;
-                    firmNameSearch.focus();
-                    isFirmNameOpen = true;
-                    populateFirmNameOptions(firmNameSearch.value);
-                }
-                
-                function closeFirmNameDropdown() {
-                    firmNameOptions.classList.remove('active');
-                    firmNameSearch.classList.remove('active');
-                    firmNameSearch.readOnly = true;
-                    isFirmNameOpen = false;
-                    currentFirmNameIndex = -1;
-                    hideApiCustomerTooltip();
-                }
-                
-                function clearFirmNameSelection() {
-                    firmNameSearch.value = '';
-                    firmNameInput.value = '';
-                    updateFirmNameClearButton();
-                    closeApiCustomerDetails();
-                    
-                    document.querySelectorAll('#firmNameOptions .select-option').forEach(opt => {
-                        opt.classList.remove('selected');
-                    });
-                }
-                
-                populateFirmNameOptions();
-                updateFirmNameClearButton();
-                
-                firmNameSearch.placeholder = `Search from ${apiCustomerData.length} API customers or type new firm...`;
-                
-                firmNameSearch.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    openFirmNameDropdown();
-                });
-                
-                firmNameSearch.addEventListener('input', function() {
-                    populateFirmNameOptions(this.value);
-                });
-                
-                firmNameSearch.addEventListener('keydown', function(e) {
-                    const options = firmNameOptions.querySelectorAll('.select-option');
-                    
-                    switch(e.key) {
-                        case 'ArrowDown':
-                            e.preventDefault();
-                            if (options.length > 0) {
-                                currentFirmNameIndex = (currentFirmNameIndex + 1) % options.length;
-                                options.forEach(opt => opt.classList.remove('selected'));
-                                if (currentFirmNameIndex >= 0 && options[currentFirmNameIndex]) {
-                                    options[currentFirmNameIndex].classList.add('selected');
-                                    options[currentFirmNameIndex].scrollIntoView({ block: 'nearest' });
-                                }
-                            }
-                            break;
-                            
-                        case 'ArrowUp':
-                            e.preventDefault();
-                            if (options.length > 0) {
-                                currentFirmNameIndex = (currentFirmNameIndex - 1 + options.length) % options.length;
-                                options.forEach(opt => opt.classList.remove('selected'));
-                                if (currentFirmNameIndex >= 0 && options[currentFirmNameIndex]) {
-                                    options[currentFirmNameIndex].classList.add('selected');
-                                    options[currentFirmNameIndex].scrollIntoView({ block: 'nearest' });
-                                }
-                            }
-                            break;
-                            
-                        case 'Enter':
-                            e.preventDefault();
-                            if (currentFirmNameIndex >= 0 && options[currentFirmNameIndex]) {
-                                const isNew = options[currentFirmNameIndex].classList.contains('new-firm');
-                                selectFirmNameOption(options[currentFirmNameIndex], isNew);
-                            } else if (this.value.trim()) {
-                                const newFirm = this.value.trim();
-                                firmNameInput.value = newFirm;
-                                firmNameSearch.value = newFirm;
-                                updateFirmNameClearButton();
-                                closeFirmNameDropdown();
-                                showAutoFillNotification(`New firm "${newFirm}" will be created`, 'info');
-                                closeApiCustomerDetails();
-                            }
-                            break;
-                            
-                        case 'Escape':
-                            closeFirmNameDropdown();
-                            break;
-                            
-                        case 'Tab':
-                            closeFirmNameDropdown();
-                            break;
-                    }
-                });
-                
-                firmNameClear.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    clearFirmNameSelection();
-                });
-                
-                document.addEventListener('click', function(e) {
-                    if (!e.target.closest('#firmNameContainer')) {
-                        closeFirmNameDropdown();
-                    }
-                });
-                
-                if (firmNameInput.value) {
-                    firmNameSearch.value = firmNameInput.value;
-                    updateFirmNameClearButton();
-                    
-                    const initialCustomer = apiCustomerData.find(c => c.name === firmNameInput.value);
-                    if (initialCustomer) {
-                        showApiCustomerDetails(initialCustomer);
-                    }
-                }
-            }
-            
-            window.closeApiCustomerDetails = function() {
-                const detailsDiv = document.getElementById('apiCustomerDetails');
-                if (detailsDiv) {
-                    detailsDiv.style.display = 'none';
-                }
-                
-                const badge = document.getElementById('firmSourceBadge');
-                if (badge) {
-                    badge.innerHTML = '<i class="fas fa-database"></i> ';
-                    badge.style.background = '';
-                }
-            };
-
-            // ========== API REFRESH FUNCTION ==========
-
-            async function refreshApiData() {
-                try {
-                    apiRefreshBtn.classList.add('loading');
-                    apiStatus.className = 'api-status loading';
-                    
-                    // Show loading message
-                    const apiLabel = document.querySelector('.api-label');
-                    if (apiLabel) {
-                        const originalText = apiLabel.textContent;
-                        apiLabel.textContent = 'Loading...';
-                        
-                        setTimeout(() => {
-                            // Simulate API refresh (in real implementation, this would be an AJAX call)
-                            console.log('Refreshing API data...');
-                            
-                            // Update status
-                            apiStatus.className = 'api-status connected';
-                            apiCountElement.textContent = apiCustomerData.length;
-                            apiLabel.textContent = 'API Customers';
-                            
-                            apiRefreshBtn.classList.remove('loading');
-                            
-                            showAutoFillNotification('API customer data refreshed successfully', 'success');
-                            
-                        }, 1500);
-                    }
-                    
-                } catch (error) {
-                    console.error('Error refreshing API data:', error);
-                    apiStatus.className = 'api-status disconnected';
-                    apiRefreshBtn.classList.remove('loading');
-                    showAutoFillNotification('Error refreshing API data', 'error');
-                }
-            }
-
-            // ========== AUTO-FILL NOTIFICATION FUNCTIONS ==========
-
-            function showAutoFillNotification(message, type = 'info') {
-                autoFillMessage.textContent = message;
-                autoFillNotification.style.display = 'block';
-                
-                // Set color based on type
-                if (type === 'success') {
-                    autoFillNotification.style.borderColor = '#4CAF50';
-                    autoFillNotification.style.background = '#f0fff0';
-                } else if (type === 'error') {
-                    autoFillNotification.style.borderColor = '#f44336';
-                    autoFillNotification.style.background = '#fff0f0';
-                } else {
-                    autoFillNotification.style.borderColor = '#2196F3';
-                    autoFillNotification.style.background = '#f0f8ff';
-                }
-                
-                // Auto-hide after 5 seconds
-                setTimeout(() => {
-                    closeAutoFillNotification();
-                }, 5000);
-            }
-
-            function closeAutoFillNotification() {
-                autoFillNotification.style.display = 'none';
-            }
-
-            window.closeAutoFillNotification = closeAutoFillNotification;
-
-            // ========== CAMPAIGN DETAILS FUNCTIONS ==========
-
-            function displayCampaignDetails(select) {
-                const box = document.getElementById("campaign-details-box");
-                
-                if (!select.value) {
-                    if (box) box.style.display = "none";
-                    return;
-                }
-                
-                const opt = select.options[select.selectedIndex];
-                const campaignData = campaignMap[select.value];
-                
-                if (!campaignData) {
-                    console.warn('Campaign data not found for ID:', select.value);
-                    if (box) box.style.display = "none";
-                    return;
-                }
-                
-                // Update all detail fields if they exist
-                const cId = document.getElementById("c-id");
-                const cName = document.getElementById("c-name");
-                const cSoftware = document.getElementById("c-software");
-                const cStatus = document.getElementById("c-status");
-                
-                if (cId) cId.textContent = campaignData.id || '-';
-                if (cName) cName.textContent = campaignData.name || '-';
-                if (cSoftware) cSoftware.textContent = campaignData.software || '-';
-                
-                if (cStatus) {
-                    const status = campaignData.status || 'draft';
-                    cStatus.innerHTML = `<span class="status-badge status-${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>`;
-                }
-                
-                if (box) box.style.display = "block";
-                
-                console.log('🎯 Selected Campaign:', campaignData);
-            }
-
-            function clearCampaignDetails() {
-                const box = document.getElementById("campaign-details-box");
-                if (box) {
-                    box.style.display = "none";
-                }
-                
-                document.querySelectorAll('#campaign-details-box span[id^="c-"]').forEach(span => {
-                    span.textContent = "-";
-                });
-            }
-
-            // ========== INITIALIZATION FUNCTIONS ==========
-
-            function initializeApp() {
-                initializeToggle();
-                setupDirectoryTabs();
-                setupDirectorySearch();
-                setupPriorityFilter();
-                initializePagination();
-                setupEventListeners();
-                initializeSearchableSelect();
-                initializeFirmNameSearch();
-                initializeDateDisplay();
-                
-                // Setup API refresh button
-                if (apiRefreshBtn) {
-                    apiRefreshBtn.addEventListener('click', refreshApiData);
-                }
-
-                setTimeout(() => {
-                    updateAllTimeElapsedBadges();
-                }, 500);
-
-                setInterval(updateAllTimeElapsedBadges, 60000);
-
-                console.log('✅ Lead Edit System initialized successfully');
-                console.log('📊 Editing Lead ID:', {{ lead_data.id }});
-            }
-
-            function initializeSearchableSelect() {
-                const refFromSelect = document.getElementById('refFrom');
-                const refFromSearch = document.getElementById('refFromSearch');
-                const refFromOptions = document.getElementById('refFromOptions');
-                const refFromClear = document.getElementById('refFromClear');
-                
-                if (!refFromSelect || !refFromSearch || !refFromOptions) return;
-
-                const originalOptions = Array.from(refFromSelect.options);
-                
-                function populateOptions(filter = '') {
-                    refFromOptions.innerHTML = '';
-                    
-                    const filteredOptions = originalOptions.filter(option => 
-                        option.text.toLowerCase().includes(filter.toLowerCase())
-                    );
-                    
-                    filteredOptions.forEach((option, index) => {
-                        if (option.value === '') return;
-                        
-                        const optionElement = document.createElement('div');
-                        optionElement.className = 'select-option';
-                        optionElement.textContent = option.text;
-                        optionElement.dataset.value = option.value;
-                        optionElement.dataset.index = index;
-                        
-                        optionElement.addEventListener('click', function() {
-                            selectRefFromOption(this);
-                        });
-                        
-                        refFromOptions.appendChild(optionElement);
-                    });
-                    
-                    if (filteredOptions.length === 0) {
-                        const noResults = document.createElement('div');
-                        noResults.className = 'no-results-option';
-                        noResults.textContent = 'No references found';
-                        refFromOptions.appendChild(noResults);
-                    }
-                    
-                    currentRefFromIndex = -1;
-                }
-                
-                function selectRefFromOption(optionElement) {
-                    refFromSearch.value = optionElement.textContent;
-                    refFromSelect.value = optionElement.dataset.value;
-                    
-                    document.querySelectorAll('#refFromOptions .select-option').forEach(opt => {
-                        opt.classList.remove('selected');
-                    });
-                    
-                    optionElement.classList.add('selected');
-                    
-                    updateClearButton();
-                    
-                    closeRefFromDropdown();
-                    
-                    console.log('Selected reference:', optionElement.textContent, 'Value:', optionElement.dataset.value);
-                }
-                
-                function updateClearButton() {
-                    if (refFromSearch.value) {
-                        refFromClear.classList.add('active');
-                    } else {
-                        refFromClear.classList.remove('active');
-                    }
-                }
-                
-                function openRefFromDropdown() {
-                    refFromOptions.classList.add('active');
-                    refFromSearch.classList.add('active');
-                    refFromSearch.readOnly = false;
-                    refFromSearch.focus();
-                    isRefFromOpen = true;
-                    populateOptions(refFromSearch.value);
-                }
-                
-                function closeRefFromDropdown() {
-                    refFromOptions.classList.remove('active');
-                    refFromSearch.classList.remove('active');
-                    refFromSearch.readOnly = true;
-                    isRefFromOpen = false;
-                    currentRefFromIndex = -1;
-                }
-                
-                function clearRefFromSelection() {
-                    refFromSearch.value = '';
-                    refFromSelect.value = '';
-                    updateClearButton();
-                    
-                    document.querySelectorAll('#refFromOptions .select-option').forEach(opt => {
-                        opt.classList.remove('selected');
-                    });
-                }
-                
-                populateOptions();
-                updateClearButton();
-                
-                refFromSearch.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    openRefFromDropdown();
-                });
-                
-                refFromSearch.addEventListener('input', function() {
-                    populateOptions(this.value);
-                });
-                
-                refFromSearch.addEventListener('keydown', function(e) {
-                    const options = refFromOptions.querySelectorAll('.select-option');
-                    
-                    switch(e.key) {
-                        case 'ArrowDown':
-                            e.preventDefault();
-                            if (options.length > 0) {
-                                currentRefFromIndex = (currentRefFromIndex + 1) % options.length;
-                                options.forEach(opt => opt.classList.remove('selected'));
-                                options[currentRefFromIndex].classList.add('selected');
-                                options[currentRefFromIndex].scrollIntoView({ block: 'nearest' });
-                            }
-                            break;
-                            
-                        case 'ArrowUp':
-                            e.preventDefault();
-                            if (options.length > 0) {
-                                currentRefFromIndex = (currentRefFromIndex - 1 + options.length) % options.length;
-                                options.forEach(opt => opt.classList.remove('selected'));
-                                options[currentRefFromIndex].classList.add('selected');
-                                options[currentRefFromIndex].scrollIntoView({ block: 'nearest' });
-                            }
-                            break;
-                            
-                        case 'Enter':
-                            e.preventDefault();
-                            if (currentRefFromIndex >= 0 && options[currentRefFromIndex]) {
-                                selectRefFromOption(options[currentRefFromIndex]);
-                            }
-                            break;
-                            
-                        case 'Escape':
-                            closeRefFromDropdown();
-                            break;
-                            
-                        case 'Tab':
-                            closeRefFromDropdown();
-                            break;
-                    }
-                });
-                
-                refFromClear.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    clearRefFromSelection();
-                });
-                
-                document.addEventListener('click', function(e) {
-                    if (!e.target.closest('#refFromContainer')) {
-                        closeRefFromDropdown();
-                    }
-                });
-                
-                if (refFromSelect.value) {
-                    const selectedOption = originalOptions.find(opt => opt.value === refFromSelect.value);
-                    if (selectedOption) {
-                        refFromSearch.value = selectedOption.text;
-                        updateClearButton();
-                    }
-                }
-            }
-
-            function setupEventListeners() {
-                prevPageBtn.addEventListener('click', goToPreviousPage);
-                nextPageBtn.addEventListener('click', goToNextPage);
-                
-                customerTypeToggle.addEventListener('change', initializeToggle);
-                
-                confirmUpdateBtn.addEventListener('click', handleConfirmUpdate);
-                cancelUpdateBtn.addEventListener('click', hideUpdateModal);
-                updateModal.addEventListener('click', handleModalClickOutside);
-                
-                const form = document.getElementById('customerForm');
-                form.addEventListener('submit', handleFormSubmit);
-                
-                document.querySelectorAll('input[required], select[required]').forEach(field => {
-                    field.addEventListener('blur', handleFieldValidation);
-                });
-                
-                setupNavigationMenu();
-            }
-
-            // ========== FORM MANAGEMENT ==========
-
-            function initializeToggle() {
-                const isBusinessMode = customerTypeToggle.checked;
-                
-                if (isBusinessMode) {
-                    businessFields.style.display = 'block';
-                    individualFields.style.display = 'none';
-                    
-                    document.querySelectorAll('.business-fields [required]').forEach(field => {
-                        field.required = true;
-                    });
-                    document.querySelectorAll('.individual-fields [required]').forEach(field => {
-                        field.required = false;
-                    });
-                    
-                    const firmNameSearch = document.getElementById('nameSearch');
-                    if (firmNameSearch) {
-                        firmNameSearch.readOnly = false;
-                        firmNameSearch.placeholder = `Search from ${apiCustomerData.length} API customers or type new firm...`;
-                    }
-                    
-                } else {
-                    businessFields.style.display = 'none';
-                    individualFields.style.display = 'block';
-                    
-                    document.querySelectorAll('.business-fields [required]').forEach(field => {
-                        field.required = false;
-                    });
-                    document.querySelectorAll('.individual-fields [required]').forEach(field => {
-                        field.required = true;
-                    });
-                    
-                    const firmNameOptions = document.getElementById('firmNameOptions');
-                    if (firmNameOptions) firmNameOptions.classList.remove('active');
-                    
-                    closeApiCustomerDetails();
-                }
-            }
-
-            // ========== VALIDATION & SUBMISSION ==========
-
-            function handleFieldValidation() {
-                if (!this.value.trim() && this.hasAttribute('required')) {
-                    this.style.borderColor = 'red';
-                } else {
-                    this.style.borderColor = '#ddd';
-                }
-            }
-
-            function validateForm() {
-                let isValid = true;
-                const isBusiness = customerTypeToggle.checked;
-
-                document.querySelectorAll('input, select').forEach(field => {
-                    field.style.borderColor = '#ddd';
-                });
-
-                const requiredBasic = ['ownerName', 'phoneNo', 'status', 'priority'];
-                requiredBasic.forEach(fieldId => {
-                    const field = document.getElementById(fieldId);
-                    if (!field.value.trim()) {
-                        isValid = false;
-                        field.style.borderColor = 'red';
-                        if (isValid) {
-                            field.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        }
-                    }
-                });
-
-                if (isBusiness) {
-                    const firmName = document.getElementById('name').value.trim();
-                    const firmNameSearch = document.getElementById('nameSearch').value.trim();
-                    const place = document.getElementById('place');
-                    const pinCode = document.getElementById('pinCode');
-                    
-                    if (!firmName && !firmNameSearch) {
-                        isValid = false;
-                        const firmNameSearchField = document.getElementById('nameSearch');
-                        firmNameSearchField.style.borderColor = 'red';
-                    }
-                    
-                    if (!place.value.trim()) {
-                        isValid = false;
-                        place.style.borderColor = 'red';
-                    }
-                    
-                    if (!pinCode.value.trim()) {
-                        isValid = false;
-                        pinCode.style.borderColor = 'red';
-                    }
-                } else {
-                    const firstName = document.getElementById('firstName');
-                    const individualPlace = document.getElementById('individualPlace');
-                    const individualPinCode = document.getElementById('individualPinCode');
-                    
-                    if (!firstName.value.trim()) {
-                        isValid = false;
-                        firstName.style.borderColor = 'red';
-                    }
-                    
-                    if (!individualPlace.value.trim()) {
-                        isValid = false;
-                        individualPlace.style.borderColor = 'red';
-                    }
-                    
-                    if (!individualPinCode.value.trim()) {
-                        isValid = false;
-                        individualPinCode.style.borderColor = 'red';
-                    }
-                }
-
-                return isValid;
-            }
-
-            function handleFormSubmit(e) {
-                e.preventDefault();
-
-                const firmNameSearch = document.getElementById('nameSearch');
-                const firmNameInput = document.getElementById('name');
-                
-                if (firmNameSearch && firmNameSearch.value && !firmNameInput.value) {
-                    firmNameInput.value = firmNameSearch.value;
-                }
-
-                if (!validateForm()) {
-                    showAutoFillNotification('Please fill in all required fields marked in red.', 'error');
-                    return;
-                }
-
-                showUpdateModal();
-            }
-
-            function showUpdateModal() {
-                updateModal.style.display = 'flex';
-            }
-
-            function hideUpdateModal() {
-                updateModal.style.display = 'none';
-            }
-
-            function handleConfirmUpdate() {
-                // Submit the form
-                document.getElementById('customerForm').submit();
-            }
-
-            function handleModalClickOutside(e) {
-                if (e.target === updateModal) {
-                    hideUpdateModal();
-                }
-            }
-
-            // ========== DIRECTORY & PAGINATION ==========
-
-            function setupDirectoryTabs() {
-                const tabs = document.querySelectorAll('.directory-tab');
-                const employeeList = document.getElementById('employeeList');
-                const leadList = document.getElementById('leadList');
-
-                tabs.forEach(tab => {
-                    tab.addEventListener('click', function() {
-                        const targetTab = this.getAttribute('data-tab');
-
-                        tabs.forEach(t => t.classList.remove('active'));
-                        this.classList.add('active');
-
-                        if (targetTab === 'employees') {
-                            employeeList.classList.add('active');
-                            leadList.classList.remove('active');
-                            document.querySelector('.directory-filter-container').style.display = 'none';
-                        } else {
-                            employeeList.classList.remove('active');
-                            leadList.classList.add('active');
-                            document.querySelector('.directory-filter-container').style.display = 'flex';
-                        }
-
-                        document.getElementById('directorySearch').value = '';
-                        document.getElementById('priorityFilter').value = 'all';
-                        currentPage = 1;
-                        initializePagination();
-                    });
-                });
-            }
-
-            function setupDirectorySearch() {
-                const searchInput = document.getElementById('directorySearch');
-                searchInput.addEventListener('input', function() {
-                    const priority = document.getElementById('priorityFilter').value;
-                    filterDirectoryItemsByPriorityAndSearch(this.value.toLowerCase(), priority);
-                });
-            }
-
-            function setupPriorityFilter() {
-                const priorityFilter = document.getElementById('priorityFilter');
-                
-                priorityFilter.addEventListener('change', function() {
-                    filterDirectoryItemsByPriorityAndSearch(
-                        document.getElementById('directorySearch').value.toLowerCase(),
-                        this.value
-                    );
-                });
-            }
-
-            function filterDirectoryItemsByPriorityAndSearch(searchTerm, priority) {
-                const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
-                
-                if (activeTab === 'employees') {
-                    currentItems = employees;
-                } else {
-                    currentItems = leads;
-                }
-                
-                if (!searchTerm) {
-                    filteredItems = [...currentItems];
-                } else {
-                    filteredItems = currentItems.filter(item => {
-                        let textContent = '';
-                        
-                        if (activeTab === 'employees') {
-                            textContent = (
-                                item.name.toLowerCase() + ' ' + 
-                                item.department.toLowerCase() + ' ' + 
-                                (item.designation || '').toLowerCase()
-                            );
-                        } else {
-                            textContent = (
-                                item.ownerName.toLowerCase() + ' ' + 
-                                item.phoneNo.toLowerCase() + ' ' + 
-                                item.ticketNo.toLowerCase() + ' ' +
-                                (item.priority || '').toLowerCase() + ' ' +
-                                (item.campaign || '').toLowerCase() + ' ' +
-                                (item.campaign_display || '').toLowerCase() + ' ' +
-                                (item.date || '').toLowerCase()
-                            );
-                        }
-                        
-                        return textContent.includes(searchTerm);
-                    });
-                }
-                
-                if (activeTab === 'leads' && priority !== 'all') {
-                    filteredItems = filteredItems.filter(item => item.priority === priority);
-                }
-                
-                currentPage = 1;
-                updatePagination();
-            }
-
-            function initializePagination() {
-                const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
-                if (activeTab === 'employees') {
-                    currentItems = employees;
-                } else {
-                    currentItems = leads;
-                }
-                
-                filteredItems = [...currentItems];
-                updatePagination();
-            }
-
-            function updatePagination() {
-                totalPages = Math.ceil(filteredItems.length / itemsPerPage);
-                
-                if (currentPage > totalPages) {
-                    currentPage = totalPages || 1;
-                }
-                
-                prevPageBtn.disabled = currentPage === 1;
-                nextPageBtn.disabled = currentPage === totalPages;
-                
-                const startItem = (currentPage - 1) * itemsPerPage + 1;
-                const endItem = Math.min(currentPage * itemsPerPage, filteredItems.length);
-                paginationInfo.textContent = `Page ${currentPage} of ${totalPages} (${filteredItems.length} items)`;
-                
-                generatePageNumbers();
-                
-                displayCurrentPageItems();
-                
-                document.getElementById('activeTabCount').textContent = filteredItems.length;
-            }
-
-            function generatePageNumbers() {
-                paginationNumbers.innerHTML = '';
-                
-                let startPage = Math.max(1, currentPage - 2);
-                let endPage = Math.min(totalPages, startPage + 4);
-                
-                if (endPage - startPage < 4) {
-                    startPage = Math.max(1, endPage - 4);
-                }
-                
-                if (startPage > 1) {
-                    const firstPageBtn = document.createElement('button');
-                    firstPageBtn.className = 'page-number';
-                    firstPageBtn.textContent = '1';
-                    firstPageBtn.addEventListener('click', () => goToPage(1));
-                    paginationNumbers.appendChild(firstPageBtn);
-                    
-                    if (startPage > 2) {
-                        const ellipsis = document.createElement('span');
-                        ellipsis.className = 'pagination-ellipsis';
-                        ellipsis.textContent = '...';
-                        paginationNumbers.appendChild(ellipsis);
-                    }
-                }
-                
-                for (let i = startPage; i <= endPage; i++) {
-                    const pageBtn = document.createElement('button');
-                    pageBtn.className = `page-number ${i === currentPage ? 'active' : ''}`;
-                    pageBtn.textContent = i;
-                    pageBtn.addEventListener('click', () => goToPage(i));
-                    paginationNumbers.appendChild(pageBtn);
-                }
-                
-                if (endPage < totalPages) {
-                    if (endPage < totalPages - 1) {
-                        const ellipsis = document.createElement('span');
-                        ellipsis.className = 'pagination-ellipsis';
-                        ellipsis.textContent = '...';
-                        paginationNumbers.appendChild(ellipsis);
-                    }
-                    
-                    const lastPageBtn = document.createElement('button');
-                    lastPageBtn.className = 'page-number';
-                    lastPageBtn.textContent = totalPages;
-                    lastPageBtn.addEventListener('click', () => goToPage(totalPages));
-                    paginationNumbers.appendChild(lastPageBtn);
-                }
-            }
-
-            function goToPage(page) {
-                currentPage = page;
-                updatePagination();
-            }
-
-            function goToPreviousPage() {
-                if (currentPage > 1) {
-                    currentPage--;
-                    updatePagination();
-                }
-            }
-
-            function goToNextPage() {
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    updatePagination();
-                }
-            }
-
-            function displayCurrentPageItems() {
-                const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
-                const container = activeTab === 'employees' ? document.getElementById('employeeList') : document.getElementById('leadList');
-                
-                container.innerHTML = '';
-                
-                if (filteredItems.length === 0) {
-                    const noResults = document.createElement('div');
-                    noResults.className = 'no-results';
-                    noResults.textContent = 'No items found';
-                    container.appendChild(noResults);
-                    return;
-                }
-                
-                const startIndex = (currentPage - 1) * itemsPerPage;
-                const endIndex = Math.min(startIndex + itemsPerPage, filteredItems.length);
-                const currentPageItems = filteredItems.slice(startIndex, endIndex);
-                
-                currentPageItems.forEach(item => {
-                    if (activeTab === 'employees') {
-                        createEmployeeItem(item, container);
-                    } else {
-                        createLeadItem(item, container);
-                    }
-                });
-                
-                if (activeTab === 'employees') {
-                    setupEmployeeAssignButtons();
-                } else {
-                    setupLeadViewButtons();
-                }
-            }
-
-            function createEmployeeItem(employee, container) {
-                const item = document.createElement('div');
-                item.className = 'employee-item';
-                item.setAttribute('data-id', employee.id);
-                item.setAttribute('data-name', employee.name);
-                
-                item.innerHTML = `
-                    <div class="employee-avatar">
-                        ${employee.name.slice(0, 2).toUpperCase()}
-                    </div>
-                    <div class="employee-details">
-                        <div class="employee-name">${employee.name}</div>
-                        <div class="employee-role">
-                            ${employee.department}${employee.designation ? ' - ' + employee.designation : ''}
-                        </div>
-                    </div>
-                    <button class="assign-btn" data-id="${employee.id}" data-name="${employee.name}" data-role="employee-assign">
-                        Assign
-                    </button>
-                `;
-                
-                container.appendChild(item);
-            }
-
-            function createLeadItem(lead, container) {
-                const item = document.createElement('div');
-                item.className = 'lead-item';
-                item.setAttribute('data-id', lead.id);
-                
-                const priorityConfig = getPriorityConfig(lead.priority || 'Medium');
-                
-                const createdDate = lead.createdAt || lead.date;
-                const isoDate = createdDate ? new Date(createdDate).toISOString() : '';
-                
-                let campaignDisplay = lead.campaign_display || '';
-                if (!campaignDisplay && lead.campaign) {
-                    campaignDisplay = getCampaignDisplayName(lead.campaign);
-                }
-                
-                const leadDateInfo = formatDateForDisplay(lead.date);
-                const createdDateInfo = formatDateForDisplay(lead.createdAt);
-                
-                item.innerHTML = `
-                    <div class="lead-avatar">
-                        ${(lead.ownerName || '').slice(0, 2).toUpperCase()}
-                    </div>
-                    <div class="lead-details">
-                        <div class="lead-header">
-                            <div class="lead-name-container">
-                                <span class="lead-priority-indicator">
-                                    ${priorityConfig.emoji}
-                                </span>
-                                <span class="lead-name">${lead.ownerName || 'No Name'}</span>
-                                ${leadDateInfo.short ? `
-                                <span class="lead-date-full" title="Lead Date: ${leadDateInfo.tooltip}">
-                                    <i class="far fa-calendar-check"></i>
-                                    ${leadDateInfo.short}
-                                </span>` : ''}
-                            </div>
-                            ${createdDateInfo.short ? `
-                            <div class="lead-date-compact" title="Created: ${createdDateInfo.tooltip}">
-                                <i class="far fa-calendar-alt"></i>
-                                ${createdDateInfo.short}
-                            </div>` : ''}
-                        </div>
-                        
-                        <div class="time-elapsed-badge" 
-                             data-created="${isoDate}"
-                             style="display: inline-flex; margin-top: 5px;">
-                            <i class="fas fa-clock"></i>
-                            <span class="elapsed-text">${lead.time_elapsed || 'Calculating...'}</span>
-                        </div>
-                        
-                        <div class="lead-phone">${lead.phoneNo || 'No Phone'}</div>
-                        <div class="lead-ticket">${lead.ticketNo || 'No Ticket'}</div>
-                        ${lead.createdTime ? `
-                        <div class="lead-datetime">
-                            <i class="far fa-clock"></i>
-                            Created at ${lead.createdTime}
-                        </div>` : ''}
-                        <div class="lead-info-row">
-                            <div class="lead-status">Status: ${lead.status || 'Unknown'}</div>
-                            <span style="color: ${priorityConfig.color}; font-weight: 600; font-size: 10px; padding: 2px 8px; border-radius: 10px; background: ${priorityConfig.color}15;">
-                                ${priorityConfig.text}
-                            </span>
-                        </div>
-                        ${campaignDisplay ? `
-                        <div class="lead-campaign" title="${campaignDisplay}">
-                            <i class="fas fa-bullhorn" style="font-size: 9px;"></i>
-                            <span>${campaignDisplay.substring(0, 40)}${campaignDisplay.length > 40 ? '...' : ''}</span>
-                        </div>` : ''}
-                    </div>
-                `;
-                
-                container.appendChild(item);
-            }
-
-            function getPriorityConfig(priority) {
-                const configs = {
-                    'High': { emoji: '🔴', color: '#ff4444', text: 'High' },
-                    'Medium': { emoji: '🟡', color: '#ffaa00', text: 'Medium' },
-                    'Low': { emoji: '🟢', color: '#22c55e', text: 'Low' }
-                };
-                
-                return configs[priority] || configs['Medium'];
-            }
-
-            function getCampaignDisplayName(campaignId) {
-                if (!campaignId) return '';
-                
-                if (campaignMap[campaignId]) {
-                    return campaignMap[campaignId].fullName || campaignMap[campaignId].displayName || campaignId;
-                }
-                
-                const campaignField = document.getElementById('campaign');
-                if (campaignField) {
-                    for (let option of campaignField.options) {
-                        if (option.value === campaignId) {
-                            return option.text;
-                        }
-                    }
-                }
-                
-                return campaignId;
-            }
-
-            function setupEmployeeAssignButtons() {
-                const employeeAssignButtons = document.querySelectorAll('#employeeList .assign-btn[data-role="employee-assign"]');
-                employeeAssignButtons.forEach(btn => {
-                    btn.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        const empId = this.getAttribute('data-id');
-                        const empName = this.getAttribute('data-name');
-                        const url = "{% url 'app5:lead_assign_list' %}";
-                        window.location.href = url;
-                    });
-                });
-            }
-
-            function setupLeadViewButtons() {
-                const leadItems = document.querySelectorAll('#leadList .lead-item');
-                
-                leadItems.forEach(item => {
-                    item.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        
-                        leadItems.forEach(i => i.classList.remove('selected'));
-                        
-                        this.classList.add('selected');
-                        
-                        const leadId = this.getAttribute('data-id');
-                        
-                        // Ensure leadId is valid
-                        if (!leadId || isNaN(leadId)) {
-                            console.error('Invalid lead ID:', leadId);
-                            showAutoFillNotification('Error: Invalid lead ID', 'error');
-                            return;
-                        }
-                        
-                        const lead = leads.find(l => l.id == leadId);
-                        
-                        if (lead) {
-                            // FIXED: Use simple URL construction to avoid Django template tag issues
-                            handleLoadLeadForEdit(lead);
-                        } else {
-                            console.error('Lead not found in leads array');
-                            showAutoFillNotification('Error: Lead data not found', 'error');
-                        }
-                    });
-                });
-            }
-
-            // FIXED FUNCTION: Handle loading lead for edit
-            function handleLoadLeadForEdit(leadData) {
-                console.log('Loading lead data for edit:', leadData);
-                
-                // Validate lead data
-                if (!leadData || typeof leadData !== 'object') {
-                    console.error('Invalid lead data object');
-                    showAutoFillNotification('Error: Invalid lead data', 'error');
-                    return;
-                }
-                
-                if (!leadData.id || isNaN(parseInt(leadData.id))) {
-                    console.error('Invalid lead ID:', leadData.id);
-                    showAutoFillNotification('Error: Invalid lead ID', 'error');
-                    return;
-                }
-                
-                if (!leadData.ownerName) {
-                    console.error('Missing owner name');
-                    showAutoFillNotification('Error: Missing owner name', 'error');
-                    return;
-                }
-                
-                // Ask for confirmation before loading new lead
-                const confirmMessage = `Load lead data for "${leadData.ownerName}" (ID: ${leadData.id})? Current unsaved changes will be lost.`;
-                
-                if (confirm(confirmMessage)) {
-                    try {
-                        // Simple URL construction - avoids Django template tag issues
-                        const editUrl = `/app5/lead/${leadData.id}/edit/`;
-                        console.log('Redirecting to edit URL:', editUrl);
-                        window.location.href = editUrl;
-                        
-                    } catch (error) {
-                        console.error('Error generating edit URL:', error);
-                        showAutoFillNotification('Error: Could not redirect to edit page', 'error');
-                    }
-                }
-            }
-
-            function formatDateForInput(dateString) {
-                if (!dateString) return '';
-                
-                try {
-                    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
-                        return dateString;
-                    }
-                    
-                    let dateObj;
-                    
-                    if (typeof dateString === 'string' && dateString.includes('T')) {
-                        dateObj = new Date(dateString);
-                    } else {
-                        dateObj = new Date(dateString);
-                    }
-                    
-                    if (isNaN(dateObj.getTime())) {
-                        console.warn('Invalid date format:', dateString);
-                        return '';
-                    }
-                    
-                    const year = dateObj.getFullYear();
-                    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-                    const day = String(dateObj.getDate()).padStart(2, '0');
-                    
-                    return `${year}-${month}-${day}`;
-                } catch (error) {
-                    console.error('Error formatting date:', error, dateString);
-                    return '';
-                }
-            }
-
-            function setSelectValue(selectId, value) {
-                const select = document.getElementById(selectId);
-                if (!select || !value) return;
-                
-                let valueFound = false;
-                
-                for (let i = 0; i < select.options.length; i++) {
-                    const option = select.options[i];
-                    if (option.value === value || option.text === value) {
-                        option.selected = true;
-                        valueFound = true;
-                        break;
-                    }
-                }
-                
-                if (!valueFound) {
-                    select.value = value;
-                }
-            }
-
-            // ========== NAVIGATION ==========
-
-            function setupNavigationMenu() {
-                const navLinks = document.querySelectorAll('.nav-link');
-                navLinks.forEach(link => {
-                    link.addEventListener('click', function(e) {
-                        if (this.getAttribute('href').startsWith('#')) {
-                            e.preventDefault();
-                            navLinks.forEach(l => l.classList.remove('active'));
-                            this.classList.add('active');
-                        }
-                    });
-                });
-            }
-
-            // ========== INITIALIZE APPLICATION ==========
-            
+            // Initialize everything from the original form
             initializeApp();
-
-            function displayCampaignDetails(selectElement) {
-                const selectedOption = selectElement.options[selectElement.selectedIndex];
-                const detailsBox = document.getElementById('campaign-details-box');
-                
-                if (!selectedOption.value) {
-                    if (detailsBox) detailsBox.style.display = 'none';
-                    return;
-                }
-                
-                const campaignData = campaignMap[selectElement.value];
-                
-                if (!campaignData) {
-                    console.warn('Campaign data not found for ID:', selectElement.value);
-                    if (detailsBox) detailsBox.style.display = "none";
-                    return;
-                }
-                
-                const cId = document.getElementById("c-id");
-                const cName = document.getElementById("c-name");
-                const cSoftware = document.getElementById("c-software");
-                const cStatus = document.getElementById("c-status");
-                
-                if (cId) cId.textContent = campaignData.id || '-';
-                if (cName) cName.textContent = campaignData.name || '-';
-                if (cSoftware) cSoftware.textContent = campaignData.software || '-';
-                
-                if (cStatus) {
-                    const status = campaignData.status || 'draft';
-                    cStatus.innerHTML = `<span class="status-badge status-${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>`;
-                }
-                
-                if (detailsBox) detailsBox.style.display = 'block';
-            }
-
-            function closeCampaignDetails() {
-                const detailsBox = document.getElementById('campaign-details-box');
-                if (detailsBox) detailsBox.style.display = 'none';
-            }
-
-        });
-
-    </script>
-
-   <script>
-(function() {
-    'use strict';
-    
-    const CONFIG = {
-        STORAGE_KEY: 'selectedLeadData',
-        LEAD_ID_PARAM: 'lead_id',
-        AUTO_LOAD_DELAY: 300
-    };
-    
-    function saveLeadToStorage(leadData) {
-        try {
-            localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(leadData));
-            console.log('✅ Lead saved:', leadData.ownerName);
-            return true;
-        } catch (error) {
-            console.error('❌ Error saving lead:', error);
-            return false;
-        }
-    }
-    
-    function getLeadFromStorage() {
-        try {
-            const data = localStorage.getItem(CONFIG.STORAGE_KEY);
-            return data ? JSON.parse(data) : null;
-        } catch (error) {
-            console.error('❌ Error reading lead:', error);
-            return null;
-        }
-    }
-    
-    function getLeadIdFromURL() {
-        const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get(CONFIG.LEAD_ID_PARAM);
-    }
-    
-    function enhanceNavigationLinks(leadId) {
-        if (!leadId) return;
-        
-        document.querySelectorAll('.nav-link[href*="requirements"], .nav-link[href*="quotation"], .nav-link[href*="event"]').forEach(link => {
-            const href = link.getAttribute('href');
-            if (href && !href.includes('#') && !href.includes('lead_id=')) {
-                const separator = href.includes('?') ? '&' : '?';
-                link.setAttribute('href', `${href}${separator}lead_id=${leadId}`);
-                console.log('🔗 Link updated:', link.textContent.trim());
-            }
-        });
-    }
-    
-    function enhanceLeadSelection() {
-        document.querySelectorAll('.lead-item').forEach(item => {
-            const newItem = item.cloneNode(true);
-            item.parentNode.replaceChild(newItem, item);
             
-            newItem.addEventListener('click', function(e) {
-                if (e.defaultPrevented) return;
-                
-                const leadId = this.getAttribute('data-id');
-                if (!leadId) return;
-                
-                console.log('🎯 Lead clicked:', leadId);
-                
-                const leadData = {
-                    id: leadId,
-                    ownerName: this.querySelector('.lead-name')?.textContent || '',
-                    phoneNo: this.querySelector('.lead-phone')?.textContent || '',
-                    ticket_number: this.querySelector('.lead-ticket')?.textContent || '',
-                    status: this.querySelector('.lead-status')?.textContent?.replace('Status: ', '') || '',
-                    priority: this.querySelector('.lead-priority-indicator')?.textContent?.trim() || ''
-                };
-                
-                saveLeadToStorage(leadData);
-                enhanceNavigationLinks(leadId);
-                
-                if (typeof window.populateFormWithLead === 'function') {
-                    window.populateFormWithLead(leadData);
+            // Set the current lead as selected in the directory
+            const currentLeadId = {{ lead.id }};
+            const leadItems = document.querySelectorAll('.lead-item');
+            leadItems.forEach(item => {
+                const leadId = parseInt(item.getAttribute('data-id'));
+                if (leadId === currentLeadId) {
+                    item.classList.add('selected');
+                    item.scrollIntoView({ block: 'center', behavior: 'smooth' });
                 }
-                
-                // For requirements page - use existing ticket selection function
-                if (typeof window.selectTicketFromDirectory === 'function') {
-                    window.selectTicketFromDirectory(leadData);
-                }
-                
-                // For quotation page - use existing lead selection function  
-                if (typeof window.handleLeadSelection === 'function' && this.classList.contains('lead-item')) {
-                    window.handleLeadSelection(this);
-                }
-                
-                document.querySelectorAll('.lead-item').forEach(i => i.classList.remove('selected'));
-                this.classList.add('selected');
             });
-        });
-        
-        console.log('✅ Lead selection enhanced');
-    }
-    
-    function autoLoadLead() {
-        const urlLeadId = getLeadIdFromURL();
-        
-        if (urlLeadId) {
-            console.log('🔄 Loading from URL:', urlLeadId);
-            const leadItem = document.querySelector(`.lead-item[data-id="${urlLeadId}"]`);
-            if (leadItem) {
-                setTimeout(() => {
-                    leadItem.click();
-                    leadItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }, CONFIG.AUTO_LOAD_DELAY);
-                return;
-            }
-        }
-        
-        const storedLead = getLeadFromStorage();
-        if (storedLead && storedLead.id) {
-            console.log('🔄 Loading from storage:', storedLead.ownerName);
-            const leadItem = document.querySelector(`.lead-item[data-id="${storedLead.id}"]`);
-            if (leadItem) {
-                setTimeout(() => {
-                    leadItem.click();
-                }, CONFIG.AUTO_LOAD_DELAY);
-            } else {
-                console.log('📋 Lead not in directory, using stored data');
-                if (typeof window.populateFormWithLead === 'function') {
-                    window.populateFormWithLead(storedLead);
-                }
-                enhanceNavigationLinks(storedLead.id);
-            }
-        }
-    }
-    
-    function init() {
-        console.log('🚀 Navigation System Starting...');
-        
-        enhanceLeadSelection();
-        
-        const path = window.location.pathname;
-        if (path.includes('lead') || path.includes('form') || 
-            path.includes('requirement') || path.includes('quotation')) {
-            autoLoadLead();
-        }
-        
-        console.log('✅ Navigation System Ready');
-    }
-    
-    window.clearLeadSelection = function() {
-        try {
-            localStorage.removeItem(CONFIG.STORAGE_KEY);
-            document.querySelectorAll('.lead-item').forEach(item => {
-                item.classList.remove('selected');
-            });
-            console.log('🧹 Lead selection cleared');
-        } catch (error) {
-            console.error('Error clearing selection:', error);
-        }
-    };
-    
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
-    
-})();
-</script> 
-<script>
-(function() {
-    'use strict';
-    
-    const CONFIG = {
-        STORAGE_KEY: 'selectedLeadData',
-        LEAD_ID_PARAM: 'lead_id',
-        AUTO_LOAD_DELAY: 300
-    };
-    
-    function saveLeadToStorage(leadData) {
-        try {
-            localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(leadData));
-            console.log('✅ Lead saved:', leadData.ownerName);
-            return true;
-        } catch (error) {
-            console.error('❌ Error saving lead:', error);
-            return false;
-        }
-    }
-    
-    function getLeadFromStorage() {
-        try {
-            const data = localStorage.getItem(CONFIG.STORAGE_KEY);
-            return data ? JSON.parse(data) : null;
-        } catch (error) {
-            console.error('❌ Error reading lead:', error);
-            return null;
-        }
-    }
-    
-    function getLeadIdFromURL() {
-        const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get(CONFIG.LEAD_ID_PARAM);
-    }
-    
-    function enhanceNavigationLinks(leadId) {
-        if (!leadId) return;
-        
-        document.querySelectorAll('.nav-link[href*="requirements"], .nav-link[href*="quotation"], .nav-link[href*="event"]').forEach(link => {
-            const href = link.getAttribute('href');
-            if (href && !href.includes('#') && !href.includes('lead_id=')) {
-                const separator = href.includes('?') ? '&' : '?';
-                link.setAttribute('href', `${href}${separator}lead_id=${leadId}`);
-                console.log('🔗 Link updated:', link.textContent.trim());
-            }
-        });
-    }
-    
-    function enhanceLeadSelection() {
-        document.querySelectorAll('.lead-item').forEach(item => {
-            const newItem = item.cloneNode(true);
-            item.parentNode.replaceChild(newItem, item);
             
-            newItem.addEventListener('click', function(e) {
-                if (e.defaultPrevented) return;
-                
-                const leadId = this.getAttribute('data-id');
-                if (!leadId) return;
-                
-                console.log('🎯 Lead clicked:', leadId);
-                
-                const leadData = {
-                    id: leadId,
-                    ownerName: this.querySelector('.lead-name')?.textContent || '',
-                    phoneNo: this.querySelector('.lead-phone')?.textContent || '',
-                    ticket_number: this.querySelector('.lead-ticket')?.textContent || '',
-                    status: this.querySelector('.lead-status')?.textContent?.replace('Status: ', '') || '',
-                    priority: this.querySelector('.lead-priority-indicator')?.textContent?.trim() || ''
-                };
-                
-                saveLeadToStorage(leadData);
-                enhanceNavigationLinks(leadId);
-                
-                if (typeof window.populateFormWithLead === 'function') {
-                    window.populateFormWithLead(leadData);
-                }
-                
-                // For requirements page - use existing ticket selection function
-                if (typeof window.selectTicketFromDirectory === 'function') {
-                    window.selectTicketFromDirectory(leadData);
-                }
-                
-                // For quotation page - use existing lead selection function  
-                if (typeof window.handleLeadSelection === 'function' && this.classList.contains('lead-item')) {
-                    window.handleLeadSelection(this);
-                }
-                
-                document.querySelectorAll('.lead-item').forEach(i => i.classList.remove('selected'));
-                this.classList.add('selected');
-            });
-        });
-        
-        console.log('✅ Lead selection enhanced');
-    }
-    
-    function autoLoadLead() {
-        const urlLeadId = getLeadIdFromURL();
-        
-        if (urlLeadId) {
-            console.log('🔄 Loading from URL:', urlLeadId);
-            const leadItem = document.querySelector(`.lead-item[data-id="${urlLeadId}"]`);
-            if (leadItem) {
-                setTimeout(() => {
-                    leadItem.click();
-                    leadItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }, CONFIG.AUTO_LOAD_DELAY);
-                return;
-            }
-        }
-        
-        const storedLead = getLeadFromStorage();
-        if (storedLead && storedLead.id) {
-            console.log('🔄 Loading from storage:', storedLead.ownerName);
-            const leadItem = document.querySelector(`.lead-item[data-id="${storedLead.id}"]`);
-            if (leadItem) {
-                setTimeout(() => {
-                    leadItem.click();
-                }, CONFIG.AUTO_LOAD_DELAY);
-            } else {
-                console.log('📋 Lead not in directory, using stored data');
-                if (typeof window.populateFormWithLead === 'function') {
-                    window.populateFormWithLead(storedLead);
-                }
-                enhanceNavigationLinks(storedLead.id);
-            }
-        }
-    }
-    
-    function init() {
-        console.log('🚀 Navigation System Starting...');
-        
-        enhanceLeadSelection();
-        
-        const path = window.location.pathname;
-        if (path.includes('lead') || path.includes('form') || 
-            path.includes('requirement') || path.includes('quotation')) {
-            autoLoadLead();
-        }
-        
-        console.log('✅ Navigation System Ready');
-    }
-    
-    window.clearLeadSelection = function() {
-        try {
-            localStorage.removeItem(CONFIG.STORAGE_KEY);
-            document.querySelectorAll('.lead-item').forEach(item => {
-                item.classList.remove('selected');
-            });
-            console.log('🧹 Lead selection cleared');
-        } catch (error) {
-            console.error('Error clearing selection:', error);
-        }
-    };
-    
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
-    
-})();
-
-(function() {
-    'use strict';
-    
-    // =====================================================
-    // CONFIGURATION
-    // =====================================================
-    const CONFIG = {
-        STORAGE_KEY: 'selectedLeadData',
-        SELECTED_LEAD_ID_KEY: 'selectedLeadId',
-        AUTO_LOAD_DELAY: 300
-    };
-    
-    // =====================================================
-    // STORAGE FUNCTIONS
-    // =====================================================
-    
-    function saveSelectedLeadId(leadId) {
-        try {
-            localStorage.setItem(CONFIG.SELECTED_LEAD_ID_KEY, leadId);
-            console.log('✅ Selected Lead ID saved:', leadId);
-            return true;
-        } catch (error) {
-            console.error('❌ Error saving lead ID:', error);
-            return false;
-        }
-    }
-    
-    function getSelectedLeadId() {
-        try {
-            return localStorage.getItem(CONFIG.SELECTED_LEAD_ID_KEY);
-        } catch (error) {
-            console.error('❌ Error getting lead ID:', error);
-            return null;
-        }
-    }
-    
-    function saveLeadToStorage(leadData) {
-        try {
-            const enrichedData = {
-                ...leadData,
-                timestamp: Date.now(),
-                sourcePage: window.location.pathname
-            };
-            localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(enrichedData));
-            saveSelectedLeadId(leadData.id);
-            console.log('✅ Lead data saved:', leadData.ownerName || leadData.name);
-            return true;
-        } catch (error) {
-            console.error('❌ Error saving lead:', error);
-            return false;
-        }
-    }
-    
-    function getLeadFromStorage() {
-        try {
-            const data = localStorage.getItem(CONFIG.STORAGE_KEY);
-            return data ? JSON.parse(data) : null;
-        } catch (error) {
-            console.error('❌ Error reading lead:', error);
-            return null;
-        }
-    }
-    
-    // =====================================================
-    // LEAD HIGHLIGHTING FUNCTIONS
-    // =====================================================
-    
-    function highlightLeadInDirectory(leadId) {
-        if (!leadId) return false;
-        
-        // Remove all previous selections
-        document.querySelectorAll('.lead-item').forEach(item => {
-            item.classList.remove('selected');
-        });
-        
-        // Find and highlight the current lead
-        const leadItem = document.querySelector(`.lead-item[data-id="${leadId}"]`);
-        
-        if (leadItem) {
-            leadItem.classList.add('selected');
-            
-            // Scroll into view
+            // Load existing requirements if any
             setTimeout(() => {
-                leadItem.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'center' 
+                loadExistingRequirements();
+            }, 500);
+        });
+        
+        function loadExistingRequirements() {
+            // This function will load existing requirements from the lead
+            const requirementDetails = JSON.parse(document.getElementById('hiddenRequirementDetails').value || '[]');
+            
+            if (requirementDetails.length > 0) {
+                const tableBody = document.getElementById('table-body');
+                tableBody.innerHTML = '';
+                
+                requirementDetails.forEach((req, index) => {
+                    // Create a new row for each requirement
+                    // This should be integrated with your existing addNewRow function
+                    // For now, we'll just update the count badge
+                    const itemsCountBadge = document.getElementById('itemsCountBadge');
+                    itemsCountBadge.textContent = `${requirementDetails.length} items`;
                 });
-            }, 100);
-            
-            console.log('✅ Lead highlighted in directory:', leadId);
-            return true;
-        }
-        
-        console.log('⚠️ Lead not found in directory:', leadId);
-        return false;
-    }
-    
-    // =====================================================
-    // LEAD SELECTION ENHANCEMENT
-    // =====================================================
-    
-    function enhanceLeadSelection() {
-        const leadItems = document.querySelectorAll('.lead-item[data-id]');
-        
-        leadItems.forEach(item => {
-            // Clone to remove existing listeners
-            const newItem = item.cloneNode(true);
-            item.parentNode.replaceChild(newItem, item);
-            
-            newItem.addEventListener('click', function(e) {
-                // Don't interfere with button clicks
-                if (e.target.tagName === 'BUTTON' || 
-                    e.target.closest('button')) {
-                    return;
-                }
                 
-                if (e.defaultPrevented) return;
-                
-                const leadId = this.getAttribute('data-id');
-                if (!leadId) return;
-                
-                // Gather lead data
-                const leadData = {
-                    id: leadId,
-                    ownerName: this.querySelector('.lead-name')?.textContent.trim() || '',
-                    phoneNo: this.querySelector('.lead-phone')?.textContent.trim() || '',
-                    ticket_number: this.querySelector('.lead-ticket')?.textContent.trim() || '',
-                    status: this.querySelector('.lead-status')?.textContent.replace('Status: ', '').trim() || '',
-                    priority: this.getAttribute('data-priority') || ''
-                };
-                
-                console.log('🎯 Lead clicked:', leadData);
-                
-                // Save to storage
-                saveLeadToStorage(leadData);
-                
-                // Highlight in directory
-                highlightLeadInDirectory(leadId);
-                
-                // Navigate to edit page
-                const currentPath = window.location.pathname;
-                
-                if (currentPath.includes('lead') && !currentPath.includes('edit')) {
-                    // On lead_form.html - redirect to edit page
-                    console.log('📄 Redirecting to edit page...');
-                    window.location.href = `/app5/lead/${leadId}/edit/`;
-                } else if (currentPath.includes('edit')) {
-                    // On lead_form_edit.html - reload with new lead
-                    console.log('📝 Loading new lead in edit page...');
-                    window.location.href = `/app5/lead/${leadId}/edit/`;
-                }
-            });
-        });
-        
-        console.log(`✅ Enhanced ${leadItems.length} lead items`);
-    }
-    
-    // =====================================================
-    // AUTO-HIGHLIGHT ON PAGE LOAD
-    // =====================================================
-    
-    function autoHighlightSelectedLead() {
-        // Get the current editing lead ID from the page (for edit page)
-        const currentLeadIdField = document.querySelector('input[name="lead_id"]');
-        let currentEditingLeadId = null;
-        
-        if (currentLeadIdField) {
-            currentEditingLeadId = currentLeadIdField.value;
-        }
-        
-        // Priority 1: If we're on edit page, use the current editing lead
-        if (currentEditingLeadId) {
-            console.log('📝 Edit page - highlighting current lead:', currentEditingLeadId);
-            saveSelectedLeadId(currentEditingLeadId);
-            
-            setTimeout(() => {
-                highlightLeadInDirectory(currentEditingLeadId);
-            }, CONFIG.AUTO_LOAD_DELAY);
-            
-            return true;
-        }
-        
-        // Priority 2: Use stored lead ID
-        const storedLeadId = getSelectedLeadId();
-        
-        if (storedLeadId) {
-            console.log('💾 Storage - highlighting lead:', storedLeadId);
-            
-            setTimeout(() => {
-                highlightLeadInDirectory(storedLeadId);
-            }, CONFIG.AUTO_LOAD_DELAY);
-            
-            return true;
-        }
-        
-        console.log('ℹ️ No lead to highlight');
-        return false;
-    }
-    
-    // =====================================================
-    // NAVIGATION LINK ENHANCEMENT
-    // =====================================================
-    
-    function enhanceNavigationLinks(leadId) {
-        if (!leadId) return;
-        
-        document.querySelectorAll('.nav-link[href*="requirements"], .nav-link[href*="quotation"], .nav-link[href*="event"]').forEach(link => {
-            const href = link.getAttribute('href');
-            if (href && !href.includes('#') && !href.includes('lead_id=')) {
-                const separator = href.includes('?') ? '&' : '?';
-                link.setAttribute('href', `${href}${separator}lead_id=${leadId}`);
+                updateGrandTotal();
             }
-        });
-    }
-    
-    // =====================================================
-    // INITIALIZATION
-    // =====================================================
-    
-    function init() {
-        console.log('🚀 Universal Lead Selection System Starting...');
-        console.log('📍 Current page:', window.location.pathname);
-        
-        // Enhance all lead items in directory
-        enhanceLeadSelection();
-        
-        // Auto-highlight the selected lead
-        autoHighlightSelectedLead();
-        
-        // Get current or stored lead ID for navigation enhancement
-        const currentLeadIdField = document.querySelector('input[name="lead_id"]');
-        const leadId = currentLeadIdField ? currentLeadIdField.value : getSelectedLeadId();
-        
-        if (leadId) {
-            enhanceNavigationLinks(leadId);
         }
         
-        console.log('✅ Universal Lead Selection System Ready');
-    }
-    
-    // =====================================================
-    // GLOBAL API
-    // =====================================================
-    
-    window.leadSelection = {
-        save: saveLeadToStorage,
-        load: getLeadFromStorage,
-        highlight: highlightLeadInDirectory,
-        getCurrentLeadId: getSelectedLeadId,
-        refresh: enhanceLeadSelection
-    };
-    
-    // =====================================================
-    // START
-    // =====================================================
-    
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
-    
-})();
-
-document.addEventListener("DOMContentLoaded", function () {
-    const params = new URLSearchParams(window.location.search);
-    const pos = params.get("pos");
-
-    if (pos !== null) {
-        const leadItems = document.querySelectorAll(".lead-item");
-
-        if (leadItems[pos]) {
-            leadItems[pos].classList.add("selected");
-            leadItems[pos].scrollIntoView({
-                behavior: "smooth",
-                block: "center"
+        function submitForm() {
+            if (!validateForm()) {
+                showMessage('Please fill in all required fields marked in red.', 'error');
+                return;
+            }
+            
+            // Update requirements data before submission
+            updateRequirementsData();
+            
+            // Show loading state
+            const submitBtn = document.querySelector('.update-btn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> &nbsp; Updating...';
+            submitBtn.disabled = true;
+            
+            // Submit the form
+            document.getElementById('customerForm').submit();
+            
+            // Re-enable button after 5 seconds in case submission fails
+            setTimeout(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }, 5000);
+        }
+        
+        function updateRequirementsData() {
+            // Collect requirements data from the table
+            const requirements = [];
+            const tableRows = document.querySelectorAll('#table-body tr');
+            
+            tableRows.forEach(row => {
+                const section = row.querySelector('.section-select')?.value;
+                const itemId = row.querySelector('.item-select')?.value;
+                const unit = row.querySelector('.unit-input')?.value;
+                const price = parseFloat(row.querySelector('.price-input')?.value) || 0;
+                const quantity = parseInt(row.querySelector('.qty-input')?.value) || 0;
+                const total = parseFloat(row.querySelector('.total-input')?.value) || 0;
+                
+                if (itemId && section) {
+                    requirements.push({
+                        section: section,
+                        item_id: itemId,
+                        unit: unit,
+                        price: price,
+                        quantity: quantity,
+                        total: total
+                    });
+                }
             });
+            
+            // Update hidden fields
+            document.getElementById('hiddenRequirementIds').value = requirements.map(r => r.item_id).join(',');
+            document.getElementById('hiddenRequirementDetails').value = JSON.stringify(requirements);
         }
-    }
-});
-
-function openLead(leadId, index) {
-    window.location.href = `/app5/lead/edit/${leadId}/?pos=${index}`;
-}
-
-// =====================================================
-// HELPER FUNCTION: Clear Selection
-// =====================================================
-function clearLeadSelection() {
-    try {
-        localStorage.removeItem('selectedLeadId');
-        localStorage.removeItem('selectedLeadData');
         
-        document.querySelectorAll('.lead-item').forEach(item => {
-            item.classList.remove('selected');
-        });
+        function updateGrandTotal() {
+            let grandTotal = 0;
+            const tableRows = document.querySelectorAll('#table-body tr');
+            
+            tableRows.forEach(row => {
+                const totalInput = row.querySelector('.total-input');
+                if (totalInput) {
+                    grandTotal += parseFloat(totalInput.value) || 0;
+                }
+            });
+            
+            document.getElementById('grand-total').textContent = grandTotal.toFixed(2);
+        }
         
-        console.log('🗑️ Lead selection cleared');
-    } catch (error) {
-        console.error('Error clearing selection:', error);
-    }
-}
-</script>
+        function showDeleteConfirmation() {
+            document.getElementById('deleteConfirmationModal').style.display = 'flex';
+        }
+        
+        function hideDeleteConfirmation() {
+            document.getElementById('deleteConfirmationModal').style.display = 'none';
+        }
+        
+        function deleteLead() {
+            // Redirect to delete URL
+            window.location.href = "{% url 'app5:lead_delete' lead.id %}";
+        }
+        
+        function showMessage(message, type = 'success') {
+            const modal = document.getElementById('messageModal');
+            const title = document.getElementById('messageTitle');
+            const text = document.getElementById('messageText');
+            
+            if (type === 'error') {
+                title.textContent = 'Error';
+                title.style.color = '#f44336';
+            } else {
+                title.textContent = 'Success';
+                title.style.color = '#4CAF50';
+            }
+            
+            text.textContent = message;
+            modal.style.display = 'flex';
+        }
+        
+        function hideMessageModal() {
+            document.getElementById('messageModal').style.display = 'none';
+        }
+        
+        // Add this to your existing openLead function
+        function openLead(leadId, index) {
+            // If we're already editing this lead, do nothing
+            if (parseInt(leadId) === {{ lead.id }}) {
+                return;
+            }
+            
+            // Otherwise, redirect to edit that lead
+            window.location.href = `/app5/lead/edit/${leadId}/`;
+        }
+        
+        // Override the clear form function for edit page
+        function handleClearForm() {
+            if (confirm('Are you sure you want to reset all changes? This will reload the original lead data.')) {
+                window.location.reload();
+            }
+        }
+    </script>
 </body>
 </html>

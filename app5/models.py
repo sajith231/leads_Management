@@ -633,6 +633,35 @@ class Lead(models.Model):
         else:
             super().save(*args, **kwargs)
 
+
+    @property
+    def requirements_json(self):
+        """Return requirements as JSON string"""
+        from django.core.serializers import serialize
+        import json
+        
+        requirements = []
+        for req in self.requirements.all():
+            requirements.append({
+                'id': req.id,
+                'item_id': req.item.id if req.item else None,
+                'item_name': req.item_name,
+                'section': req.section,
+                'unit': req.unit,
+                'price': str(req.price),
+                'quantity': req.quantity,
+                'total': str(req.total),
+                'item': {
+                    'id': req.item.id if req.item else None,
+                    'name': req.item.name if req.item else req.item_name,
+                    'section': req.item.section if req.item else req.section,
+                    'unit_of_measure': req.item.unit_of_measure if req.item else req.unit,
+                    'mrp': str(req.item.mrp) if req.item else '0.00',
+                } if req.item else None
+            })
+        
+        return json.dumps(requirements)
+
     # =====================================================
     # SMART DISPLAY NAME FOR DIRECTORY
     # =====================================================

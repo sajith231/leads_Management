@@ -3413,7 +3413,7 @@ def lead_form_view(request):
 
             # Fetch active leads with all necessary fields including priority
             active_leads_qs = Lead.objects.filter(status__iexact='Active').order_by('-created_at')[:50]
-            
+            active_leads = Lead.objects.filter(status='Active').prefetch_related('requirements').order_by('-created_at')
             # Process each lead to ensure all fields are properly formatted
             for lead in active_leads_qs:
                 # ✅ Get campaign display name if campaign ID exists
@@ -3496,6 +3496,8 @@ def lead_form_view(request):
                     'Consultant': lead.Consultant if lead.Consultant else '',
                     'requirement': lead.requirement if lead.requirement else '',
                     'details': lead.details if lead.details else '',
+                    'requirements': lead.requirements.all(),
+                    'requirements_count': lead.requirements.count(),
                     'date': lead.date.strftime('%Y-%m-%d') if lead.date else '',
                     'created_at': lead.created_at if hasattr(lead, 'created_at') else None,
                     'time_elapsed': time_elapsed,
@@ -3867,15 +3869,179 @@ def lead_form_view(request):
             # ✅ ADD API DATA TO CONTEXT FOR RE-RENDER
             context['api_customer_data'] = api_customer_data
             context['api_data_count'] = len(api_customer_data)
+            context['items_by_section'] = get_items_by_section()  # Added this line
             return render(request, "lead_form.html", context)
 
-    # GET: prepare dropdowns and render form
+    # ============================
+    # ✅ LOAD ITEMS FROM purchase_order APP (SECTION-WISE) - FIXED
+    # ============================
+    items_by_section = get_items_by_section()
+
+    # ✅ GET CONTEXT DATA
     context = get_lead_form_context(existing_firms, active_leads_data, active_users)
     # ✅ ADD API CUSTOMER DATA TO CONTEXT
     context['api_customer_data'] = api_customer_data
     context['api_data_count'] = len(api_customer_data)
+    context['items_by_section'] = items_by_section  # This was missing
     
     return render(request, "lead_form.html", context)
+
+
+def get_items_by_section():
+    """Helper function to load items grouped by section"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    items_by_section = {}
+    
+    try:
+        from purchase_order.models import Item as POItem
+
+        # Fetch all active items ordered by section and name
+        po_items = POItem.objects.filter(is_active=True).order_by('section', 'name')
+        
+        logger.info(f"✅ Fetched {po_items.count()} items from purchase_order")
+        
+        for item in po_items:
+            # Get section from item or default to GENERAL
+            section_raw = (item.section or 'GENERAL').upper().strip()
+            
+            # Normalize section names
+            section = section_raw
+            if 'HARDWARE' in section_raw:
+                section = 'HARDWARE'
+            elif 'SOFTWARE' in section_raw:
+                section = 'SOFTWARE'
+            elif 'PAPER' in section_raw or 'ROLL' in section_raw:
+                section = 'PAPER_ROLLS'
+            elif not section_raw or section_raw == '':
+                section = 'GENERAL'
+            
+            # Create section if it doesn't exist
+            if section not in items_by_section:
+                items_by_section[section] = []
+            
+            # Get display name for section
+            section_display = section.replace('_', ' ').title()
+            
+            # Add item to section
+            items_by_section[section].append({
+                "id": item.id,
+                "name": item.name,
+                "section": section,
+                "section_display": section_display,
+                "unit_of_measure": item.unit_of_measure or "pcs",
+                "mrp": float(item.mrp or 0),
+                "hsn_code": item.hsn_code or "",
+                "description": item.description or "",
+            })
+        
+        logger.info(f"✅ Items grouped into {len(items_by_section)} sections: {list(items_by_section.keys())}")
+        
+    except Exception as e:
+        logger.error(f"❌ Could not load purchase_order items: {e}", exc_info=True)
+        # Provide sample data for testing
+        items_by_section = {
+            "HARDWARE": [
+                {"id": 1, "name": "Computer", "section": "HARDWARE", "section_display": "Hardware", 
+                 "unit_of_measure": "pcs", "mrp": 50000.0, "hsn_code": "8471", "description": "Desktop Computer"},
+                {"id": 2, "name": "Printer", "section": "HARDWARE", "section_display": "Hardware", 
+                 "unit_of_measure": "pcs", "mrp": 15000.0, "hsn_code": "8443", "description": "Laser Printer"},
+            ],
+            "SOFTWARE": [
+                {"id": 3, "name": "Accounting Software", "section": "SOFTWARE", "section_display": "Software", 
+                 "unit_of_measure": "license", "mrp": 25000.0, "hsn_code": "8523", "description": "Financial Accounting"},
+            ],
+            "GENERAL": [
+                {"id": 4, "name": "Office Chair", "section": "GENERAL", "section_display": "General", 
+                 "unit_of_measure": "pcs", "mrp": 5000.0, "hsn_code": "9401", "description": "Ergonomic Chair"},
+            ]
+        }
+    
+    return items_by_section
+
+
+def get_lead_form_context(existing_firms, active_leads_data, active_users):
+    """Helper function to get lead form context"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    context = {}
+    
+    try:
+        # Districts
+        from app5.models import District
+        context['districts'] = District.objects.all().order_by('name')
+    except Exception as e:
+        logger.debug(f"Could not load districts: {e}")
+        context['districts'] = []
+
+    try:
+        # States
+        from app5.models import State
+        context['states'] = State.objects.all().order_by('name')
+    except Exception as e:
+        logger.debug(f"Could not load states: {e}")
+        context['states'] = []
+
+    try:
+        # Departments (for branch dropdown)
+        from purchase_order.models import Department
+        context['departments'] = Department.objects.all().order_by('name')
+    except Exception as e:
+        logger.debug(f"Could not load departments: {e}")
+        context['departments'] = []
+
+    try:
+        # Business Natures
+        from app5.models import BusinessNature
+        context['business_natures'] = BusinessNature.objects.all().order_by('name')
+    except Exception as e:
+        logger.debug(f"Could not load business natures: {e}")
+        context['business_natures'] = []
+
+    try:
+        # References
+        from app5.models import Reference
+        context['references'] = Reference.objects.all().order_by('ref_name')
+    except Exception as e:
+        logger.debug(f"Could not load references: {e}")
+        context['references'] = []
+
+    try:
+        # Campaigns
+        from campaigning.models import Campaigning
+        campaigns = Campaigning.objects.all().order_by('-campaign_unique_id')[:100]
+        context['campaigns'] = campaigns
+        logger.info(f"Loaded {campaigns.count()} campaigns")
+    except Exception as e:
+        logger.debug(f"Could not load campaigns: {e}")
+        context['campaigns'] = []
+
+    # Pass other data
+    context['existing_firms'] = existing_firms
+    context['active_leads_data'] = active_leads_data
+    context['active_users'] = active_users
+    context['today'] = timezone.now().date()
+    
+    # ✅ Load items - This should already be loaded separately
+    # items_by_section = get_items_by_section()  # Don't call here, called in main function
+    # context['items_by_section'] = items_by_section
+    
+    # ✅ FLAT LIST OF ALL ITEMS FOR TEMPLATE (JavaScript needs this)
+    try:
+        from purchase_order.models import Item as POItem
+        all_items = POItem.objects.filter(is_active=True).order_by('name')
+        context['items'] = all_items
+        logger.info(f"✅ Loaded {all_items.count()} items for template")
+    except Exception as e:
+        logger.warning(f"Could not load all items: {e}")
+        context['items'] = []
+    
+    return context
+
+
+    
 
 
 def get_lead_form_context(existing_firms, active_leads_data, active_users):
@@ -4121,6 +4287,7 @@ def lead_detail_api(request, lead_id):
         "consultant": lead.Consultant,
         "branch": lead.requirement,
         "notes": lead.details,
+        "requirementsJson": json.dumps(requirements),
         "date": lead.date.strftime('%Y-%m-%d') if getattr(lead, "date", None) else None,
         "created_at": lead.created_at.strftime('%Y-%m-%d %H:%M:%S') if getattr(lead, "created_at", None) else None,
         "updated_at": lead.updated_at.strftime('%Y-%m-%d %H:%M:%S') if getattr(lead, "updated_at", None) else None
@@ -4454,11 +4621,23 @@ def lead_edit(request, lead_id):
         'name', flat=True
     ).distinct()
 
+    # Get items grouped by section for requirements
+    items_by_section = {}
+    try:
+        all_items = Item.objects.all()
+        for item in all_items:
+            section = item.section if item.section else 'GENERAL'
+            if section not in items_by_section:
+                items_by_section[section] = []
+            items_by_section[section].append(item)
+    except:
+        items_by_section = {}
+
     # ========== PREPARE CONTEXT ==========
     context = {
-        'lead_data': lead_data,
-        'lead': lead,
-        'quotation': quotation,  # Added this line - this is what was missing!
+        'lead_data': lead_data,  # This is the main data that will populate the form
+        'lead': lead,  # The lead instance itself
+        'quotation': quotation,  # Quotation data if exists
         'business_natures': business_natures,
         'states': states,
         'districts': districts,
@@ -4474,7 +4653,7 @@ def lead_edit(request, lead_id):
         'existing_firms': existing_firms,
         'api_customer_data': standardized_api_data,
         'api_data_count': api_data_count,
-        'section_counts': {},
+        'items_by_section': items_by_section,  # Added this for requirements section
     }
     
     return render(request, "lead_form_edit.html", context)
@@ -5257,386 +5436,7 @@ def lead_detail(request, lead_id):
 
     return JsonResponse({"success": True, "data": data})
 
-# app5/views.py
-# Add these imports near the top of your views.py (if not already present)
-import json
-import logging
-from django.db.models import Q
-from django.utils import timezone
-from django.shortcuts import render
 
-logger = logging.getLogger(__name__)
-
-# In views.py, update the requirement_list function to ensure proper data loading
-
-def requirement_list(request):
-    """Display requirement list page with items, users, and leads"""
-    from django.db.models import Q, Count
-    from django.utils import timezone
-    import json
-    import logging
-    
-    logger = logging.getLogger(__name__)
-    logger.info("=" * 60)
-    logger.info("REQUIREMENT LIST VIEW - START")
-    logger.info("=" * 60)
-    
-    items_list = []
-    section_counts = {}
-    
-    # ==================== ITEMS LOADING ====================
-    try:
-        # ✅ Try to import from purchase_order app first
-        try:
-            from purchase_order.models import Item as POItem
-            items_qs = POItem.objects.filter(is_active=True).order_by('section', 'name')
-            logger.info(f"✅ Using purchase_order.Item model - {items_qs.count()} items found")
-            using_po_items = True
-        except (ImportError, Exception) as e:
-            # ✅ Fallback to app5 Item model (NO section field)
-            logger.info(f"⚠️ purchase_order.Item not available: {e}")
-            try:
-                from .models import Item as App5Item
-                items_qs = App5Item.objects.all().order_by('name')
-                logger.info(f"✅ Using app5.Item model - {items_qs.count()} items found")
-                using_po_items = False
-            except Exception as e2:
-                logger.error(f"❌ Both item models failed: {e2}")
-                items_qs = []
-                using_po_items = False
-        
-        # Process items into structured format
-        section_values = set()
-        items_processed = 0
-        
-        for item in items_qs:
-            try:
-                # ✅ Get section value (only for purchase_order items)
-                if using_po_items and hasattr(item, 'section'):
-                    section_value = getattr(item, 'section', None)
-                    
-                    if not section_value or str(section_value).strip() == '':
-                        section_value = 'GENERAL'
-                    else:
-                        section_value = str(section_value).upper().strip()
-                        
-                        # Standardize section names
-                        if 'HARDWARE' in section_value:
-                            section_value = 'HARDWARE'
-                        elif 'SOFTWARE' in section_value:
-                            section_value = 'SOFTWARE'
-                        elif 'PAPER' in section_value or 'ROLL' in section_value:
-                            section_value = 'PAPER_ROLLS'
-                        elif 'GENERAL' in section_value:
-                            section_value = 'GENERAL'
-                else:
-                    # ✅ Default section for app5 items
-                    section_value = 'GENERAL'
-                
-                section_values.add(section_value)
-                section_display = section_value.replace('_', ' ').title()
-                
-                # ✅ Get item attributes safely with defaults
-                item_dict = {
-                    'id': getattr(item, 'id', 0),
-                    'name': getattr(item, 'name', 'Unknown Item'),
-                    'unit_of_measure': getattr(item, 'unit_of_measure', 'pcs'),
-                    'mrp': float(getattr(item, 'mrp', 0) or 0),
-                    'purchase_price': float(getattr(item, 'purchase_price', 0) or 0),
-                    'cost': float(getattr(item, 'cost', 0) or 0),
-                    'section': section_value,
-                    'section_display': section_display,
-                    'tax_percentage': float(getattr(item, 'tax_percentage', 0) or 0),
-                    'hsn_code': getattr(item, 'hsn_code', ''),
-                    'description': getattr(item, 'description', ''),
-                    'is_active': getattr(item, 'is_active', True) if hasattr(item, 'is_active') else True,
-                }
-                
-                items_list.append(item_dict)
-                items_processed += 1
-                
-            except Exception as e:
-                logger.warning(f"❌ Error processing item {getattr(item, 'id', '?')}: {e}")
-        
-        logger.info(f"✅ Processed {items_processed} items successfully")
-        logger.info(f"✅ Unique sections: {sorted(section_values)}")
-        
-        # Get section statistics
-        for section in ['GENERAL', 'HARDWARE', 'SOFTWARE', 'PAPER_ROLLS']:
-            count = sum(1 for item in items_list if item['section'] == section)
-            section_counts[section] = {
-                'label': section.replace('_', ' ').title(),
-                'count': count,
-                'percentage': round((count / max(len(items_list), 1)) * 100, 1)
-            }
-            
-    except Exception as e:
-        logger.error(f"❌ Critical error loading items: {e}", exc_info=True)
-        items_list = []
-        section_counts = {}
-    
-    # ==================== ACTIVE USERS ====================
-    active_users_list = []
-    try:
-        # Try multiple user model imports
-        try:
-            from .models import User
-        except ImportError:
-            try:
-                from app1.models import User
-            except ImportError:
-                from django.contrib.auth import get_user_model
-                User = get_user_model()
-        
-        # Determine filtering field
-        user_fields = [f.name for f in User._meta.get_fields()] if hasattr(User, '_meta') else []
-        
-        if "status" in user_fields:
-            active_users_qs = User.objects.filter(status__iexact="active").order_by("name")
-        elif "is_active" in user_fields:
-            active_users_qs = User.objects.filter(is_active=True).order_by("first_name", "last_name")
-        else:
-            active_users_qs = User.objects.all().order_by("name")
-        
-        # Process users
-        for u in active_users_qs:
-            try:
-                # Get display name
-                name = None
-                
-                if hasattr(u, 'name') and u.name:
-                    name = str(u.name).strip()
-                elif hasattr(u, 'get_full_name'):
-                    try:
-                        full_name = u.get_full_name().strip()
-                        if full_name:
-                            name = full_name
-                    except:
-                        pass
-                
-                if not name:
-                    first_name = getattr(u, 'first_name', '').strip()
-                    last_name = getattr(u, 'last_name', '').strip()
-                    if first_name or last_name:
-                        name = f"{first_name} {last_name}".strip()
-                
-                if not name:
-                    name = getattr(u, 'username', f'User #{getattr(u, "id", "?")}')
-                
-                # Build user dict
-                active_users_list.append({
-                    "id": getattr(u, 'id', 0),
-                    "name": name,
-                    "phone": getattr(u, "phone_number", "") or getattr(u, "phone", "") or "",
-                    "department": getattr(u, "department", "") or "",
-                    "designation": getattr(u, "designation", "") or "",
-                    "username": getattr(u, "username", ""),
-                    "email": getattr(u, "email", ""),
-                    "user_id": getattr(u, "userid", ""),
-                })
-                
-            except Exception as e:
-                logger.warning(f"❌ Error processing user: {e}")
-        
-        logger.info(f"✅ Loaded {len(active_users_list)} active users")
-        
-    except Exception as e:
-        logger.error(f"❌ Error loading users: {e}")
-        active_users_list = []
-    
-    # ==================== ACTIVE LEADS ====================
-    active_leads_list = []
-    try:
-        # Try multiple lead model imports
-        try:
-            from .models import Lead
-        except ImportError:
-            try:
-                from app1.models import Lead
-            except ImportError:
-                Lead = None
-        
-        if Lead:
-            # Get active leads with proper filtering
-            leads_qs = Lead.objects.filter(
-                status__iexact="Active"
-            ).exclude(
-                Q(ticket_number__isnull=True) | Q(ticket_number__exact='')
-            ).order_by("-created_at")  # Already sorted by created_at descending
-            
-            seen_tickets = set()
-            leads_processed = 0
-            
-            for l in leads_qs:
-                try:
-                    # Get ticket number
-                    ticket = getattr(l, "ticket_number", "") or f"TKT-{l.id:06d}"
-                    ticket = str(ticket).strip()
-                    
-                    # Skip if empty or duplicate
-                    if not ticket or ticket in seen_tickets:
-                        continue
-                    
-                    seen_tickets.add(ticket)
-                    
-                    # Get owner name with multiple fallbacks
-                    owner_name = ""
-                    for field_name in ['ownerName', 'name', 'customer_name', 'contact_name', 'firstName']:
-                        if hasattr(l, field_name):
-                            value = getattr(l, field_name, "")
-                            if value and str(value).strip():
-                                owner_name = str(value).strip()
-                                break
-                    
-                    if not owner_name:
-                        owner_name = f"Lead #{l.id}"
-                    
-                    # Get phone number
-                    phone_no = ""
-                    for field_name in ['phoneNo', 'phone', 'phone_number', 'mobile']:
-                        if hasattr(l, field_name):
-                            value = getattr(l, field_name, "")
-                            if value and str(value).strip():
-                                phone_no = str(value).strip()
-                                break
-                    
-                    # Get requirements count for this lead
-                    requirements_count = 0
-                    try:
-                        from .models import RequirementItem
-                        requirements_count = RequirementItem.objects.filter(
-                            Q(ticket_number=ticket) |
-                            Q(owner_name=owner_name, phone_no=phone_no)
-                        ).count()
-                    except Exception as e:
-                        logger.debug(f"Could not get requirements count: {e}")
-                    
-                    # Build lead dict with all required fields
-                    lead_entry = {
-                        "id": l.id,
-                        "ticket_number": ticket,
-                        "ownerName": owner_name,
-                        "phoneNo": phone_no,
-                        "email": getattr(l, "email", "") or "",
-                        "status": getattr(l, "status", "Active"),
-                        "priority": getattr(l, "priority", "Medium"),
-                        "customerType": getattr(l, "customerType", "Business"),
-                        "place": getattr(l, "place", "") or getattr(l, "individualPlace", "") or "",
-                        "business": getattr(l, "business", "") or "",
-                        "company": getattr(l, "name", "") or getattr(l, "business", "") or "",
-                        "requirements_count": requirements_count,
-                        "created_at": getattr(l, "created_at", None),
-                        "display_name": owner_name,
-                        "ticket_display": f"{ticket} - {owner_name}",
-                    }
-                    
-                    active_leads_list.append(lead_entry)
-                    leads_processed += 1
-                    
-                except Exception as e:
-                    logger.warning(f"❌ Error processing lead {getattr(l, 'id', '?')}: {e}")
-            
-            # ===== FIXED: Sort by created_at descending (consistent with lead_form) =====
-            # The query is already sorted by "-created_at", but let's ensure the list matches
-            # Don't re-sort with priority logic - keep the original query order
-            # This ensures leads appear in the same order as in lead_form
-            
-            logger.info(f"✅ Loaded {leads_processed} active leads with valid tickets")
-        else:
-            logger.warning("⚠️ Lead model not found")
-            
-    except Exception as e:
-        logger.error(f"❌ Error loading leads: {e}", exc_info=True)
-        active_leads_list = []
-    
-    # ==================== REQUIREMENTS MAP ====================
-    lead_requirements_map = {}
-    try:
-        from .models import RequirementItem
-        
-        requirements = RequirementItem.objects.select_related('item').all()
-        requirements_loaded = 0
-        
-        for req in requirements:
-            try:
-                ticket = getattr(req, 'ticket_number', None)
-                if not ticket:
-                    continue
-                
-                # Find corresponding lead
-                lead_match = None
-                for lead in active_leads_list:
-                    if lead.get('ticket_number') == ticket:
-                        lead_match = lead
-                        break
-                
-                if not lead_match:
-                    continue
-                
-                lead_id = lead_match['id']
-                lead_requirements_map.setdefault(lead_id, [])
-                
-                # Get section
-                section_value = 'GENERAL'
-                if req.item and hasattr(req.item, 'section'):
-                    section_raw = str(req.item.section).upper().strip()
-                    if 'HARDWARE' in section_raw:
-                        section_value = 'HARDWARE'
-                    elif 'SOFTWARE' in section_raw:
-                        section_value = 'SOFTWARE'
-                    elif 'PAPER' in section_raw or 'ROLL' in section_raw:
-                        section_value = 'PAPER_ROLLS'
-                    else:
-                        section_value = section_raw
-                
-                lead_requirements_map[lead_id].append({
-                    'id': req.id,
-                    'item_id': req.item.id if req.item else None,
-                    'item_name': req.item.name if req.item else getattr(req, 'item_name', ''),
-                    'section': section_value,
-                    'quantity': int(req.quantity or 1),
-                    'price': float(req.price or 0),
-                    'unit': req.unit or '',
-                    'total': float(req.total or 0),
-                })
-                requirements_loaded += 1
-                
-            except Exception as e:
-                logger.warning(f"❌ Error processing requirement {getattr(req, 'id', '?')}: {e}")
-        
-        logger.info(f"✅ Loaded {requirements_loaded} requirements for {len(lead_requirements_map)} leads")
-        
-    except Exception as e:
-        logger.warning(f"⚠️ Could not load requirements: {e}")
-    
-    # ==================== FINAL CONTEXT ====================
-    context = {
-        "items": items_list,
-        "active_users": active_users_list,
-        "active_leads": active_leads_list,
-        "active_users_json": json.dumps(active_users_list, default=str, ensure_ascii=False),
-        "active_leads_json": json.dumps(active_leads_list, default=str, ensure_ascii=False),
-        "items_json": json.dumps(items_list, default=str, ensure_ascii=False),
-        "lead_requirements_map": json.dumps(lead_requirements_map, default=str, ensure_ascii=False),
-        "section_counts": section_counts,
-        "server_time": timezone.now().strftime('%Y-%m-%d %H:%M:%S'),
-        "users_count": len(active_users_list),
-        "leads_count": len(active_leads_list),
-        "items_count": len(items_list),
-        "requirements_count": sum(len(reqs) for reqs in lead_requirements_map.values()),
-    }
-    
-    logger.info("=" * 60)
-    logger.info("REQUIREMENT LIST - FINAL SUMMARY")
-    logger.info("=" * 60)
-    logger.info(f"Users: {len(active_users_list)}")
-    logger.info(f"Leads: {len(active_leads_list)}")
-    logger.info(f"Items: {len(items_list)}")
-    logger.info(f"Requirements mapped: {sum(len(reqs) for reqs in lead_requirements_map.values())}")
-    logger.info(f"Sections: {[f'{k}: {v['count']}' for k, v in section_counts.items()]}")
-    logger.info("=" * 60)
-    
-    return render(request, "requirement_list.html", context)
 
 
     
