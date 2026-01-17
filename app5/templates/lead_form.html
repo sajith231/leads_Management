@@ -3475,9 +3475,189 @@ function populateItemsForSection(sectionSelect, itemSelect, itemData = null) {
         return isValid;
     }
 
-    /**
-     * Add event listeners to a row
-     */
+    function initializeFormSubmissionWithModal() {
+    const form = document.getElementById('customerForm');
+    const assignmentModal = document.getElementById('assignmentModal');
+    const selfAssignedBtn = document.getElementById('selfAssignedBtn');
+    const unassignedBtn = document.getElementById('unassignedBtn');
+    const cancelModalBtn = document.getElementById('cancelModalBtn');
+    const assignmentTypeField = document.getElementById('assignmentType');
+    
+    if (!form || !assignmentModal) {
+        console.error('Form or modal not found');
+        return;
+    }
+    
+    console.log('✅ Assignment modal initialized');
+    
+    // ========== FORM SUBMIT HANDLER ==========
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        console.log('📝 Form submission intercepted');
+        
+        // Validate form first
+        if (!validateForm()) {
+            console.log('❌ Form validation failed');
+            return false;
+        }
+        
+        console.log('✅ Form validation passed');
+        
+        // Update hidden fields before showing modal
+        updateHiddenFields();
+        
+        // Show the assignment modal
+        showModal();
+        
+        return false;
+    });
+    
+    // ========== SELF ASSIGNED BUTTON ==========
+    selfAssignedBtn.addEventListener('click', function() {
+        console.log('👤 Self-assigned selected');
+        assignmentTypeField.value = 'self_assigned';
+        
+        // Hide modal
+        hideModal();
+        
+        // Submit form
+        submitFormDirectly();
+    });
+    
+    // ========== UNASSIGNED BUTTON ==========
+    unassignedBtn.addEventListener('click', function() {
+        console.log('👥 Unassigned selected');
+        assignmentTypeField.value = 'unassigned';
+        
+        // Hide modal
+        hideModal();
+        
+        // Submit form
+        submitFormDirectly();
+    });
+    
+    // ========== CANCEL BUTTON ==========
+    cancelModalBtn.addEventListener('click', function() {
+        console.log('❌ Assignment cancelled');
+        hideModal();
+    });
+    
+    // ========== CLICK OUTSIDE MODAL TO CLOSE ==========
+    assignmentModal.addEventListener('click', function(e) {
+        if (e.target === assignmentModal) {
+            console.log('❌ Clicked outside modal');
+            hideModal();
+        }
+    });
+    
+    // ========== ESC KEY TO CLOSE ==========
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && assignmentModal.style.display === 'flex') {
+            console.log('❌ ESC pressed, closing modal');
+            hideModal();
+        }
+    });
+    
+    // ========== HELPER FUNCTIONS ==========
+    
+    function showModal() {
+        assignmentModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden'; // Prevent scrolling
+        console.log('✅ Modal shown');
+    }
+    
+    function hideModal() {
+        assignmentModal.style.display = 'none';
+        document.body.style.overflow = ''; // Restore scrolling
+        console.log('✅ Modal hidden');
+    }
+    
+    function submitFormDirectly() {
+        console.log('📤 Submitting form with assignment type:', assignmentTypeField.value);
+        
+        // Update requirements data one final time
+        updateHiddenFields();
+        
+        // Submit the form
+        form.submit();
+    }
+    
+    function validateForm() {
+        const requiredFields = form.querySelectorAll('[required]');
+        let isValid = true;
+        let firstInvalidField = null;
+        
+        // Check all required fields
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                isValid = false;
+                field.style.borderColor = '#f44336';
+                
+                if (!firstInvalidField) {
+                    firstInvalidField = field;
+                }
+            } else {
+                field.style.borderColor = '';
+            }
+        });
+        
+        // Check phone number format
+        const phoneField = document.getElementById('phoneNo');
+        if (phoneField.value && !/^\d{10,15}$/.test(phoneField.value.replace(/\D/g, ''))) {
+            isValid = false;
+            phoneField.style.borderColor = '#f44336';
+            showNotification('Please enter a valid phone number (10-15 digits)', 'error');
+            if (!firstInvalidField) firstInvalidField = phoneField;
+        }
+        
+        // Check email format
+        const emailField = document.getElementById('email');
+        if (emailField.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailField.value)) {
+            isValid = false;
+            emailField.style.borderColor = '#f44336';
+            showNotification('Please enter a valid email address', 'error');
+            if (!firstInvalidField) firstInvalidField = emailField;
+        }
+        
+        // Check firm name (if business mode)
+        const customerTypeToggle = document.getElementById('customerTypeToggle');
+        if (customerTypeToggle && customerTypeToggle.checked) {
+            const firmNameSearch = document.getElementById('nameSearch');
+            if (!firmNameSearch.value.trim()) {
+                isValid = false;
+                firmNameSearch.style.borderColor = '#f44336';
+                showNotification('Firm name is required for business customers', 'error');
+                if (!firstInvalidField) firstInvalidField = firmNameSearch;
+            }
+        } else {
+            // Check first name (if individual mode)
+            const firstNameField = document.getElementById('firstName');
+            if (!firstNameField.value.trim()) {
+                isValid = false;
+                firstNameField.style.borderColor = '#f44336';
+                showNotification('Firm name is required for individual customers', 'error');
+                if (!firstInvalidField) firstInvalidField = firstNameField;
+            }
+        }
+        
+        if (!isValid) {
+            showNotification('Please fill in all required fields correctly', 'error');
+            
+            // Scroll to first invalid field
+            if (firstInvalidField) {
+                firstInvalidField.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center' 
+                });
+                firstInvalidField.focus();
+            }
+        }
+        
+        return isValid;
+    }
+}
     /**
  * Add event listeners to a row
  */
@@ -3543,8 +3723,8 @@ function addRowEventListeners(row, itemData = null) {
             row.remove();
             updateRowNumbers();
             updateTotal();
-            updateItemsCount();
-            updateHiddenFields();
+            updateItemsCount();     // NEW: Update count when item selected
+    updateHiddenFields();
         });
     }
     
@@ -3606,11 +3786,20 @@ function addRowEventListeners(row, itemData = null) {
     /**
      * Update items count badge
      */
-    function updateItemsCount() {
-        const itemCount = tableBody.querySelectorAll('tr').length;
-        itemsCountBadge.textContent = `${itemCount} item${itemCount !== 1 ? 's' : ''}`;
-    }
-
+   // AFTER (CORRECT)
+function updateItemsCount() {
+    let itemCount = 0;
+    const rows = tableBody.querySelectorAll('tr');
+    
+    rows.forEach(row => {
+        const itemSelect = row.querySelector('.item-select');
+        if (itemSelect && itemSelect.value) {  // Only count if item is selected
+            itemCount++;
+        }
+    });
+    
+    itemsCountBadge.textContent = `${itemCount} item${itemCount !== 1 ? 's' : ''}`;
+}
     /**
      * Update hidden fields with requirement data
      */
@@ -3850,12 +4039,16 @@ function fetchRequirementsFromServer(leadId) {
     /**
  * Set up lead item click functionality
  */
+/**
+ * Add event listeners to lead items for click functionality
+ */
 function setupLeadViewButtons() {
     const leadItems = document.querySelectorAll('#leadList .lead-item');
     
     leadItems.forEach(item => {
         item.addEventListener('click', function(e) {
             e.stopPropagation();
+            e.preventDefault();
             
             // Remove previous selection
             leadItems.forEach(i => i.classList.remove('selected'));
@@ -3863,83 +4056,75 @@ function setupLeadViewButtons() {
             // Add selection to current item
             this.classList.add('selected');
             
-            // Get the requirements JSON from data attribute
-            const requirementsJson = this.getAttribute('data-requirements');
-            const requirementsCount = this.getAttribute('data-requirements-count') || '0';
+            const leadId = this.getAttribute('data-id');
+            const leadIndex = this.getAttribute('data-index');
             
-            // Get all data from attributes
-            const leadData = {
-                id: this.getAttribute('data-id'),
-                ownerName: this.getAttribute('data-owner') || '',
-                phoneNo: this.getAttribute('data-phone') || '',
-                email: this.getAttribute('data-email') || '',
-                status: this.getAttribute('data-status') || '',
-                priority: this.getAttribute('data-priority') || 'Medium',
-                customerType: this.getAttribute('data-customertype') || 'Business',
-                name: this.getAttribute('data-name') || '',
-                address: this.getAttribute('data-address') || '',
-                place: this.getAttribute('data-place') || '',
-                District: this.getAttribute('data-district') || '',
-                State: this.getAttribute('data-state') || '',
-                pinCode: this.getAttribute('data-pincode') || '',
-                firstName: this.getAttribute('data-firstname') || '',
-                individualAddress: this.getAttribute('data-individualaddress') || '',
-                individualPlace: this.getAttribute('data-individualplace') || '',
-                individualDistrict: this.getAttribute('data-individualdistrict') || '',
-                individualState: this.getAttribute('data-individualstate') || '',
-                individualPinCode: this.getAttribute('data-individualpincode') || '',
-                refFrom: this.getAttribute('data-reffrom') || '',
-                business: this.getAttribute('data-business') || '',
-                campaign: this.getAttribute('data-campaign') || '',
-                campaign_display: this.getAttribute('data-campaign-display') || '',
-                marketedBy: this.getAttribute('data-marketedby') || '',
-                Consultant: this.getAttribute('data-consultant') || '',
-                requirement: this.getAttribute('data-branch') || '',
-                details: this.getAttribute('data-details') || '',
-                date: this.getAttribute('data-date') || '',
-                // Store requirements JSON for later parsing
-                requirementsJson: requirementsJson,
-                requirementsCount: parseInt(requirementsCount)
-            };
+            // IMPORTANT: Get the lead data from your leads array
+            // Since you have the data-index attribute, use it to find the lead
+            let leadData = null;
             
-            console.log('📝 Lead clicked:', leadData.ownerName);
-            console.log('📦 Requirements JSON:', requirementsJson ? 'Available' : 'Not available');
-            console.log('📊 Item count:', leadData.requirementsCount);
+            if (leadIndex !== null && leadIndex !== undefined) {
+                // Use the data-index to get the lead from leads array
+                leadData = leads[parseInt(leadIndex)];
+            }
             
-            // If we have the lead ID, try to find complete data in leads array
-            if (leadData.id) {
-                const completeLeadData = leads.find(lead => lead.id == leadData.id);
-                if (completeLeadData) {
-                    // Merge attribute data with complete data
-                    Object.assign(leadData, completeLeadData);
-                    
-                    // Prefer requirements from JSON attribute (most up-to-date)
-                    if (requirementsJson) {
-                        leadData.requirementsJson = requirementsJson;
-                    }
+            // Fallback: search by ID if index doesn't work
+            if (!leadData && leadId) {
+                leadData = leads.find(lead => String(lead.id) === String(leadId));
+            }
+            
+            if (leadData) {
+                console.log('📥 Loading lead data into form:', leadData);
+                
+                // Populate the form with lead data
+                populateFormWithLeadData(leadData);
+                
+                // Update form header to indicate edit mode
+                updateFormHeaderForEdit(leadData.ownerName);
+                
+                // Set hidden field for lead ID (if you add one)
+                const leadIdField = document.getElementById('lead_id');
+                if (leadIdField) {
+                    leadIdField.value = leadData.id;
                 }
+                
+                // Scroll to form for better UX
+                setTimeout(() => {
+                    document.querySelector('.form-column').scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start' 
+                    });
+                }, 100);
+                
+                // Show success notification
+                showNotification(`✅ Loaded lead: ${leadData.ownerName}`, 'success');
+                
+            } else {
+                console.error('Lead data not found for ID:', leadId, 'Index:', leadIndex);
+                showNotification('Could not load lead data', 'error');
             }
-            
-            // Populate form with lead data
-            populateFormWithLeadData(leadData);
-            
-            // Show edit button
-            if (leadData.id) {
-                showEditButton(leadData.id);
-            }
-            
-            // Scroll form into view for better UX
-            document.querySelector('.form-column').scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'start' 
-            });
         });
     });
 }
 
-    /**
-     * Populate all form fields with lead data
-     */
+
+function resetFormHeader() {
+    const formHeader = document.querySelector('.form-header h1');
+    const formSubtitle = document.querySelector('.form-header p');
+    
+    if (formHeader) {
+        formHeader.textContent = 'Lead Creation Form';
+        formHeader.innerHTML = 'Lead Creation Form'; // Clear any HTML
+    }
+    
+    if (formSubtitle) {
+        formSubtitle.textContent = 'Please fill in all the required details accurately';
+        formSubtitle.style.color = '';
+        formSubtitle.style.fontWeight = '';
+    }
+}
+
+   
     function populateFormWithLeadData(leadData) {
         console.log('🚀 START: Loading complete lead data into form');
         

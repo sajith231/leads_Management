@@ -1,4 +1,8 @@
+{% extends "base.html" %}
 
+{% block title %}Lead Report{% endblock %}
+
+{% block content %}
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,51 +17,64 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
-        body {
-            background: #f0f2f5;
-            min-height: 100vh;
-        }
+               body {
+    background: #f0f2f5;
+    min-height: 100vh;
+    margin: 0; /* Remove default margin */
+}
         
-        .container {
-            max-width: 1600px;
-            width: 100%;
-            margin: 0 auto;
-            padding: 20px;
-        }
+             .container {
+    max-width: 1600px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 20px;
+    height: 100vh; /* Make container full viewport height */
+}
         
-        .main-content {
-            display: flex;
-            gap: 20px;
-            align-items: stretch;
-            width: 100%;
-            min-height: 80vh;
-        }
-        
-        .directory-column {
-            flex: 0 0 320px;
-            width: 320px;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .form-column {
-            flex: 1;
-            min-width: 0;
-            display: flex;
-            flex-direction: column;
-        }
+             .main-content {
+    display: flex;
+    gap: 20px;
+    align-items: stretch;
+    width: 100%;
+    height: calc(100vh - 40px); /* Full viewport height minus container padding */
+}
+      .directory-column {
+    flex: 0 0 320px;
+    width: 320px;
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* Take full height of parent */
+}
 
         
-        .form-container {
-            background-color:#dcd9f3;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
-            overflow: hidden;
-            width: 100%;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
+   .form-column {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* Take full height of parent */
+}
+
+   .form-container {
+    background-color:#dcd9f3;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    width: 100%;
+    height: 100%; /* Take full height of parent */
+    display: flex;
+    flex-direction: column;
+}
+
+.lead-directory-container {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    height: 100%; /* Take full height of parent */
+    display: flex;
+    flex-direction: column;
+}
         
         .form-header {
             background:#a095f6;
@@ -109,6 +126,15 @@
             align-items: center;
             justify-content: space-between;
         }
+
+                .form-body {
+    padding: 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* Allow scrolling if content is too long */
+}
+  
         
         .section-title i {
             margin-right: 8px;
@@ -5363,3 +5389,4 @@ console.log('✅ Requirements table functionality initialized');
 </script>
 </body>
 </html>
+{% endblock %}
