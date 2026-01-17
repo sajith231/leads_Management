@@ -101,9 +101,7 @@ urlpatterns = [
     path("get-item-details/", views.get_item_details, name="get_item_details"),
 
     # endpoint for saving the form
-    
-    path('edit-requirement/<int:lead_id>/', views.edit_requirement, name='edit_requirement'),
-    path('update-requirement/<int:lead_id>/', views.update_requirement, name='update_requirement'),
+
     
 
     # your lead form view (adjust if function name differs)

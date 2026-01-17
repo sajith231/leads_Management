@@ -4,7 +4,7 @@
 from .models import (
     JobCard, JobCardImage, Item, Supplier, 
     WarrantyTicket, WarrantyItemLog, StandbyIssuance,
-    ServiceBilling, ServiceItem  # Add these
+    ServiceBilling, ServiceItem,RequirementItem  # Add these
 )
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
@@ -3373,6 +3373,7 @@ def lead_form_view(request):
           support for firm-name toggle (existing firm select OR free-text name).
     """
     import logging
+    import json
     import requests  # Added for API calls
     from django.shortcuts import render, redirect, get_object_or_404
     from django.contrib import messages
@@ -3466,6 +3467,21 @@ def lead_form_view(request):
                     else:
                         time_elapsed = "Just now"
                 
+                # Build requirements JSON for each lead
+                requirements_data = []
+                for req in lead.requirements.all():
+                    requirements_data.append({
+                        'id': req.id,
+                        'item_id': req.item.id if req.item else None,
+                        'item_name': req.item_name,
+                        'section': req.section or 'GENERAL',
+                        'unit': req.unit or 'pcs',
+                        'price': float(req.price) if req.price is not None else 0.00,
+                        'quantity': int(req.quantity) if req.quantity is not None else 1,
+                    })
+                
+                requirements_json = json.dumps(requirements_data)
+                
                 lead_dict = {
                     'id': lead.id,
                     'ownerName': lead.ownerName,
@@ -3498,6 +3514,7 @@ def lead_form_view(request):
                     'details': lead.details if lead.details else '',
                     'requirements': lead.requirements.all(),
                     'requirements_count': lead.requirements.count(),
+                    'requirements_json': requirements_json,
                     'date': lead.date.strftime('%Y-%m-%d') if lead.date else '',
                     'created_at': lead.created_at if hasattr(lead, 'created_at') else None,
                     'time_elapsed': time_elapsed,
@@ -3850,6 +3867,39 @@ def lead_form_view(request):
 
                 lead = Lead.objects.create(**safe_kwargs)
 
+                # ✅ NEW: Extract and save requirement items from form
+                requirements_json = data.get('requirements_data', '[]')
+                logger.info(f"Requirements JSON from form: {requirements_json}")
+                
+                try:
+                    import json
+                    from decimal import Decimal
+                    requirements_list = json.loads(requirements_json) if requirements_json else []
+                    
+                    # Create RequirementItem objects for each requirement
+                    for req_data in requirements_list:
+                        RequirementItem.objects.create(
+                            lead=lead,
+                            item_id=req_data.get('item_id'),
+                            item_name=req_data.get('item_name', ''),
+                            ticket_number=lead.ticket_number,
+                            owner_name=lead.ownerName,
+                            phone_no=lead.phoneNo,
+                            email=lead.email if lead.email else '',
+                            section=req_data.get('section', ''),
+                            unit=req_data.get('unit', ''),
+                            price=Decimal(str(req_data.get('price', 0))),
+                            quantity=int(req_data.get('quantity', 1)),
+                        )
+                    
+                    if requirements_list:
+                        logger.info(f"✅ Created {len(requirements_list)} requirement items for lead {lead.id}")
+                    
+                except json.JSONDecodeError as e:
+                    logger.warning(f"Could not parse requirements JSON: {e}")
+                except Exception as e:
+                    logger.error(f"Error creating requirement items: {e}", exc_info=True)
+
             assignment_msg = "self-assigned" if assignment_type == "self_assigned" else "submitted for assignment"
             ticket_info = getattr(lead, "ticket_number", getattr(lead, "id", ""))
 
@@ -3930,9 +3980,9 @@ def get_items_by_section():
                 "name": item.name,
                 "section": section,
                 "section_display": section_display,
-                "unit_of_measure": item.unit_of_measure or "pcs",
-                "mrp": float(item.mrp or 0),
-                "hsn_code": item.hsn_code or "",
+                "unit": item.unit_of_measure or "pcs", 
+                "price": float(item.mrp or 0),
+                "hsn": item.hsn_code or "",
                 "description": item.description or "",
             })
         
@@ -4455,7 +4505,149 @@ def lead_edit(request, lead_id):
             lead.pinCode = None
 
         lead.save()
-        messages.success(request, f"Lead updated successfully! Ticket Number: {getattr(lead, 'ticket_number', lead.id)}")
+        
+        # ========== SAVE REQUIREMENT ITEMS SIMULTANEOUSLY ==========
+        try:
+            # Get requirement arrays from form
+            requirement_ids = request.POST.getlist('requirement_ids[]') if 'requirement_ids[]' in request.POST else []
+            sections = request.POST.getlist('section[]') if 'section[]' in request.POST else []
+            item_ids = request.POST.getlist('item_id[]') if 'item_id[]' in request.POST else []
+            units = request.POST.getlist('unit[]') if 'unit[]' in request.POST else []
+            prices = request.POST.getlist('price[]') if 'price[]' in request.POST else []
+            quantities = request.POST.getlist('qty[]') if 'qty[]' in request.POST else []
+            
+            # Also check for single hidden field format (comma-separated)
+            if not item_ids:
+                requirement_ids_str = request.POST.get('requirement_ids', '').strip()
+                if requirement_ids_str:
+                    requirement_ids = [rid.strip() for rid in requirement_ids_str.split(',') if rid.strip()]
+            
+            logger.info(f"🔍 DEBUG - Requirement data received:")
+            logger.info(f"   requirement_ids: {requirement_ids}")
+            logger.info(f"   item_ids: {item_ids}")
+            logger.info(f"   sections: {sections}")
+            logger.info(f"   prices: {prices}")
+            logger.info(f"   quantities: {quantities}")
+            
+            if item_ids:
+                logger.info(f"Processing {len(item_ids)} requirement items for lead {lead.id}")
+                
+                # Import Item model
+                try:
+                    from purchase_order.models import Item as POItem
+                    ItemModel = POItem
+                except ImportError:
+                    from .models import Item as App5Item
+                    ItemModel = App5Item
+                
+                # Get or clear existing requirements
+                existing_requirement_ids = set()
+                if requirement_ids:
+                    existing_requirement_ids = set(int(rid) for rid in requirement_ids if rid and str(rid).isdigit())
+                
+                # Delete requirements not in the new list
+                if existing_requirement_ids:
+                    lead.requirements.exclude(id__in=existing_requirement_ids).delete()
+                else:
+                    # If no requirement IDs provided, delete all existing (for fresh save)
+                    lead.requirements.all().delete()
+                
+                logger.info(f"Cleaned up old requirements for lead {lead.id}")
+                
+                # Save each requirement item
+                saved_count = 0
+                for i in range(len(item_ids)):
+                    if not item_ids[i]:  # Skip empty items
+                        continue
+                    
+                    try:
+                        # Get the Item
+                        item = ItemModel.objects.filter(id=item_ids[i]).first()
+                        if not item:
+                            logger.warning(f"Item with ID {item_ids[i]} not found")
+                            continue
+                        
+                        # Get section
+                        section_value = sections[i] if i < len(sections) else 'GENERAL'
+                        if not section_value:
+                            section_value = getattr(item, 'section', 'GENERAL')
+                        
+                        # Parse price and quantity
+                        try:
+                            price = float(prices[i]) if i < len(prices) and prices[i] else 0.00
+                        except (ValueError, TypeError):
+                            price = 0.00
+                        
+                        try:
+                            quantity = int(quantities[i]) if i < len(quantities) and quantities[i] else 1
+                        except (ValueError, TypeError):
+                            quantity = 1
+                        
+                        unit = units[i] if i < len(units) else getattr(item, 'unit_of_measure', 'pcs')
+                        total = price * quantity
+                        
+                        logger.info(f"   Item {i+1}: ID={item_ids[i]}, Name={item.name}, Price={price}, Qty={quantity}")
+                        
+                        # Update or create requirement item
+                        if i < len(requirement_ids) and requirement_ids[i] and str(requirement_ids[i]).isdigit():
+                            # Update existing
+                            req_id = int(requirement_ids[i])
+                            req, created = RequirementItem.objects.update_or_create(
+                                id=req_id,
+                                defaults={
+                                    'lead': lead,
+                                    'item': item,
+                                    'item_name': item.name,
+                                    'section': section_value,
+                                    'unit': unit,
+                                    'price': price,
+                                    'quantity': quantity,
+                                    'total': total,
+                                    'owner_name': lead.ownerName,
+                                    'phone_no': lead.phoneNo,
+                                    'email': lead.email,
+                                    'ticket_number': lead.ticket_number
+                                }
+                            )
+                            logger.info(f"Updated requirement {req_id}")
+                        else:
+                            # Create new
+                            req = RequirementItem.objects.create(
+                                lead=lead,
+                                item=item,
+                                item_name=item.name,
+                                section=section_value,
+                                unit=unit,
+                                price=price,
+                                quantity=quantity,
+                                total=total,
+                                owner_name=lead.ownerName,
+                                phone_no=lead.phoneNo,
+                                email=lead.email,
+                                ticket_number=lead.ticket_number
+                            )
+                            logger.info(f"✅ Created new requirement {req.id}")
+                        
+                        saved_count += 1
+                        
+                    except Exception as e:
+                        logger.error(f"Error saving requirement item {i}: {str(e)}", exc_info=True)
+                        continue
+                
+                if saved_count > 0:
+                    logger.info(f"✅ Successfully saved {saved_count} requirement items with lead")
+                    messages.success(request, f"Lead and {saved_count} requirement item(s) saved successfully! Ticket Number: {getattr(lead, 'ticket_number', lead.id)}")
+                else:
+                    logger.info(f"No requirement items were saved, only lead updated")
+                    messages.success(request, f"Lead updated successfully! Ticket Number: {getattr(lead, 'ticket_number', lead.id)}")
+            else:
+                logger.info("No requirement items to save")
+                messages.success(request, f"Lead updated successfully! Ticket Number: {getattr(lead, 'ticket_number', lead.id)}")
+        
+        except Exception as e:
+            logger.error(f"Error processing requirements: {e}", exc_info=True)
+            messages.success(request, f"Lead updated successfully but there was an issue saving requirements. Ticket Number: {getattr(lead, 'ticket_number', lead.id)}")
+        
         return redirect('app5:lead_report')
 
     # ========== GET REQUEST PREPARATION ==========
@@ -4624,13 +4816,18 @@ def lead_edit(request, lead_id):
     # Get items grouped by section for requirements
     items_by_section = {}
     try:
-        all_items = Item.objects.all()
+        from purchase_order.models import Item as POItem
+        all_items = POItem.objects.filter(is_active=True).order_by('section', 'name')
+        
         for item in all_items:
             section = item.section if item.section else 'GENERAL'
             if section not in items_by_section:
                 items_by_section[section] = []
             items_by_section[section].append(item)
-    except:
+            
+        logger.info(f"✅ Loaded {all_items.count()} items in {len(items_by_section)} sections")
+    except Exception as e:
+        logger.error(f"Error loading items: {e}")
         items_by_section = {}
 
     # ========== PREPARE CONTEXT ==========

@@ -634,33 +634,43 @@ class Lead(models.Model):
             super().save(*args, **kwargs)
 
 
-    @property
-    def requirements_json(self):
-        """Return requirements as JSON string"""
-        from django.core.serializers import serialize
-        import json
-        
-        requirements = []
+@property
+@property
+def requirements_json(self):
+    """Return requirements as JSON string"""
+    import json
+    
+    requirements = []
+    try:
+        # Get all requirements linked to this lead
         for req in self.requirements.all():
-            requirements.append({
+            req_dict = {
                 'id': req.id,
                 'item_id': req.item.id if req.item else None,
                 'item_name': req.item_name,
-                'section': req.section,
-                'unit': req.unit,
-                'price': str(req.price),
-                'quantity': req.quantity,
-                'total': str(req.total),
-                'item': {
-                    'id': req.item.id if req.item else None,
-                    'name': req.item.name if req.item else req.item_name,
-                    'section': req.item.section if req.item else req.section,
-                    'unit_of_measure': req.item.unit_of_measure if req.item else req.unit,
-                    'mrp': str(req.item.mrp) if req.item else '0.00',
-                } if req.item else None
-            })
-        
-        return json.dumps(requirements)
+                'section': req.section or '',
+                'unit': req.unit or '',
+                'price': float(req.price) if req.price else 0.0,
+                'quantity': req.quantity if req.quantity else 1,
+                'total': float(req.total) if req.total else 0.0,
+            }
+            requirements.append(req_dict)
+            
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error building requirements JSON for lead {self.id}: {e}")
+        return '[]'
+    
+    return json.dumps(requirements)
+
+@property
+def requirements_count(self):
+    """Return count of requirements"""
+    try:
+        return self.requirements.count()
+    except:
+        return 0
 
     # =====================================================
     # SMART DISPLAY NAME FOR DIRECTORY
@@ -682,9 +692,24 @@ class Lead(models.Model):
 from django.db import models
 
 class RequirementItem(models.Model):
+    # ForeignKey relationships
+    lead = models.ForeignKey(
+        Lead, 
+        on_delete=models.CASCADE, 
+        related_name='requirements',
+        null=True,  # Allow null for backward compatibility
+        blank=True
+    )
+    item = models.ForeignKey(
+        'purchase_order.Item',  # Add this ForeignKey!
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Item"
+    )
+    
     # Basic item information
     item_name = models.CharField(max_length=200, verbose_name="Item Name")
-    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='requirements')
     
     # Customer/owner information
     ticket_number = models.CharField(max_length=50, blank=True, null=True, verbose_name="Ticket Number")
@@ -696,12 +721,20 @@ class RequirementItem(models.Model):
     section = models.CharField(max_length=255, null=True, blank=True)
     unit = models.CharField(max_length=50, blank=True, null=True, verbose_name="Unit")
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Price")
-    quantity = models.IntegerField(default=1, verbose_name="Quantity")  # Add this
+    quantity = models.IntegerField(default=1, verbose_name="Quantity")
     total = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Total")
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.item_name} - {self.lead.ticket_number if self.lead else 'No Lead'}"
+    
+    def save(self, *args, **kwargs):
+        # Auto-calculate total
+        self.total = self.price * self.quantity
+        super().save(*args, **kwargs)
 # bussiness nature
 
 class BusinessNature(models.Model):
