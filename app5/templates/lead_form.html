@@ -1403,29 +1403,7 @@
         }
 
         /* Firm source badge */
-        #firmSourceBadge {
-            margin-left: 5px;
-            font-size: 10px;
-            padding: 2px 6px;
-            
-            color: white;
-            border-radius: 3px;
-            vertical-align: middle;
-        }
-
-        /* API data source indicator */
-        .api-source-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            background: #f0f7ff;
-            border: 1px solid #4a6fdc;
-            border-radius: 4px;
-            padding: 2px 6px;
-            font-size: 10px;
-            color: #4a6fdc;
-            margin-left: 5px;
-        }
+        
 
         /* Hover effects for API options */
         .select-option[data-is-api="true"]:hover {
@@ -2369,12 +2347,7 @@
                                     <div class="business-fields">
                                         <!-- Searchable Firm Name Field with API Data -->
                                         <div class="compact-form-group">
-                                            <label for="name">
-                                                Firm Name * 
-                                                <span id="firmSourceBadge" class="campaign-badge" style="background: #4a6fdc;">
-                                                    API: {{ api_data_count }}
-                                                </span>
-                                            </label>
+                                            
                                             <div class="select-search-container" id="firmNameContainer">
                                                 <input type="text" class="select-search-input" id="nameSearch" 
                                                        placeholder="Search from {{ api_data_count }} API customers or type new firm..." 
@@ -3070,7 +3043,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             option.innerHTML = `
                 ${displayName}
-                ${customer.is_api ? '<span class="api-source-indicator">API</span>' : ''}
+                ${customer.is_api ? '<span class="api-source-indicator"></span>' : ''}
             `;
             
             option.onclick = function() {
