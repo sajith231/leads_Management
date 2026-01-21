@@ -17,6 +17,10 @@
             box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
+        body {
+    overflow-x: auto;
+    overflow-y: auto;
+}
 
         .container {
             max-width: 1400px;
@@ -76,39 +80,7 @@
         .me-1 { margin-right: 0.25rem; }
         .me-2 { margin-right: 0.5rem; }
 
-        .stats-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .stat-card {
-            background:#795548;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-            text-align: center;
-            transition: transform 0.2s;
-            border: 1px solid rgb(91, 61, 61);
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
-        }
-
-        .stat-card h3 {
-            font-size: 14px;
-            color:rgb(252, 250, 250);
-            margin-bottom: 10px;
-        }
-
-        .stat-card .number {
-            font-size: 32px;
-            font-weight: bold;
-            color: #fcfcfc;
-        }
+        
 
         .filters {
             background: #795548;
@@ -195,7 +167,7 @@
         th, td {
             padding: 12px 15px;
             color: #0b0b0b;
-            font-weight: bold;
+            
             text-align: left;
             border-bottom: 1px solid #7b7a7a;
             border-top: 1px solid #7b7a7a;
@@ -502,6 +474,20 @@
             align-items: flex-start;
             gap: 15px;
         }
+        /* Enable vertical + horizontal scroll for table */
+.table-scroll {
+    max-height: 550px;
+    overflow-x: auto;
+    overflow-y: auto;
+    white-space: nowrap;     /* prevents column wrapping */
+}
+
+/* Force table to be wider than container */
+.table-scroll table {
+    min-width: 1200px;       /* increase if you have many columns */
+}
+
+
 
         .lead-title {
             display: flex;
@@ -734,10 +720,7 @@
                 padding: 10px;
             }
 
-            .stats-container {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
+            
             .filter-row {
                 flex-direction: column;
                 gap: 15px;
@@ -770,36 +753,7 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1><i class="fas fa-chart-line"></i> Lead Management Report</h1>
-            <p>Comprehensive overview of all customer leads</p>
-        </div>
-
-        <!-- Statistics -->
-        <div class="stats-container">
-            <div class="stat-card">
-                <h3><i class="fas fa-users"></i> Total Leads</h3>
-                <div class="number">{{ total_leads }}</div>
-            </div>
-            <div class="stat-card">
-                <h3><i class="fas fa-ticket-alt"></i> Today's Leads</h3>
-                <div class="number">{{ today_leads }}</div>
-            </div>
-            <div class="stat-card">
-                <h3><i class="fas fa-check-circle"></i> Active</h3>
-                <div class="number status-active">{{ active_leads }}</div>
-            </div>
-            <div class="stat-card">
-                <h3><i class="fas fa-times-circle"></i> Inactive</h3>
-                <div class="number status-inactive">{{ inactive_leads }}</div>
-            </div>
-            <div class="stat-card">
-                <h3><i class="fas fa-tools"></i> Installed</h3>
-                <div class="number status-installed">{{ installed_leads }}</div>
-            </div>
-        </div>
-
-        <!-- Filters -->
+        
         <div class="filters">
             <form method="get" id="filterForm">
                 <div class="filter-row">
@@ -856,16 +810,17 @@
             </div>
 
             {% if leads %}
-            <div style="overflow-x: auto;">
+            <div class="table-scroll">
+
                 <table>
                     <thead>
                         <tr>
                             <th class="serial-number">Sl.No</th>
                             <th>Ticket No</th>
-                            <th>Created Date</th>
-                            <th>Owner Name</th>
-                            <th>Name/Firm</th>
-                            <th>Reference</th>
+                            <th>Owner Detailes</th>
+                            <th>Branch</th>
+                            <th>marketedBy</th>
+                            <th>Reference From</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -905,8 +860,9 @@
                                         {% endif %}
                                     </span>
                                 {% endif %}
+                                <br>{{ lead.date|date:"d M Y" }}</br>
                             </td>
-                            <td>{{ lead.date|date:"d M Y" }}</td>
+                           
                             <td>
                                 <!-- Owner icon + name (colored) -->
                                 <i class="fa-solid fa-user icon-owner me-1" title="Owner"></i>
@@ -914,7 +870,7 @@
 
                                 <!-- Phone -->
                                 {% if lead.phoneNo %}
-                                    <a href="tel:{{ lead.phoneNo }}" style="color: #28a745;font-weight: bold; text-decoration: none;">
+                                    <a href="tel:{{ lead.phoneNo }}" style="color: #28a745; text-decoration: none;">
                                         <i class="fas fa-phone icon-phone me-1" title="Phone"></i> {{ lead.phoneNo }}
                                     </a>
                                 {% else %}
@@ -925,7 +881,7 @@
                                 <!-- ✅ FIXED: Place (business vs individual) with maps link -->
                                 {% if lead.customerType == 'Business' %}
                                     {% if lead.place %}
-                                        <a href="https://www.google.com/maps/search/{{ lead.place|urlencode }}" target="_blank" style="color: #dc3545;font-weight: bold; text-decoration: none;">
+                                        <a href="https://www.google.com/maps/search/{{ lead.place|urlencode }}" target="_blank" style="color: #dc3545; text-decoration: none;">
                                             <i class="fa-solid fa-location-dot icon-place me-1" title="Place"></i>
                                             {{ lead.place }}
                                         </a>
@@ -934,7 +890,7 @@
                                     {% endif %}
                                 {% else %}
                                     {% if lead.individualPlace %}
-                                        <a href="https://www.google.com/maps/search/{{ lead.individualPlace|urlencode }}" target="_blank" style="color: #dc3545;font-weight: bold; text-decoration: none;">
+                                        <a href="https://www.google.com/maps/search/{{ lead.individualPlace|urlencode }}" target="_blank" style="color: #dc3545; text-decoration: none;">
                                             <i class="fa-solid fa-location-dot icon-place me-1" title="Place"></i>
                                             {{ lead.individualPlace }}
                                         </a>
@@ -942,14 +898,11 @@
                                         <span style="color: #999;">No location</span>
                                     {% endif %}
                                 {% endif %}
-                            </td>
 
-                            <!-- ✅ FIXED: Name/Firm Column -->
-                            <td>
-                                {% if lead.customerType == 'Business' %}
+                                <br>{% if lead.customerType == 'Business' %}
                                     {% if lead.name %}
                                         <i class="fas fa-building" style="color: #6a11cb; margin-right: 5px;"></i>
-                                        <strong>{{ lead.name }}</strong>
+                                        {{ lead.name }}
                                         <br>
                                         <span class="badge business-type"></span>
                                     {% else %}
@@ -958,14 +911,17 @@
                                 {% else %}
                                     {% if lead.firstName or lead.lastName %}
                                         <i class="fas fa-user-circle" style="color: #7b1fa2; margin-right: 5px;"></i>
-                                        <strong>{{ lead.firstName|default:"" }} {{ lead.lastName|default:"" }}</strong>
+                                        {{ lead.firstName|default:"" }} {{ lead.lastName|default:"" }}
                                         <br>
                                         <!-- <span class="badge individual-type">Individual</span> -->
                                     {% else %}
                                         <span style="color: #999;">No name</span>
                                     {% endif %}
-                                {% endif %}
+                                {% endif %}</br>
                             </td>
+                            <td>{{ lead.requirement|default:'' }}</td>
+                            <td>{{ lead.marketedBy|default:'' }}</td>
+                            
                             <td>{{ lead.refFrom|default:"-" }}</td>
 
                             <td>

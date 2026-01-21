@@ -4431,30 +4431,49 @@ def lead_edit(request, lead_id):
         lead.refFrom = request.POST.get('refFrom')
         lead.business = request.POST.get('business')
         
-        # Handle marketedBy
+        # ========== FIXED: Handle marketedBy as NAME ==========
         marketed_by_value = request.POST.get('marketedBy')
-        if marketed_by_value and marketed_by_value.isdigit():
-            lead.marketedBy = int(marketed_by_value)
+        if marketed_by_value:
+            # Store the name directly
+            lead.marketedBy = marketed_by_value.strip()
+            # Also store the user ID if we can find it
+            try:
+                user = User.objects.filter(name=marketed_by_value.strip()).first()
+                if user:
+                    lead.marketed_by_user = user
+            except (AttributeError, Exception) as e:
+                logger.debug(f"No user found for name '{marketed_by_value}': {e}")
         else:
-            lead.marketedBy = marketed_by_value
+            lead.marketedBy = None
+            lead.marketed_by_user = None
             
         lead.Consultant = request.POST.get('Consultant')
         
-        # Handle requirement
+        # ========== FIXED: Handle requirement as NAME ==========
         requirement_value = request.POST.get('requirement')
-        if requirement_value and requirement_value.isdigit():
-            lead.requirement = int(requirement_value)
+        if requirement_value:
+            # Store the branch name directly
+            lead.requirement = requirement_value.strip()
+            # Also store the department ID if we can find it
+            try:
+                department = Department.objects.filter(name=requirement_value.strip()).first()
+                if department:
+                    lead.department = department
+            except (AttributeError, Exception) as e:
+                logger.debug(f"No department found for name '{requirement_value}': {e}")
         else:
-            lead.requirement = requirement_value
+            lead.requirement = None
+            lead.department = None
             
         lead.details = request.POST.get('details')
         lead.date = request.POST.get('date') or lead.date
         
         # Handle campaign field
-        if hasattr(lead, 'Campaign'):
-            lead.Campaign = request.POST.get('Campaign')
-        elif hasattr(lead, 'campaign'):
-            lead.campaign = request.POST.get('Campaign')
+        campaign_value = request.POST.get('campaign') or request.POST.get('Campaign')
+        if hasattr(lead, 'campaign'):
+            lead.campaign = campaign_value
+        elif hasattr(lead, 'Campaign'):
+            lead.Campaign = campaign_value
 
         # Update customer type specific fields
         if lead.customerType == 'Business':
@@ -4667,66 +4686,48 @@ def lead_edit(request, lead_id):
     # Get active leads
     active_leads_data = Lead.objects.filter(status='Active').order_by('-created_at')[:50]
 
-    # ========== PREPARE MARKETED BY DISPLAY ==========
-    marketed_by_id = None
-    marketed_by_name = None
+    # ========== GET CURRENT SELECTED VALUES FOR DROPDOWNS ==========
     
+    # Get current marketedBy value (could be ID or name)
+    marketed_by_selected_value = None
     if lead.marketedBy:
+        # First check if it's a numeric ID
         try:
-            if isinstance(lead.marketedBy, int) or (isinstance(lead.marketedBy, str) and lead.marketedBy.isdigit()):
-                marketed_by_id = int(lead.marketedBy)
-                try:
-                    marketed_by_user = User.objects.get(id=marketed_by_id)
-                    marketed_by_name = marketed_by_user.name
-                except User.DoesNotExist:
-                    marketed_by_name = str(lead.marketedBy)
+            if lead.marketedBy.isdigit():
+                user = User.objects.filter(id=int(lead.marketedBy)).first()
+                if user:
+                    marketed_by_selected_value = user.name
+                else:
+                    marketed_by_selected_value = lead.marketedBy
             else:
-                try:
-                    marketed_by_user = User.objects.filter(name=lead.marketedBy).first()
-                    if marketed_by_user:
-                        marketed_by_id = marketed_by_user.id
-                        marketed_by_name = marketed_by_user.name
-                    else:
-                        marketed_by_name = str(lead.marketedBy)
-                except:
-                    marketed_by_name = str(lead.marketedBy)
-        except Exception as e:
-            logger.error(f"Error getting marketed by user: {e}")
-            marketed_by_name = str(lead.marketedBy)
-
-    # ========== PREPARE BRANCH DISPLAY ==========
-    branch_id = None
-    branch_name = None
+                # It's already a name
+                marketed_by_selected_value = lead.marketedBy
+        except:
+            marketed_by_selected_value = lead.marketedBy
     
+    # Get current requirement value (could be ID or name)
+    requirement_selected_value = None
     if lead.requirement:
+        # First check if it's a numeric ID
         try:
-            if isinstance(lead.requirement, int) or (isinstance(lead.requirement, str) and lead.requirement.isdigit()):
-                branch_id = int(lead.requirement)
-                try:
-                    branch = Department.objects.get(id=branch_id)
-                    branch_name = branch.name
-                except Department.DoesNotExist:
-                    branch_name = str(lead.requirement)
+            if lead.requirement.isdigit():
+                department = Department.objects.filter(id=int(lead.requirement)).first()
+                if department:
+                    requirement_selected_value = department.name
+                else:
+                    requirement_selected_value = lead.requirement
             else:
-                try:
-                    branch = Department.objects.filter(name=lead.requirement).first()
-                    if branch:
-                        branch_id = branch.id
-                        branch_name = branch.name
-                    else:
-                        branch_name = str(lead.requirement)
-                except:
-                    branch_name = str(lead.requirement)
-        except Exception as e:
-            logger.error(f"Error getting branch: {e}")
-            branch_name = str(lead.requirement)
+                # It's already a name
+                requirement_selected_value = lead.requirement
+        except:
+            requirement_selected_value = lead.requirement
 
     # Get campaign name
-    campaign_name = None
-    if hasattr(lead, 'Campaign') and lead.Campaign:
-        campaign_name = lead.Campaign
-    elif hasattr(lead, 'campaign') and lead.campaign:
-        campaign_name = lead.campaign
+    campaign_display = None
+    if hasattr(lead, 'campaign') and lead.campaign:
+        campaign_display = lead.campaign
+    elif hasattr(lead, 'Campaign') and lead.Campaign:
+        campaign_display = lead.Campaign
 
     # ========== ✅ FIX: PROPERLY FORMAT REQUIREMENTS DATA ==========
     requirements_data = []
@@ -4738,27 +4739,55 @@ def lead_edit(request, lead_id):
         
         logger.info(f"📦 Found {requirements.count()} requirements for lead {lead_id}")
         
+        # ✅ GET ITEM MODEL
+        try:
+            from purchase_order.models import Item as POItem
+            ItemModel = POItem
+        except ImportError:
+            from .models import Item as App5Item
+            ItemModel = App5Item
+        
         for req in requirements:
+            # ✅ GET ACTUAL ITEM FROM DATABASE TO GET CURRENT PRICE & UNIT
+            item_price = float(req.price) if req.price is not None else 0.00
+            item_unit = req.unit or 'pcs'
+            
+            # If we have an item reference, get its current details
+            if req.item:
+                try:
+                    current_item = ItemModel.objects.get(id=req.item.id)
+                    # Use saved price/unit, but have current item data available
+                    if item_price == 0.00 and hasattr(current_item, 'mrp'):
+                        item_price = float(current_item.mrp or 0)
+                    if not item_unit and hasattr(current_item, 'unit_of_measure'):
+                        item_unit = current_item.unit_of_measure or 'pcs'
+                except ItemModel.DoesNotExist:
+                    logger.warning(f"Item {req.item.id} not found")
+            
+            # Calculate total
+            quantity_val = int(req.quantity) if req.quantity is not None else 1
+            total_val = item_price * quantity_val
+            
             req_dict = {
                 'id': req.id,
                 'item_id': req.item.id if req.item else None,
                 'item_name': req.item_name or '',
                 'section': req.section or 'GENERAL',
-                'unit': req.unit or 'pcs',
-                'price': float(req.price) if req.price is not None else 0.00,
-                'quantity': int(req.quantity) if req.quantity is not None else 1,
-                'total': float(req.total) if req.total is not None else 0.00,
+                'unit': item_unit,
+                'price': item_price,
+                'quantity': quantity_val,
+                'total': total_val,
             }
             
             requirements_data.append(req_dict)
             
-            logger.debug(f"  Item: {req.item_name}, Unit: {req.unit}, Price: ₹{req.price}, Qty: {req.quantity}, Total: ₹{req.total}")
+            logger.debug(f"  Item: {req.item_name}, Unit: {item_unit}, Price: ₹{item_price}, Qty: {quantity_val}, Total: ₹{total_val}")
         
         # Convert to JSON
         requirements_json = json.dumps(requirements_data, cls=DjangoJSONEncoder)
         
         logger.info(f"✅ Successfully prepared {len(requirements_data)} requirements for template")
-        
+    
     except Exception as e:
         logger.error(f"❌ Error preparing requirements data: {e}", exc_info=True)
         requirements_data = []
@@ -4797,18 +4826,16 @@ def lead_edit(request, lead_id):
         'individualState': lead.individualState,
         'individualPinCode': lead.individualPinCode,
         
-        # Display fields
-        'marketed_by_name': marketed_by_name,
-        'branch_name': branch_name,
-        'campaign_display': campaign_name,
-        'campaign': campaign_name,
-        
-        # ID fields for select dropdowns
-        'marketedBy': str(marketed_by_id) if marketed_by_id else '',
-        'requirement': str(branch_id) if branch_id else '',
+        # ========== FIXED: Use resolved names for form values ==========
+        'marketedBy': marketed_by_selected_value or '',  # User name for form value
+        'marketed_by_name': marketed_by_selected_value or '',  # For display
+        'requirement': requirement_selected_value or '',  # Department name for form value
+        'branch_name': requirement_selected_value or '',  # For display
+        'campaign': campaign_display or '',  # For form value
+        'campaign_display': campaign_display or '',  # For display
         
         # ✅ ADD REQUIREMENTS
-        'requirement_ids': ','.join([str(r['id']) for r in requirements_data]),
+        'requirement_ids': ','.join([str(r['id']) for r in requirements_data if r.get('id')]),
         'requirement_details_json': requirements_json,
     }
     
@@ -4853,15 +4880,15 @@ def lead_edit(request, lead_id):
         'campaigns': campaigns,
         'references': references,
         'active_leads_data': active_leads_data,
-        'marketed_by_name': marketed_by_name,
-        'branch_name': branch_name,
-        'campaign_name': campaign_name,
+        'marketed_by_name': marketed_by_selected_value,
+        'branch_name': requirement_selected_value,
+        'campaign_name': campaign_display,
         'today': timezone.now().date(),
         'existing_firms': existing_firms,
         'api_customer_data': standardized_api_data,
         'api_data_count': api_data_count,
         'items_by_section': items_by_section,
-        
+        'requirements_data': requirements_data,
     }
     
     return render(request, "lead_form_edit.html", context)

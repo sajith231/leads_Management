@@ -1,3 +1,5 @@
+[file name]: lead_form_edit.html
+[file content begin]
 {% extends "base.html" %}
 
 {% block title %}Lead Report{% endblock %}
@@ -1385,7 +1387,7 @@
             font-size: 10px;
             padding: 2px 6px;
             
-            color: white;
+            color: #ffe9cc;
             border-radius: 3px;
             vertical-align: middle;
         }
@@ -1422,7 +1424,6 @@
 
         /* First letter search styles */
        
-
 
 
         /* ========================================
@@ -2046,6 +2047,139 @@
             background-color: #f5f5f5 !important;
             cursor: not-allowed !important;
         }
+
+ .lead-info-banner {
+            background: linear-gradient(135deg, #4a6fdc, #6a11cb);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .lead-id-badge {
+            background: white;
+            color: #4a6fdc;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        
+        .lead-status-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        
+        .lead-date-info {
+            display: flex;
+            gap: 15px;
+            font-size: 13px;
+        }
+        
+        .lead-date-info span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .update-btn {
+            background: linear-gradient(135deg, #ff9800, #ff5722);
+            color: white;
+            box-shadow: 0 3px 8px rgba(255, 152, 0, 0.3);
+        }
+        
+        .update-btn:hover {
+            background: linear-gradient(135deg, #ff5722, #ff9800);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(255, 152, 0, 0.4);
+        }
+        
+        .delete-btn {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+        }
+        
+        .delete-btn:hover {
+            background: linear-gradient(135deg, #d32f2f, #f44336);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(244, 67, 54, 0.4);
+        }
+        
+       
+   .lead-info-banner {
+            background: linear-gradient(135deg, #4a6fdc, #6a11cb);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .lead-id-badge {
+            background: white;
+            color: #4a6fdc;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        
+        .lead-status-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        
+        .lead-date-info {
+            display: flex;
+            gap: 15px;
+            font-size: 13px;
+        }
+        
+        .lead-date-info span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .update-btn {
+            background: linear-gradient(135deg, #ff9800, #ff5722);
+            color: white;
+            box-shadow: 0 3px 8px rgba(255, 152, 0, 0.3);
+        }
+        
+        .update-btn:hover {
+            background: linear-gradient(135deg, #ff5722, #ff9800);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(255, 152, 0, 0.4);
+        }
+        
+        .delete-btn {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+        }
+        
+        .delete-btn:hover {
+            background: linear-gradient(135deg, #d32f2f, #f44336);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(244, 67, 54, 0.4);
+        }
+        
+        /* ... rest of your existing CSS ... */
     </style>
 </head>
 <body>
@@ -2054,22 +2188,14 @@
             <!-- Left Column - Lead Directory -->
             <div class="directory-column">
                 <div class="lead-directory-container">
-                    <!-- UPDATED DIRECTORY HEADER - Left/Right Alignment -->
+                    <!-- Directory Header -->
                     <div class="directory-header">
                         <div class="directory-left">
                             <h2>Lead Management</h2>
-                            <div class="directory-date" id="currentDate">
-                                <i class="far fa-calendar-alt"></i>
-                                Loading date...
-                            </div>
                         </div>
                         <div class="directory-right">
                             <div class="directory-info-row">
                                 <div class="directory-count">Leads: <span id="activeTabCount">{{ active_leads_data|length }}</span></div>
-                                <div class="directory-today" id="todayDate">
-                                    <i class="far fa-clock"></i>
-                                    Loading time...
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -2077,10 +2203,9 @@
                     <!-- Directory Tabs -->
                     <div class="directory-tabs">
                         <button class="directory-tab active" data-tab="leads">Active Leads</button>
-                       
                     </div>
                     
-                    <!-- UPDATED SEARCH AND FILTER - Combined in one row -->
+                    <!-- Search and Filter -->
                     <div class="directory-controls">
                         <div class="directory-search-container">
                             <div class="search-box">
@@ -2130,13 +2255,6 @@
                                                 {{ lead.created_at|date:"d M" }}
                                             </div>
                                             {% endif %}
-                                            
-                                            <!-- TIME ELAPSED BADGE - Place it right below the date -->
-                                            <div class="time-elapsed-badge" 
-                                                 data-created="{{ lead.created_at|date:'c'|default:lead.date|date:'c' }}">
-                                                <i class="fas fa-clock"></i>
-                                                <span class="elapsed-text">{{ lead.time_elapsed|default:"Calculating..." }}</span>
-                                            </div>
                                         </div>
                                     </div>
                                     <div class="lead-phone">{{ lead.phoneNo }}</div>
@@ -2164,30 +2282,6 @@
                             {% endfor %}
                         {% else %}
                             <div class="no-results">No active leads found</div>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Employee List (hidden by default) -->
-                    <div class="employee-list" id="employeeList">
-                        {% if active_users %}
-                            {% for u in active_users %}
-                            <div class="employee-item" data-id="{{ u.id }}" data-name="{{ u.name|escapejs }}">
-                                <div class="employee-avatar">
-                                    {{ u.name|slice:":2"|upper }}
-                                </div>
-                                <div class="employee-details">
-                                    <div class="employee-name">{{ u.name }}</div>
-                                    <div class="employee-role">
-                                        {{ u.department }}{% if u.designation %} - {{ u.designation }}{% endif %}
-                                    </div>
-                                </div>
-                                <button class="assign-btn" data-id="{{ u.id }}" data-name="{{ u.name|escapejs }}" data-role="employee-assign">
-                                    Assign
-                                </button>
-                            </div>
-                            {% endfor %}
-                        {% else %}
-                            <div class="no-results">No active users found</div>
                         {% endif %}
                     </div>
                     
@@ -2322,7 +2416,6 @@
                                                        title="Connected to customer API - {{ api_data_count }} records available" value="{{ lead.name }}">
                                                 <i class="fas fa-times select-clear-icon" id="firmNameClear"></i>
                                                 <i class="fas fa-chevron-down select-search-icon"></i>
-                                                <!-- First letter search buttons will be added here by JavaScript -->
                                                 <div class="select-options" id="firmNameOptions"></div>
                                             </div>
                                             <input type="text" id="name" name="name" style="display: none;" value="{{ lead.name }}">
@@ -2438,12 +2531,17 @@
                                         </div>
                                     </div>
 
-                                     <div class="compact-form-group">
+                                    <!-- FIXED: Branch field - Now uses department name as value -->
+                                    <div class="compact-form-group">
                                         <label for="requirement">Branch</label>
                                         <select id="requirement" name="requirement">
                                             <option value="">Select Branch</option>
                                             {% for department in departments %}
-                                            <option value="{{ department.id }}" {% if lead.requirement == department.id|stringformat:"i" or lead.requirement == department.name %}selected{% endif %}>{{ department.name }}</option>
+                                            <!-- Use department.name as value -->
+                                            <option value="{{ department.name }}" 
+                                                    {% if lead.requirement == department.name or lead.branch_name == department.name %}selected{% endif %}>
+                                                {{ department.name }}
+                                            </option>
                                             {% endfor %}
                                         </select>
                                     </div>
@@ -2476,12 +2574,17 @@
                                         </select>
                                     </div>
                                     
+                                    <!-- FIXED: Marketed By field - Now uses user name as value -->
                                     <div class="compact-form-group">
                                         <label for="marketedBy">Marketed By</label>
                                         <select id="marketedBy" name="marketedBy" class="form-select">
                                             <option value="">-- Select Active User --</option>
                                             {% for user in active_users %}
-                                                <option value="{{ user.id }}" {% if lead.marketedBy == user.id|stringformat:"i" or lead.marketed_by_name == user.name %}selected{% endif %}>{{ user.name }}</option>
+                                                <!-- Use user.name as value -->
+                                                <option value="{{ user.name }}" 
+                                                        {% if lead.marketedBy == user.name or lead.marketed_by_name == user.name %}selected{% endif %}>
+                                                    {{ user.name }}
+                                                </option>
                                             {% endfor %}
                                         </select>
                                     </div>
@@ -2544,24 +2647,26 @@
                                     </button>
                                 </div>
 
-                                <!-- Item Options Template -->
-                                <template id="item-options">
+                                <!-- Item Options Template - FIXED: Using correct field names from purchase_order Item model -->
+                                <div id="item-options-data" style="display: none;">
                                     {% for section, items in items_by_section.items %}
                                         {% for item in items %}
-                                            <option
-                                                value="{{ item.id }}"
-                                                data-name="{{ item.name }}"
-                                                data-section="{{ section }}"
-                                                data-unit="{{ item.unit|default:'pcs' }}"
-                                                data-price="{{ item.price|default:'0' }}"
-                                                data-hsn="{{ item.hsn|default:'' }}"
-                                                data-description="{{ item.description|default:'' }}"
-                                            >
+                                            <div class="item-option" 
+                                                 data-id="{{ item.id }}"
+                                                 data-name="{{ item.name }}"
+                                                 data-section="{{ section }}"
+                                                 data-unit="{{ item.unit_of_measure|default:'pcs' }}"
+                                                 data-price="{{ item.mrp|floatformat:2|default:'0.00' }}"
+                                                 data-purchase-price="{{ item.purchase_price|floatformat:2|default:'0.00' }}"
+                                                 data-cost="{{ item.cost|floatformat:2|default:'0.00' }}"
+                                                 data-hsn="{{ item.hsn_code|default:'' }}"
+                                                 data-tax="{{ item.tax_percentage|default:'18' }}"
+                                                 data-description="{{ item.description|default:'' }}">
                                                 {{ item.name }}
-                                            </option>
+                                            </div>
                                         {% endfor %}
                                     {% endfor %}
-                                </template>
+                                </div>
 
                                 <div class="table-container" style="margin-top: 15px;">
                                     <table id="requirements-table">
@@ -2578,36 +2683,69 @@
                                             </tr>
                                         </thead>
                                         <tbody id="table-body">
-                                            <!-- Rows will be added dynamically -->
-                                           {% if lead.requirements.all %}
-    {% for requirement in lead.requirements.all %}
-                                                    <tr id="row-{{ forloop.counter }}">
-                                                        <td>{{ forloop.counter }}</td>
-                                                        <td>
-                                                            <select class="section-select">
-                                                                <option value="">Select Section</option>
-                                                                {% for section_name in items_by_section.keys %}
-                                                                    <option value="{{ section_name }}" {% if requirement.section == section_name %}selected{% endif %}>{{ section_name }}</option>
-                                                                {% endfor %}
-                                                            </select>
-                                                        </td>
-                                                        <td>
-                                                            <select class="item-select" data-item-id="{{ requirement.item.id|default:'' }}" data-item-name="{{ requirement.item_name|escapejs }}">
-                                                                <option value="">Select Item</option>
-                                                                <!-- Options will be populated by JavaScript -->
-                                                            </select>
-                                                        </td>
-                                                        <td><input type="text" class="unit-input" readonly value="{{ requirement.unit }}"></td>
-                                                        <td><input type="number" class="price-input" step="0.01" min="0" value="{{ requirement.price }}"></td>
-                                                        <td><input type="number" class="qty-input" min="1" value="{{ requirement.quantity }}"></td>
-                                                        <td><input type="text" class="total-input" readonly value="{% widthratio requirement.quantity 1 requirement.price %}"></td>
-                                                        <td>
-                                                            <button type="button" class="remove-btn">
-                                                                <i class="fas fa-trash"></i>
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                {% endfor %}
+                                            <!-- ✅ FIXED: Properly display existing requirements -->
+                                            {% if requirements_data %}
+    {% for requirement in requirements_data %}
+    <tr id="row-{{ forloop.counter }}">
+        <td>{{ forloop.counter }}</td>
+        <td>
+            <select class="section-select" required>
+                <option value="">Select Section</option>
+                {% for section_name in items_by_section.keys %}
+                    <option value="{{ section_name }}" {% if requirement.section == section_name %}selected{% endif %}>{{ section_name }}</option>
+                {% endfor %}
+            </select>
+        </td>
+        <td>
+            <select class="item-select" required>
+                <option value="">Select Item</option>
+            </select>
+            <input type="hidden" class="item-id-input" value="{{ requirement.item_id|default:'' }}">
+            <input type="hidden" class="item-name-input" value="{{ requirement.item_name|default:'' }}">
+        </td>
+        <td><input type="text" class="unit-input" readonly value="{{ requirement.unit }}"></td>
+        <td><input type="number" class="price-input" step="0.01" min="0" value="{{ requirement.price|floatformat:2 }}"></td>
+        <td><input type="number" class="qty-input" min="1" value="{{ requirement.quantity }}"></td>
+        <td>
+            <input type="text" class="total-input" readonly 
+                   value="{{ requirement.total|floatformat:2 }}">
+        </td>
+        <td>
+            <button type="button" class="remove-btn" onclick="removeRow(this)">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>
+    </tr>
+    {% endfor %}
+{% else %}
+                                                <!-- Default empty row -->
+                                                <tr id="row-1">
+                                                    <td>1</td>
+                                                    <td>
+                                                        <select class="section-select" required>
+                                                            <option value="">Select Section</option>
+                                                            {% for section_name in items_by_section.keys %}
+                                                                <option value="{{ section_name }}">{{ section_name }}</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </td>
+                                                    <td>
+                                                        <select class="item-select" required>
+                                                            <option value="">Select Item</option>
+                                                        </select>
+                                                        <input type="hidden" class="item-id-input" value="">
+                                                        <input type="hidden" class="item-name-input" value="">
+                                                    </td>
+                                                    <td><input type="text" class="unit-input" readonly value="pcs"></td>
+                                                    <td><input type="number" class="price-input" step="0.01" min="0" value="0.00"></td>
+                                                    <td><input type="number" class="qty-input" min="1" value="1"></td>
+                                                    <td><input type="text" class="total-input" readonly value="0.00"></td>
+                                                    <td>
+                                                        <button type="button" class="remove-btn" onclick="removeRow(this)">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
                                             {% endif %}
                                         </tbody>
                                         <tfoot>
@@ -2632,10 +2770,6 @@
                                     <i class="fas fa-save"></i>
                                     &nbsp; Update Lead
                                 </button>
-                                <!-- <button type="button" class="clear-btn" id="clearFormBtn">
-                                    <i class="fas fa-eraser"></i>
-                                    &nbsp; Reset Changes
-                                </button> -->
                                 <button type="button" class="reset-btn" onclick="window.location.href='{% url 'app5:lead_report' %}'">
                                     <i class="fas fa-arrow-left"></i>
                                     &nbsp; Back to Leads
@@ -2702,6 +2836,660 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        console.log('🔧 Initializing Lead Edit System');
+        
+        // ========== GLOBAL VARIABLES ==========
+        let apiCustomerTooltip = null;
+        let currentFirmNameIndex = -1;
+        let currentRefFromIndex = -1;
+        let isFirmNameOpen = false;
+        let isRefFromOpen = false;
+        const itemsPerPage = 10;
+        let currentPage = 1;
+        let totalPages = 1;
+        let currentItems = [];
+        let filteredItems = [];
+        
+        // ========== FORM SUBMISSION FUNCTION ==========
+        window.submitForm = function() {
+            console.log('🔄 Submit form called - Update button clicked');
+            
+            // Validate the form
+            if (!validateForm()) {
+                console.error('❌ Form validation failed');
+                return false;
+            }
+            
+            // Prepare requirements data
+            const requirementsData = collectRequirementsData();
+            console.log('📦 Requirements data:', requirementsData);
+            
+            // Set requirements data in hidden field
+            const requirementsInput = document.getElementById('hiddenRequirementDetails');
+            if (requirementsInput) {
+                requirementsInput.value = JSON.stringify(requirementsData);
+                console.log('✅ Requirements data set in hidden field');
+            } else {
+                console.warn('⚠️ Hidden requirements field not found, creating it');
+                
+                // Create hidden field if it doesn't exist
+                const form = document.getElementById('customerForm');
+                const hiddenField = document.createElement('input');
+                hiddenField.type = 'hidden';
+                hiddenField.name = 'requirements_data';
+                hiddenField.id = 'hiddenRequirementDetails';
+                hiddenField.value = JSON.stringify(requirementsData);
+                form.appendChild(hiddenField);
+            }
+            
+            // Submit the form
+            const form = document.getElementById('customerForm');
+            if (form) {
+                console.log('✅ Submitting form');
+                showLoadingState();
+                form.submit();
+            } else {
+                console.error('❌ Form not found!');
+                alert('Error: Form not found. Please refresh the page and try again.');
+                hideLoadingState();
+            }
+        };
+        
+        // ========== VALIDATION FUNCTIONS ==========
+        function validateForm() {
+            const errors = [];
+            
+            // Check owner name
+            const ownerName = document.getElementById('ownerName');
+            if (!ownerName || !ownerName.value.trim()) {
+                errors.push('Owner Name is required');
+                if (ownerName) ownerName.style.borderColor = 'red';
+            }
+            
+            // Check phone number
+            const phoneNo = document.getElementById('phoneNo');
+            if (!phoneNo || !phoneNo.value.trim()) {
+                errors.push('Phone Number is required');
+                if (phoneNo) phoneNo.style.borderColor = 'red';
+            }
+            
+            // Check status
+            const status = document.getElementById('status');
+            if (!status || !status.value) {
+                errors.push('Status is required');
+                if (status) status.style.borderColor = 'red';
+            }
+            
+            // Check priority
+            const priority = document.getElementById('priority');
+            if (!priority || !priority.value) {
+                errors.push('Priority is required');
+                if (priority) priority.style.borderColor = 'red';
+            }
+            
+            // Check customer type specific fields
+            const isBusinessMode = document.getElementById('customerTypeToggle').checked;
+            
+            if (isBusinessMode) {
+                // Business mode - check firm name
+                const firmNameSearch = document.getElementById('nameSearch');
+                const firmName = document.getElementById('name');
+                
+                if ((!firmNameSearch || !firmNameSearch.value.trim()) && (!firmName || !firmName.value.trim())) {
+                    errors.push('Firm Name is required for Business type');
+                    if (firmNameSearch) firmNameSearch.style.borderColor = 'red';
+                }
+                
+                // Check place
+                const place = document.getElementById('place');
+                if (!place || !place.value.trim()) {
+                    errors.push('Place is required');
+                    if (place) place.style.borderColor = 'red';
+                }
+                
+                // Check pin code
+                const pinCode = document.getElementById('pinCode');
+                if (!pinCode || !pinCode.value.trim()) {
+                    errors.push('Pin Code is required');
+                    if (pinCode) pinCode.style.borderColor = 'red';
+                }
+            } else {
+                // Individual mode
+                const firstName = document.getElementById('firstName');
+                if (!firstName || !firstName.value.trim()) {
+                    errors.push('First Name is required for Individual type');
+                    if (firstName) firstName.style.borderColor = 'red';
+                }
+                
+                const individualPlace = document.getElementById('individualPlace');
+                if (!individualPlace || !individualPlace.value.trim()) {
+                    errors.push('Place is required');
+                    if (individualPlace) individualPlace.style.borderColor = 'red';
+                }
+                
+                const individualPinCode = document.getElementById('individualPinCode');
+                if (!individualPinCode || !individualPinCode.value.trim()) {
+                    errors.push('Pin Code is required');
+                    if (individualPinCode) individualPinCode.style.borderColor = 'red';
+                }
+            }
+            
+            // Show errors if any
+            if (errors.length > 0) {
+                alert('Please fix the following errors:\n\n' + errors.join('\n'));
+                
+                // Scroll to first error
+                const firstErrorField = document.querySelector('[style*="border-color: red"]');
+                if (firstErrorField) {
+                    firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                
+                return false;
+            }
+            
+            return true;
+        }
+        
+        // ========== REQUIREMENTS TABLE FUNCTIONS ==========
+        
+        // ✅ INITIALIZE EXISTING REQUIREMENTS ON PAGE LOAD
+        function initializeRequirements() {
+            console.log('📦 Initializing requirements table');
+            
+            const tableBody = document.getElementById('table-body');
+            if (!tableBody) return;
+            
+            const rows = tableBody.querySelectorAll('tr');
+            console.log(`Found ${rows.length} requirement rows`);
+            
+            rows.forEach((row, index) => {
+                setupRowEventHandlers(row);
+                
+                // Get the item ID and name from hidden inputs
+                const itemIdInput = row.querySelector('.item-id-input');
+                const itemNameInput = row.querySelector('.item-name-input');
+                const sectionSelect = row.querySelector('.section-select');
+                const itemSelect = row.querySelector('.item-select');
+                const unitInput = row.querySelector('.unit-input');
+                const priceInput = row.querySelector('.price-input');
+                const qtyInput = row.querySelector('.qty-input');
+                const totalInput = row.querySelector('.total-input');
+                
+                if (itemIdInput && itemIdInput.value) {
+                    const itemId = itemIdInput.value;
+                    const itemName = itemNameInput.value;
+                    
+                    console.log(`Row ${index + 1}: Item ID: ${itemId}, Name: ${itemName}`);
+                    
+                    // Find the item in our data
+                    const itemOption = document.querySelector(`#item-options-data .item-option[data-id="${itemId}"]`);
+                    if (itemOption) {
+                        const section = itemOption.getAttribute('data-section');
+                        const unit = itemOption.getAttribute('data-unit');
+                        const price = itemOption.getAttribute('data-price');
+                        
+                        // Set section
+                        if (sectionSelect && section) {
+                            sectionSelect.value = section;
+                        }
+                        
+                        // Populate items for this section
+                        if (section && itemSelect) {
+                            populateItemsForSection(section, itemSelect, itemId);
+                        }
+                        
+                        // Set unit and price
+                        if (unitInput && unit) {
+                            unitInput.value = unit;
+                        }
+                        if (priceInput && price) {
+                            priceInput.value = parseFloat(price).toFixed(2);
+                        }
+                    }
+                    
+                    // Calculate total for this row
+                    if (priceInput && qtyInput && totalInput) {
+                        // Check if total has data attributes (for initial load)
+                        const dataPrice = totalInput.getAttribute('data-price');
+                        const dataQty = totalInput.getAttribute('data-qty');
+                        
+                        if (dataPrice !== null && dataQty !== null) {
+                            // Use data from attributes on initial load
+                            const price = parseFloat(dataPrice) || 0;
+                            const qty = parseInt(dataQty) || 1;
+                            totalInput.value = (price * qty).toFixed(2);
+                            // Remove data attributes after calculation
+                            totalInput.removeAttribute('data-price');
+                            totalInput.removeAttribute('data-qty');
+                        } else {
+                            // Use current input values
+                            const price = parseFloat(priceInput.value) || 0;
+                            const qty = parseInt(qtyInput.value) || 1;
+                            totalInput.value = (price * qty).toFixed(2);
+                        }
+                    }
+                }
+            });
+            
+            // Update grand total
+            updateGrandTotal();
+            updateItemsCountBadge();
+            
+            console.log('✅ Requirements table initialized');
+        }
+        
+        // ✅ ADD REQUIREMENT ROW FUNCTION
+        function addRequirementRow(reqData = null, rowNumber = null) {
+            const tableBody = document.getElementById('table-body');
+            if (!tableBody) return;
+            
+            const currentRowCount = tableBody.querySelectorAll('tr').length;
+            const newRowNumber = rowNumber || (currentRowCount + 1);
+            
+            const newRow = document.createElement('tr');
+            newRow.id = `row-${newRowNumber}`;
+            
+            // Store requirement ID if it exists
+            if (reqData && reqData.id) {
+                newRow.setAttribute('data-requirement-id', reqData.id);
+            }
+            
+            newRow.innerHTML = `
+                <td>${newRowNumber}</td>
+                <td>
+                    <select class="section-select" required>
+                        <option value="">Select Section</option>
+                        {% for section_name in items_by_section.keys %}
+                        <option value="{{ section_name }}">{{ section_name }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td>
+                    <select class="item-select" required>
+                        <option value="">Select Item</option>
+                    </select>
+                    <input type="hidden" class="item-id-input" value="${reqData ? reqData.item_id : ''}">
+                    <input type="hidden" class="item-name-input" value="${reqData ? reqData.item_name : ''}">
+                </td>
+                <td><input type="text" class="unit-input" readonly value="${reqData ? reqData.unit : 'pcs'}"></td>
+                <td><input type="number" class="price-input" step="0.01" min="0" value="${reqData ? parseFloat(reqData.price).toFixed(2) : '0.00'}"></td>
+                <td><input type="number" class="qty-input" min="1" value="${reqData ? parseInt(reqData.quantity) : '1'}"></td>
+                <td><input type="text" class="total-input" readonly value="${reqData ? parseFloat(reqData.total).toFixed(2) : '0.00'}"></td>
+                <td>
+                    <button type="button" class="remove-btn" onclick="removeRow(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            
+            tableBody.appendChild(newRow);
+            
+            // Setup event handlers for this row
+            setupRowEventHandlers(newRow);
+            
+            // If we have data, populate the item
+            if (reqData && reqData.item_id) {
+                const sectionSelect = newRow.querySelector('.section-select');
+                const itemSelect = newRow.querySelector('.item-select');
+                
+                // Find the item's section
+                const itemOption = document.querySelector(`#item-options-data .item-option[data-id="${reqData.item_id}"]`);
+                if (itemOption) {
+                    const section = itemOption.getAttribute('data-section');
+                    if (sectionSelect && section) {
+                        sectionSelect.value = section;
+                        populateItemsForSection(section, itemSelect, reqData.item_id);
+                    }
+                }
+            }
+            
+            return newRow;
+        }
+        
+        // ✅ POPULATE ITEMS FOR SECTION
+        function populateItemsForSection(section, itemSelect, selectedItemId = null) {
+            if (!itemSelect) return;
+            
+            console.log(`📋 Populating items for section: ${section}, selected ID: ${selectedItemId}`);
+            
+            // Clear existing options except first one
+            itemSelect.innerHTML = '<option value="">Select Item</option>';
+            
+            if (!section) return;
+            
+            // Get item options from hidden div
+            const itemOptionsData = document.getElementById('item-options-data');
+            if (!itemOptionsData) {
+                console.error('❌ Item options data not found');
+                return;
+            }
+            
+            // Get all item options for this section
+            const allOptions = itemOptionsData.querySelectorAll('.item-option');
+            let itemsAdded = 0;
+            
+            allOptions.forEach(option => {
+                const optionSection = option.getAttribute('data-section');
+                
+                if (optionSection === section) {
+                    const itemId = option.getAttribute('data-id');
+                    const itemName = option.getAttribute('data-name');
+                    
+                    const newOption = document.createElement('option');
+                    newOption.value = itemId;
+                    newOption.textContent = itemName;
+                    newOption.setAttribute('data-unit', option.getAttribute('data-unit') || 'pcs');
+                    newOption.setAttribute('data-price', option.getAttribute('data-price') || '0');
+                    
+                    // ✅ SELECT THE CORRECT ITEM
+                    if (selectedItemId && itemId == selectedItemId) {
+                        newOption.selected = true;
+                        console.log(`  ✅ Selected item: ${itemName} (ID: ${selectedItemId})`);
+                        
+                        // Update hidden inputs
+                        const itemIdInput = itemSelect.parentElement.querySelector('.item-id-input');
+                        const itemNameInput = itemSelect.parentElement.querySelector('.item-name-input');
+                        if (itemIdInput) itemIdInput.value = itemId;
+                        if (itemNameInput) itemNameInput.value = itemName;
+                        
+                        // Update unit and price
+                        const unitInput = itemSelect.closest('tr').querySelector('.unit-input');
+                        const priceInput = itemSelect.closest('tr').querySelector('.price-input');
+                        if (unitInput) unitInput.value = option.getAttribute('data-unit') || 'pcs';
+                        if (priceInput) priceInput.value = parseFloat(option.getAttribute('data-price') || 0).toFixed(2);
+                        
+                        // Trigger change to calculate total
+                        setTimeout(() => {
+                            const changeEvent = new Event('change', { bubbles: true });
+                            itemSelect.dispatchEvent(changeEvent);
+                        }, 100);
+                    }
+                    
+                    itemSelect.appendChild(newOption);
+                    itemsAdded++;
+                }
+            });
+            
+            console.log(`  Added ${itemsAdded} items to dropdown`);
+            
+            // If no items found for this section
+            if (itemsAdded === 0) {
+                const noItemOption = document.createElement('option');
+                noItemOption.value = '';
+                noItemOption.textContent = 'No items in this section';
+                itemSelect.appendChild(noItemOption);
+            }
+        }
+        
+        // ✅ SETUP EVENT HANDLERS FOR ROW
+        function setupRowEventHandlers(row) {
+            const sectionSelect = row.querySelector('.section-select');
+            const itemSelect = row.querySelector('.item-select');
+            const priceInput = row.querySelector('.price-input');
+            const qtyInput = row.querySelector('.qty-input');
+            const unitInput = row.querySelector('.unit-input');
+            const removeBtn = row.querySelector('.remove-btn');
+            
+            // Section change - populate items
+            if (sectionSelect) {
+                sectionSelect.addEventListener('change', function() {
+                    console.log('📂 Section changed to:', this.value);
+                    populateItemsForSection(this.value, itemSelect);
+                    
+                    // Reset item selection and related fields
+                    const itemIdInput = row.querySelector('.item-id-input');
+                    const itemNameInput = row.querySelector('.item-name-input');
+                    if (itemIdInput) itemIdInput.value = '';
+                    if (itemNameInput) itemNameInput.value = '';
+                    if (unitInput) unitInput.value = 'pcs';
+                    if (priceInput) priceInput.value = '0.00';
+                    if (qtyInput) qtyInput.value = '1';
+                    
+                    calculateRowTotal(row);
+                });
+            }
+            
+            // ✅ ITEM CHANGE - UPDATE UNIT AND PRICE
+            if (itemSelect) {
+                itemSelect.addEventListener('change', function() {
+                    const selectedOption = this.options[this.selectedIndex];
+                    
+                    console.log('🔧 Item changed:', selectedOption ? selectedOption.text : 'None');
+                    
+                    // Update hidden inputs
+                    const itemIdInput = row.querySelector('.item-id-input');
+                    const itemNameInput = row.querySelector('.item-name-input');
+                    
+                    if (selectedOption && selectedOption.value) {
+                        // Update hidden inputs
+                        if (itemIdInput) itemIdInput.value = selectedOption.value;
+                        if (itemNameInput) itemNameInput.value = selectedOption.text;
+                        
+                        // Get data from option attributes
+                        const unit = selectedOption.getAttribute('data-unit') || 'pcs';
+                        const price = selectedOption.getAttribute('data-price') || '0';
+                        
+                        console.log('📊 Item details:', {
+                            id: selectedOption.value,
+                            name: selectedOption.text,
+                            unit: unit,
+                            price: price
+                        });
+                        
+                        // ✅ UPDATE UNIT FIELD
+                        if (unitInput) {
+                            unitInput.value = unit;
+                            console.log('  ✅ Unit set to:', unit);
+                        }
+                        
+                        // ✅ UPDATE PRICE FIELD
+                        if (priceInput) {
+                            const priceValue = parseFloat(price) || 0;
+                            priceInput.value = priceValue.toFixed(2);
+                            console.log('  ✅ Price set to:', priceValue.toFixed(2));
+                        }
+                        
+                        // Set quantity to 1 if empty or 0
+                        if (qtyInput) {
+                            const currentQty = parseInt(qtyInput.value) || 0;
+                            if (currentQty === 0) {
+                                qtyInput.value = '1';
+                            }
+                        }
+                        
+                        // Calculate total immediately
+                        calculateRowTotal(row);
+                    } else {
+                        // Item deselected - reset fields
+                        if (itemIdInput) itemIdInput.value = '';
+                        if (itemNameInput) itemNameInput.value = '';
+                        if (unitInput) unitInput.value = 'pcs';
+                        if (priceInput) priceInput.value = '0.00';
+                        if (qtyInput) qtyInput.value = '1';
+                        calculateRowTotal(row);
+                    }
+                });
+            }
+            
+            // Price change - recalculate total
+            if (priceInput) {
+                priceInput.addEventListener('input', function() {
+                    console.log('💵 Price changed to:', this.value);
+                    calculateRowTotal(row);
+                });
+            }
+            
+            // Quantity change - recalculate total
+            if (qtyInput) {
+                qtyInput.addEventListener('input', function() {
+                    if (parseInt(this.value) < 1) {
+                        this.value = '1';
+                    }
+                    console.log('🔢 Quantity changed to:', this.value);
+                    calculateRowTotal(row);
+                });
+            }
+            
+            // Remove button
+            if (removeBtn) {
+                removeBtn.addEventListener('click', function() {
+                    removeRow(this);
+                });
+            }
+        }
+        
+        // ✅ CALCULATE ROW TOTAL
+        function calculateRowTotal(row) {
+            const priceInput = row.querySelector('.price-input');
+            const qtyInput = row.querySelector('.qty-input');
+            const totalInput = row.querySelector('.total-input');
+            
+            if (!priceInput || !qtyInput || !totalInput) {
+                console.warn('⚠️ Missing inputs for total calculation');
+                return;
+            }
+            
+            const price = parseFloat(priceInput.value) || 0;
+            const qty = parseInt(qtyInput.value) || 0;
+            const total = price * qty;
+            
+            totalInput.value = total.toFixed(2);
+            
+            console.log('🧮 Calculated:', {
+                price: price,
+                quantity: qty,
+                total: total.toFixed(2)
+            });
+            
+            // Update grand total
+            updateGrandTotal();
+        }
+        
+        // ✅ UPDATE GRAND TOTAL
+        function updateGrandTotal() {
+            const tableBody = document.getElementById('table-body');
+            const grandTotalElement = document.getElementById('grand-total');
+            
+            if (!tableBody || !grandTotalElement) return;
+            
+            let grandTotal = 0;
+            
+            const rows = tableBody.querySelectorAll('tr');
+            rows.forEach(row => {
+                const totalInput = row.querySelector('.total-input');
+                if (totalInput) {
+                    const rowTotal = parseFloat(totalInput.value) || 0;
+                    grandTotal += rowTotal;
+                }
+            });
+            
+            grandTotalElement.textContent = '₹' + grandTotal.toFixed(2);
+            
+            console.log('💰 Grand Total updated: ₹' + grandTotal.toFixed(2));
+        }
+        
+        // ✅ UPDATE ITEMS COUNT BADGE
+        function updateItemsCountBadge() {
+            const badge = document.getElementById('itemsCountBadge');
+            const tableBody = document.getElementById('table-body');
+            
+            if (!badge || !tableBody) return;
+            
+            const rowCount = tableBody.querySelectorAll('tr').length;
+            badge.textContent = `${rowCount} item${rowCount !== 1 ? 's' : ''}`;
+        }
+        
+        // ✅ REMOVE ROW FUNCTION
+        window.removeRow = function(button) {
+            const row = button.closest('tr');
+            if (row && confirm('Are you sure you want to remove this item?')) {
+                row.remove();
+                updateRowNumbers();
+                updateItemsCountBadge();
+                updateGrandTotal();
+            }
+        };
+        
+        // ✅ UPDATE ROW NUMBERS
+        function updateRowNumbers() {
+            const tableBody = document.getElementById('table-body');
+            if (!tableBody) return;
+            
+            const rows = tableBody.querySelectorAll('tr');
+            rows.forEach((row, index) => {
+                const firstCell = row.querySelector('td:first-child');
+                if (firstCell) {
+                    firstCell.textContent = index + 1;
+                }
+            });
+        }
+        
+        // ✅ COLLECT REQUIREMENTS DATA
+        function collectRequirementsData() {
+            const tableBody = document.getElementById('table-body');
+            if (!tableBody) {
+                console.warn('⚠️ Requirements table not found');
+                return [];
+            }
+            
+            const rows = tableBody.querySelectorAll('tr');
+            const requirementsData = [];
+            
+            rows.forEach((row, index) => {
+                const itemSelect = row.querySelector('.item-select');
+                const itemIdInput = row.querySelector('.item-id-input');
+                const itemNameInput = row.querySelector('.item-name-input');
+                const sectionSelect = row.querySelector('.section-select');
+                const unitInput = row.querySelector('.unit-input');
+                const priceInput = row.querySelector('.price-input');
+                const qtyInput = row.querySelector('.qty-input');
+                const requirementId = row.getAttribute('data-requirement-id');
+                
+                // Skip rows without item selected
+                const itemId = itemIdInput ? itemIdInput.value : (itemSelect ? itemSelect.value : '');
+                if (!itemId) {
+                    console.debug(`Skipping row ${index + 1}: No item selected`);
+                    return;
+                }
+                
+                const itemName = itemNameInput ? itemNameInput.value : (itemSelect ? itemSelect.options[itemSelect.selectedIndex]?.text : '');
+                const section = sectionSelect ? sectionSelect.value : 'GENERAL';
+                const unit = unitInput ? unitInput.value : 'pcs';
+                const price = priceInput ? parseFloat(priceInput.value) || 0 : 0;
+                const quantity = qtyInput ? parseInt(qtyInput.value) || 1 : 1;
+                const total = price * quantity;
+                
+                const requirement = {
+                    id: requirementId || null,
+                    item_id: itemId,
+                    item_name: itemName || '',
+                    section: section,
+                    unit: unit,
+                    price: price,
+                    quantity: quantity,
+                    total: total,
+                };
+                
+                requirementsData.push(requirement);
+                console.debug(`Row ${index + 1}:`, requirement);
+            });
+            
+            console.log(`📊 Collected ${requirementsData.length} requirements`);
+            return requirementsData;
+        }
+        
+        // ✅ ADD ITEM BUTTON
+        const addItemBtn = document.getElementById('add-item-btn');
+        if (addItemBtn) {
+            addItemBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                addRequirementRow();
+                updateItemsCountBadge();
+            });
+        }
+        
+        // ========== INITIALIZATION FUNCTIONS ==========
+        
         // Set today's date as default if not already set
         const today = new Date().toISOString().split('T')[0];
         const dateField = document.getElementById('date');
@@ -2714,53 +3502,22 @@
         const businessFields = document.querySelector('.business-fields');
         const individualFields = document.querySelector('.individual-fields');
         
-        // Modal elements
-        const updateModal = document.getElementById('updateModal');
-        const confirmUpdateBtn = document.getElementById('confirmUpdateBtn');
-        const cancelUpdateBtn = document.getElementById('cancelUpdateBtn');
-        const assignmentTypeField = document.getElementById('assignmentType');
-        
         // Pagination elements
         const prevPageBtn = document.getElementById('prevPage');
         const nextPageBtn = document.getElementById('nextPage');
         const paginationNumbers = document.getElementById('paginationNumbers');
         const paginationInfo = document.getElementById('paginationInfo');
         
-        // API elements
-        const apiStatus = document.getElementById('apiStatus');
-        const apiRefreshBtn = document.getElementById('apiRefreshBtn');
-        const apiCountElement = document.querySelector('.api-count');
-        const autoFillNotification = document.getElementById('autoFillNotification');
-        const autoFillMessage = document.getElementById('autoFillMessage');
-        
-        // Pagination configuration
-        const itemsPerPage = 10;
-        let currentPage = 1;
-        let totalPages = 1;
-        let currentItems = [];
-        let filteredItems = [];
-        
-        // Searchable Select Variables
-        let isRefFromOpen = false;
-        let currentRefFromIndex = -1;
-        
-        // Firm Name searchable select Variables
-        let isFirmNameOpen = false;
-        let currentFirmNameIndex = -1;
-        
-        // API Customer Tooltip
-        let apiCustomerTooltip = null;
-        
         // Create lookup maps for marketedBy and branch
         const marketedByMap = {
             {% for user in active_users %}
-            "{{ user.id }}": "{{ user.name|escapejs }}",
+            "{{ user.name|escapejs }}": "{{ user.name|escapejs }}",
             {% endfor %}
         };
 
         const branchMap = {
             {% for department in departments %}
-            "{{ department.id }}": "{{ department.name|escapejs }}",
+            "{{ department.name|escapejs }}": "{{ department.name|escapejs }}",
             {% endfor %}
         };
 
@@ -2875,200 +3632,82 @@
             apiCustomerData = [];
         }
 
-        console.log('📡 Edit Mode - Lead ID: {{ lead_data.id }}');
+        console.log('📡 Edit Mode - Lead ID: {{ lead.id }}');
         console.log('📊 Total leads:', leads.length);
         console.log('👥 Total employees:', employees.length);
         console.log('🎯 Campaigns available:', Object.keys(campaignMap).length);
         console.log('🏢 Existing firms:', existingFirms.length);
         console.log('📡 API Customers:', apiCustomerData.length);
 
-        // Update API status display
-        function updateApiStatus() {
-            if (apiCustomerData.length > 0) {
-                apiStatus.className = 'api-status connected';
-                apiCountElement.textContent = apiCustomerData.length;
+        // ========== INITIALIZE APPLICATION ==========
+        
+        initializeApp();
+
+        function initializeApp() {
+            initializeToggle();
+            setupDirectoryTabs();
+            setupDirectorySearch();
+            setupPriorityFilter();
+            initializePagination();
+            setupEventListeners();
+            initializeSearchableSelect();
+            initializeFirmNameSearch();
+            initializeDateDisplay();
+            
+            // ✅ Initialize requirements table
+            initializeRequirements();
+            
+            // Setup API refresh button
+            if (apiRefreshBtn) {
+                apiRefreshBtn.addEventListener('click', refreshApiData);
+            }
+
+            setTimeout(() => {
+                updateAllTimeElapsedBadges();
+            }, 500);
+
+            setInterval(updateAllTimeElapsedBadges, 60000);
+
+            console.log('✅ Lead Edit System initialized successfully');
+            console.log('📊 Editing Lead ID:', {{ lead.id }});
+        }
+
+        function initializeToggle() {
+            const isBusinessMode = customerTypeToggle.checked;
+            
+            if (isBusinessMode) {
+                businessFields.style.display = 'block';
+                individualFields.style.display = 'none';
+                
+                document.querySelectorAll('.business-fields [required]').forEach(field => {
+                    field.required = true;
+                });
+                document.querySelectorAll('.individual-fields [required]').forEach(field => {
+                    field.required = false;
+                });
+                
+                const firmNameSearch = document.getElementById('nameSearch');
+                if (firmNameSearch) {
+                    firmNameSearch.readOnly = false;
+                    firmNameSearch.placeholder = `Search from ${apiCustomerData.length} API customers or type new firm...`;
+                }
+                
             } else {
-                apiStatus.className = 'api-status disconnected';
-                apiCountElement.textContent = '0';
-            }
-        }
-
-        // Debug: Check if current lead exists in leads array
-        const currentLeadId = {{ lead_data.id }};
-        console.log('Current lead ID:', currentLeadId);
-        console.log('Is current lead in leads array?', leads.some(l => l.id == currentLeadId));
-
-        // Initialize API status
-        updateApiStatus();
-
-        // ========== DATE FUNCTIONS ==========
-
-        function formatDateForDisplay(dateString) {
-            if (!dateString) return { short: '', full: '', tooltip: '' };
-            
-            try {
-                const dateObj = new Date(dateString);
-                if (isNaN(dateObj.getTime())) {
-                    return {
-                        short: dateString,
-                        full: dateString,
-                        tooltip: dateString
-                    };
-                }
+                businessFields.style.display = 'none';
+                individualFields.style.display = 'block';
                 
-                const short = dateObj.toLocaleDateString('en-GB', {
-                    day: '2-digit',
-                    month: 'short'
+                document.querySelectorAll('.business-fields [required]').forEach(field => {
+                    field.required = false;
+                });
+                document.querySelectorAll('.individual-fields [required]').forEach(field => {
+                    field.required = true;
                 });
                 
-                const full = dateObj.toLocaleDateString('en-GB', {
-                    day: '2-digit',
-                    month: 'long',
-                    year: 'numeric'
-                });
+                const firmNameOptions = document.getElementById('firmNameOptions');
+                if (firmNameOptions) firmNameOptions.classList.remove('active');
                 
-                const tooltip = dateObj.toLocaleDateString('en-GB', {
-                    weekday: 'long',
-                    day: '2-digit',
-                    month: 'long',
-                    year: 'numeric'
-                });
-                
-                const time = dateObj.toLocaleTimeString('en-GB', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: true
-                });
-                
-                return {
-                    short: short,
-                    full: full,
-                    tooltip: tooltip,
-                    time: time,
-                    dateObj: dateObj
-                };
-            } catch (e) {
-                return {
-                    short: dateString,
-                    full: dateString,
-                    tooltip: dateString
-                };
+                closeApiCustomerDetails();
             }
-        }
-        
-        function updateDirectoryDateDisplay() {
-            const now = new Date();
-            
-            const currentDateDisplay = now.toLocaleDateString('en-GB', {
-                weekday: 'short',
-                day: '2-digit',
-                month: 'short',
-                year: 'numeric'
-            });
-            
-            const timeDisplay = now.toLocaleTimeString('en-GB', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true
-            });
-            
-            const todayDisplay = now.toLocaleDateString('en-GB', {
-                day: '2-digit',
-                month: 'short'
-            });
-            
-            const currentDateElement = document.getElementById('currentDate');
-            const todayDateElement = document.getElementById('todayDate');
-            
-            if (currentDateElement) {
-                currentDateElement.innerHTML = `<i class="far fa-calendar-alt"></i> ${currentDateDisplay}`;
-            }
-            
-            if (todayDateElement) {
-                todayDateElement.innerHTML = `<i class="far fa-clock"></i> ${todayDisplay} ${timeDisplay}`;
-            }
-        }
-        
-        function initializeDateDisplay() {
-            updateDirectoryDateDisplay();
-            setInterval(updateDirectoryDateDisplay, 60000);
-        }
-
-        // ========== TIME ELAPSED FUNCTIONS ==========
-
-        function updateAllTimeElapsedBadges() {
-            const timeElapsedBadges = document.querySelectorAll('.time-elapsed-badge');
-            const now = new Date();
-            
-            timeElapsedBadges.forEach(badge => {
-                const createdDateStr = badge.getAttribute('data-created');
-                const elapsedText = badge.querySelector('.elapsed-text');
-                
-                if (!createdDateStr || !elapsedText) return;
-                
-                try {
-                    const createdDate = new Date(createdDateStr);
-                    
-                    // Check if date is valid
-                    if (isNaN(createdDate.getTime())) {
-                        elapsedText.textContent = 'Invalid date';
-                        badge.className = 'time-elapsed-badge time-old';
-                        return;
-                    }
-                    
-                    const diffMs = now - createdDate;
-                    const diffSeconds = Math.floor(diffMs / 1000);
-                    const diffMinutes = Math.floor(diffSeconds / 60);
-                    const diffHours = Math.floor(diffMinutes / 60);
-                    const diffDays = Math.floor(diffHours / 24);
-                    
-                    let elapsedTextValue = '';
-                    let badgeClass = 'time-elapsed-badge';
-                    
-                    // Determine time elapsed and badge class
-                    if (diffDays > 0) {
-                        if (diffDays === 1) elapsedTextValue = '1 day ago';
-                        else if (diffDays < 7) elapsedTextValue = `${diffDays} days ago`;
-                        else if (diffDays < 30) elapsedTextValue = `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? 's' : ''} ago`;
-                        else if (diffDays < 365) elapsedTextValue = `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) > 1 ? 's' : ''} ago`;
-                        else elapsedTextValue = `${Math.floor(diffDays / 365)} year${Math.floor(diffDays / 365) > 1 ? 's' : ''} ago`;
-                        
-                        // Color coding based on age
-                        if (diffDays < 1) {
-                            badgeClass += ' time-recent';
-                        } else if (diffDays < 3) {
-                            badgeClass += ' time-medium';
-                        } else {
-                            badgeClass += ' time-old';
-                        }
-                    } else if (diffHours > 0) {
-                        if (diffHours === 1) elapsedTextValue = '1 hour ago';
-                        else elapsedTextValue = `${diffHours} hours ago`;
-                        badgeClass += ' time-recent';
-                    } else if (diffMinutes > 0) {
-                        if (diffMinutes === 1) elapsedTextValue = '1 minute ago';
-                        else if (diffMinutes < 60) elapsedTextValue = `${diffMinutes} minutes ago`;
-                        else elapsedTextValue = '1 hour ago';
-                        badgeClass += ' time-recent';
-                    } else if (diffSeconds > 30) {
-                        elapsedTextValue = `${diffSeconds} seconds ago`;
-                        badgeClass += ' time-recent';
-                    } else {
-                        elapsedTextValue = 'Just now';
-                        badgeClass += ' time-recent';
-                    }
-                    
-                    elapsedText.textContent = elapsedTextValue;
-                    badge.className = badgeClass;
-                    badge.style.display = 'inline-flex';
-                    
-                } catch (e) {
-                    console.error('Error calculating time elapsed:', e);
-                    elapsedText.textContent = 'Date error';
-                    badge.className = 'time-elapsed-badge time-old';
-                    badge.style.display = 'inline-flex';
-                }
-            });
         }
 
         // ========== API CUSTOMER SEARCH FUNCTIONS ==========
@@ -3205,7 +3844,7 @@
                 `;
                 
                 if (customer.mobile) detailsHTML += `<div><i class="fas fa-phone"></i> Mobile: ${customer.mobile}</div>`;
-                if (customer.branch) detailsHTML += `<div><i class="fas fa-code-branch"></i> Branch: ${customer.branch}</div>`;
+                
                 
                 detailsHTML += '</div>';
                 
@@ -3214,7 +3853,7 @@
                 
                 const badge = document.getElementById('firmSourceBadge');
                 badge.innerHTML = '<i class="fas fa-database"></i>';
-                badge.style.background = '#4a6fdc';
+                badge.style.background = '#ffe9cc';
             }
             
             function autoFillFromApiCustomer(customer) {
@@ -3398,14 +4037,14 @@
                 });
             }
             
-            function closeApiCustomerDetails() {
+            window.closeApiCustomerDetails = function() {
                 const detailsDiv = document.getElementById('apiCustomerDetails');
                 detailsDiv.style.display = 'none';
                 
                 const badge = document.getElementById('firmSourceBadge');
                 badge.innerHTML = '<i class="fas fa-database"></i> ';
                 badge.style.background = '';
-            }
+            };
             
             function showApiCustomerTooltip(element, customer) {
                 if (apiCustomerTooltip) {
@@ -3607,164 +4246,6 @@
                 }
             }
         }
-        
-        window.closeApiCustomerDetails = function() {
-            const detailsDiv = document.getElementById('apiCustomerDetails');
-            if (detailsDiv) {
-                detailsDiv.style.display = 'none';
-            }
-            
-            const badge = document.getElementById('firmSourceBadge');
-            if (badge) {
-                badge.innerHTML = '<i class="fas fa-database"></i> ';
-                badge.style.background = '';
-            }
-        };
-
-        // ========== API REFRESH FUNCTION ==========
-
-        async function refreshApiData() {
-            try {
-                apiRefreshBtn.classList.add('loading');
-                apiStatus.className = 'api-status loading';
-                
-                // Show loading message
-                const apiLabel = document.querySelector('.api-label');
-                if (apiLabel) {
-                    const originalText = apiLabel.textContent;
-                    apiLabel.textContent = 'Loading...';
-                    
-                    setTimeout(() => {
-                        // Simulate API refresh (in real implementation, this would be an AJAX call)
-                        console.log('Refreshing API data...');
-                        
-                        // Update status
-                        apiStatus.className = 'api-status connected';
-                        apiCountElement.textContent = apiCustomerData.length;
-                        apiLabel.textContent = 'API Customers';
-                        
-                        apiRefreshBtn.classList.remove('loading');
-                        
-                        showAutoFillNotification('API customer data refreshed successfully', 'success');
-                        
-                    }, 1500);
-                }
-                
-            } catch (error) {
-                console.error('Error refreshing API data:', error);
-                apiStatus.className = 'api-status disconnected';
-                apiRefreshBtn.classList.remove('loading');
-                showAutoFillNotification('Error refreshing API data', 'error');
-            }
-        }
-
-        // ========== AUTO-FILL NOTIFICATION FUNCTIONS ==========
-
-        function showAutoFillNotification(message, type = 'info') {
-            autoFillMessage.textContent = message;
-            autoFillNotification.style.display = 'block';
-            
-            // Set color based on type
-            if (type === 'success') {
-                autoFillNotification.style.borderColor = '#4CAF50';
-                autoFillNotification.style.background = '#f0fff0';
-            } else if (type === 'error') {
-                autoFillNotification.style.borderColor = '#f44336';
-                autoFillNotification.style.background = '#fff0f0';
-            } else {
-                autoFillNotification.style.borderColor = '#2196F3';
-                autoFillNotification.style.background = '#f0f8ff';
-            }
-            
-            // Auto-hide after 5 seconds
-            setTimeout(() => {
-                closeAutoFillNotification();
-            }, 5000);
-        }
-
-        function closeAutoFillNotification() {
-            autoFillNotification.style.display = 'none';
-        }
-
-        window.closeAutoFillNotification = closeAutoFillNotification;
-
-        // ========== CAMPAIGN DETAILS FUNCTIONS ==========
-
-        function displayCampaignDetails(select) {
-            const box = document.getElementById("campaign-details-box");
-            
-            if (!select.value) {
-                if (box) box.style.display = "none";
-                return;
-            }
-            
-            const opt = select.options[select.selectedIndex];
-            const campaignData = campaignMap[select.value];
-            
-            if (!campaignData) {
-                console.warn('Campaign data not found for ID:', select.value);
-                if (box) box.style.display = "none";
-                return;
-            }
-            
-            // Update all detail fields if they exist
-            const cId = document.getElementById("c-id");
-            const cName = document.getElementById("c-name");
-            const cSoftware = document.getElementById("c-software");
-            const cStatus = document.getElementById("c-status");
-            
-            if (cId) cId.textContent = campaignData.id || '-';
-            if (cName) cName.textContent = campaignData.name || '-';
-            if (cSoftware) cSoftware.textContent = campaignData.software || '-';
-            
-            if (cStatus) {
-                const status = campaignData.status || 'draft';
-                cStatus.innerHTML = `<span class="status-badge status-${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>`;
-            }
-            
-            if (box) box.style.display = "block";
-            
-            console.log('🎯 Selected Campaign:', campaignData);
-        }
-
-        function clearCampaignDetails() {
-            const box = document.getElementById("campaign-details-box");
-            if (box) {
-                box.style.display = "none";
-            }
-            
-            document.querySelectorAll('#campaign-details-box span[id^="c-"]').forEach(span => {
-                span.textContent = "-";
-            });
-        }
-
-        // ========== INITIALIZATION FUNCTIONS ==========
-
-        function initializeApp() {
-            initializeToggle();
-            setupDirectoryTabs();
-            setupDirectorySearch();
-            setupPriorityFilter();
-            initializePagination();
-            setupEventListeners();
-            initializeSearchableSelect();
-            initializeFirmNameSearch();
-            initializeDateDisplay();
-            
-            // Setup API refresh button
-            if (apiRefreshBtn) {
-                apiRefreshBtn.addEventListener('click', refreshApiData);
-            }
-
-            setTimeout(() => {
-                updateAllTimeElapsedBadges();
-            }, 500);
-
-            setInterval(updateAllTimeElapsedBadges, 60000);
-
-            console.log('✅ Lead Edit System initialized successfully');
-            console.log('📊 Editing Lead ID:', {{ lead_data.id }});
-        }
 
         function initializeSearchableSelect() {
             const refFromSelect = document.getElementById('refFrom');
@@ -3940,10 +4421,20 @@
             
             customerTypeToggle.addEventListener('change', initializeToggle);
             
-            // Modal button listeners - FIXED
-            confirmUpdateBtn.addEventListener('click', handleConfirmUpdate);
-            cancelUpdateBtn.addEventListener('click', hideUpdateModal);
-            updateModal.addEventListener('click', handleModalClickOutside);
+            // Modal button listeners
+            const updateModal = document.getElementById('updateModal');
+            const confirmUpdateBtn = document.getElementById('confirmUpdateBtn');
+            const cancelUpdateBtn = document.getElementById('cancelUpdateBtn');
+            
+            if (confirmUpdateBtn) {
+                confirmUpdateBtn.addEventListener('click', handleConfirmUpdate);
+            }
+            if (cancelUpdateBtn) {
+                cancelUpdateBtn.addEventListener('click', hideUpdateModal);
+            }
+            if (updateModal) {
+                updateModal.addEventListener('click', handleModalClickOutside);
+            }
             
             const form = document.getElementById('customerForm');
             form.addEventListener('submit', handleFormSubmit);
@@ -3954,123 +4445,6 @@
             
             setupNavigationMenu();
         }
-
-        // ========== FORM MANAGEMENT ==========
-
-        function initializeToggle() {
-            const isBusinessMode = customerTypeToggle.checked;
-            
-            if (isBusinessMode) {
-                businessFields.style.display = 'block';
-                individualFields.style.display = 'none';
-                
-                document.querySelectorAll('.business-fields [required]').forEach(field => {
-                    field.required = true;
-                });
-                document.querySelectorAll('.individual-fields [required]').forEach(field => {
-                    field.required = false;
-                });
-                
-                const firmNameSearch = document.getElementById('nameSearch');
-                if (firmNameSearch) {
-                    firmNameSearch.readOnly = false;
-                    firmNameSearch.placeholder = `Search from ${apiCustomerData.length} API customers or type new firm...`;
-                }
-                
-            } else {
-                businessFields.style.display = 'none';
-                individualFields.style.display = 'block';
-                
-                document.querySelectorAll('.business-fields [required]').forEach(field => {
-                    field.required = false;
-                });
-                document.querySelectorAll('.individual-fields [required]').forEach(field => {
-                    field.required = true;
-                });
-                
-                const firmNameOptions = document.getElementById('firmNameOptions');
-                if (firmNameOptions) firmNameOptions.classList.remove('active');
-                
-                closeApiCustomerDetails();
-            }
-        }
-
-        // ========== VALIDATION & SUBMISSION ==========
-
-        function handleFieldValidation() {
-            if (!this.value.trim() && this.hasAttribute('required')) {
-                this.style.borderColor = 'red';
-            } else {
-                this.style.borderColor = '#ddd';
-            }
-        }
-
-        function validateForm() {
-            let isValid = true;
-            const isBusiness = customerTypeToggle.checked;
-
-            document.querySelectorAll('input, select').forEach(field => {
-                field.style.borderColor = '#ddd';
-            });
-
-            const requiredBasic = ['ownerName', 'phoneNo', 'status', 'priority'];
-            requiredBasic.forEach(fieldId => {
-                const field = document.getElementById(fieldId);
-                if (!field.value.trim()) {
-                    isValid = false;
-                    field.style.borderColor = 'red';
-                    if (isValid) {
-                        field.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                }
-            });
-
-            if (isBusiness) {
-                const firmName = document.getElementById('name').value.trim();
-                const firmNameSearch = document.getElementById('nameSearch').value.trim();
-                const place = document.getElementById('place');
-                const pinCode = document.getElementById('pinCode');
-                
-                if (!firmName && !firmNameSearch) {
-                    isValid = false;
-                    const firmNameSearchField = document.getElementById('nameSearch');
-                    firmNameSearchField.style.borderColor = 'red';
-                }
-                
-                if (!place.value.trim()) {
-                    isValid = false;
-                    place.style.borderColor = 'red';
-                }
-                
-                if (!pinCode.value.trim()) {
-                    isValid = false;
-                    pinCode.style.borderColor = 'red';
-                }
-            } else {
-                const firstName = document.getElementById('firstName');
-                const individualPlace = document.getElementById('individualPlace');
-                const individualPinCode = document.getElementById('individualPinCode');
-                
-                if (!firstName.value.trim()) {
-                    isValid = false;
-                    firstName.style.borderColor = 'red';
-                }
-                
-                if (!individualPlace.value.trim()) {
-                    isValid = false;
-                    individualPlace.style.borderColor = 'red';
-                }
-                
-                if (!individualPinCode.value.trim()) {
-                    isValid = false;
-                    individualPinCode.style.borderColor = 'red';
-                }
-            }
-
-            return isValid;
-        }
-
-        // ========== FORM SUBMISSION FIX ==========
 
         function handleFormSubmit(e) {
             e.preventDefault();
@@ -4094,25 +4468,28 @@
         }
 
         function showUpdateModal() {
-            updateModal.style.display = 'flex';
+            const updateModal = document.getElementById('updateModal');
+            if (updateModal) {
+                updateModal.style.display = 'flex';
+            } else {
+                // If no modal, submit directly
+                submitForm();
+            }
         }
 
         function hideUpdateModal() {
-            updateModal.style.display = 'none';
+            const updateModal = document.getElementById('updateModal');
+            if (updateModal) {
+                updateModal.style.display = 'none';
+            }
         }
 
         function handleConfirmUpdate() {
             // Hide the modal
             hideUpdateModal();
             
-            // Show loading state
-            const submitBtn = document.querySelector('.submit-btn');
-            const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
-            submitBtn.disabled = true;
-            
             // Submit the form
-            document.getElementById('customerForm').submit();
+            submitForm();
         }
 
         function handleModalClickOutside(e) {
@@ -4120,6 +4497,63 @@
                 hideUpdateModal();
             }
         }
+
+        function handleFieldValidation() {
+            if (!this.value.trim() && this.hasAttribute('required')) {
+                this.style.borderColor = 'red';
+            } else {
+                this.style.borderColor = '#ddd';
+            }
+        }
+
+        // ========== HELPER FUNCTIONS ==========
+        
+        function showLoadingState() {
+            const submitBtn = document.querySelector('.update-btn');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+            }
+        }
+        
+        function hideLoadingState() {
+            const submitBtn = document.querySelector('.update-btn');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-save"></i> Update Lead';
+            }
+        }
+        
+        function syncFirmNameFields() {
+            const firmNameSearch = document.getElementById('nameSearch');
+            const firmNameInput = document.getElementById('name');
+            
+            if (firmNameSearch && firmNameInput) {
+                // If search field has value but input doesn't, sync them
+                if (firmNameSearch.value && !firmNameInput.value) {
+                    firmNameInput.value = firmNameSearch.value;
+                    console.log('🔄 Initial firm name sync:', firmNameSearch.value);
+                }
+                
+                // If input has value but search doesn't, sync them
+                if (firmNameInput.value && !firmNameSearch.value) {
+                    firmNameSearch.value = firmNameInput.value;
+                    console.log('🔄 Initial firm name sync (reverse):', firmNameInput.value);
+                }
+            }
+        }
+        
+        // Initialize firm name sync
+        syncFirmNameFields();
+        
+        // Clear red borders on input
+        document.querySelectorAll('input, select').forEach(field => {
+            field.addEventListener('input', function() {
+                if (this.style.borderColor === 'red') {
+                    this.style.borderColor = '';
+                }
+            });
+        });
 
         // ========== DIRECTORY & PAGINATION ==========
 
@@ -4405,9 +4839,7 @@
                             </span>
                             <span class="lead-name">${lead.ownerName || 'No Name'}</span>
                             ${leadDateInfo.short ? `
-                            <span class="lead-date-full" title="Lead Date: ${leadDateInfo.tooltip}">
-                                <i class="far fa-calendar-check"></i>
-                                ${leadDateInfo.short}
+                            
                             </span>` : ''}
                         </div>
                         ${createdDateInfo.short ? `
@@ -4417,12 +4849,7 @@
                         </div>` : ''}
                     </div>
                     
-                    <div class="time-elapsed-badge" 
-                         data-created="${isoDate}"
-                         style="display: inline-flex; margin-top: 5px;">
-                        <i class="fas fa-clock"></i>
-                        <span class="elapsed-text">${lead.time_elapsed || 'Calculating...'}</span>
-                    </div>
+               
                     
                     <div class="lead-phone">${lead.phoneNo || 'No Phone'}</div>
                     <div class="lead-ticket">${lead.ticketNo || 'No Ticket'}</div>
@@ -4563,56 +4990,178 @@
             }
         }
 
-        function formatDateForInput(dateString) {
-            if (!dateString) return '';
+        function formatDateForDisplay(dateString) {
+            if (!dateString) return { short: '', full: '', tooltip: '' };
             
             try {
-                if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
-                    return dateString;
-                }
-                
-                let dateObj;
-                
-                if (typeof dateString === 'string' && dateString.includes('T')) {
-                    dateObj = new Date(dateString);
-                } else {
-                    dateObj = new Date(dateString);
-                }
-                
+                const dateObj = new Date(dateString);
                 if (isNaN(dateObj.getTime())) {
-                    console.warn('Invalid date format:', dateString);
-                    return '';
+                    return {
+                        short: dateString,
+                        full: dateString,
+                        tooltip: dateString
+                    };
                 }
                 
-                const year = dateObj.getFullYear();
-                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-                const day = String(dateObj.getDate()).padStart(2, '0');
+                const short = dateObj.toLocaleDateString('en-GB', {
+                    day: '2-digit',
+                    month: 'short'
+                });
                 
-                return `${year}-${month}-${day}`;
-            } catch (error) {
-                console.error('Error formatting date:', error, dateString);
-                return '';
+                const full = dateObj.toLocaleDateString('en-GB', {
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric'
+                });
+                
+                const tooltip = dateObj.toLocaleDateString('en-GB', {
+                    weekday: 'long',
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric'
+                });
+                
+                const time = dateObj.toLocaleTimeString('en-GB', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                });
+                
+                return {
+                    short: short,
+                    full: full,
+                    tooltip: tooltip,
+                    time: time,
+                    dateObj: dateObj
+                };
+            } catch (e) {
+                return {
+                    short: dateString,
+                    full: dateString,
+                    tooltip: dateString
+                };
             }
         }
 
-        function setSelectValue(selectId, value) {
-            const select = document.getElementById(selectId);
-            if (!select || !value) return;
+        // ========== TIME ELAPSED FUNCTIONS ==========
+
+        function updateAllTimeElapsedBadges() {
+            const timeElapsedBadges = document.querySelectorAll('.time-elapsed-badge');
+            const now = new Date();
             
-            let valueFound = false;
-            
-            for (let i = 0; i < select.options.length; i++) {
-                const option = select.options[i];
-                if (option.value === value || option.text === value) {
-                    option.selected = true;
-                    valueFound = true;
-                    break;
+            timeElapsedBadges.forEach(badge => {
+                const createdDateStr = badge.getAttribute('data-created');
+                const elapsedText = badge.querySelector('.elapsed-text');
+                
+                if (!createdDateStr || !elapsedText) {
+                    elapsedText.textContent = 'No date';
+                    badge.style.display = 'none';
+                    return;
                 }
+                
+                try {
+                    const createdDate = new Date(createdDateStr);
+                    
+                    // Check if date is valid
+                    if (isNaN(createdDate.getTime())) {
+                        elapsedText.textContent = 'Invalid date';
+                        badge.className = 'time-elapsed-badge time-old';
+                        return;
+                    }
+                    
+                    const diffMs = now - createdDate;
+                    const diffSeconds = Math.floor(diffMs / 1000);
+                    const diffMinutes = Math.floor(diffSeconds / 60);
+                    const diffHours = Math.floor(diffMinutes / 60);
+                    const diffDays = Math.floor(diffHours / 24);
+                    
+                    let elapsedTextValue = '';
+                    let badgeClass = 'time-elapsed-badge';
+                    
+                    // Determine time elapsed and badge class
+                    if (diffDays > 0) {
+                        if (diffDays === 1) elapsedTextValue = '1 day ago';
+                        else if (diffDays < 7) elapsedTextValue = `${diffDays} days ago`;
+                        else if (diffDays < 30) elapsedTextValue = `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? 's' : ''} ago`;
+                        else if (diffDays < 365) elapsedTextValue = `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) > 1 ? 's' : ''} ago`;
+                        else elapsedTextValue = `${Math.floor(diffDays / 365)} year${Math.floor(diffDays / 365) > 1 ? 's' : ''} ago`;
+                        
+                        // Color coding based on age
+                        if (diffDays < 1) {
+                            badgeClass += ' time-recent';
+                        } else if (diffDays < 3) {
+                            badgeClass += ' time-medium';
+                        } else {
+                            badgeClass += ' time-old';
+                        }
+                    } else if (diffHours > 0) {
+                        if (diffHours === 1) elapsedTextValue = '1 hour ago';
+                        else elapsedTextValue = `${diffHours} hours ago`;
+                        badgeClass += ' time-recent';
+                    } else if (diffMinutes > 0) {
+                        if (diffMinutes === 1) elapsedTextValue = '1 minute ago';
+                        else if (diffMinutes < 60) elapsedTextValue = `${diffMinutes} minutes ago`;
+                        else elapsedTextValue = '1 hour ago';
+                        badgeClass += ' time-recent';
+                    } else if (diffSeconds > 30) {
+                        elapsedTextValue = `${diffSeconds} seconds ago`;
+                        badgeClass += ' time-recent';
+                    } else {
+                        elapsedTextValue = 'Just now';
+                        badgeClass += ' time-recent';
+                    }
+                    
+                    elapsedText.textContent = elapsedTextValue;
+                    badge.className = badgeClass;
+                    badge.style.display = 'inline-flex';
+                    
+                } catch (e) {
+                    console.error('Error calculating time elapsed:', e);
+                    elapsedText.textContent = 'Date error';
+                    badge.className = 'time-elapsed-badge time-old';
+                    badge.style.display = 'inline-flex';
+                }
+            });
+        }
+
+        // ========== DATE FUNCTIONS ==========
+
+        function updateDirectoryDateDisplay() {
+            const now = new Date();
+            
+            const currentDateDisplay = now.toLocaleDateString('en-GB', {
+                weekday: 'short',
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+            
+            const timeDisplay = now.toLocaleTimeString('en-GB', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            });
+            
+            const todayDisplay = now.toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: 'short'
+            });
+            
+            const currentDateElement = document.getElementById('currentDate');
+            const todayDateElement = document.getElementById('todayDate');
+            
+            if (currentDateElement) {
+                currentDateElement.innerHTML = `<i class="far fa-calendar-alt"></i> ${currentDateDisplay}`;
             }
             
-            if (!valueFound) {
-                select.value = value;
+            if (todayDateElement) {
+                todayDateElement.innerHTML = `<i class="far fa-clock"></i> ${todayDisplay} ${timeDisplay}`;
             }
+        }
+        
+        function initializeDateDisplay() {
+            updateDirectoryDateDisplay();
+            setInterval(updateDirectoryDateDisplay, 60000);
         }
 
         // ========== NAVIGATION ==========
@@ -4630,11 +5179,9 @@
             });
         }
 
-        // ========== INITIALIZE APPLICATION ==========
-        
-        initializeApp();
+        // ========== CAMPAIGN FUNCTIONS ==========
 
-        function displayCampaignDetails(selectElement) {
+        window.displayCampaignDetails = function(selectElement) {
             const selectedOption = selectElement.options[selectElement.selectedIndex];
             const detailsBox = document.getElementById('campaign-details-box');
             
@@ -4666,727 +5213,103 @@
             }
             
             if (detailsBox) detailsBox.style.display = 'block';
-        }
+            
+            console.log('🎯 Selected Campaign:', campaignData);
+        };
 
-        function closeCampaignDetails() {
+        window.closeCampaignDetails = function() {
             const detailsBox = document.getElementById('campaign-details-box');
             if (detailsBox) detailsBox.style.display = 'none';
-        }
-
-    });
-
-
-    // ========== UPDATE BUTTON FUNCTIONALITY FIX ==========
-// Add this to your lead_form_edit.html template
-
-// Global function for form submission
-function submitForm() {
-    console.log('🔄 Submit form called - Update button clicked');
-    
-    // Validate the form
-    if (!validateForm()) {
-        console.error('❌ Form validation failed');
-        return false;
-    }
-    
-    // Prepare requirements data
-    const requirementsData = collectRequirementsData();
-    console.log('📦 Requirements data:', requirementsData);
-    
-    // Set requirements data in hidden field
-    const requirementsInput = document.getElementById('hiddenRequirementDetails');
-    if (requirementsInput) {
-        requirementsInput.value = JSON.stringify(requirementsData);
-        console.log('✅ Requirements data set in hidden field');
-    } else {
-        console.warn('⚠️ Hidden requirements field not found, creating it');
-        
-        // Create hidden field if it doesn't exist
-        const form = document.getElementById('customerForm');
-        const hiddenField = document.createElement('input');
-        hiddenField.type = 'hidden';
-        hiddenField.name = 'requirements_data';
-        hiddenField.id = 'hiddenRequirementDetails';
-        hiddenField.value = JSON.stringify(requirementsData);
-        form.appendChild(hiddenField);
-    }
-    
-    // Submit the form
-    const form = document.getElementById('customerForm');
-    if (form) {
-        console.log('✅ Submitting form');
-        form.submit();
-    } else {
-        console.error('❌ Form not found!');
-        alert('Error: Form not found. Please refresh the page and try again.');
-    }
-}
-
-// Validate form before submission
-function validateForm() {
-    const errors = [];
-    
-    // Check owner name
-    const ownerName = document.getElementById('ownerName');
-    if (!ownerName || !ownerName.value.trim()) {
-        errors.push('Owner Name is required');
-        if (ownerName) ownerName.style.borderColor = 'red';
-    }
-    
-    // Check phone number
-    const phoneNo = document.getElementById('phoneNo');
-    if (!phoneNo || !phoneNo.value.trim()) {
-        errors.push('Phone Number is required');
-        if (phoneNo) phoneNo.style.borderColor = 'red';
-    }
-    
-    // Check status
-    const status = document.getElementById('status');
-    if (!status || !status.value) {
-        errors.push('Status is required');
-        if (status) status.style.borderColor = 'red';
-    }
-    
-    // Check priority
-    const priority = document.getElementById('priority');
-    if (!priority || !priority.value) {
-        errors.push('Priority is required');
-        if (priority) priority.style.borderColor = 'red';
-    }
-    
-    // Check customer type specific fields
-    const isBusinessMode = document.getElementById('customerTypeToggle').checked;
-    
-    if (isBusinessMode) {
-        // Business mode - check firm name
-        const firmNameSearch = document.getElementById('nameSearch');
-        const firmName = document.getElementById('name');
-        
-        if ((!firmNameSearch || !firmNameSearch.value.trim()) && (!firmName || !firmName.value.trim())) {
-            errors.push('Firm Name is required for Business type');
-            if (firmNameSearch) firmNameSearch.style.borderColor = 'red';
-        }
-        
-        // Check place
-        const place = document.getElementById('place');
-        if (!place || !place.value.trim()) {
-            errors.push('Place is required');
-            if (place) place.style.borderColor = 'red';
-        }
-        
-        // Check pin code
-        const pinCode = document.getElementById('pinCode');
-        if (!pinCode || !pinCode.value.trim()) {
-            errors.push('Pin Code is required');
-            if (pinCode) pinCode.style.borderColor = 'red';
-        }
-    } else {
-        // Individual mode
-        const firstName = document.getElementById('firstName');
-        if (!firstName || !firstName.value.trim()) {
-            errors.push('First Name is required for Individual type');
-            if (firstName) firstName.style.borderColor = 'red';
-        }
-        
-        const individualPlace = document.getElementById('individualPlace');
-        if (!individualPlace || !individualPlace.value.trim()) {
-            errors.push('Place is required');
-            if (individualPlace) individualPlace.style.borderColor = 'red';
-        }
-        
-        const individualPinCode = document.getElementById('individualPinCode');
-        if (!individualPinCode || !individualPinCode.value.trim()) {
-            errors.push('Pin Code is required');
-            if (individualPinCode) individualPinCode.style.borderColor = 'red';
-        }
-    }
-    
-    // Show errors if any
-    if (errors.length > 0) {
-        alert('Please fix the following errors:\n\n' + errors.join('\n'));
-        
-        // Scroll to first error
-        const firstErrorField = document.querySelector('[style*="border-color: red"]');
-        if (firstErrorField) {
-            firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-        
-        return false;
-    }
-    
-    return true;
-}
-
-// Collect requirements data from the table
-function collectRequirementsData() {
-    const tableBody = document.getElementById('table-body');
-    if (!tableBody) {
-        console.warn('⚠️ Requirements table not found');
-        return [];
-    }
-    
-    const rows = tableBody.querySelectorAll('tr');
-    const requirementsData = [];
-    
-    rows.forEach((row, index) => {
-        const itemSelect = row.querySelector('.item-select');
-        const sectionSelect = row.querySelector('.section-select');
-        const unitInput = row.querySelector('.unit-input');
-        const priceInput = row.querySelector('.price-input');
-        const qtyInput = row.querySelector('.qty-input');
-        
-        if (!itemSelect || !itemSelect.value) {
-            console.debug(`Skipping row ${index + 1}: No item selected`);
-            return; // Skip empty rows
-        }
-        
-        const requirementId = row.getAttribute('data-requirement-id') || null;
-        
-        const requirement = {
-            id: requirementId,
-            item_id: itemSelect.value,
-            item_name: itemSelect.options[itemSelect.selectedIndex].text,
-            section: sectionSelect ? sectionSelect.value : 'GENERAL',
-            unit: unitInput ? unitInput.value : 'pcs',
-            price: priceInput ? parseFloat(priceInput.value) || 0 : 0,
-            quantity: qtyInput ? parseInt(qtyInput.value) || 1 : 1,
         };
-        
-        requirementsData.push(requirement);
-        console.debug(`Row ${index + 1}:`, requirement);
-    });
-    
-    console.log(`📊 Collected ${requirementsData.length} requirements`);
-    return requirementsData;
-}
 
-// Reset form to original values
-function resetForm() {
-    if (confirm('Are you sure you want to reset all changes? This will reload the page.')) {
-        window.location.reload();
-    }
-}
+        // ========== UTILITY FUNCTIONS ==========
 
-// Initialize form on page load
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('✅ Lead Edit Form initialized');
-    
-    // Ensure firm name sync
-    syncFirmNameFields();
-    
-    // Add change listener to firm name search
-    const firmNameSearch = document.getElementById('nameSearch');
-    if (firmNameSearch) {
-        firmNameSearch.addEventListener('change', function() {
-            const firmNameInput = document.getElementById('name');
-            if (firmNameInput) {
-                firmNameInput.value = this.value;
-                console.log('🔄 Synced firm name:', this.value);
-            }
-        });
-    }
-    
-    // Clear red borders on input
-    document.querySelectorAll('input, select').forEach(field => {
-        field.addEventListener('input', function() {
-            if (this.style.borderColor === 'red') {
-                this.style.borderColor = '';
-            }
-        });
-    });
-});
-
-// Sync firm name between search field and hidden field
-function syncFirmNameFields() {
-    const firmNameSearch = document.getElementById('nameSearch');
-    const firmNameInput = document.getElementById('name');
-    
-    if (firmNameSearch && firmNameInput) {
-        // If search field has value but input doesn't, sync them
-        if (firmNameSearch.value && !firmNameInput.value) {
-            firmNameInput.value = firmNameSearch.value;
-            console.log('🔄 Initial firm name sync:', firmNameSearch.value);
-        }
-        
-        // If input has value but search doesn't, sync them
-        if (firmNameInput.value && !firmNameSearch.value) {
-            firmNameSearch.value = firmNameInput.value;
-            console.log('🔄 Initial firm name sync (reverse):', firmNameInput.value);
-        }
-    }
-}
-
-// Helper function to show loading state
-function showLoadingState() {
-    const submitBtn = document.querySelector('.update-btn');
-    if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
-    }
-}
-
-// Helper function to hide loading state
-function hideLoadingState() {
-    const submitBtn = document.querySelector('.update-btn');
-    if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-save"></i> Update Lead';
-    }
-}
-
-console.log('✅ Update button script loaded successfully');
-
-
-console.log('✅ Update button script loaded successfully');
-
-// ========== REQUIREMENTS TABLE FUNCTIONALITY ==========
-
-// Add Item Button Handler
-document.addEventListener('DOMContentLoaded', function() {
-    const addItemBtn = document.getElementById('add-item-btn');
-    const tableBody = document.getElementById('table-body');
-    
-    if (!addItemBtn || !tableBody) {
-        console.error('❌ Requirements table elements not found');
-        return;
-    }
-    
-    // Add item button click handler
-    addItemBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        addNewRequirementRow();
-    });
-    
-    // Initialize existing rows
-    initializeExistingRows();
-    
-    // Update grand total on page load
-    updateGrandTotal();
-});
-
-// Initialize existing requirement rows
-function initializeExistingRows() {
-    const tableBody = document.getElementById('table-body');
-    if (!tableBody) return;
-    
-    const rows = tableBody.querySelectorAll('tr');
-    
-    console.log(`🔄 Initializing ${rows.length} existing requirement rows`);
-    
-    rows.forEach((row, index) => {
-        // Setup event handlers first
-        setupRowEventHandlers(row);
-        
-        // Get the selects
-        const sectionSelect = row.querySelector('.section-select');
-        const itemSelect = row.querySelector('.item-select');
-        const unitInput = row.querySelector('.unit-input');
-        const priceInput = row.querySelector('.price-input');
-        const qtyInput = row.querySelector('.qty-input');
-        
-        if (sectionSelect && itemSelect) {
-            const savedItemId = itemSelect.getAttribute('data-item-id');
-            const savedItemName = itemSelect.getAttribute('data-item-name');
-            const currentSection = sectionSelect.value;
+        function showAutoFillNotification(message, type = 'info') {
+            const autoFillNotification = document.getElementById('autoFillNotification');
+            const autoFillMessage = document.getElementById('autoFillMessage');
             
-            console.log(`Row ${index + 1}:`, {
-                section: currentSection,
-                itemId: savedItemId,
-                itemName: savedItemName
-            });
+            if (!autoFillNotification || !autoFillMessage) return;
             
-            // Populate items for the current section
-            if (currentSection) {
-                populateItemsForSection(currentSection, itemSelect);
-                
-                // Restore saved selection after population
-                if (savedItemId) {
-                    // Try to select by ID
-                    let found = false;
-                    for (let option of itemSelect.options) {
-                        if (option.value === savedItemId) {
-                            option.selected = true;
-                            found = true;
-                            
-                            // Trigger change to update unit and price
-                            const event = new Event('change', { bubbles: true });
-                            itemSelect.dispatchEvent(event);
-                            break;
-                        }
-                    }
-                    
-                    if (!found) {
-                        console.warn(`⚠️ Item ID ${savedItemId} not found in section ${currentSection}`);
-                    }
-                } else if (savedItemName) {
-                    // Try to find item by name
-                    for (let option of itemSelect.options) {
-                        if (option.text === savedItemName || option.getAttribute('data-name') === savedItemName) {
-                            option.selected = true;
-                            
-                            // Trigger change to update unit and price
-                            const event = new Event('change', { bubbles: true });
-                            itemSelect.dispatchEvent(event);
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        
-        // Ensure quantity is at least 1
-        if (qtyInput && (!qtyInput.value || parseInt(qtyInput.value) < 1)) {
-            qtyInput.value = '1';
-        }
-        
-        // Format price
-        if (priceInput && priceInput.value) {
-            const price = parseFloat(priceInput.value) || 0;
-            priceInput.value = price.toFixed(2);
-        }
-        
-        // Calculate total for this row
-        calculateRowTotal(row);
-    });
-    
-    updateItemsCountBadge();
-    updateGrandTotal();
-    
-    console.log('✅ All existing rows initialized');
-}
-
-// Add new requirement row
-function addNewRequirementRow() {
-    const tableBody = document.getElementById('table-body');
-    if (!tableBody) return;
-    
-    const rowCount = tableBody.querySelectorAll('tr').length + 1;
-    
-    const newRow = document.createElement('tr');
-    newRow.id = `row-${rowCount}`;
-    
-    newRow.innerHTML = `
-        <td>${rowCount}</td>
-        <td>
-            <select class="section-select" required>
-                <option value="">Select Section</option>
-                {% for section_name in items_by_section.keys %}
-                <option value="{{ section_name }}">{{ section_name }}</option>
-                {% endfor %}
-            </select>
-        </td>
-        <td>
-            <select class="item-select" required>
-                <option value="">Select Item</option>
-            </select>
-        </td>
-        <td><input type="text" class="unit-input" readonly value="pcs"></td>
-        <td><input type="number" class="price-input" step="0.01" min="0" value="0.00"></td>
-        <td><input type="number" class="qty-input" min="1" value="1"></td>
-        <td><input type="text" class="total-input" readonly value="0.00"></td>
-        <td>
-            <button type="button" class="remove-btn">
-                <i class="fas fa-trash"></i>
-            </button>
-        </td>
-    `;
-    
-    tableBody.appendChild(newRow);
-    
-    // Setup event handlers for the new row
-    setupRowEventHandlers(newRow);
-    
-    // Update row numbers
-    updateRowNumbers();
-    
-    // Update count badge
-    updateItemsCountBadge();
-    
-    // Update grand total
-    updateGrandTotal();
-    
-    console.log('✅ Added new requirement row');
-}
-
-// Setup event handlers for a row
-function setupRowEventHandlers(row) {
-    const sectionSelect = row.querySelector('.section-select');
-    const itemSelect = row.querySelector('.item-select');
-    const priceInput = row.querySelector('.price-input');
-    const qtyInput = row.querySelector('.qty-input');
-    const totalInput = row.querySelector('.total-input');
-    const unitInput = row.querySelector('.unit-input');
-    const removeBtn = row.querySelector('.remove-btn');
-    
-    // Section change - populate items
-    if (sectionSelect) {
-        sectionSelect.addEventListener('change', function() {
-            console.log('📂 Section changed to:', this.value);
-            populateItemsForSection(this.value, itemSelect);
+            autoFillMessage.textContent = message;
+            autoFillNotification.style.display = 'block';
             
-            // Reset item selection and related fields
-            if (itemSelect) {
-                itemSelect.value = '';
-            }
-            if (unitInput) unitInput.value = 'pcs';
-            if (priceInput) priceInput.value = '0.00';
-            if (qtyInput) qtyInput.value = '1';
-            if (totalInput) totalInput.value = '0.00';
-            
-            updateGrandTotal();
-        });
-    }
-    
-    // Item change - update unit and price
-    // Item change - update unit and price
-    if (itemSelect) {
-        itemSelect.addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
-            
-            console.log('🔧 Item changed:', selectedOption ? selectedOption.text : 'None');
-            
-            if (selectedOption && selectedOption.value) {
-                // Get data from option attributes
-                const unit = selectedOption.getAttribute('data-unit') || 'pcs';
-                const price = selectedOption.getAttribute('data-price') || '0';
-                const itemName = selectedOption.getAttribute('data-name') || selectedOption.text;
-                
-                console.log('📊 Item details:', {
-                    name: itemName,
-                    unit: unit,
-                    price: price
-                });
-                
-                // Update unit field
-                if (unitInput) {
-                    unitInput.value = unit;
-                    console.log('✅ Unit set to:', unit);
-                }
-                
-                // Update price field
-                if (priceInput) {
-                    const priceValue = parseFloat(price) || 0;
-                    priceInput.value = priceValue.toFixed(2);
-                    console.log('✅ Price set to:', priceValue.toFixed(2));
-                }
-                
-                // Set quantity to 1 if empty or 0
-                if (qtyInput) {
-                    const currentQty = parseInt(qtyInput.value) || 0;
-                    if (currentQty === 0) {
-                        qtyInput.value = '1';
-                    }
-                }
-                
-                // Calculate total immediately
-                calculateRowTotal(row);
+            // Set color based on type
+            if (type === 'success') {
+                autoFillNotification.style.borderColor = '#4CAF50';
+                autoFillNotification.style.background = '#f0fff0';
+            } else if (type === 'error') {
+                autoFillNotification.style.borderColor = '#f44336';
+                autoFillNotification.style.background = '#fff0f0';
             } else {
-                // Item deselected - reset fields
-                if (unitInput) unitInput.value = 'pcs';
-                if (priceInput) priceInput.value = '0.00';
-                if (qtyInput) qtyInput.value = '1';
-                if (totalInput) totalInput.value = '0.00';
-                updateGrandTotal();
+                autoFillNotification.style.borderColor = '#2196F3';
+                autoFillNotification.style.background = '#f0f8ff';
             }
-        });
-    }
-    // Price change - recalculate total
-    if (priceInput) {
-        priceInput.addEventListener('input', function() {
-            console.log('💵 Price changed to:', this.value);
-            calculateRowTotal(row);
-        });
-        
-        priceInput.addEventListener('blur', function() {
-            // Format price on blur
-            const value = parseFloat(this.value) || 0;
-            this.value = value.toFixed(2);
-        });
-    }
-    
-    // Quantity change - recalculate total
-    if (qtyInput) {
-        qtyInput.addEventListener('input', function() {
-            // Ensure quantity is at least 1
-            if (parseInt(this.value) < 1) {
-                this.value = '1';
-            }
-            console.log('🔢 Quantity changed to:', this.value);
-            calculateRowTotal(row);
-        });
-        
-        qtyInput.addEventListener('blur', function() {
-            // Ensure valid quantity on blur
-            const value = parseInt(this.value) || 1;
-            this.value = value;
-        });
-    }
-    
-    // Remove button
-    if (removeBtn) {
-        removeBtn.addEventListener('click', function() {
-            removeRequirementRow(row);
-        });
-    }
-}
-
-// Populate items dropdown based on section
-function populateItemsForSection(section, itemSelect) {
-    if (!itemSelect) return;
-    
-    // Store current selection
-    const currentValue = itemSelect.value;
-    
-    // Clear existing options
-    itemSelect.innerHTML = '<option value="">Select Item</option>';
-    
-    if (!section) return;
-    
-    // Get item options template
-    const itemOptionsTemplate = document.getElementById('item-options');
-    if (!itemOptionsTemplate) {
-        console.error('❌ Item options template not found');
-        return;
-    }
-    
-    // Get all options from template
-    const allOptions = itemOptionsTemplate.content.querySelectorAll('option');
-    
-    let itemsAdded = 0;
-    
-    // Filter by section
-    allOptions.forEach(option => {
-        const optionSection = option.getAttribute('data-section');
-        
-        if (optionSection === section) {
-            const newOption = document.createElement('option');
-            newOption.value = option.value;
-            newOption.textContent = option.textContent;
             
-            // Copy all data attributes
-            newOption.setAttribute('data-name', option.getAttribute('data-name') || '');
-            newOption.setAttribute('data-section', option.getAttribute('data-section') || '');
-            newOption.setAttribute('data-unit', option.getAttribute('data-unit') || 'pcs');
-            newOption.setAttribute('data-price', option.getAttribute('data-price') || '0');
-            newOption.setAttribute('data-hsn', option.getAttribute('data-hsn') || '');
-            newOption.setAttribute('data-description', option.getAttribute('data-description') || '');
-            
-            itemSelect.appendChild(newOption);
-            itemsAdded++;
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                closeAutoFillNotification();
+            }, 5000);
         }
-    });
-    
-    // Restore selection if it still exists
-    if (currentValue) {
-        for (let option of itemSelect.options) {
-            if (option.value === currentValue) {
-                option.selected = true;
-                break;
+
+        function closeAutoFillNotification() {
+            const autoFillNotification = document.getElementById('autoFillNotification');
+            if (autoFillNotification) {
+                autoFillNotification.style.display = 'none';
             }
         }
-    }
-    
-    console.log(`✅ Populated ${itemsAdded} items for section: ${section}`);
-}
 
-// Calculate row total
-function calculateRowTotal(row) {
-    const priceInput = row.querySelector('.price-input');
-    const qtyInput = row.querySelector('.qty-input');
-    const totalInput = row.querySelector('.total-input');
-    
-    if (!priceInput || !qtyInput || !totalInput) {
-        console.warn('⚠️ Missing inputs for total calculation');
-        return;
-    }
-    
-    const price = parseFloat(priceInput.value) || 0;
-    const qty = parseInt(qtyInput.value) || 0;
-    const total = price * qty;
-    
-    totalInput.value = total.toFixed(2);
-    
-    console.log('🧮 Calculated:', {
-        price: price,
-        quantity: qty,
-        total: total.toFixed(2)
-    });
-    
-    // Update grand total
-    updateGrandTotal();
-}
+        window.closeAutoFillNotification = closeAutoFillNotification;
 
-// Update grand total
-function updateGrandTotal() {
-    const tableBody = document.getElementById('table-body');
-    const grandTotalElement = document.getElementById('grand-total');
-    
-    if (!tableBody || !grandTotalElement) return;
-    
-    let grandTotal = 0;
-    
-    const rows = tableBody.querySelectorAll('tr');
-    rows.forEach(row => {
-        const totalInput = row.querySelector('.total-input');
-        if (totalInput) {
-            const rowTotal = parseFloat(totalInput.value) || 0;
-            grandTotal += rowTotal;
+        // ========== API REFRESH FUNCTION ==========
+
+        async function refreshApiData() {
+            try {
+                const apiRefreshBtn = document.getElementById('apiRefreshBtn');
+                const apiStatus = document.getElementById('apiStatus');
+                const apiCountElement = document.querySelector('.api-count');
+                
+                if (!apiRefreshBtn || !apiStatus || !apiCountElement) return;
+                
+                apiRefreshBtn.classList.add('loading');
+                apiStatus.className = 'api-status loading';
+                
+                // Show loading message
+                const apiLabel = document.querySelector('.api-label');
+                if (apiLabel) {
+                    const originalText = apiLabel.textContent;
+                    apiLabel.textContent = 'Loading...';
+                    
+                    setTimeout(() => {
+                        // Simulate API refresh (in real implementation, this would be an AJAX call)
+                        console.log('Refreshing API data...');
+                        
+                        // Update status
+                        apiStatus.className = 'api-status connected';
+                        apiCountElement.textContent = apiCustomerData.length;
+                        apiLabel.textContent = 'API Customers';
+                        
+                        apiRefreshBtn.classList.remove('loading');
+                        
+                        showAutoFillNotification('API customer data refreshed successfully', 'success');
+                        
+                    }, 1500);
+                }
+                
+            } catch (error) {
+                console.error('Error refreshing API data:', error);
+                const apiStatus = document.getElementById('apiStatus');
+                const apiRefreshBtn = document.getElementById('apiRefreshBtn');
+                
+                if (apiStatus) apiStatus.className = 'api-status disconnected';
+                if (apiRefreshBtn) apiRefreshBtn.classList.remove('loading');
+                showAutoFillNotification('Error refreshing API data', 'error');
+            }
         }
+
+        console.log('✅ Requirements table initialization complete');
+        console.log('✅ Lead Edit Form initialized');
     });
-    
-    grandTotalElement.textContent = '₹' + grandTotal.toFixed(2);
-    
-    console.log('💰 Grand Total updated: ₹' + grandTotal.toFixed(2));
-}
-
-// Remove requirement row
-function removeRequirementRow(row) {
-    if (!confirm('Are you sure you want to remove this item?')) {
-        return;
-    }
-    
-    row.remove();
-    
-    // Update row numbers
-    updateRowNumbers();
-    
-    // Update count badge
-    updateItemsCountBadge();
-    
-    // Update grand total
-    updateGrandTotal();
-    
-    console.log('🗑️ Removed requirement row');
-}
-
-// Update row numbers
-function updateRowNumbers() {
-    const tableBody = document.getElementById('table-body');
-    if (!tableBody) return;
-    
-    const rows = tableBody.querySelectorAll('tr');
-    rows.forEach((row, index) => {
-        const firstCell = row.querySelector('td:first-child');
-        if (firstCell) {
-            firstCell.textContent = index + 1;
-        }
-    });
-}
-
-// Update items count badge
-function updateItemsCountBadge() {
-    const badge = document.getElementById('itemsCountBadge');
-    const tableBody = document.getElementById('table-body');
-    
-    if (!badge || !tableBody) return;
-    
-    const rowCount = tableBody.querySelectorAll('tr').length;
-    badge.textContent = `${rowCount} item${rowCount !== 1 ? 's' : ''}`;
-}
-
-console.log('✅ Requirements table functionality initialized');
-
-</script>
+    </script>
 </body>
 </html>
 {% endblock %}
