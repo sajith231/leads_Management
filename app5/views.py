@@ -4,7 +4,7 @@
 from .models import (
     JobCard, JobCardImage, Item, Supplier, 
     WarrantyTicket, WarrantyItemLog, StandbyIssuance,
-    ServiceBilling, ServiceItem  # Add these
+    ServiceBilling, ServiceItem,RequirementItem  # Add these
 )
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
@@ -3373,6 +3373,7 @@ def lead_form_view(request):
           support for firm-name toggle (existing firm select OR free-text name).
     """
     import logging
+    import json
     import requests  # Added for API calls
     from django.shortcuts import render, redirect, get_object_or_404
     from django.contrib import messages
@@ -3413,7 +3414,7 @@ def lead_form_view(request):
 
             # Fetch active leads with all necessary fields including priority
             active_leads_qs = Lead.objects.filter(status__iexact='Active').order_by('-created_at')[:50]
-            
+            active_leads = Lead.objects.filter(status='Active').prefetch_related('requirements').order_by('-created_at')
             # Process each lead to ensure all fields are properly formatted
             for lead in active_leads_qs:
                 # ✅ Get campaign display name if campaign ID exists
@@ -3466,6 +3467,21 @@ def lead_form_view(request):
                     else:
                         time_elapsed = "Just now"
                 
+                # Build requirements JSON for each lead
+                requirements_data = []
+                for req in lead.requirements.all():
+                    requirements_data.append({
+                        'id': req.id,
+                        'item_id': req.item.id if req.item else None,
+                        'item_name': req.item_name,
+                        'section': req.section or 'GENERAL',
+                        'unit': req.unit or 'pcs',
+                        'price': float(req.price) if req.price is not None else 0.00,
+                        'quantity': int(req.quantity) if req.quantity is not None else 1,
+                    })
+                
+                requirements_json = json.dumps(requirements_data)
+                
                 lead_dict = {
                     'id': lead.id,
                     'ownerName': lead.ownerName,
@@ -3496,6 +3512,9 @@ def lead_form_view(request):
                     'Consultant': lead.Consultant if lead.Consultant else '',
                     'requirement': lead.requirement if lead.requirement else '',
                     'details': lead.details if lead.details else '',
+                    'requirements': lead.requirements.all(),
+                    'requirements_count': lead.requirements.count(),
+                    'requirements_json': requirements_json,
                     'date': lead.date.strftime('%Y-%m-%d') if lead.date else '',
                     'created_at': lead.created_at if hasattr(lead, 'created_at') else None,
                     'time_elapsed': time_elapsed,
@@ -3848,6 +3867,39 @@ def lead_form_view(request):
 
                 lead = Lead.objects.create(**safe_kwargs)
 
+                # ✅ NEW: Extract and save requirement items from form
+                requirements_json = data.get('requirements_data', '[]')
+                logger.info(f"Requirements JSON from form: {requirements_json}")
+                
+                try:
+                    import json
+                    from decimal import Decimal
+                    requirements_list = json.loads(requirements_json) if requirements_json else []
+                    
+                    # Create RequirementItem objects for each requirement
+                    for req_data in requirements_list:
+                        RequirementItem.objects.create(
+                            lead=lead,
+                            item_id=req_data.get('item_id'),
+                            item_name=req_data.get('item_name', ''),
+                            ticket_number=lead.ticket_number,
+                            owner_name=lead.ownerName,
+                            phone_no=lead.phoneNo,
+                            email=lead.email if lead.email else '',
+                            section=req_data.get('section', ''),
+                            unit=req_data.get('unit', ''),
+                            price=Decimal(str(req_data.get('price', 0))),
+                            quantity=int(req_data.get('quantity', 1)),
+                        )
+                    
+                    if requirements_list:
+                        logger.info(f"✅ Created {len(requirements_list)} requirement items for lead {lead.id}")
+                    
+                except json.JSONDecodeError as e:
+                    logger.warning(f"Could not parse requirements JSON: {e}")
+                except Exception as e:
+                    logger.error(f"Error creating requirement items: {e}", exc_info=True)
+
             assignment_msg = "self-assigned" if assignment_type == "self_assigned" else "submitted for assignment"
             ticket_info = getattr(lead, "ticket_number", getattr(lead, "id", ""))
 
@@ -3867,15 +3919,179 @@ def lead_form_view(request):
             # ✅ ADD API DATA TO CONTEXT FOR RE-RENDER
             context['api_customer_data'] = api_customer_data
             context['api_data_count'] = len(api_customer_data)
+            context['items_by_section'] = get_items_by_section()  # Added this line
             return render(request, "lead_form.html", context)
 
-    # GET: prepare dropdowns and render form
+    # ============================
+    # ✅ LOAD ITEMS FROM purchase_order APP (SECTION-WISE) - FIXED
+    # ============================
+    items_by_section = get_items_by_section()
+
+    # ✅ GET CONTEXT DATA
     context = get_lead_form_context(existing_firms, active_leads_data, active_users)
     # ✅ ADD API CUSTOMER DATA TO CONTEXT
     context['api_customer_data'] = api_customer_data
     context['api_data_count'] = len(api_customer_data)
+    context['items_by_section'] = items_by_section  # This was missing
     
     return render(request, "lead_form.html", context)
+
+
+def get_items_by_section():
+    """Helper function to load items grouped by section"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    items_by_section = {}
+    
+    try:
+        from purchase_order.models import Item as POItem
+
+        # Fetch all active items ordered by section and name
+        po_items = POItem.objects.filter(is_active=True).order_by('section', 'name')
+        
+        logger.info(f"✅ Fetched {po_items.count()} items from purchase_order")
+        
+        for item in po_items:
+            # Get section from item or default to GENERAL
+            section_raw = (item.section or 'GENERAL').upper().strip()
+            
+            # Normalize section names
+            section = section_raw
+            if 'HARDWARE' in section_raw:
+                section = 'HARDWARE'
+            elif 'SOFTWARE' in section_raw:
+                section = 'SOFTWARE'
+            elif 'PAPER' in section_raw or 'ROLL' in section_raw:
+                section = 'PAPER_ROLLS'
+            elif not section_raw or section_raw == '':
+                section = 'GENERAL'
+            
+            # Create section if it doesn't exist
+            if section not in items_by_section:
+                items_by_section[section] = []
+            
+            # Get display name for section
+            section_display = section.replace('_', ' ').title()
+            
+            # Add item to section
+            items_by_section[section].append({
+                "id": item.id,
+                "name": item.name,
+                "section": section,
+                "section_display": section_display,
+                "unit": item.unit_of_measure or "pcs", 
+                "price": float(item.mrp or 0),
+                "hsn": item.hsn_code or "",
+                "description": item.description or "",
+            })
+        
+        logger.info(f"✅ Items grouped into {len(items_by_section)} sections: {list(items_by_section.keys())}")
+        
+    except Exception as e:
+        logger.error(f"❌ Could not load purchase_order items: {e}", exc_info=True)
+        # Provide sample data for testing
+        items_by_section = {
+            "HARDWARE": [
+                {"id": 1, "name": "Computer", "section": "HARDWARE", "section_display": "Hardware", 
+                 "unit_of_measure": "pcs", "mrp": 50000.0, "hsn_code": "8471", "description": "Desktop Computer"},
+                {"id": 2, "name": "Printer", "section": "HARDWARE", "section_display": "Hardware", 
+                 "unit_of_measure": "pcs", "mrp": 15000.0, "hsn_code": "8443", "description": "Laser Printer"},
+            ],
+            "SOFTWARE": [
+                {"id": 3, "name": "Accounting Software", "section": "SOFTWARE", "section_display": "Software", 
+                 "unit_of_measure": "license", "mrp": 25000.0, "hsn_code": "8523", "description": "Financial Accounting"},
+            ],
+            "GENERAL": [
+                {"id": 4, "name": "Office Chair", "section": "GENERAL", "section_display": "General", 
+                 "unit_of_measure": "pcs", "mrp": 5000.0, "hsn_code": "9401", "description": "Ergonomic Chair"},
+            ]
+        }
+    
+    return items_by_section
+
+
+def get_lead_form_context(existing_firms, active_leads_data, active_users):
+    """Helper function to get lead form context"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    context = {}
+    
+    try:
+        # Districts
+        from app5.models import District
+        context['districts'] = District.objects.all().order_by('name')
+    except Exception as e:
+        logger.debug(f"Could not load districts: {e}")
+        context['districts'] = []
+
+    try:
+        # States
+        from app5.models import State
+        context['states'] = State.objects.all().order_by('name')
+    except Exception as e:
+        logger.debug(f"Could not load states: {e}")
+        context['states'] = []
+
+    try:
+        # Departments (for branch dropdown)
+        from purchase_order.models import Department
+        context['departments'] = Department.objects.all().order_by('name')
+    except Exception as e:
+        logger.debug(f"Could not load departments: {e}")
+        context['departments'] = []
+
+    try:
+        # Business Natures
+        from app5.models import BusinessNature
+        context['business_natures'] = BusinessNature.objects.all().order_by('name')
+    except Exception as e:
+        logger.debug(f"Could not load business natures: {e}")
+        context['business_natures'] = []
+
+    try:
+        # References
+        from app5.models import Reference
+        context['references'] = Reference.objects.all().order_by('ref_name')
+    except Exception as e:
+        logger.debug(f"Could not load references: {e}")
+        context['references'] = []
+
+    try:
+        # Campaigns
+        from campaigning.models import Campaigning
+        campaigns = Campaigning.objects.all().order_by('-campaign_unique_id')[:100]
+        context['campaigns'] = campaigns
+        logger.info(f"Loaded {campaigns.count()} campaigns")
+    except Exception as e:
+        logger.debug(f"Could not load campaigns: {e}")
+        context['campaigns'] = []
+
+    # Pass other data
+    context['existing_firms'] = existing_firms
+    context['active_leads_data'] = active_leads_data
+    context['active_users'] = active_users
+    context['today'] = timezone.now().date()
+    
+    # ✅ Load items - This should already be loaded separately
+    # items_by_section = get_items_by_section()  # Don't call here, called in main function
+    # context['items_by_section'] = items_by_section
+    
+    # ✅ FLAT LIST OF ALL ITEMS FOR TEMPLATE (JavaScript needs this)
+    try:
+        from purchase_order.models import Item as POItem
+        all_items = POItem.objects.filter(is_active=True).order_by('name')
+        context['items'] = all_items
+        logger.info(f"✅ Loaded {all_items.count()} items for template")
+    except Exception as e:
+        logger.warning(f"Could not load all items: {e}")
+        context['items'] = []
+    
+    return context
+
+
+    
 
 
 def get_lead_form_context(existing_firms, active_leads_data, active_users):
@@ -4121,6 +4337,7 @@ def lead_detail_api(request, lead_id):
         "consultant": lead.Consultant,
         "branch": lead.requirement,
         "notes": lead.details,
+        "requirementsJson": json.dumps(requirements),
         "date": lead.date.strftime('%Y-%m-%d') if getattr(lead, "date", None) else None,
         "created_at": lead.created_at.strftime('%Y-%m-%d %H:%M:%S') if getattr(lead, "created_at", None) else None,
         "updated_at": lead.updated_at.strftime('%Y-%m-%d %H:%M:%S') if getattr(lead, "updated_at", None) else None
@@ -4147,34 +4364,23 @@ def lead_edit(request, lead_id):
     # ========== GET QUOTATION FOR THIS LEAD ==========
     quotation = None
     try:
-        # Try to get the quotation for this lead
         quotation = Quotation.objects.filter(lead=lead).first()
-    except Quotation.DoesNotExist:
-        quotation = None
     except Exception as e:
         logger.error(f"Error getting quotation for lead {lead_id}: {e}")
         quotation = None
     
-    # ========== API INTEGRATION ==========
+    # ========== API INTEGRATION (existing code) ==========
     API_URL = "https://accmaster.imcbs.com/api/sync/rrc-clients/"
     api_customer_data = []
     api_data_count = 0
     
     try:
-        # You might need to add authentication headers
-        headers = {
-            'Content-Type': 'application/json',
-            # Add authentication headers if required
-            # 'Authorization': 'Bearer YOUR_TOKEN',
-        }
-        
-        # Make API request with timeout
+        headers = {'Content-Type': 'application/json'}
         response = requests.get(API_URL, headers=headers, timeout=10)
         
         if response.status_code == 200:
             api_data = response.json()
             
-            # Process API data based on its structure
             if isinstance(api_data, list):
                 api_customer_data = api_data
             elif isinstance(api_data, dict) and 'data' in api_data:
@@ -4186,22 +4392,15 @@ def lead_edit(request, lead_id):
             
             api_data_count = len(api_customer_data)
             logger.info(f"Successfully fetched {api_data_count} customers from API")
-            
         else:
             logger.error(f"API request failed with status {response.status_code}")
             messages.warning(request, f"Could not fetch customer data from API (Status: {response.status_code})")
             
-    except requests.exceptions.RequestException as e:
+    except Exception as e:
         logger.error(f"Error connecting to API: {e}")
         messages.warning(request, "Unable to connect to customer database API")
-    except json.JSONDecodeError as e:
-        logger.error(f"Error parsing API response: {e}")
-        messages.warning(request, "Error processing customer data from API")
-    except Exception as e:
-        logger.error(f"Unexpected error with API: {e}")
-        messages.warning(request, "Error fetching customer data")
     
-    # Standardize API data structure
+    # Standardize API data structure (existing code)
     standardized_api_data = []
     for customer in api_customer_data:
         standardized_customer = {
@@ -4222,6 +4421,7 @@ def lead_edit(request, lead_id):
     
     # ========== POST REQUEST HANDLING ==========
     if request.method == 'POST':
+        # Update lead fields
         lead.ownerName = request.POST.get('ownerName')
         lead.phoneNo = request.POST.get('phoneNo')
         lead.email = request.POST.get('email')
@@ -4231,31 +4431,51 @@ def lead_edit(request, lead_id):
         lead.refFrom = request.POST.get('refFrom')
         lead.business = request.POST.get('business')
         
-        # Handle marketedBy - store as ID
+        # ========== FIXED: Handle marketedBy as NAME ==========
         marketed_by_value = request.POST.get('marketedBy')
-        if marketed_by_value and marketed_by_value.isdigit():
-            lead.marketedBy = int(marketed_by_value)
+        if marketed_by_value:
+            # Store the name directly
+            lead.marketedBy = marketed_by_value.strip()
+            # Also store the user ID if we can find it
+            try:
+                user = User.objects.filter(name=marketed_by_value.strip()).first()
+                if user:
+                    lead.marketed_by_user = user
+            except (AttributeError, Exception) as e:
+                logger.debug(f"No user found for name '{marketed_by_value}': {e}")
         else:
-            lead.marketedBy = marketed_by_value
+            lead.marketedBy = None
+            lead.marketed_by_user = None
             
         lead.Consultant = request.POST.get('Consultant')
         
-        # Handle requirement - store as ID
+        # ========== FIXED: Handle requirement as NAME ==========
         requirement_value = request.POST.get('requirement')
-        if requirement_value and requirement_value.isdigit():
-            lead.requirement = int(requirement_value)
+        if requirement_value:
+            # Store the branch name directly
+            lead.requirement = requirement_value.strip()
+            # Also store the department ID if we can find it
+            try:
+                department = Department.objects.filter(name=requirement_value.strip()).first()
+                if department:
+                    lead.department = department
+            except (AttributeError, Exception) as e:
+                logger.debug(f"No department found for name '{requirement_value}': {e}")
         else:
-            lead.requirement = requirement_value
+            lead.requirement = None
+            lead.department = None
             
         lead.details = request.POST.get('details')
         lead.date = request.POST.get('date') or lead.date
         
         # Handle campaign field
-        if hasattr(lead, 'Campaign'):
-            lead.Campaign = request.POST.get('Campaign')
-        elif hasattr(lead, 'campaign'):
-            lead.campaign = request.POST.get('Campaign')
+        campaign_value = request.POST.get('campaign') or request.POST.get('Campaign')
+        if hasattr(lead, 'campaign'):
+            lead.campaign = campaign_value
+        elif hasattr(lead, 'Campaign'):
+            lead.Campaign = campaign_value
 
+        # Update customer type specific fields
         if lead.customerType == 'Business':
             lead.name = request.POST.get('name')
             lead.address = request.POST.get('address')
@@ -4288,16 +4508,151 @@ def lead_edit(request, lead_id):
             lead.pinCode = None
 
         lead.save()
-        messages.success(request, f"Lead updated successfully! Ticket Number: {getattr(lead, 'ticket_number', lead.id)}")
+        
+        # ========== SAVE REQUIREMENT ITEMS ==========
+        try:
+            # Get requirement data from form
+            requirement_details_json = request.POST.get('requirement_details', '[]')
+            
+            logger.info(f"📦 Requirement details JSON: {requirement_details_json}")
+            
+            try:
+                requirements_list = json.loads(requirement_details_json) if requirement_details_json else []
+            except json.JSONDecodeError as e:
+                logger.error(f"JSON decode error: {e}")
+                requirements_list = []
+            
+            if requirements_list:
+                logger.info(f"Processing {len(requirements_list)} requirement items for lead {lead.id}")
+                
+                # Import Item model
+                try:
+                    from purchase_order.models import Item as POItem
+                    ItemModel = POItem
+                except ImportError:
+                    from .models import Item as App5Item
+                    ItemModel = App5Item
+                
+                # Get existing requirement IDs
+                existing_requirement_ids = set()
+                for req_data in requirements_list:
+                    req_id = req_data.get('id')
+                    if req_id and str(req_id).isdigit():
+                        existing_requirement_ids.add(int(req_id))
+                
+                # Delete requirements not in the new list
+                if existing_requirement_ids:
+                    lead.requirements.exclude(id__in=existing_requirement_ids).delete()
+                else:
+                    # If no requirement IDs, delete all existing
+                    lead.requirements.all().delete()
+                
+                logger.info(f"Cleaned up old requirements for lead {lead.id}")
+                
+                # Save each requirement item
+                saved_count = 0
+                for req_data in requirements_list:
+                    try:
+                        item_id = req_data.get('item_id')
+                        if not item_id:
+                            continue
+                        
+                        # Get the Item
+                        item = ItemModel.objects.filter(id=item_id).first()
+                        if not item:
+                            logger.warning(f"Item with ID {item_id} not found")
+                            continue
+                        
+                        # Parse values
+                        try:
+                            price = float(req_data.get('price', 0))
+                        except (ValueError, TypeError):
+                            price = 0.00
+                        
+                        try:
+                            quantity = int(req_data.get('quantity', 1))
+                        except (ValueError, TypeError):
+                            quantity = 1
+                        
+                        section = req_data.get('section', 'GENERAL')
+                        if not section:
+                            section = getattr(item, 'section', 'GENERAL')
+                        
+                        unit = req_data.get('unit', 'pcs')
+                        if not unit:
+                            unit = getattr(item, 'unit_of_measure', 'pcs')
+                        
+                        total = price * quantity
+                        
+                        # Update or create requirement item
+                        req_id = req_data.get('id')
+                        if req_id and str(req_id).isdigit():
+                            # Update existing
+                            req, created = RequirementItem.objects.update_or_create(
+                                id=int(req_id),
+                                defaults={
+                                    'lead': lead,
+                                    'item': item,
+                                    'item_name': item.name,
+                                    'section': section,
+                                    'unit': unit,
+                                    'price': price,
+                                    'quantity': quantity,
+                                    'total': total,
+                                    'owner_name': lead.ownerName,
+                                    'phone_no': lead.phoneNo,
+                                    'email': lead.email,
+                                    'ticket_number': lead.ticket_number
+                                }
+                            )
+                            logger.info(f"{'Created' if created else 'Updated'} requirement {req.id}")
+                        else:
+                            # Create new
+                            req = RequirementItem.objects.create(
+                                lead=lead,
+                                item=item,
+                                item_name=item.name,
+                                section=section,
+                                unit=unit,
+                                price=price,
+                                quantity=quantity,
+                                total=total,
+                                owner_name=lead.ownerName,
+                                phone_no=lead.phoneNo,
+                                email=lead.email,
+                                ticket_number=lead.ticket_number
+                            )
+                            logger.info(f"✅ Created new requirement {req.id}")
+                        
+                        saved_count += 1
+                        
+                    except Exception as e:
+                        logger.error(f"Error saving requirement item: {str(e)}", exc_info=True)
+                        continue
+                
+                if saved_count > 0:
+                    logger.info(f"✅ Successfully saved {saved_count} requirement items")
+                    messages.success(request, f"Lead and {saved_count} requirement item(s) saved successfully! Ticket: {lead.ticket_number}")
+                else:
+                    messages.success(request, f"Lead updated successfully! Ticket: {lead.ticket_number}")
+            else:
+                logger.info("No requirement items to save")
+                messages.success(request, f"Lead updated successfully! Ticket: {lead.ticket_number}")
+        
+        except Exception as e:
+            logger.error(f"Error processing requirements: {e}", exc_info=True)
+            messages.success(request, f"Lead updated but error saving requirements. Ticket: {lead.ticket_number}")
+        
         return redirect('app5:lead_report')
 
-    # ========== GET REQUEST PREPARATION ==========
+    # ========== GET REQUEST - PREPARE DISPLAY DATA ==========
+    
     # Get dropdown options
     business_natures = BusinessNature.objects.all().order_by('name') if BusinessNature is not None else []
     states = StateMaster.objects.all().order_by('name') if StateMaster is not None else []
     districts = District.objects.all().order_by('name') if District is not None else []
 
-    # Get active users for dropdown
+    # Get active users
     try:
         user_fields = [f.name for f in User._meta.get_fields()]
         
@@ -4314,92 +4669,131 @@ def lead_edit(request, lead_id):
 
     departments = Department.objects.filter(is_active=True).order_by('name') if Department is not None else []
     
-    # Get campaigns for dropdown
+    # Get campaigns
     try:
         from campaign.models import Campaigning
         campaigns = Campaigning.objects.filter(is_deleted=False).order_by('-campaign_id')
     except:
         campaigns = []
     
-    # Get references for dropdown
+    # Get references
     try:
         from .models import Reference
         references = Reference.objects.all().order_by('ref_name')
     except:
         references = []
     
-    # Get active leads for directory - FIXED: Use same sorting as lead_form_view
+    # Get active leads
     active_leads_data = Lead.objects.filter(status='Active').order_by('-created_at')[:50]
 
-    # ========== PREPARE DISPLAY DATA ==========
-    marketed_by_id = None
-    marketed_by_name = None
+    # ========== GET CURRENT SELECTED VALUES FOR DROPDOWNS ==========
     
-    # First, try to get the ID from lead.marketedBy
+    # Get current marketedBy value (could be ID or name)
+    marketed_by_selected_value = None
     if lead.marketedBy:
+        # First check if it's a numeric ID
         try:
-            # If marketedBy is already an integer ID
-            if isinstance(lead.marketedBy, int) or (isinstance(lead.marketedBy, str) and lead.marketedBy.isdigit()):
-                marketed_by_id = int(lead.marketedBy)
-                try:
-                    marketed_by_user = User.objects.get(id=marketed_by_id)
-                    marketed_by_name = marketed_by_user.name
-                except User.DoesNotExist:
-                    logger.error(f"User with ID {marketed_by_id} not found")
-                    marketed_by_name = str(lead.marketedBy)
+            if lead.marketedBy.isdigit():
+                user = User.objects.filter(id=int(lead.marketedBy)).first()
+                if user:
+                    marketed_by_selected_value = user.name
+                else:
+                    marketed_by_selected_value = lead.marketedBy
             else:
-                # If it's a string name, try to find the user
-                try:
-                    marketed_by_user = User.objects.filter(name=lead.marketedBy).first()
-                    if marketed_by_user:
-                        marketed_by_id = marketed_by_user.id
-                        marketed_by_name = marketed_by_user.name
-                    else:
-                        marketed_by_name = str(lead.marketedBy)
-                except:
-                    marketed_by_name = str(lead.marketedBy)
-        except (ValueError, Exception) as e:
-            logger.error(f"Error getting marketed by user: {e}")
-            marketed_by_name = str(lead.marketedBy)
-
-    branch_id = None
-    branch_name = None
+                # It's already a name
+                marketed_by_selected_value = lead.marketedBy
+        except:
+            marketed_by_selected_value = lead.marketedBy
     
-    # Get branch/requirement information
+    # Get current requirement value (could be ID or name)
+    requirement_selected_value = None
     if lead.requirement:
+        # First check if it's a numeric ID
         try:
-            # If requirement is already an integer ID
-            if isinstance(lead.requirement, int) or (isinstance(lead.requirement, str) and lead.requirement.isdigit()):
-                branch_id = int(lead.requirement)
-                try:
-                    branch = Department.objects.get(id=branch_id)
-                    branch_name = branch.name
-                except Department.DoesNotExist:
-                    logger.error(f"Department with ID {branch_id} not found")
-                    branch_name = str(lead.requirement)
+            if lead.requirement.isdigit():
+                department = Department.objects.filter(id=int(lead.requirement)).first()
+                if department:
+                    requirement_selected_value = department.name
+                else:
+                    requirement_selected_value = lead.requirement
             else:
-                # If it's a string name, try to find the department
-                try:
-                    branch = Department.objects.filter(name=lead.requirement).first()
-                    if branch:
-                        branch_id = branch.id
-                        branch_name = branch.name
-                    else:
-                        branch_name = str(lead.requirement)
-                except:
-                    branch_name = str(lead.requirement)
-        except (ValueError, Exception) as e:
-            logger.error(f"Error getting branch: {e}")
-            branch_name = str(lead.requirement)
+                # It's already a name
+                requirement_selected_value = lead.requirement
+        except:
+            requirement_selected_value = lead.requirement
 
     # Get campaign name
-    campaign_name = None
-    if hasattr(lead, 'Campaign') and lead.Campaign:
-        campaign_name = lead.Campaign
-    elif hasattr(lead, 'campaign') and lead.campaign:
-        campaign_name = lead.campaign
+    campaign_display = None
+    if hasattr(lead, 'campaign') and lead.campaign:
+        campaign_display = lead.campaign
+    elif hasattr(lead, 'Campaign') and lead.Campaign:
+        campaign_display = lead.Campaign
 
-    # Prepare lead_data dictionary for template
+    # ========== ✅ FIX: PROPERLY FORMAT REQUIREMENTS DATA ==========
+    requirements_data = []
+    requirements_json = "[]"
+    
+    try:
+        # Get all requirements for this lead
+        requirements = lead.requirements.all().order_by('created_at')
+        
+        logger.info(f"📦 Found {requirements.count()} requirements for lead {lead_id}")
+        
+        # ✅ GET ITEM MODEL
+        try:
+            from purchase_order.models import Item as POItem
+            ItemModel = POItem
+        except ImportError:
+            from .models import Item as App5Item
+            ItemModel = App5Item
+        
+        for req in requirements:
+            # ✅ GET ACTUAL ITEM FROM DATABASE TO GET CURRENT PRICE & UNIT
+            item_price = float(req.price) if req.price is not None else 0.00
+            item_unit = req.unit or 'pcs'
+            
+            # If we have an item reference, get its current details
+            if req.item:
+                try:
+                    current_item = ItemModel.objects.get(id=req.item.id)
+                    # Use saved price/unit, but have current item data available
+                    if item_price == 0.00 and hasattr(current_item, 'mrp'):
+                        item_price = float(current_item.mrp or 0)
+                    if not item_unit and hasattr(current_item, 'unit_of_measure'):
+                        item_unit = current_item.unit_of_measure or 'pcs'
+                except ItemModel.DoesNotExist:
+                    logger.warning(f"Item {req.item.id} not found")
+            
+            # Calculate total
+            quantity_val = int(req.quantity) if req.quantity is not None else 1
+            total_val = item_price * quantity_val
+            
+            req_dict = {
+                'id': req.id,
+                'item_id': req.item.id if req.item else None,
+                'item_name': req.item_name or '',
+                'section': req.section or 'GENERAL',
+                'unit': item_unit,
+                'price': item_price,
+                'quantity': quantity_val,
+                'total': total_val,
+            }
+            
+            requirements_data.append(req_dict)
+            
+            logger.debug(f"  Item: {req.item_name}, Unit: {item_unit}, Price: ₹{item_price}, Qty: {quantity_val}, Total: ₹{total_val}")
+        
+        # Convert to JSON
+        requirements_json = json.dumps(requirements_data, cls=DjangoJSONEncoder)
+        
+        logger.info(f"✅ Successfully prepared {len(requirements_data)} requirements for template")
+    
+    except Exception as e:
+        logger.error(f"❌ Error preparing requirements data: {e}", exc_info=True)
+        requirements_data = []
+        requirements_json = "[]"
+
+    # Prepare lead_data dictionary
     lead_data = {
         'id': lead.id,
         'ownerName': lead.ownerName,
@@ -4432,18 +4826,20 @@ def lead_edit(request, lead_id):
         'individualState': lead.individualState,
         'individualPinCode': lead.individualPinCode,
         
-        # Display fields
-        'marketed_by_name': marketed_by_name,
-        'branch_name': branch_name,
-        'campaign_display': campaign_name,
-        'campaign': campaign_name,
+        # ========== FIXED: Use resolved names for form values ==========
+        'marketedBy': marketed_by_selected_value or '',  # User name for form value
+        'marketed_by_name': marketed_by_selected_value or '',  # For display
+        'requirement': requirement_selected_value or '',  # Department name for form value
+        'branch_name': requirement_selected_value or '',  # For display
+        'campaign': campaign_display or '',  # For form value
+        'campaign_display': campaign_display or '',  # For display
         
-        # ID fields for select dropdowns (IMPORTANT FIX)
-        'marketedBy': str(marketed_by_id) if marketed_by_id else '',
-        'requirement': str(branch_id) if branch_id else '',
+        # ✅ ADD REQUIREMENTS
+        'requirement_ids': ','.join([str(r['id']) for r in requirements_data if r.get('id')]),
+        'requirement_details_json': requirements_json,
     }
     
-    # Get existing firms for searchable dropdown
+    # Get existing firms
     existing_firms = Lead.objects.filter(
         customerType='Business'
     ).exclude(
@@ -4454,11 +4850,28 @@ def lead_edit(request, lead_id):
         'name', flat=True
     ).distinct()
 
+    # Get items grouped by section
+    items_by_section = {}
+    try:
+        from purchase_order.models import Item as POItem
+        all_items = POItem.objects.filter(is_active=True).order_by('section', 'name')
+        
+        for item in all_items:
+            section = item.section if item.section else 'GENERAL'
+            if section not in items_by_section:
+                items_by_section[section] = []
+            items_by_section[section].append(item)
+            
+        logger.info(f"✅ Loaded {all_items.count()} items in {len(items_by_section)} sections")
+    except Exception as e:
+        logger.error(f"Error loading items: {e}")
+        items_by_section = {}
+
     # ========== PREPARE CONTEXT ==========
     context = {
         'lead_data': lead_data,
         'lead': lead,
-        'quotation': quotation,  # Added this line - this is what was missing!
+        'quotation': quotation,
         'business_natures': business_natures,
         'states': states,
         'districts': districts,
@@ -4467,14 +4880,15 @@ def lead_edit(request, lead_id):
         'campaigns': campaigns,
         'references': references,
         'active_leads_data': active_leads_data,
-        'marketed_by_name': marketed_by_name,
-        'branch_name': branch_name,
-        'campaign_name': campaign_name,
+        'marketed_by_name': marketed_by_selected_value,
+        'branch_name': requirement_selected_value,
+        'campaign_name': campaign_display,
         'today': timezone.now().date(),
         'existing_firms': existing_firms,
         'api_customer_data': standardized_api_data,
         'api_data_count': api_data_count,
-        'section_counts': {},
+        'items_by_section': items_by_section,
+        'requirements_data': requirements_data,
     }
     
     return render(request, "lead_form_edit.html", context)
@@ -5257,386 +5671,7 @@ def lead_detail(request, lead_id):
 
     return JsonResponse({"success": True, "data": data})
 
-# app5/views.py
-# Add these imports near the top of your views.py (if not already present)
-import json
-import logging
-from django.db.models import Q
-from django.utils import timezone
-from django.shortcuts import render
 
-logger = logging.getLogger(__name__)
-
-# In views.py, update the requirement_list function to ensure proper data loading
-
-def requirement_list(request):
-    """Display requirement list page with items, users, and leads"""
-    from django.db.models import Q, Count
-    from django.utils import timezone
-    import json
-    import logging
-    
-    logger = logging.getLogger(__name__)
-    logger.info("=" * 60)
-    logger.info("REQUIREMENT LIST VIEW - START")
-    logger.info("=" * 60)
-    
-    items_list = []
-    section_counts = {}
-    
-    # ==================== ITEMS LOADING ====================
-    try:
-        # ✅ Try to import from purchase_order app first
-        try:
-            from purchase_order.models import Item as POItem
-            items_qs = POItem.objects.filter(is_active=True).order_by('section', 'name')
-            logger.info(f"✅ Using purchase_order.Item model - {items_qs.count()} items found")
-            using_po_items = True
-        except (ImportError, Exception) as e:
-            # ✅ Fallback to app5 Item model (NO section field)
-            logger.info(f"⚠️ purchase_order.Item not available: {e}")
-            try:
-                from .models import Item as App5Item
-                items_qs = App5Item.objects.all().order_by('name')
-                logger.info(f"✅ Using app5.Item model - {items_qs.count()} items found")
-                using_po_items = False
-            except Exception as e2:
-                logger.error(f"❌ Both item models failed: {e2}")
-                items_qs = []
-                using_po_items = False
-        
-        # Process items into structured format
-        section_values = set()
-        items_processed = 0
-        
-        for item in items_qs:
-            try:
-                # ✅ Get section value (only for purchase_order items)
-                if using_po_items and hasattr(item, 'section'):
-                    section_value = getattr(item, 'section', None)
-                    
-                    if not section_value or str(section_value).strip() == '':
-                        section_value = 'GENERAL'
-                    else:
-                        section_value = str(section_value).upper().strip()
-                        
-                        # Standardize section names
-                        if 'HARDWARE' in section_value:
-                            section_value = 'HARDWARE'
-                        elif 'SOFTWARE' in section_value:
-                            section_value = 'SOFTWARE'
-                        elif 'PAPER' in section_value or 'ROLL' in section_value:
-                            section_value = 'PAPER_ROLLS'
-                        elif 'GENERAL' in section_value:
-                            section_value = 'GENERAL'
-                else:
-                    # ✅ Default section for app5 items
-                    section_value = 'GENERAL'
-                
-                section_values.add(section_value)
-                section_display = section_value.replace('_', ' ').title()
-                
-                # ✅ Get item attributes safely with defaults
-                item_dict = {
-                    'id': getattr(item, 'id', 0),
-                    'name': getattr(item, 'name', 'Unknown Item'),
-                    'unit_of_measure': getattr(item, 'unit_of_measure', 'pcs'),
-                    'mrp': float(getattr(item, 'mrp', 0) or 0),
-                    'purchase_price': float(getattr(item, 'purchase_price', 0) or 0),
-                    'cost': float(getattr(item, 'cost', 0) or 0),
-                    'section': section_value,
-                    'section_display': section_display,
-                    'tax_percentage': float(getattr(item, 'tax_percentage', 0) or 0),
-                    'hsn_code': getattr(item, 'hsn_code', ''),
-                    'description': getattr(item, 'description', ''),
-                    'is_active': getattr(item, 'is_active', True) if hasattr(item, 'is_active') else True,
-                }
-                
-                items_list.append(item_dict)
-                items_processed += 1
-                
-            except Exception as e:
-                logger.warning(f"❌ Error processing item {getattr(item, 'id', '?')}: {e}")
-        
-        logger.info(f"✅ Processed {items_processed} items successfully")
-        logger.info(f"✅ Unique sections: {sorted(section_values)}")
-        
-        # Get section statistics
-        for section in ['GENERAL', 'HARDWARE', 'SOFTWARE', 'PAPER_ROLLS']:
-            count = sum(1 for item in items_list if item['section'] == section)
-            section_counts[section] = {
-                'label': section.replace('_', ' ').title(),
-                'count': count,
-                'percentage': round((count / max(len(items_list), 1)) * 100, 1)
-            }
-            
-    except Exception as e:
-        logger.error(f"❌ Critical error loading items: {e}", exc_info=True)
-        items_list = []
-        section_counts = {}
-    
-    # ==================== ACTIVE USERS ====================
-    active_users_list = []
-    try:
-        # Try multiple user model imports
-        try:
-            from .models import User
-        except ImportError:
-            try:
-                from app1.models import User
-            except ImportError:
-                from django.contrib.auth import get_user_model
-                User = get_user_model()
-        
-        # Determine filtering field
-        user_fields = [f.name for f in User._meta.get_fields()] if hasattr(User, '_meta') else []
-        
-        if "status" in user_fields:
-            active_users_qs = User.objects.filter(status__iexact="active").order_by("name")
-        elif "is_active" in user_fields:
-            active_users_qs = User.objects.filter(is_active=True).order_by("first_name", "last_name")
-        else:
-            active_users_qs = User.objects.all().order_by("name")
-        
-        # Process users
-        for u in active_users_qs:
-            try:
-                # Get display name
-                name = None
-                
-                if hasattr(u, 'name') and u.name:
-                    name = str(u.name).strip()
-                elif hasattr(u, 'get_full_name'):
-                    try:
-                        full_name = u.get_full_name().strip()
-                        if full_name:
-                            name = full_name
-                    except:
-                        pass
-                
-                if not name:
-                    first_name = getattr(u, 'first_name', '').strip()
-                    last_name = getattr(u, 'last_name', '').strip()
-                    if first_name or last_name:
-                        name = f"{first_name} {last_name}".strip()
-                
-                if not name:
-                    name = getattr(u, 'username', f'User #{getattr(u, "id", "?")}')
-                
-                # Build user dict
-                active_users_list.append({
-                    "id": getattr(u, 'id', 0),
-                    "name": name,
-                    "phone": getattr(u, "phone_number", "") or getattr(u, "phone", "") or "",
-                    "department": getattr(u, "department", "") or "",
-                    "designation": getattr(u, "designation", "") or "",
-                    "username": getattr(u, "username", ""),
-                    "email": getattr(u, "email", ""),
-                    "user_id": getattr(u, "userid", ""),
-                })
-                
-            except Exception as e:
-                logger.warning(f"❌ Error processing user: {e}")
-        
-        logger.info(f"✅ Loaded {len(active_users_list)} active users")
-        
-    except Exception as e:
-        logger.error(f"❌ Error loading users: {e}")
-        active_users_list = []
-    
-    # ==================== ACTIVE LEADS ====================
-    active_leads_list = []
-    try:
-        # Try multiple lead model imports
-        try:
-            from .models import Lead
-        except ImportError:
-            try:
-                from app1.models import Lead
-            except ImportError:
-                Lead = None
-        
-        if Lead:
-            # Get active leads with proper filtering
-            leads_qs = Lead.objects.filter(
-                status__iexact="Active"
-            ).exclude(
-                Q(ticket_number__isnull=True) | Q(ticket_number__exact='')
-            ).order_by("-created_at")  # Already sorted by created_at descending
-            
-            seen_tickets = set()
-            leads_processed = 0
-            
-            for l in leads_qs:
-                try:
-                    # Get ticket number
-                    ticket = getattr(l, "ticket_number", "") or f"TKT-{l.id:06d}"
-                    ticket = str(ticket).strip()
-                    
-                    # Skip if empty or duplicate
-                    if not ticket or ticket in seen_tickets:
-                        continue
-                    
-                    seen_tickets.add(ticket)
-                    
-                    # Get owner name with multiple fallbacks
-                    owner_name = ""
-                    for field_name in ['ownerName', 'name', 'customer_name', 'contact_name', 'firstName']:
-                        if hasattr(l, field_name):
-                            value = getattr(l, field_name, "")
-                            if value and str(value).strip():
-                                owner_name = str(value).strip()
-                                break
-                    
-                    if not owner_name:
-                        owner_name = f"Lead #{l.id}"
-                    
-                    # Get phone number
-                    phone_no = ""
-                    for field_name in ['phoneNo', 'phone', 'phone_number', 'mobile']:
-                        if hasattr(l, field_name):
-                            value = getattr(l, field_name, "")
-                            if value and str(value).strip():
-                                phone_no = str(value).strip()
-                                break
-                    
-                    # Get requirements count for this lead
-                    requirements_count = 0
-                    try:
-                        from .models import RequirementItem
-                        requirements_count = RequirementItem.objects.filter(
-                            Q(ticket_number=ticket) |
-                            Q(owner_name=owner_name, phone_no=phone_no)
-                        ).count()
-                    except Exception as e:
-                        logger.debug(f"Could not get requirements count: {e}")
-                    
-                    # Build lead dict with all required fields
-                    lead_entry = {
-                        "id": l.id,
-                        "ticket_number": ticket,
-                        "ownerName": owner_name,
-                        "phoneNo": phone_no,
-                        "email": getattr(l, "email", "") or "",
-                        "status": getattr(l, "status", "Active"),
-                        "priority": getattr(l, "priority", "Medium"),
-                        "customerType": getattr(l, "customerType", "Business"),
-                        "place": getattr(l, "place", "") or getattr(l, "individualPlace", "") or "",
-                        "business": getattr(l, "business", "") or "",
-                        "company": getattr(l, "name", "") or getattr(l, "business", "") or "",
-                        "requirements_count": requirements_count,
-                        "created_at": getattr(l, "created_at", None),
-                        "display_name": owner_name,
-                        "ticket_display": f"{ticket} - {owner_name}",
-                    }
-                    
-                    active_leads_list.append(lead_entry)
-                    leads_processed += 1
-                    
-                except Exception as e:
-                    logger.warning(f"❌ Error processing lead {getattr(l, 'id', '?')}: {e}")
-            
-            # ===== FIXED: Sort by created_at descending (consistent with lead_form) =====
-            # The query is already sorted by "-created_at", but let's ensure the list matches
-            # Don't re-sort with priority logic - keep the original query order
-            # This ensures leads appear in the same order as in lead_form
-            
-            logger.info(f"✅ Loaded {leads_processed} active leads with valid tickets")
-        else:
-            logger.warning("⚠️ Lead model not found")
-            
-    except Exception as e:
-        logger.error(f"❌ Error loading leads: {e}", exc_info=True)
-        active_leads_list = []
-    
-    # ==================== REQUIREMENTS MAP ====================
-    lead_requirements_map = {}
-    try:
-        from .models import RequirementItem
-        
-        requirements = RequirementItem.objects.select_related('item').all()
-        requirements_loaded = 0
-        
-        for req in requirements:
-            try:
-                ticket = getattr(req, 'ticket_number', None)
-                if not ticket:
-                    continue
-                
-                # Find corresponding lead
-                lead_match = None
-                for lead in active_leads_list:
-                    if lead.get('ticket_number') == ticket:
-                        lead_match = lead
-                        break
-                
-                if not lead_match:
-                    continue
-                
-                lead_id = lead_match['id']
-                lead_requirements_map.setdefault(lead_id, [])
-                
-                # Get section
-                section_value = 'GENERAL'
-                if req.item and hasattr(req.item, 'section'):
-                    section_raw = str(req.item.section).upper().strip()
-                    if 'HARDWARE' in section_raw:
-                        section_value = 'HARDWARE'
-                    elif 'SOFTWARE' in section_raw:
-                        section_value = 'SOFTWARE'
-                    elif 'PAPER' in section_raw or 'ROLL' in section_raw:
-                        section_value = 'PAPER_ROLLS'
-                    else:
-                        section_value = section_raw
-                
-                lead_requirements_map[lead_id].append({
-                    'id': req.id,
-                    'item_id': req.item.id if req.item else None,
-                    'item_name': req.item.name if req.item else getattr(req, 'item_name', ''),
-                    'section': section_value,
-                    'quantity': int(req.quantity or 1),
-                    'price': float(req.price or 0),
-                    'unit': req.unit or '',
-                    'total': float(req.total or 0),
-                })
-                requirements_loaded += 1
-                
-            except Exception as e:
-                logger.warning(f"❌ Error processing requirement {getattr(req, 'id', '?')}: {e}")
-        
-        logger.info(f"✅ Loaded {requirements_loaded} requirements for {len(lead_requirements_map)} leads")
-        
-    except Exception as e:
-        logger.warning(f"⚠️ Could not load requirements: {e}")
-    
-    # ==================== FINAL CONTEXT ====================
-    context = {
-        "items": items_list,
-        "active_users": active_users_list,
-        "active_leads": active_leads_list,
-        "active_users_json": json.dumps(active_users_list, default=str, ensure_ascii=False),
-        "active_leads_json": json.dumps(active_leads_list, default=str, ensure_ascii=False),
-        "items_json": json.dumps(items_list, default=str, ensure_ascii=False),
-        "lead_requirements_map": json.dumps(lead_requirements_map, default=str, ensure_ascii=False),
-        "section_counts": section_counts,
-        "server_time": timezone.now().strftime('%Y-%m-%d %H:%M:%S'),
-        "users_count": len(active_users_list),
-        "leads_count": len(active_leads_list),
-        "items_count": len(items_list),
-        "requirements_count": sum(len(reqs) for reqs in lead_requirements_map.values()),
-    }
-    
-    logger.info("=" * 60)
-    logger.info("REQUIREMENT LIST - FINAL SUMMARY")
-    logger.info("=" * 60)
-    logger.info(f"Users: {len(active_users_list)}")
-    logger.info(f"Leads: {len(active_leads_list)}")
-    logger.info(f"Items: {len(items_list)}")
-    logger.info(f"Requirements mapped: {sum(len(reqs) for reqs in lead_requirements_map.values())}")
-    logger.info(f"Sections: {[f'{k}: {v['count']}' for k, v in section_counts.items()]}")
-    logger.info("=" * 60)
-    
-    return render(request, "requirement_list.html", context)
 
 
     
@@ -8055,3 +8090,187 @@ def generate_quotation_pdf(context):
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     
     return response
+
+    # app5/views.py
+# app5/views.py
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import login_required
+from .models import Lead
+
+@login_required
+def lead_view_detail(request, pk):
+    """View-only page for lead details"""
+    lead = get_object_or_404(Lead, pk=pk)
+    
+    # Get user details for marketed_by
+    marketed_by_user = None
+    if lead.marketedBy:
+        try:
+            User = get_user_model()
+            marketed_by_user = User.objects.filter(name=lead.marketedBy).first()
+        except:
+            marketed_by_user = None
+    
+    # Get requirements data
+    requirements_data = []
+    requirement_ids = []
+    
+    # Try to get from JSON field first
+    if hasattr(lead, 'requirement_details_json') and lead.requirement_details_json:
+        import json
+        try:
+            raw_requirements = json.loads(lead.requirement_details_json)
+            # Process and calculate totals
+            for req in raw_requirements:
+                price = float(req.get('price', 0) or 0)
+                quantity = int(req.get('quantity', 1) or 1)
+                total = float(req.get('total', 0) or (price * quantity))
+                
+                requirements_data.append({
+                    'item_id': req.get('item_id', ''),
+                    'item_name': req.get('item_name', req.get('name', 'Unknown Item')),
+                    'section': req.get('section', 'GENERAL'),
+                    'unit': req.get('unit', 'pcs'),
+                    'price': price,
+                    'quantity': quantity,
+                    'total': total,
+                    'price_display': f"{price:.2f}",
+                    'total_display': f"{total:.2f}",
+                })
+                if req.get('item_id'):
+                    requirement_ids.append(str(req['item_id']))
+        except:
+            requirements_data = []
+    
+    # Try to get from related model
+    elif hasattr(lead, 'requirements') and hasattr(lead.requirements, 'all'):
+        raw_requirements = list(lead.requirements.all().values(
+            'id', 'item_id', 'item_name', 'section', 'unit', 
+            'price', 'quantity', 'total', 'created_at'
+        ))
+        for req in raw_requirements:
+            price = float(req.get('price', 0) or 0)
+            quantity = int(req.get('quantity', 1) or 1)
+            total = float(req.get('total', 0) or (price * quantity))
+            
+            requirements_data.append({
+                'item_id': req.get('item_id', ''),
+                'item_name': req.get('item_name', 'Unknown Item'),
+                'section': req.get('section', 'GENERAL'),
+                'unit': req.get('unit', 'pcs'),
+                'price': price,
+                'quantity': quantity,
+                'total': total,
+                'price_display': f"{price:.2f}",
+                'total_display': f"{total:.2f}",
+            })
+            requirement_ids.append(str(req.get('id', '')))
+    
+    # Calculate grand total
+    grand_total = 0
+    if requirements_data:
+        grand_total = sum(req['total'] for req in requirements_data)
+    
+    # Get all models safely
+    try:
+        from app5.models import (
+            Department, BusinessNature, State, District, 
+            Reference, Campaign, Item, Section
+        )
+        
+        # Get all related data
+        departments = Department.objects.all().order_by('name')
+        business_natures = BusinessNature.objects.all().order_by('name')
+        states = State.objects.all().order_by('name')
+        districts = District.objects.all().order_by('name')
+        references = Reference.objects.all().order_by('ref_name')
+        campaigns = Campaign.objects.all().order_by('campaign_name')
+        
+        # Get active users
+        User = get_user_model()
+        active_users = User.objects.filter(is_active=True).order_by('name')
+        
+        # Get existing firms (including the current lead's firm)
+        existing_firms = Lead.objects.filter(
+            customerType='Business'
+        ).exclude(name__isnull=True).exclude(name='').values_list('name', flat=True).distinct().order_by('name')
+        
+        # Get items organized by section for requirements
+        items_by_section = {}
+        try:
+            # Get all sections
+            sections = Section.objects.all().order_by('name')
+            for section in sections:
+                # Get items for this section
+                items = Item.objects.filter(section=section).order_by('name')
+                if items.exists():
+                    items_by_section[section.name] = items
+        except:
+            # If Section model doesn't exist, fall back to grouping by item section field
+            items = Item.objects.all().order_by('name')
+            for item in items:
+                section_name = getattr(item, 'section', 'GENERAL')
+                if not section_name:
+                    section_name = 'GENERAL'
+                
+                if section_name not in items_by_section:
+                    items_by_section[section_name] = []
+                items_by_section[section_name].append(item)
+        
+    except Exception as e:
+        print(f"Error loading data: {e}")
+        departments = []
+        business_natures = []
+        states = []
+        districts = []
+        references = []
+        campaigns = []
+        active_users = []
+        existing_firms = []
+        items_by_section = {}
+    
+    # Add API data (if applicable)
+    api_customer_data = []
+    try:
+        # If you have API integration, add your API data fetching logic here
+        # For now, we'll leave it empty
+        pass
+    except:
+        api_customer_data = []
+    
+    # Debug: Print lead data to console
+    print(f"Lead Name: {lead.name}")
+    print(f"Lead ID: {lead.id}")
+    print(f"Lead Type: {lead.customerType}")
+    print(f"Owner Name: {lead.ownerName}")
+    
+    context = {
+        'lead': lead,
+        'marketed_by_user': marketed_by_user,
+        'requirements_data': requirements_data,
+        'requirement_ids': ','.join(requirement_ids),
+        'grand_total': f"{grand_total:.2f}",
+        'is_view_mode': True,
+        
+        # Form data
+        'departments': departments,
+        'business_natures': business_natures,
+        'states': states,
+        'districts': districts,
+        'references': references,
+        'campaigns': campaigns,
+        'active_users': active_users,
+        'existing_firms': existing_firms,
+        'items_by_section': items_by_section,
+        
+        # API data
+        'api_customer_data': api_customer_data,
+        'api_data_count': len(api_customer_data),
+        
+        # User permissions
+        'can_edit': request.user.has_perm('app5.change_lead') or request.user == lead.created_by,
+        'can_delete': request.user.has_perm('app5.delete_lead') or request.user == lead.created_by,
+    }
+    
+    return render(request, 'lead_view.html', context)
