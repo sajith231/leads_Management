@@ -169,10 +169,7 @@
             color: #0b0b0b;
             
             text-align: left;
-            border-bottom: 1px solid #7b7a7a;
-            border-top: 1px solid #7b7a7a;
-            border-right: 1px solid #7b7a7a;
-            border-left: 1px solid #7b7a7a;
+           
         }
 
         th {
@@ -308,13 +305,14 @@
         .action-buttons {
             display: flex;
             gap: 6px;
-            justify-content: center;
+            justify-content: flex-start;
+            justify-content:left;
         }
 
         .serial-number {
             text-align: center;
             font-weight: 600;
-            color: #0a0a0a;
+            color: #090909;
             min-width: 50px;
         }
 
@@ -485,6 +483,19 @@
 /* Force table to be wider than container */
 .table-scroll table {
     min-width: 1200px;       /* increase if you have many columns */
+}
+/* Zebra striping for table rows */
+tbody tr:nth-child(odd) {
+    background-color: #eaeae9;   /* light color */
+}
+
+tbody tr:nth-child(even) {
+    background-color: #ffffff;   /* white */
+}
+
+/* Keep hover effect visible */
+tbody tr:hover {
+    background-color: #eaeaea !important;
 }
 
 
@@ -815,10 +826,10 @@
                 <table>
                     <thead>
                         <tr>
-                            <th class="serial-number">Sl.No</th>
+                            <th>Sl.No</th>
                             <th>Ticket No</th>
                             <th>Owner Detailes</th>
-                            <th>Branch</th>
+                           
                             <th>marketedBy</th>
                             <th>Reference From</th>
                             <th>Actions</th>
@@ -917,9 +928,10 @@
                                     {% else %}
                                         <span style="color: #999;">No name</span>
                                     {% endif %}
-                                {% endif %}</br>
+                                {% endif %}
+                                {{ lead.requirement|default:'' }}
                             </td>
-                            <td>{{ lead.requirement|default:'' }}</td>
+                            
                             <td>{{ lead.marketedBy|default:'' }}</td>
                             
                             <td>{{ lead.refFrom|default:"-" }}</td>
@@ -927,42 +939,10 @@
                             <td>
                                 <div class="action-buttons">
                                     <!-- View Button - ✅ FIXED DATA ATTRIBUTES -->
-                                    <button class="btn btn-primary btn-small view-lead-btn"
-                                        data-lead-id="{{ lead.id }}"
-                                        data-ticket-number="{{ lead.ticket_number }}"
-                                        data-owner="{{ lead.ownerName|default:'' }}"
-                                        data-phone="{{ lead.phoneNo|default:'' }}"
-                                        data-email="{{ lead.email|default:'' }}"
-                                        data-type="{{ lead.customerType|default:'' }}"
-                                        data-firm="{{ lead.name|default:'' }}"
-                                        data-firstname="{{ lead.firstName|default:'' }}"
-                                        data-lastname="{{ lead.lastName|default:'' }}"
-                                        data-business-address="{{ lead.address|default:'' }}"
-                                        data-individual-address="{{ lead.individualAddress|default:'' }}"
-                                        data-place="{{ lead.place|default:'' }}"
-                                        data-individual-place="{{ lead.individualPlace|default:'' }}"
-                                        data-district="{{ lead.District|default:'' }}"
-                                        data-individual-district="{{ lead.individualDistrict|default:'' }}"
-                                        data-state="{{ lead.State|default:'' }}"
-                                        data-individual-state="{{ lead.individualState|default:'' }}"
-                                        data-pincode="{{ lead.pinCode|default:'' }}"
-                                        data-individual-pincode="{{ lead.individualPinCode|default:'' }}"
-                                        data-status="{{ lead.status|default:'' }}"
-                                        data-reference="{{ lead.refFrom|default:'' }}"
-                                        data-business-nature="{{ lead.business|default:'' }}"
-                                        data-marketed="{{ lead.marketedBy|default:'' }}"
-                                        data-consultant="{{ lead.Consultant|default:'' }}"
-                                        data-branch="{{ lead.requirement|default:'' }}"
-                                        data-notes="{{ lead.details|default:'' }}"
-                                        data-date="{{ lead.date|date:'Y-m-d'|default:'' }}"
-                                        data-created="{{ lead.created_at|date:'Y-m-d H:i:s'|default:'' }}"
-                                        data-updated="{{ lead.updated_at|date:'Y-m-d H:i:s'|default:'' }}"
-                                        data-created-by="{% if lead.created_by %}{% if lead.created_by.name %}{{ lead.created_by.name }}{% elif lead.created_by.username %}{{ lead.created_by.username }}{% elif lead.created_by.email %}{{ lead.created_by.email }}{% else %}User #{{ lead.created_by.id }}{% endif %}{% else %}System{% endif %}"
-                                        data-assigned-to="{{ lead.assigned_to_name|default:'' }}"
-                                        data-assigned-by="{{ lead.assigned_by_name|default:'' }}"
-                                        data-assignment-type="{{ lead.assignment_type|default:'unassigned' }}">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
+<a href="{% url 'app5:lead_view_detail' lead.id %}" class="btn btn-info btn-small" title="View Lead">
+    <i class="fas fa-eye"></i>
+</a>
+
 
                                     <!-- Edit Button -->
                                     <button class="btn btn-success btn-small"
@@ -1088,7 +1068,7 @@
         // Open modal when view button is clicked
         viewButtons.forEach(button => {
             button.addEventListener('click', function() {
-                const leadData = {
+                const leadId = this.dataset.leadId;
                     id: this.dataset.leadId,
                     ticket_number: this.dataset.ticketNumber,
                     ownerName: this.dataset.owner,
@@ -1124,8 +1104,7 @@
                     assigned_by: this.dataset.assignedBy
                 };
 
-                populateModal(leadData);
-                modal.style.display = 'block';
+                 window.location.href = `/app5/lead/?view=${leadId}`;
             });
         });
 
@@ -1499,6 +1478,80 @@
                 minute: '2-digit'
             });
         }
+
+        // Add this to the JavaScript section of lead_view.html
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if we're in view mode (from context variable)
+    const isViewMode = {% if is_view_mode %}true{% else %}false{% endif %};
+    
+    if (isViewMode) {
+        console.log('🔒 View-only mode enabled');
+        
+        // Make all form fields read-only/disabled
+        document.querySelectorAll('input, select, textarea, button').forEach(field => {
+            if (field.type !== 'hidden') {
+                field.readOnly = true;
+                field.disabled = true;
+                
+                // Style for readonly fields
+                if (field.tagName === 'INPUT' || field.tagName === 'TEXTAREA') {
+                    field.style.backgroundColor = '#f5f5f5';
+                    field.style.cursor = 'not-allowed';
+                }
+                
+                if (field.tagName === 'SELECT') {
+                    field.style.pointerEvents = 'none';
+                    field.style.backgroundColor = '#f5f5f5';
+                }
+            }
+        });
+        
+        // Hide submit and delete buttons
+        document.querySelectorAll('.submit-btn, .update-btn, .delete-btn, .remove-btn').forEach(btn => {
+            btn.style.display = 'none';
+        });
+        
+        // Hide "Add Item" button in requirements
+        const addItemBtn = document.getElementById('add-item-btn');
+        if (addItemBtn) addItemBtn.style.display = 'none';
+        
+        // Change page title
+        document.title = 'View Lead - ' + document.title;
+        
+        // Update header to show view mode
+        const leadInfoBanner = document.querySelector('.lead-info-banner');
+        if (leadInfoBanner) {
+            const viewModeBadge = document.createElement('div');
+            viewModeBadge.className = 'lead-status-badge';
+            viewModeBadge.style.background = '#2196F3';
+            viewModeBadge.innerHTML = '<i class="fas fa-eye"></i> View Mode';
+            leadInfoBanner.appendChild(viewModeBadge);
+        }
+        
+        // Add "Edit" button to header
+        const btnGroup = document.querySelector('.btn-group');
+        if (btnGroup) {
+            const editBtn = document.createElement('a');
+            const leadId = document.querySelector('[data-lead-id]')?.getAttribute('data-lead-id');
+if (leadId) {
+    editBtn.href = `/app5/lead/edit/${leadId}/`;
+} else {
+    // Fallback or hide the button
+    editBtn.style.display = 'none';
+}
+            editBtn.className = 'btn btn-primary';
+            editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit Lead';
+            editBtn.style.marginLeft = '10px';
+            btnGroup.appendChild(editBtn);
+        }
+        
+        // Change back button text
+        const backBtn = document.querySelector('.reset-btn');
+        if (backBtn) {
+            backBtn.innerHTML = '<i class="fas fa-arrow-left"></i> Back to Leads';
+        }
+    }
+});
     </script>
 </body>
 </html>

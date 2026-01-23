@@ -86,6 +86,7 @@ urlpatterns = [
 # lead
     path("lead/", views.lead_form_view, name="lead"),
     path("lead-report/", views.lead_report_view, name="lead_report"),
+    path('lead/view/<int:pk>/', views.lead_view_detail, name='lead_view_detail'),
     # app5/urls.py
    path('lead/<int:lead_id>/edit/', views.lead_edit, name='lead_edit'),  
    path('lead/edit/<int:lead_id>/', views.lead_edit, name='lead_edit'),

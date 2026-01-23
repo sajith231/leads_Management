@@ -1,0 +1,1870 @@
+{% extends "base.html" %}
+
+{% block title %}Lead Report{% endblock %}
+
+{% block content %}
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Lead Information</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Copy all the same styles from lead_form.html */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: #f0f2f5;
+            min-height: 100vh;
+            margin: 0; /* Remove default margin */
+        }
+        
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .form-container {
+            background-color:#dcd9f3;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            width: 100%;
+        }
+        
+        .form-header {
+            background:#a095f6;
+            color:black;
+            padding: 15px 20px;
+            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .form-header h1 {
+            font-size: 22px;
+            margin-bottom: 5px;
+            font-weight: 700;
+        }
+        
+        .form-header p {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+        
+        .form-body {
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-section {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px dashed #e0e0e0;
+        }
+        
+        #communication-details {
+            background-color:#dbf5dd;
+            border: 2px solid #0ec33f;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 3px 10px rgba(37, 117, 252, 0.15);
+        }
+        
+        .section-title {
+            font-size: 16px;
+            color: #14ad09;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .form-body {
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto; /* Allow scrolling if content is too long */
+        }
+        
+        .section-title i {
+            margin-right: 8px;
+            font-size: 16px;
+        }
+        
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -5px;
+            width: 100%;
+        }
+        
+        .status-select {
+            width: 100% !important;
+            padding: 10px 12px;
+            font-size: 14px;
+            font-weight: 600;
+            border: 2px solid #2575fc;
+            border-radius: 8px;
+            background: #f9fcff;
+            cursor: pointer;
+            transition: 0.2s ease-in-out;
+        }
+        
+        .status-select:focus {
+            border-color: #0a57d1;
+            background: white;
+            box-shadow: 0 0 6px rgba(0, 102, 255, 0.4);
+            outline: none;
+        }
+        
+        .status-select:hover {
+            background: #eef6ff;
+        }
+        
+        .form-group {
+            flex: 1;
+            min-width: 180px;
+            padding: 0 5px;
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #444;
+            font-size: 13px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: all 0.2s;
+            background-color: #f9f9f9;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            border-color: #6a11cb;
+            box-shadow: 0 0 0 2px rgba(106, 17, 203, 0.1);
+            outline: none;
+            background-color: white;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-top: 8px;
+        }
+        
+        .checkbox-group input {
+            width: auto;
+            margin-right: 8px;
+        }
+        
+        .btn-group {
+            display: flex;
+            justify-content: center;
+            margin-top: auto;
+            gap: 10px;
+            width: 100%;
+            padding-top: 20px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .submit-btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            box-shadow: 0 3px 8px rgba(37, 117, 252, 0.3);
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(37, 117, 252, 0.4);
+        }
+        
+        .reset-btn {
+            background-color:#4CAF50;
+            color: #fffdfd;
+            border: 1px solid #ddd;
+        }
+        
+        .reset-btn:hover {
+            background-color:#4CAF50;
+        }
+        
+        .single-line-sections {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+        
+        .section-column {
+            flex: 1;
+            background:#ffe9cc;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+            border: 1px solid #f8861b;
+            min-width: 0;
+        }
+        
+        .section-header-compact {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e5bc08;
+            width: 100%;
+        }
+        
+        .section-title-compact {
+            display: flex;
+            align-items: center;
+            font-size: 16px;
+            color: #d29105;
+            font-weight: 700;
+            margin: 0;
+            white-space: nowrap;
+        }
+        
+        .section-title-compact i {
+            margin-right: 10px;
+            font-size: 18px;
+            color: #d29105;
+        }
+        
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        
+        .date-field-compact {
+            min-width: 180px;
+        }
+        
+        .date-field-compact label {
+            margin-bottom: 5px;
+            font-size: 12px;
+            color:black;
+            font-weight: 600;
+        }
+        
+        .date-field-compact input {
+            background: white;
+            border: 1px solid black;
+            font-weight: 500;
+            width: 100%;
+            min-width: 150px;
+        }
+        
+        .compact-form-group {
+            margin-bottom: 12px;
+            width: 100%;
+            position: relative;
+        }
+        
+        .compact-form-group label {
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+        
+        .compact-form-group input, 
+        .compact-form-group select {
+            padding: 6px 8px;
+            font-size: 12px;
+            height: 32px;
+            width: 100%;
+        }
+        
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .toggle-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #444;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: #4CAF50;
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+        
+        .individual-fields {
+            display: none;
+        }
+        
+        .business-fields {
+            display: block;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .modal-content h3 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .modal-content p {
+            color: #666;
+            margin-bottom: 25px;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 25px;
+        }
+        
+        .modal-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+        }
+        
+        .self-assign-btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+        }
+        
+        .self-assign-btn:hover {
+            background: linear-gradient(135deg, #45a049, #4CAF50);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        .unassign-btn {
+            background: linear-gradient(135deg, #6c757d, #5a6268);
+            color: white;
+        }
+        
+        .unassign-btn:hover {
+            background: linear-gradient(135deg, #5a6268, #6c757d);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        .cancel-btn {
+            padding: 10px 20px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: #f8f9fa;
+            color: #666;
+            cursor: pointer;
+            width: 100%;
+        }
+        
+        .cancel-btn:hover {
+            background: #e9ecef;
+            border-color: #adb5bd;
+        }
+        
+        .status-inline {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: auto;
+        }
+        
+        .status-inline label {
+            margin-bottom: 0;
+            font-size: 13px;
+            color: #333;
+            white-space: nowrap;
+        }
+        
+        .status-inline select {
+            width: 150px;
+            padding: 6px 8px;
+            font-size: 13px;
+            height: 32px;
+        }
+        
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 10px;
+            color: #2575fc;
+        }
+        
+        .loading-spinner i {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .clear-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: 1px solid #ddd;
+        }
+        
+        .clear-btn:hover {
+            background-color: #4CAF50;
+        }
+        
+        /* Searchable Select Styles */
+        .select-search-container {
+            position: relative;
+            width: 100%;
+        }
+        
+        .select-search-input {
+            padding: 8px 35px 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            width: 100%;
+            background-color: #f9f9f9;
+            cursor: pointer;
+            height: 32px;
+        }
+        
+        .select-search-input:focus {
+            border-color: #6a11cb;
+            box-shadow: 0 0 0 2px rgba(106, 17, 203, 0.1);
+            outline: none;
+            background-color: white;
+        }
+        
+        .select-search-input.active {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            border-bottom-color: #eee;
+        }
+        
+        .select-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #6a11cb;
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            display: none;
+        }
+        
+        .select-options.active {
+            display: block;
+        }
+        
+        .select-option {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 13px;
+            transition: background-color 0.2s;
+        }
+        
+        .select-option:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .select-option.selected {
+            background-color: #e3f2fd;
+            color: #1976d2;
+            font-weight: 600;
+        }
+        
+        .select-search-icon {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+            pointer-events: none;
+        }
+        
+        .select-clear-icon {
+            position: absolute;
+            right: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+            cursor: pointer;
+            font-size: 12px;
+            display: none;
+        }
+        
+        .select-clear-icon:hover {
+            color: #666;
+        }
+        
+        .select-clear-icon.active {
+            display: block;
+        }
+        
+        .no-results-option {
+            padding: 8px 12px;
+            color: #999;
+            font-style: italic;
+            font-size: 13px;
+            text-align: center;
+        }
+        
+        /* Campaign tooltip */
+        .lead-campaign:hover::after {
+            content: attr(title);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1000;
+            margin-bottom: 5px;
+            max-width: 300px;
+            word-wrap: break-word;
+        }
+        
+        .lead-campaign:hover::before {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: #333;
+            margin-bottom: -5px;
+            z-index: 1000;
+        }
+        
+        /* Campaign dropdown badge */
+        .campaign-badge {
+            display: inline-block;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            margin-left: 5px;
+            font-weight: 600;
+        }
+        
+        /* Campaign Details Styles */
+        .campaign-details-section {
+            animation: slideDown 0.3s ease-out;
+            margin-top: 10px;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .campaign-detail-item {
+            padding: 8px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e8e8e8;
+        }
+        
+        .campaign-detail-item span {
+            word-break: break-word;
+        }
+        
+        /* Status Badges for Campaigns */
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-active {
+            background: #e8f5e9;
+            color: #4caf50;
+        }
+        
+        .status-draft {
+            background: #e3f2fd;
+            color: #2196f3;
+        }
+        
+        .status-completed {
+            background: #f3e5f5;
+            color: #9c27b0;
+        }
+        
+        .campaign-stats-summary {
+            margin-top: 5px;
+            font-size: 11px;
+            color: #666;
+        }
+        
+        .campaign-stats-summary span {
+            margin-right: 10px;
+        }
+        
+        .campaign-stats-summary i {
+            margin-right: 3px;
+        }
+        
+        /* Style for new firm option */
+        .select-option.new-firm {
+            color: #4CAF50;
+            font-weight: 600;
+            background-color: rgba(76, 175, 80, 0.1);
+            border-left: 3px solid #4CAF50;
+        }
+        
+        .select-option.new-firm:hover {
+            background-color: rgba(76, 175, 80, 0.2);
+        }
+        
+        .select-option.new-firm::before {
+            content: "✚ ";
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        
+        /* API Customer Tooltip Styles */
+        .api-customer-tooltip {
+            position: absolute;
+            background: white;
+            border: 1px solid #4a6fdc;
+            border-radius: 6px;
+            padding: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+            max-width: 300px;
+            font-size: 12px;
+            pointer-events: none;
+        }
+        
+        /* API indicator in dropdown */
+        .select-option .campaign-badge {
+            color: white;
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 3px;
+            margin-left: 8px;
+        }
+        
+        /* Firm source badge */
+        #firmSourceBadge {
+            margin-left: 5px;
+            font-size: 10px;
+            padding: 2px 6px;
+            color: #ffe9cc;
+            border-radius: 3px;
+            vertical-align: middle;
+        }
+        
+        /* API data source indicator */
+        .api-source-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #f0f7ff;
+            border: 1px solid #4a6fdc;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 10px;
+            color: #4a6fdc;
+            margin-left: 5px;
+        }
+        
+        /* Hover effects for API options */
+        .select-option[data-is-api="true"]:hover {
+            background: #f0f7ff;
+            border-left: 3px solid #4a6fdc;
+        }
+        
+        /* API customer details section */
+        #apiCustomerDetails {
+            border: 1px solid #4a6fdc;
+            background: #f8faff;
+        }
+        
+        #apiCustomerDetails strong {
+            color: #4a6fdc;
+        }
+        
+        /* ========================================
+           REQUIREMENTS SECTION STYLES
+           ======================================== */
+        .requirements-section {
+            background: #fff5e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+            border: 1px solid #ffcc80;
+        }
+        
+        .section-info-badge {
+            background: #ff9800;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .add-btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+        
+        .add-btn:hover {
+            background: linear-gradient(135deg, #45a049, #4CAF50);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #eee;
+            margin-top: 15px;
+        }
+        
+        #requirements-table {
+            table-layout: fixed;   /* Forces equal, stable column sizing */
+            width: 100%;
+        }
+        
+        #requirements-table th {
+            background: #f5f5f5;
+            padding: 12px 10px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            color: #080808;
+            border-bottom: 2px solid #ddd;
+        }
+        
+        #requirements-table td {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            font-size: 13px;
+        }
+        
+        #requirements-table tbody tr:hover {
+            background: #f9f9f9;
+        }
+        
+        #requirements-table input,
+        #requirements-table select {
+            width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+            padding: 6px 6px;
+            font-size: 13px;
+            background-color: #f5f5f5 !important;
+            cursor: not-allowed !important;
+        }
+        
+        #requirements-table th.section-col,
+        #requirements-table td.section-col { width: 18%; }
+        
+        #requirements-table th.item-col,
+        #requirements-table td.item-col { width: 28%; }
+        
+        #requirements-table th.price-col,
+        #requirements-table td.price-col { width: 10%; }
+        
+        #requirements-table th.qty-col,
+        #requirements-table td.qty-col { width: 8%; }
+        
+        #requirements-table th.unit-col,
+        #requirements-table td.unit-col { width: 10%; }
+        
+        #requirements-table th.total-col,
+        #requirements-table td.total-col { width: 12%; }
+        
+        #requirements-table th.action-col,
+        #requirements-table td.action-col { width: 6%; }
+        
+        /* Numbers aligned nicely */
+        .price-cell input,
+        .total-cell input,
+        .qty-cell input {
+            text-align: left;
+        }
+        
+        #requirements-table select:focus,
+        #requirements-table input:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+        }
+        
+        #requirements-table .price-cell,
+        #requirements-table .total-cell {
+            font-family: monospace;
+            text-align: right;
+            font-weight: 600;
+        }
+        
+        .remove-btn {
+            background: #ff4444;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+        }
+        
+        .remove-btn:hover {
+            background: #cc0000;
+        }
+        
+        .total-row {
+            background: #f8f9fa !important;
+            border-top: 2px solid #ddd;
+        }
+        
+        #grand-total {
+            color: #4CAF50;
+            font-size: 15px;
+        }
+        
+        /* RIGHT ALIGNMENT FOR PRICE, QUANTITY, AND TOTAL COLUMNS */
+        #requirements-table th.price-col,
+        #requirements-table th.qty-col,
+        #requirements-table th.total-col {
+            text-align: left;
+        }
+        
+        #requirements-table td.price-cell,
+        #requirements-table td.qty-cell,
+        #requirements-table td.total-cell {
+            text-align: right;
+        }
+        
+        #requirements-table .price-cell input,
+        #requirements-table .qty-cell input,
+        #requirements-table .total-cell input {
+            text-align: right !important;
+        }
+        
+        #requirements-table td#grand-total {
+            text-align: right !important;
+            font-weight: 700;
+        }
+        
+        @media (max-width: 1200px) {
+            .single-line-sections {
+                flex-direction: column;
+            }
+            
+            .section-column {
+                width: 100%;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .form-group {
+                flex: 1 0 50%;
+            }
+            
+            .form-body {
+                padding: 15px;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+            }
+            
+            .section-header-compact {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .header-controls {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .date-field-compact {
+                width: 100%;
+                min-width: auto;
+            }
+            
+            .date-field-compact input {
+                width: 100%;
+            }
+            
+            .modal-buttons {
+                flex-direction: column;
+            }
+            
+            /* Status in Communication Details - Mobile */
+            .status-inline {
+                margin-top: 10px;
+                margin-left: 0;
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .status-inline select {
+                width: 120px;
+            }
+            
+            /* Campaign tooltip mobile */
+            .lead-campaign:hover::after {
+                font-size: 11px;
+                padding: 6px 8px;
+                max-width: 250px;
+            }
+            
+            /* Campaign details mobile */
+            .campaign-details-section {
+                padding: 10px;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            body {
+                padding: 10px;
+            }
+            
+            .form-header {
+                padding: 12px 15px;
+            }
+            
+            .form-header h1 {
+                font-size: 20px;
+            }
+            
+            .form-group {
+                flex: 1 0 100%;
+            }
+            
+            .header-controls {
+                flex-direction: column;
+                gap: 10px;
+                width: 100%;
+            }
+            
+            .date-field-compact {
+                width: 100%;
+            }
+            
+            .toggle-container {
+                justify-content: center;
+                width: 100%;
+            }
+            
+            /* Status in Communication Details - Small Mobile */
+            .status-inline {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+            
+            .status-inline select {
+                width: 100%;
+            }
+            
+            /* Campaign tooltip small mobile */
+            .lead-campaign:hover::after {
+                font-size: 10px;
+                padding: 4px 6px;
+                max-width: 200px;
+            }
+            
+            /* Campaign details small mobile */
+            .campaign-stats-summary {
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+        
+        /* Edit Page Specific Styles */
+        .lead-id-badge {
+            background: white;
+            color: #4a6fdc;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        
+        .lead-status-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        
+        .lead-date-info {
+            display: flex;
+            gap: 15px;
+            font-size: 13px;
+        }
+        
+        .lead-date-info span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .update-btn {
+            background: linear-gradient(135deg, #ff9800, #ff5722);
+            color: white;
+            box-shadow: 0 3px 8px rgba(255, 152, 0, 0.3);
+        }
+        
+        .update-btn:hover {
+            background: linear-gradient(135deg, #ff5722, #ff9800);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(255, 152, 0, 0.4);
+        }
+        
+        .delete-btn {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+        }
+        
+        .delete-btn:hover {
+            background: linear-gradient(135deg, #d32f2f, #f44336);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(244, 67, 54, 0.4);
+        }
+        
+        .confirmation-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .confirmation-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        
+        .confirmation-content h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+        
+        .confirmation-content p {
+            color: #666;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+        
+        .confirmation-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        .confirm-delete-btn {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            flex: 1;
+        }
+        
+        .cancel-delete-btn {
+            background: linear-gradient(135deg, #6c757d, #5a6268);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            flex: 1;
+        }
+        
+        .form-section-disabled {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        
+        .readonly-field {
+            background-color: #f5f5f5 !important;
+            cursor: not-allowed !important;
+            color: #0a0a0a !important;
+        }
+        
+        .view-mode-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: linear-gradient(135deg, #a095f6, #8a7cf0);
+            color: white;
+            border-bottom: 2px solid #6a5af0;
+        }
+        
+        .view-mode-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .view-mode-title h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+        }
+        
+        .lead-meta-info {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .lead-meta-info span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .section-header-compact.view-mode {
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .section-title-compact.view-mode {
+            font-size: 15px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .section-title-compact.view-mode i {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        /* Disable all interactive elements in view mode */
+        .view-mode input,
+        .view-mode select,
+        .view-mode textarea,
+        .view-mode button:not(.back-btn) {
+            pointer-events: none !important;
+            opacity: 0.8 !important;
+        }
+        
+        /* Hide interactive buttons in view mode */
+        #add-item-btn,
+        .remove-btn,
+        .toggle-switch,
+        .select-search-input,
+        .select-clear-icon,
+        #firmNameClear,
+        #refFromClear {
+            display: none !important;
+        }
+        
+        /* Make status fields look static */
+        .status-select.view-mode {
+            background: #e8f5e9 !important;
+            border-color: #4CAF50 !important;
+            font-weight: 600;
+        }
+        
+        /* Disable hover effects */
+        .view-mode .section-column:hover {
+            transform: none !important;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08) !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-container">
+            <!-- View Mode Header -->
+            <div class="view-mode-header">
+                <div class="view-mode-title">
+                    <i class="fas fa-eye"></i>
+                    <h1>Lead Details</h1>
+                </div>
+                
+            </div>
+           
+            <div class="form-body view-mode">
+                <form id="customerForm" method="POST" action="{% url 'app5:lead_edit' lead.id %}">
+                    {% csrf_token %}
+                    
+                    <!-- Communication Details Section -->
+                    <div class="form-section" id="communication-details">
+                        <div class="section-title">
+                            <div>
+                                <i class="fas fa-phone-alt"></i>
+                                <span>Communication Details</span>
+                            </div>
+                            <div class="status-inline">
+                                <select id="status" name="status" class="status-select view-mode" required readonly>
+                                    <option value="">Status</option>
+                                    <option value="Active" {% if lead.status == "Active" %}selected{% endif %}>🟢Active</option>
+                                    <option value="Inactive" {% if lead.status == "Inactive" %}selected{% endif %}>🔴Inactive</option>
+                                    <option value="Installed" {% if lead.status == "Installed" %}selected{% endif %}>🟡 Installed</option>
+                                </select>
+                                
+                                <select id="priority" name="priority" class="status-select view-mode" required readonly>
+                                    <option value="">Priority</option>
+                                    <option value="High" {% if lead.priority == "High" %}selected{% endif %}>🔴 High</option>
+                                    <option value="Medium" {% if lead.priority == "Medium" or not lead.priority %}selected{% endif %}>🟡 Medium</option>
+                                    <option value="Low" {% if lead.priority == "Low" %}selected{% endif %}>🟢 Low</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="ownerName">Owner Name *</label>
+                                <input type="text" id="ownerName" name="ownerName" placeholder="Enter owner name" class="readonly-field" readonly required value="{{ lead.ownerName }}">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="phoneNo">Phone Number *</label>
+                                <input type="tel" id="phoneNo" name="phoneNo" placeholder="Enter phone number" class="readonly-field" readonly required value="{{ lead.phoneNo }}">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="email">Email Address</label>
+                                <input type="email" id="email" name="email" placeholder="Enter Email Address" class="readonly-field" readonly value="{{ lead.email }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Single Line Layout for Business and Basic Information -->
+                    <div class="single-line-sections">
+                        <!-- Basic Information Section -->
+                        <div class="section-column" id="basic-info">
+                            <div class="section-header-compact view-mode">
+                                <div class="section-title-compact view-mode">
+                                    <i class="fas fa-user"></i>
+                                    <span>Basic Information</span>
+                                </div>
+                                <div class="header-controls">
+                                    
+                                </div>
+                            </div>
+                            
+                            <!-- Business fields (shown by default) -->
+                            <div class="business-fields">
+                                <!-- FIXED: Firm Name Field - Simplified for view mode -->
+                                <div class="compact-form-group">
+                                    <label for="firmName">Firm Name *</label>
+                                    <div style="position: relative;">
+                                        <input type="text" 
+                                               id="firmName" 
+                                               name="firmName" 
+                                               class="readonly-field" 
+                                               readonly 
+                                               value="{{ lead.name|default:'Not specified' }}"
+                                               style="padding: 8px 10px; font-size: 13px; width: 100%;">
+                                        <i class="fas fa-building" 
+                                           style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #666;"></i>
+                                    </div>
+                                    <!-- Keep hidden field for data integrity -->
+                                    <input type="hidden" id="name" name="name" value="{{ lead.name }}">
+                                </div>
+                                
+                                <div class="compact-form-group">
+                                    <label for="address">Address</label>
+                                    <input type="text" id="address" name="address" class="readonly-field" readonly value="{{ lead.address }}">
+                                </div>
+                                
+                                <div class="compact-form-group">
+                                    <label for="place">Place *</label>
+                                    <input type="text" id="place" name="place" class="readonly-field" readonly required value="{{ lead.place }}">
+                                </div>
+                                
+                                <div class="compact-form-group">
+                                    <label for="District">District</label>
+                                    <input type="text" 
+                                           id="District" 
+                                           name="District" 
+                                           value="{{ lead.District|default:'' }}" 
+                                           readonly 
+                                           class="readonly-field">
+                                </div>
+                                
+                                <div class="compact-form-group">
+                                    <label for="State">State</label>
+                                    <input type="text" 
+                                           id="State" 
+                                           name="State" 
+                                           value="{{ lead.State|default:'' }}" 
+                                           readonly 
+                                           class="readonly-field">
+                                </div>
+                                
+                                <div class="compact-form-group">
+                                    <label for="pinCode">Pin Code *</label>
+                                    <input type="text" id="pinCode" name="pinCode" class="readonly-field" readonly required value="{{ lead.pinCode }}">
+                                </div>
+                            </div>
+                            
+                            <!-- Individual fields (hidden by default) -->
+                            <div class="individual-fields">
+                                <div class="compact-form-group">
+                                    <label for="firstName">First Name *</label>
+                                    <input type="text" id="firstName" name="firstName" class="readonly-field" readonly value="{{ lead.firstName }}">
+                                </div>
+                                
+                                <div class="compact-form-group">
+                                    <label for="individualAddress">Address</label>
+                                    <input type="text" id="individualAddress" name="individualAddress" class="readonly-field" readonly value="{{ lead.individualAddress }}">
+                                </div>
+                                
+                                <div class="compact-form-group">
+                                    <label for="individualPlace">Place *</label>
+                                    <input type="text" id="individualPlace" name="individualPlace" class="readonly-field" readonly value="{{ lead.individualPlace }}">
+                                </div>
+                                
+                                <div class="compact-form-group">
+                                    <label for="individualDistrict">District</label>
+                                    <input type="text" 
+                                           id="individualDistrict" 
+                                           name="individualDistrict" 
+                                           value="{{ lead.individualDistrict|default:'' }}" 
+                                           readonly 
+                                           class="readonly-field">
+                                </div>
+                                
+                                <div class="compact-form-group">
+                                    <label for="individualState">State</label>
+                                    <input type="text" 
+                                           id="individualState" 
+                                           name="individualState" 
+                                           value="{{ lead.individualState|default:'' }}" 
+                                           readonly 
+                                           class="readonly-field">
+                                </div>
+                                
+                                <div class="compact-form-group">
+                                    <label for="individualPinCode">Pin Code *</label>
+                                    <input type="text" id="individualPinCode" name="individualPinCode" class="readonly-field" readonly value="{{ lead.individualPinCode }}">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Business Information Section -->
+                        <div class="section-column" id="business-info">
+                            <div class="section-header-compact view-mode">
+                                <div class="section-title-compact view-mode">
+                                    <i class="fas fa-briefcase"></i>
+                                    <span>Business Information</span>
+                                </div>
+                                <div class="header-controls">
+                                    <div class="date-field-compact">
+                                        <label for="date">Date</label>
+                                        <input type="date" id="date" name="date" class="readonly-field" readonly value="{{ lead.date|date:'Y-m-d' }}">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- FIXED: Branch field - Now uses department name as value -->
+                             <div class="compact-form-group">
+                                <label for="requirement">Branch</label>
+                                <input type="text" 
+                                       id="requirement" 
+                                       name="requirement" 
+                                       value="{{ lead.requirement|default:'' }}" 
+                                       readonly 
+                                       class="readonly-field">
+                            </div>
+                            
+                            <div class="compact-form-group">
+                                <label for="business">Business Nature</label>
+                                <input type="text" 
+                                       id="business" 
+                                       name="business" 
+                                       value="{{ lead.business|default:'' }}" 
+                                       readonly 
+                                       class="readonly-field">
+                            </div>
+                            
+                            <!-- Searchable Reference From Field -->
+                            <div class="compact-form-group">
+                                <label for="refFrom">Reference From</label>
+                                <input type="text" 
+                                       id="refFrom" 
+                                       name="refFrom" 
+                                       value="{{ lead.refFrom|default:'' }}" 
+                                       readonly 
+                                       class="readonly-field">
+                            </div>
+                            
+                            <!-- FIXED: Marketed By field - Now uses user name as value -->
+                            <div class="compact-form-group">
+                                <label for="marketedBy">Marketed By</label>
+                                <input type="text" 
+                                       id="marketedBy" 
+                                       name="marketedBy" 
+                                       value="{{ lead.marketedBy|default:'' }}" 
+                                       readonly 
+                                       class="readonly-field">
+                            </div>
+                            
+                            <!-- CAMPAIGN DETAILS FIELD WITH DISPLAY -->
+                            <div class="compact-form-group">
+                                <label for="campaign">Campaign Details</label>
+                                <input type="text" 
+                                       id="campaign" 
+                                       name="campaign" 
+                                       value="{{ lead.campaign|default:'' }}" 
+                                       readonly 
+                                       class="readonly-field">
+                            </div>
+                            
+                            <div class="compact-form-group">
+                                <label for="Consultant">Consultant</label>
+                                <input type="text" id="Consultant" name="Consultant" placeholder="Enter consultant name" class="readonly-field" readonly value="{{ lead.Consultant }}">
+                            </div>
+                            
+                            <div class="compact-form-group">
+                                <label for="details">Notes</label>
+                                <input type="text" id="details" name="details"  placeholder="Enter details" class="readonly-field" readonly value="{{ lead.details }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Hidden field to store assignment type -->
+                    <input type="hidden" id="assignmentType" name="assignmentType" value="">
+                    
+                    <!-- ===== Requirements Section ===== -->
+                    <div class="requirements-section" id="requirements-section" style="margin-top: 20px;">
+                        <div class="section-header-compact view-mode">
+                            <div class="section-title-compact view-mode">
+                                <i class="fas fa-clipboard-list"></i>
+                                <span>Requirements List</span>
+                                <span id="itemsCountBadge" class="section-info-badge">
+                                    {% if requirements_data %}{{ requirements_data|length }}{% else %}0{% endif %} items
+                                </span>
+                            </div>
+                            <button type="button" class="add-btn" id="add-item-btn" style="display: none;">
+                                <i class="fas fa-plus"></i> Add Item
+                            </button>
+                        </div>
+                        
+                        <!-- Item Options Template - FIXED: Using correct field names from purchase_order Item model -->
+                        <div id="item-options-data" style="display: none;">
+                            {% for section, items in items_by_section.items %}
+                                {% for item in items %}
+                                    <div class="item-option" 
+                                         data-id="{{ item.id }}"
+                                         data-name="{{ item.name }}"
+                                         data-section="{{ section }}"
+                                         data-unit="{{ item.unit_of_measure|default:'pcs' }}"
+                                         data-price="{{ item.mrp|floatformat:2|default:'0.00' }}"
+                                         data-purchase-price="{{ item.purchase_price|floatformat:2|default:'0.00' }}"
+                                         data-cost="{{ item.cost|floatformat:2|default:'0.00' }}"
+                                         data-hsn="{{ item.hsn_code|default:'' }}"
+                                         data-tax="{{ item.tax_percentage|default:'18' }}"
+                                         data-description="{{ item.description|default:'' }}">
+                                        {{ item.name }}
+                                    </div>
+                                {% endfor %}
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="table-container" style="margin-top: 15px;">
+                            <table id="requirements-table">
+                                <thead>
+                                    <tr>
+                                        <th width="5%">#</th>
+                                        <th width="25%">Section</th>
+                                        <th width="35%">Item Name</th>
+                                        <th width="10%" class="unit-col">Unit</th>
+                                        <th width="15%" class="price-col">Price</th>
+                                        <th width="10%" class="qty-col">Qty</th>
+                                        <th width="15%" class="total-col">Total</th>
+                                        <th width="6%" class="action-col"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-body">
+                                    <!-- ✅ FIXED: Properly display existing requirements -->
+                                    {% if requirements_data %}
+                                        {% for requirement in requirements_data %}
+                                            <tr id="row-{{ forloop.counter }}">
+                                                <td>{{ forloop.counter }}</td>
+                                                <td class="section-cell">
+                                                    <input type="text" 
+                                                           value="{{ requirement.section|default:'GENERAL' }}" 
+                                                           readonly 
+                                                           class="readonly-field"
+                                                           style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 6px 8px; font-size: 13px; width: 100%;">
+                                                </td>
+                                                <td class="item-cell">
+                                                    <input type="text" 
+                                                           value="{{ requirement.item_name }}" 
+                                                           readonly 
+                                                           class="readonly-field"
+                                                           style="background-color: #f5f5f5; border: 1px solid #ddd; padding: 6px 8px; font-size: 13px; width: 100%;">
+                                                </td>
+                                                <td class="unit-cell">
+                                                    <input type="text" class="unit-input readonly-field" readonly value="{{ requirement.unit }}">
+                                                </td>
+                                                <td class="price-cell">
+                                                    <input type="number" class="price-input readonly-field" step="0.01" min="0" readonly value="{{ requirement.price|floatformat:2 }}">
+                                                </td>
+                                                <td class="qty-cell">
+                                                    <input type="number" class="qty-input readonly-field" min="1" readonly value="{{ requirement.quantity }}">
+                                                </td>
+                                                <td class="total-cell">
+                                                    <input type="text" class="total-input readonly-field" readonly 
+                                                           value="{{ requirement.total|floatformat:2 }}">
+                                                </td>
+                                                <td>
+                                                    <button type="button" class="remove-btn" onclick="removeRow(this)" style="display: none;">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <!-- Default empty row -->
+                                        <tr id="row-1">
+                                            <td>1</td>
+                                            <td class="section-cell">
+                                                <input type="text" value="No requirements" readonly class="readonly-field">
+                                            </td>
+                                            <td class="item-cell">
+                                                <input type="text" value="No items" readonly class="readonly-field">
+                                            </td>
+                                            <td class="unit-cell"><input type="text" class="unit-input readonly-field" readonly value=""></td>
+                                            <td class="price-cell"><input type="number" class="price-input readonly-field" readonly value="0.00"></td>
+                                            <td class="qty-cell"><input type="number" class="qty-input readonly-field" readonly value="0"></td>
+                                            <td class="total-cell"><input type="text" class="total-input readonly-field" readonly value="0.00"></td>
+                                            <td>
+                                                <button type="button" class="remove-btn" onclick="removeRow(this)" style="display: none;">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                                <tfoot>
+                                    <tr class="total-row">
+                                        <td colspan="6" style="text-align: right; font-weight:700; font-size: 14px;">Grand Total:</td>
+                                        <td id="grand-total" style="font-weight:700; font-size: 14px;">
+                                            {% if requirements_data %}
+                                                ₹{{ lead.grand_total|floatformat:2|default:"0.00" }}
+                                            {% else %}
+                                                ₹0.00
+                                            {% endif %}
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        
+                        <!-- Hidden fields for requirements -->
+                        <input type="hidden" name="requirement_ids" id="hiddenRequirementIds" value="{{ lead.requirement_ids }}">
+                        <input type="hidden" name="requirement_details" id="hiddenRequirementDetails" value="{{ lead.requirement_details_json }}">
+                    </div>
+                    <!-- ===== end Requirements Section ===== -->
+                    
+                    <!-- Form Actions -->
+                    <div class="btn-group" id="form-actions">
+                        <button type="button" class="reset-btn back-btn" onclick="window.location.href='{% url 'app5:lead_report' %}'">
+                            <i class="fas fa-arrow-left"></i>
+                            &nbsp; Back to Leads
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteConfirmationModal" class="confirmation-modal">
+        <div class="confirmation-content">
+            <h3><i class="fas fa-exclamation-triangle" style="color: #f44336; margin-right: 10px;"></i>Confirm Delete</h3>
+            <p>Are you sure you want to delete this lead? This action cannot be undone.</p>
+            <p style="font-size: 14px; color: #333; margin-bottom: 15px;">
+                <strong>Lead:</strong> {{ lead.ownerName }}<br>
+                <strong>Phone:</strong> {{ lead.phoneNo }}
+            </p>
+            <div class="confirmation-buttons">
+                <button type="button" class="confirm-delete-btn" onclick="deleteLead()">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+                <button type="button" class="cancel-delete-btn" onclick="hideDeleteConfirmation()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Success/Error Modal -->
+    <div id="messageModal" class="modal">
+        <div class="modal-content">
+            <h3 id="messageTitle">Success</h3>
+            <p id="messageText">Lead updated successfully!</p>
+            <button type="button" class="cancel-btn" onclick="hideMessageModal()">
+                OK
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('👁️ Lead View Mode Initialized');
+            
+            // Show correct fields based on customer type
+            const customerType = '{{ lead.customerType }}';
+            const businessFields = document.querySelector('.business-fields');
+            const individualFields = document.querySelector('.individual-fields');
+            
+            if (customerType === 'Individual') {
+                // Show individual fields, hide business fields
+                if (businessFields) businessFields.style.display = 'none';
+                if (individualFields) individualFields.style.display = 'block';
+            } else {
+                // Show business fields (default), hide individual fields
+                if (businessFields) businessFields.style.display = 'block';
+                if (individualFields) individualFields.style.display = 'none';
+            }
+            console.log('Customer Type:', customerType);
+            
+            // Disable all form submission and interactive elements
+            const form = document.getElementById('customerForm');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    alert('This is view mode. To edit, please go to edit page.');
+                    return false;
+                });
+            }
+            
+            // Disable all inputs and selects
+            document.querySelectorAll('input, select, textarea').forEach(element => {
+                element.setAttribute('readonly', true);
+                element.classList.add('readonly-field');
+                element.style.cursor = 'not-allowed';
+                
+                // Remove event listeners
+                const newElement = element.cloneNode(true);
+                element.parentNode.replaceChild(newElement, element);
+            });
+            
+            // Disable buttons (except back button)
+            document.querySelectorAll('button:not(.back-btn)').forEach(button => {
+                button.style.display = 'none';
+            });
+            
+            // Hide interactive elements
+            document.querySelectorAll('.toggle-switch, .select-search-container, .add-btn, .remove-btn').forEach(element => {
+                element.style.display = 'none';
+            });
+            
+            // Update status selects to look like static text
+            document.querySelectorAll('.status-select').forEach(select => {
+                select.classList.add('view-mode');
+                select.style.backgroundColor = '#e8f5e9';
+                select.style.borderColor = '#4CAF50';
+                select.style.cursor = 'default';
+            });
+            
+            // Calculate and display grand total for requirements
+            function calculateViewTotal() {
+                let grandTotal = 0;
+                document.querySelectorAll('.total-input').forEach(input => {
+                    const value = parseFloat(input.value) || 0;
+                    grandTotal += value;
+                });
+                
+                const grandTotalElement = document.getElementById('grand-total');
+                if (grandTotalElement) {
+                    grandTotalElement.textContent = '₹' + grandTotal.toFixed(2);
+                }
+            }
+            
+            // Initialize
+            calculateViewTotal();
+            
+            console.log('✅ Lead View Mode Ready - All fields are read-only');
+        });
+    </script>
+</body>
+</html>
+{% endblock %}

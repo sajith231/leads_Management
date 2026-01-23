@@ -8090,3 +8090,187 @@ def generate_quotation_pdf(context):
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     
     return response
+
+    # app5/views.py
+# app5/views.py
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import login_required
+from .models import Lead
+
+@login_required
+def lead_view_detail(request, pk):
+    """View-only page for lead details"""
+    lead = get_object_or_404(Lead, pk=pk)
+    
+    # Get user details for marketed_by
+    marketed_by_user = None
+    if lead.marketedBy:
+        try:
+            User = get_user_model()
+            marketed_by_user = User.objects.filter(name=lead.marketedBy).first()
+        except:
+            marketed_by_user = None
+    
+    # Get requirements data
+    requirements_data = []
+    requirement_ids = []
+    
+    # Try to get from JSON field first
+    if hasattr(lead, 'requirement_details_json') and lead.requirement_details_json:
+        import json
+        try:
+            raw_requirements = json.loads(lead.requirement_details_json)
+            # Process and calculate totals
+            for req in raw_requirements:
+                price = float(req.get('price', 0) or 0)
+                quantity = int(req.get('quantity', 1) or 1)
+                total = float(req.get('total', 0) or (price * quantity))
+                
+                requirements_data.append({
+                    'item_id': req.get('item_id', ''),
+                    'item_name': req.get('item_name', req.get('name', 'Unknown Item')),
+                    'section': req.get('section', 'GENERAL'),
+                    'unit': req.get('unit', 'pcs'),
+                    'price': price,
+                    'quantity': quantity,
+                    'total': total,
+                    'price_display': f"{price:.2f}",
+                    'total_display': f"{total:.2f}",
+                })
+                if req.get('item_id'):
+                    requirement_ids.append(str(req['item_id']))
+        except:
+            requirements_data = []
+    
+    # Try to get from related model
+    elif hasattr(lead, 'requirements') and hasattr(lead.requirements, 'all'):
+        raw_requirements = list(lead.requirements.all().values(
+            'id', 'item_id', 'item_name', 'section', 'unit', 
+            'price', 'quantity', 'total', 'created_at'
+        ))
+        for req in raw_requirements:
+            price = float(req.get('price', 0) or 0)
+            quantity = int(req.get('quantity', 1) or 1)
+            total = float(req.get('total', 0) or (price * quantity))
+            
+            requirements_data.append({
+                'item_id': req.get('item_id', ''),
+                'item_name': req.get('item_name', 'Unknown Item'),
+                'section': req.get('section', 'GENERAL'),
+                'unit': req.get('unit', 'pcs'),
+                'price': price,
+                'quantity': quantity,
+                'total': total,
+                'price_display': f"{price:.2f}",
+                'total_display': f"{total:.2f}",
+            })
+            requirement_ids.append(str(req.get('id', '')))
+    
+    # Calculate grand total
+    grand_total = 0
+    if requirements_data:
+        grand_total = sum(req['total'] for req in requirements_data)
+    
+    # Get all models safely
+    try:
+        from app5.models import (
+            Department, BusinessNature, State, District, 
+            Reference, Campaign, Item, Section
+        )
+        
+        # Get all related data
+        departments = Department.objects.all().order_by('name')
+        business_natures = BusinessNature.objects.all().order_by('name')
+        states = State.objects.all().order_by('name')
+        districts = District.objects.all().order_by('name')
+        references = Reference.objects.all().order_by('ref_name')
+        campaigns = Campaign.objects.all().order_by('campaign_name')
+        
+        # Get active users
+        User = get_user_model()
+        active_users = User.objects.filter(is_active=True).order_by('name')
+        
+        # Get existing firms (including the current lead's firm)
+        existing_firms = Lead.objects.filter(
+            customerType='Business'
+        ).exclude(name__isnull=True).exclude(name='').values_list('name', flat=True).distinct().order_by('name')
+        
+        # Get items organized by section for requirements
+        items_by_section = {}
+        try:
+            # Get all sections
+            sections = Section.objects.all().order_by('name')
+            for section in sections:
+                # Get items for this section
+                items = Item.objects.filter(section=section).order_by('name')
+                if items.exists():
+                    items_by_section[section.name] = items
+        except:
+            # If Section model doesn't exist, fall back to grouping by item section field
+            items = Item.objects.all().order_by('name')
+            for item in items:
+                section_name = getattr(item, 'section', 'GENERAL')
+                if not section_name:
+                    section_name = 'GENERAL'
+                
+                if section_name not in items_by_section:
+                    items_by_section[section_name] = []
+                items_by_section[section_name].append(item)
+        
+    except Exception as e:
+        print(f"Error loading data: {e}")
+        departments = []
+        business_natures = []
+        states = []
+        districts = []
+        references = []
+        campaigns = []
+        active_users = []
+        existing_firms = []
+        items_by_section = {}
+    
+    # Add API data (if applicable)
+    api_customer_data = []
+    try:
+        # If you have API integration, add your API data fetching logic here
+        # For now, we'll leave it empty
+        pass
+    except:
+        api_customer_data = []
+    
+    # Debug: Print lead data to console
+    print(f"Lead Name: {lead.name}")
+    print(f"Lead ID: {lead.id}")
+    print(f"Lead Type: {lead.customerType}")
+    print(f"Owner Name: {lead.ownerName}")
+    
+    context = {
+        'lead': lead,
+        'marketed_by_user': marketed_by_user,
+        'requirements_data': requirements_data,
+        'requirement_ids': ','.join(requirement_ids),
+        'grand_total': f"{grand_total:.2f}",
+        'is_view_mode': True,
+        
+        # Form data
+        'departments': departments,
+        'business_natures': business_natures,
+        'states': states,
+        'districts': districts,
+        'references': references,
+        'campaigns': campaigns,
+        'active_users': active_users,
+        'existing_firms': existing_firms,
+        'items_by_section': items_by_section,
+        
+        # API data
+        'api_customer_data': api_customer_data,
+        'api_data_count': len(api_customer_data),
+        
+        # User permissions
+        'can_edit': request.user.has_perm('app5.change_lead') or request.user == lead.created_by,
+        'can_delete': request.user.has_perm('app5.delete_lead') or request.user == lead.created_by,
+    }
+    
+    return render(request, 'lead_view.html', context)
