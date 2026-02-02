@@ -18,9 +18,9 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         body {
-    overflow-x: auto;
-    overflow-y: auto;
-}
+            overflow-x: auto;
+            overflow-y: auto;
+        }
 
         .container {
             max-width: 1400px;
@@ -79,8 +79,6 @@
         /* small spacing utility since template uses me-1 */
         .me-1 { margin-right: 0.25rem; }
         .me-2 { margin-right: 0.5rem; }
-
-        
 
         .filters {
             background: #795548;
@@ -167,9 +165,7 @@
         th, td {
             padding: 12px 15px;
             color: #0b0b0b;
-            
             text-align: left;
-           
         }
 
         th {
@@ -306,7 +302,6 @@
             display: flex;
             gap: 6px;
             justify-content: flex-start;
-            justify-content:left;
         }
 
         .serial-number {
@@ -472,33 +467,33 @@
             align-items: flex-start;
             gap: 15px;
         }
+        
         /* Enable vertical + horizontal scroll for table */
-.table-scroll {
-    max-height: 550px;
-    overflow-x: auto;
-    overflow-y: auto;
-    white-space: nowrap;     /* prevents column wrapping */
-}
+        .table-scroll {
+            max-height: 550px;
+            overflow-x: auto;
+            overflow-y: auto;
+            white-space: nowrap;     /* prevents column wrapping */
+        }
 
-/* Force table to be wider than container */
-.table-scroll table {
-    min-width: 1200px;       /* increase if you have many columns */
-}
-/* Zebra striping for table rows */
-tbody tr:nth-child(odd) {
-    background-color: #eaeae9;   /* light color */
-}
+        /* Force table to be wider than container */
+        .table-scroll table {
+            min-width: 1200px;       /* increase if you have many columns */
+        }
+        
+        /* Zebra striping for table rows */
+        tbody tr:nth-child(odd) {
+            background-color: #eaeae9;   /* light color */
+        }
 
-tbody tr:nth-child(even) {
-    background-color: #ffffff;   /* white */
-}
+        tbody tr:nth-child(even) {
+            background-color: #ffffff;   /* white */
+        }
 
-/* Keep hover effect visible */
-tbody tr:hover {
-    background-color: #eaeaea !important;
-}
-
-
+        /* Keep hover effect visible */
+        tbody tr:hover {
+            background-color: #eaeaea !important;
+        }
 
         .lead-title {
             display: flex;
@@ -725,13 +720,133 @@ tbody tr:hover {
             border: 1px solid rgba(255, 193, 7, 0.3);
         }
 
+        
+
+        /* Quick Filter Buttons */
+        .quick-filters {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .quick-filter-btn {
+            padding: 10px 16px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #495057;
+        }
+
+        .quick-filter-btn:hover {
+            background: #e9ecef;
+            border-color: #adb5bd;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .quick-filter-btn.active {
+            background: #795548;
+            color: white;
+            border-color: #795548;
+        }
+
+        .quick-filter-btn i {
+            font-size: 14px;
+        }
+
+        /* Row Count Filter Styles */
+        .row-count-filter {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .row-count-filter select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            background: white;
+            cursor: pointer;
+        }
+
+        /* Row Count Display */
+        .row-count-display {
+            font-size: 13px;
+            color: #666;
+            background: #f8f9fa;
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            font-weight: 500;
+        }
+
+        /* Delete button loading styles */
+        .delete-btn.loading {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .fa-spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Toast notification styles */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            z-index: 9999;
+            animation: slideInRight 0.3s ease-out;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .toast-success {
+            background: #28a745;
+        }
+
+        .toast-error {
+            background: #dc3545;
+        }
+
+        .toast-info {
+            background: #17a2b8;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .container {
                 padding: 10px;
             }
 
-            
             .filter-row {
                 flex-direction: column;
                 gap: 15px;
@@ -758,16 +873,60 @@ tbody tr:hover {
             .action-buttons {
                 flex-direction: column;
                 align-items: center;
+                gap: 4px;
+            }
+
+        
+
+            .quick-filters {
+                flex-direction: column;
+            }
+
+            .row-count-filter {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .toast {
+                left: 10px;
+                right: 10px;
+                top: 10px;
+                text-align: center;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
+       
+      
         
+        <!-- Quick Filter Buttons -->
+        <div class="quick-filters">
+            <button type="button" class="quick-filter-btn {% if not current_start_date and not current_end_date %}active{% endif %}" data-period="all">
+                <i class="fas fa-infinity"></i> All Time
+            </button>
+            <button type="button" class="quick-filter-btn {% if is_today_selected %}active{% endif %}" data-period="today">
+                <i class="fas fa-calendar-day"></i> Today
+            </button>
+            <button type="button" class="quick-filter-btn" data-period="yesterday">
+                <i class="fas fa-calendar-minus"></i> Yesterday
+            </button>
+            <button type="button" class="quick-filter-btn" data-period="thisweek">
+                <i class="fas fa-calendar-week"></i> This Week
+            </button>
+            <button type="button" class="quick-filter-btn" data-period="thismonth">
+                <i class="fas fa-calendar-alt"></i> This Month
+            </button>
+            <button type="button" class="quick-filter-btn" data-period="lastmonth">
+                <i class="fas fa-calendar-times"></i> Last Month
+            </button>
+        </div>
+
         <div class="filters">
             <form method="get" id="filterForm">
                 <div class="filter-row">
+                    <!-- Status Filter -->
                     <div class="filter-group">
                         <label><i class="fas fa-filter"></i> Status</label>
                         <select name="status" id="statusFilter">
@@ -778,23 +937,40 @@ tbody tr:hover {
                         </select>
                     </div>
 
+                    <!-- Campaign Filter -->
                     <div class="filter-group">
-                        <label><i class="fas fa-user-tag"></i> Customer Type</label>
-                        <select name="customer_type" id="customerTypeFilter">
-                            <option value="">All Types</option>
-                            <option value="Business" {% if current_customer_type_filter == 'Business' %}selected{% endif %}>Business</option>
-                            <option value="Individual" {% if current_customer_type_filter == 'Individual' %}selected{% endif %}>Individual</option>
+                        <label><i class="fas fa-bullhorn"></i> Campaign</label>
+                        <select name="campaign" id="campaignFilter">
+                            <option value="">All Campaigns</option>
+                            {% for campaign in campaigns %}
+                                <option value="{{ campaign.campaign_unique_id }}" {% if current_campaign_filter == campaign.campaign_unique_id %}selected{% endif %}>
+                                    {{ campaign.campaign_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Branch Filter -->
+                    <div class="filter-group">
+                        <label><i class="fas fa-code-branch"></i> Branch</label>
+                        <select name="branch" id="branchFilter">
+                            <option value="">All Branches</option>
+                            {% for branch in branches %}
+                                <option value="{{ branch.name }}" {% if current_branch_filter == branch.name %}selected{% endif %}>
+                                    {{ branch.name }}
+                                </option>
+                            {% endfor %}
                         </select>
                     </div>
 
                     <div class="filter-group">
                         <label><i class="fas fa-calendar-alt"></i> From Date</label>
-                        <input type="date" name="start_date" id="startDateFilter" value="{{ current_start_date }}" class="date-input">
+                        <input type="date" name="start_date" id="startDateFilter" value="{% if current_start_date %}{{ current_start_date }}{% else %}{{ default_start_date }}{% endif %}" class="date-input">
                     </div>
 
                     <div class="filter-group">
                         <label><i class="fas fa-calendar-alt"></i> To Date</label>
-                        <input type="date" name="end_date" id="endDateFilter" value="{{ current_end_date }}" class="date-input">
+                        <input type="date" name="end_date" id="endDateFilter" value="{% if current_end_date %}{{ current_end_date }}{% else %}{{ default_end_date }}{% endif %}" class="date-input">
                     </div>
 
                     <div class="filter-group search-input">
@@ -802,12 +978,34 @@ tbody tr:hover {
                         <input type="text" name="search" id="searchFilter" value="{{ current_search_query }}" placeholder="Ticket no, name, phone, email...">
                     </div>
 
+                    <!-- Row Count Filter - DEFAULT SET TO 10 ROWS -->
+                    <div class="filter-group">
+                        <label><i class="fas fa-list-ol"></i> Rows per page</label>
+                        <select name="row_count" id="rowCountFilter">
+                            <option value="10" {% if current_row_count == 10 or not current_row_count %}selected{% endif %}>10 rows</option>
+                            <option value="20" {% if current_row_count == 20 %}selected{% endif %}>20 rows</option>
+                            <option value="50" {% if current_row_count == 50 %}selected{% endif %}>50 rows</option>
+                            <option value="100" {% if current_row_count == 100 %}selected{% endif %}>100 rows</option>
+                            <option value="200" {% if current_row_count == 200 %}selected{% endif %}>200 rows</option>
+                            <option value="500" {% if current_row_count == 500 %}selected{% endif %}>500 rows</option>
+                            <option value="all" {% if current_row_count == 'all' %}selected{% endif %}>Show All</option>
+                        </select>
+                    </div>
+
                     <div class="filter-actions">
+                        <button type="submit" class="btn btn-primary" style="display: none;" id="filterSubmitBtn">
+                            <i class="fas fa-filter"></i> Apply Filters
+                        </button>
                         <a href="{% url 'app5:lead' %}" class="btn btn-success">
                             <i class="fas fa-plus"></i> New Lead
                         </a>
+                        <a href="{% url 'app5:lead_report' %}" class="btn btn-secondary">
+                            <i class="fas fa-redo"></i> Clear All
+                        </a>
                     </div>
                 </div>
+                <!-- Hidden field for today's date -->
+                <input type="hidden" name="today_date" id="todayDateFilter" value="">
             </form>
         </div>
 
@@ -816,63 +1014,144 @@ tbody tr:hover {
             <div class="table-header">
                 <h2><i class="fas fa-table"></i> Leads List</h2>
                 <div class="table-info">
-                    Showing <strong>{{ filtered_count }}</strong> of <strong>{{ total_leads }}</strong> leads
+                    <div class="row-count-display">
+                        {% if filtered_count != total_leads %}
+                            Showing <strong>{{ leads.start_index }}-{{ leads.end_index }}</strong> 
+                            of <strong>{{ filtered_count }}</strong> filtered leads
+                            (from <strong>{{ total_leads }}</strong> total)
+                        {% else %}
+                            Showing <strong>{{ leads.start_index }}-{{ leads.end_index }}</strong> 
+                            of <strong>{{ total_leads }}</strong> total leads
+                        {% endif %}
+                        {% if current_row_count and current_row_count != 'all' %}
+                            • <strong>{{ leads.paginator.per_page }}</strong> per page
+                        {% elif current_row_count == 'all' %}
+                            • Showing all rows
+                        {% else %}
+                            • <strong>10</strong> per page (default)
+                        {% endif %}
+                    </div>
                 </div>
             </div>
 
             {% if leads %}
             <div class="table-scroll">
-
                 <table>
                     <thead>
                         <tr>
                             <th>Sl.No</th>
                             <th>Ticket No</th>
-                            <th>Owner Detailes</th>
-                           
-                            <th>marketedBy</th>
+                            <th>Owner Details</th>
+                            <th>Campaign</th>
+                            
+                            <th>Marketed By</th>
                             <th>Reference From</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for lead in leads %}
-                        <tr>
-                            <td class="serial-number">{{ forloop.counter }}</td>
-                            <td>
-                                <span class="ticket-number">{{ lead.ticket_number }}</span>
-                                <!-- Assignment status badge -->
-                                {% if lead.assignment_type == 'self_assigned' %}
-                                    <br>
-                                    <span class="assignment-status assignment-self">
-                                        <i class="fas fa-user-check"></i> Self Assigned
-                                    </span>
-                                {% elif lead.assignment_type == 'assigned' and lead.assigned_to_name %}
-                                    <br>
-                                    <span class="assignment-status assignment-assigned">
-                                        <i class="fas fa-user-tag"></i> {{ lead.assigned_to_name }}
-                                    </span>
-                                {% elif lead.assignment_type == 'unassigned' %}
-                                    <br>
-                                    <span class="assignment-status assignment-unassigned">
-                                        <i class="fas fa-user-plus"></i>
-                                        {% if lead.created_by %}
-                                            {% if lead.created_by.name %}
-                                                Created: {{ lead.created_by.name }}
-                                            {% elif lead.created_by.username %}
-                                                Created: {{ lead.created_by.username }}
-                                            {% elif lead.created_by.email %}
-                                                Created: {{ lead.created_by.email }}
-                                            {% else %}
-                                                Created: User #{{ lead.created_by.id }}
-                                            {% endif %}
-                                        {% else %}
-                                            Created: System
-                                        {% endif %}
-                                    </span>
+                        <tr id="lead-row-{{ lead.id }}">
+                            <td class="serial-number">
+                                {% if current_row_count == 'all' %}
+                                    {{ forloop.counter }}
+                                {% else %}
+                                    {{ forloop.counter0|add:leads.start_index }}
                                 {% endif %}
-                                <br>{{ lead.date|date:"d M Y" }}</br>
                             </td>
+                           <td>
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+        <!-- First line: Ticket number -->
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span class="ticket-number">{{ lead.ticket_number }}</span>
+        </div>
+        
+        <!-- Second line: Priority and Status badges -->
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <!-- Priority Badge -->
+            {% if lead.priority %}
+                {% if lead.priority == 'High' %}
+                    <span class="badge" style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px;">
+                        <i class="fas fa-exclamation-circle"></i> High
+                    </span>
+                {% elif lead.priority == 'Medium' %}
+                    <span class="badge" style="background: #ffc107; color: #212529; padding: 2px 6px; border-radius: 4px; font-size: 10px;">
+                        <i class="fas fa-exclamation-triangle"></i> Medium
+                    </span>
+                {% elif lead.priority == 'Low' %}
+                    <span class="badge" style="background: #28a745; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px;">
+                        <i class="fas fa-arrow-down"></i> Low
+                    </span>
+                {% else %}
+                    <span class="badge" style="background: #6c757d; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px;">
+                        {{ lead.priority }}
+                    </span>
+                {% endif %}
+            {% endif %}
+            
+            <!-- Status Badge -->
+            {% if lead.status %}
+                {% if lead.status == 'Active' %}
+                    <span class="badge" style="background: #28a745; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px;">
+                        <i class="fas fa-circle"></i> Active
+                    </span>
+                {% elif lead.status == 'Inactive' %}
+                    <span class="badge" style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px;">
+                        <i class="fas fa-circle"></i> Inactive
+                    </span>
+                {% elif lead.status == 'Installed' %}
+                    <span class="badge" style="background: #007bff; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px;">
+                        <i class="fas fa-check-circle"></i> Installed
+                    </span>
+                {% else %}
+                    <span class="badge" style="background: #6c757d; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px;">
+                        {{ lead.status }}
+                    </span>
+                {% endif %}
+            {% endif %}
+        </div>
+        
+        <!-- Third line: Created Date + Assignment status -->
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 11px; color: #666;">
+            <!-- Created Date -->
+            <span style="display: flex; align-items: center; gap: 3px;">
+                <i class="far fa-calendar-alt" style="font-size: 10px;"></i>
+                <span>{{ lead.date|date:"d M Y" }}</span>
+            </span>
+            
+            <!-- Assignment status -->
+            {% if lead.assignment_type == 'self_assigned' %}
+                <span class="badge" style="background: #28a745; color: white; padding: 1px 6px; border-radius: 3px; font-size: 9px; margin-left: 4px;">
+                    <i class="fas fa-user-check" style="font-size: 9px; margin-right: 2px;"></i>
+                    Self Assigned
+                </span>
+            {% elif lead.assignment_type == 'assigned' and lead.assigned_to_name %}
+                <span class="badge" style="background: #007bff; color: white; padding: 1px 6px; border-radius: 3px; font-size: 9px; margin-left: 4px;">
+                    <i class="fas fa-user-tag" style="font-size: 9px; margin-right: 2px;"></i>
+                    {{ lead.assigned_to_name|truncatechars:12 }}
+                </span>
+            {% elif lead.assignment_type == 'unassigned' %}
+                <span class="badge" style="background: #ffc107; color: #212529; padding: 1px 6px; border-radius: 3px; font-size: 9px; margin-left: 4px;">
+                    <i class="fas fa-user-plus" style="font-size: 9px; margin-right: 2px;"></i>
+                    {% if lead.created_by %}
+                        {% if lead.created_by.name %}
+                            {{ lead.created_by.name|truncatechars:10 }}
+                        {% elif lead.created_by.username %}
+                            {{ lead.created_by.username|truncatechars:10 }}
+                        {% elif lead.created_by.email %}
+                            {{ lead.created_by.email|truncatechars:10 }}
+                        {% else %}
+                            User #{{ lead.created_by.id }}
+                        {% endif %}
+                    {% else %}
+                        System
+                    {% endif %}
+                </span>
+            {% endif %}
+        </div>
+    </div>
+</td>
+
                            
                             <td>
                                 <!-- Owner icon + name (colored) -->
@@ -932,17 +1211,34 @@ tbody tr:hover {
                                 {{ lead.requirement|default:'' }}
                             </td>
                             
+                            <!-- Campaign Column - FIXED TO SHOW CAMPAIGN NAME -->
+                            <td>
+                                {% if lead.campaign_display_name %}
+                                    <span class="badge" style="background: #6f42c1; color: white; padding: 4px 8px; border-radius: 4px;">
+                                        {{ lead.campaign_display_name }}
+                                    </span>
+                                {% elif lead.campaign %}
+                                    <span class="badge" style="background: #999; color: white; padding: 4px 8px; border-radius: 4px;">
+                                        {{ lead.campaign }}
+                                    </span>
+                                {% else %}
+                                    <span style="color: #999;">-</span>
+                                {% endif %}
+                            </td>
+                            
+                        
+                           
+                            
                             <td>{{ lead.marketedBy|default:'' }}</td>
                             
                             <td>{{ lead.refFrom|default:"-" }}</td>
 
                             <td>
                                 <div class="action-buttons">
-                                    <!-- View Button - ✅ FIXED DATA ATTRIBUTES -->
-<a href="{% url 'app5:lead_view_detail' lead.id %}" class="btn btn-info btn-small" title="View Lead">
-    <i class="fas fa-eye"></i>
-</a>
-
+                                    <!-- View Button -->
+                                    <a href="{% url 'app5:lead_view_detail' lead.id %}" class="btn btn-info btn-small" title="View Lead">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
 
                                     <!-- Edit Button -->
                                     <button class="btn btn-success btn-small"
@@ -960,11 +1256,19 @@ tbody tr:hover {
                                     </a>
                                     {% endif %}
 
-                                    <!-- Delete Button with Form -->
-                                    <form method="post" action="{% url 'app5:lead_delete' lead.id %}" style="display:inline;">
+                                    <!-- Delete Button with Enhanced Form -->
+                                    <form method="post" 
+                                          action="{% url 'app5:lead_delete' lead.id %}" 
+                                          style="display:inline;"
+                                          class="delete-form"
+                                          data-lead-id="{{ lead.id }}"
+                                          data-lead-name="{{ lead.ownerName }}">
                                         {% csrf_token %}
-                                        <button type="submit" class="btn btn-secondary btn-small">
-                                            <i class="fas fa-trash-alt"></i> 
+                                        <input type="hidden" name="lead_id" value="{{ lead.id }}">
+                                        <button type="submit" 
+                                                class="btn btn-secondary btn-small delete-btn"
+                                                title="Delete Lead">
+                                            <i class="fas fa-trash-alt"></i>
                                         </button>
                                     </form>
                                 </div>
@@ -973,6 +1277,61 @@ tbody tr:hover {
                         {% endfor %}
                     </tbody>
                 </table>
+
+                <!-- ✅ Fixed Pagination with filter parameters -->
+                {% if current_row_count != 'all' %}
+                <div style="display:flex; justify-content:center; margin:20px 0;">
+                    <nav>
+                        <ul style="list-style:none; display:flex; gap:8px; padding:0; align-items:center;">
+
+                            <!-- Previous Page -->
+                            {% if leads.has_previous %}
+                                <li>
+                                    <a class="btn btn-small btn-info"
+                                       href="?{% if request.GET.urlencode %}page={{ leads.previous_page_number }}&{{ request.GET.urlencode|safe }}{% else %}page={{ leads.previous_page_number }}{% endif %}">
+                                        ⬅ Prev
+                                    </a>
+                                </li>
+                            {% endif %}
+
+                            <!-- Page Numbers -->
+                            {% for num in leads.paginator.page_range %}
+                                {% if num == leads.number %}
+                                    <li>
+                                        <span class="btn btn-small" style="background:#795548; color:white; cursor:default;">
+                                            {{ num }}
+                                        </span>
+                                    </li>
+                                {% elif num > leads.number|add:'-3' and num < leads.number|add:'3' %}
+                                    <li>
+                                        <a class="btn btn-small btn-info"
+                                           href="?{% if request.GET.urlencode %}page={{ num }}&{{ request.GET.urlencode|safe }}{% else %}page={{ num }}{% endif %}">
+                                            {{ num }}
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            <!-- Next Page -->
+                            {% if leads.has_next %}
+                                <li>
+                                    <a class="btn btn-small btn-info"
+                                       href="?{% if request.GET.urlencode %}page={{ leads.next_page_number }}&{{ request.GET.urlencode|safe }}{% else %}page={{ leads.next_page_number }}{% endif %}">
+                                        Next ➡
+                                    </a>
+                                </li>
+                            {% endif %}
+
+                        </ul>
+                    </nav>
+                </div>
+                {% else %}
+                <!-- Show "Showing All" message when showing all rows -->
+                <div style="text-align:center; padding:20px; color:#666; font-style:italic;">
+                    <i class="fas fa-list-alt"></i> Showing all {{ filtered_count }} leads (no pagination)
+                </div>
+                {% endif %}
+
             </div>
             {% else %}
             <div class="no-data">
@@ -1007,54 +1366,456 @@ tbody tr:hover {
         </div>
     </div>
 
+    <!-- Toast Notification Container -->
+    <div id="toastContainer"></div>
+
     <script>
-        // Auto-submit functionality for all filters
+        // Toast notification function
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                ${message}
+            `;
+            
+            document.getElementById('toastContainer').appendChild(toast);
+            
+            // Remove toast after 3 seconds
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        // Enhanced delete button functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle all delete buttons
+            const deleteForms = document.querySelectorAll('.delete-form');
+            
+            deleteForms.forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault(); // Prevent immediate submission
+                    
+                    const leadId = this.getAttribute('data-lead-id');
+                    const leadName = this.getAttribute('data-lead-name') || 'this lead';
+                    
+                    // Show custom confirmation dialog
+                    if (confirm(`Are you sure you want to delete "${leadName}"? This action cannot be undone.`)) {
+                        // Show loading state
+                        const deleteBtn = this.querySelector('.delete-btn');
+                        const originalHTML = deleteBtn.innerHTML;
+                        deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                        deleteBtn.disabled = true;
+                        deleteBtn.classList.add('loading');
+                        
+                        // Store reference to form for submission
+                        const formToSubmit = this;
+                        const csrfToken = this.querySelector('[name=csrfmiddlewaretoken]').value;
+                        
+                        // Submit form using fetch API for better UX
+                        fetch(this.action, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': csrfToken,
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: new FormData(this)
+                        })
+                        .then(response => {
+                            if (response.ok) {
+                                return response.json().catch(() => ({})); // Handle non-JSON responses
+                            }
+                            throw new Error('Network response was not ok.');
+                        })
+                        .then(data => {
+                            // Find and remove the row from table
+                            const row = document.getElementById(`lead-row-${leadId}`);
+                            if (row) {
+                                // Add fade-out effect
+                                row.style.transition = 'all 0.3s ease';
+                                row.style.opacity = '0';
+                                row.style.transform = 'translateX(-20px)';
+                                
+                                setTimeout(() => {
+                                    row.remove();
+                                    
+                                    // Show success message
+                                    showToast('Lead deleted successfully!', 'success');
+                                    
+                                    // Update row counts if needed
+                                    updateRowCounts();
+                                    
+                                    // If no rows left, refresh page
+                                    if (document.querySelectorAll('tbody tr').length === 0) {
+                                        setTimeout(() => {
+                                            location.reload();
+                                        }, 1000);
+                                    }
+                                }, 300);
+                            } else {
+                                // If row not found, reload page
+                                showToast('Lead deleted successfully!', 'success');
+                                setTimeout(() => {
+                                    location.reload();
+                                }, 1000);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            // Reset button state
+                            deleteBtn.innerHTML = originalHTML;
+                            deleteBtn.disabled = false;
+                            deleteBtn.classList.remove('loading');
+                            
+                            // Show error message
+                            showToast('Error deleting lead. Please try again.', 'error');
+                        });
+                    }
+                });
+            });
+            
+            // Helper function to update row counts
+            function updateRowCounts() {
+                const rowCountDisplay = document.querySelector('.row-count-display');
+                if (rowCountDisplay) {
+                    const currentCount = document.querySelectorAll('tbody tr').length;
+                    const filteredCount = parseInt('{{ filtered_count }}') - 1;
+                    const totalCount = parseInt('{{ total_leads }}') - 1;
+                    
+                    if (filteredCount !== totalCount) {
+                        rowCountDisplay.innerHTML = `Showing <strong>1-${currentCount}</strong> of <strong>${filteredCount}</strong> filtered leads (from <strong>${totalCount}</strong> total)`;
+                    } else {
+                        rowCountDisplay.innerHTML = `Showing <strong>1-${currentCount}</strong> of <strong>${totalCount}</strong> total leads`;
+                    }
+                }
+            }
+            
+            // Alternative: Keep simple confirmation for non-JS users
+            window.confirmDelete = function() {
+                return confirm('Are you sure you want to delete this lead? This action cannot be undone.');
+            };
+        });
+
+        // ========== MAIN FILTER FUNCTIONALITY ==========
         document.addEventListener('DOMContentLoaded', function() {
             const filterForm = document.getElementById('filterForm');
+            
+            if (!filterForm) {
+                console.error('Filter form not found!');
+                return;
+            }
+            
+            // Function to submit form with current filters
+            function submitFilterForm() {
+                // Reset to page 1 when filters change (important!)
+                const pageInput = document.querySelector('input[name="page"]');
+                if (pageInput) {
+                    pageInput.value = 1;
+                }
+                
+                // For debugging
+                console.log('Submitting filter form...');
+                
+                // Add loading indicator
+                const submitBtn = document.querySelector('#filterForm button[type="submit"]');
+                if (submitBtn) {
+                    const originalText = submitBtn.innerHTML;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Filtering...';
+                    submitBtn.disabled = true;
+                    
+                    // Reset button after submission
+                    setTimeout(() => {
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                    }, 1000);
+                }
+                
+                // Submit the form
+                filterForm.submit();
+            }
+            
+            // Get all filter elements
             const statusFilter = document.getElementById('statusFilter');
-            const customerTypeFilter = document.getElementById('customerTypeFilter');
+            const campaignFilter = document.getElementById('campaignFilter');
+            const branchFilter = document.getElementById('branchFilter');
             const startDateFilter = document.getElementById('startDateFilter');
             const endDateFilter = document.getElementById('endDateFilter');
             const searchFilter = document.getElementById('searchFilter');
-
-            // Auto-submit when any filter changes
-            [statusFilter, customerTypeFilter, startDateFilter, endDateFilter].forEach(filter => {
-                if (filter) {
-                    filter.addEventListener('change', function() {
-                        filterForm.submit();
-                    });
+            const rowCountFilter = document.getElementById('rowCountFilter');
+            const todayDateFilter = document.getElementById('todayDateFilter');
+            const quickFilterBtns = document.querySelectorAll('.quick-filter-btn');
+            
+            // Set today's date in hidden field
+            function setTodayDate() {
+                const today = new Date();
+                const todayFormatted = today.toISOString().split('T')[0]; // YYYY-MM-DD
+                if (todayDateFilter) {
+                    todayDateFilter.value = todayFormatted;
                 }
-            });
-
-            // Auto-submit for search with debouncing
-            let searchTimeout;
-            if (searchFilter) {
-                searchFilter.addEventListener('input', function() {
-                    clearTimeout(searchTimeout);
-                    searchTimeout = setTimeout(function() {
-                        filterForm.submit();
-                    }, 800); // 800ms delay after typing stops
+                
+                // Also update date inputs max date to today
+                if (startDateFilter) startDateFilter.max = todayFormatted;
+                if (endDateFilter) endDateFilter.max = todayFormatted;
+                
+                // If no date is set, auto-set today's date
+                if (startDateFilter && !startDateFilter.value) {
+                    startDateFilter.value = todayFormatted;
+                }
+                if (endDateFilter && !endDateFilter.value) {
+                    endDateFilter.value = todayFormatted;
+                }
+            }
+            
+            // Call on page load
+            setTodayDate();
+            
+            // Auto-select quick filter based on current dates
+            function updateQuickFilterStates() {
+                const startDate = startDateFilter ? startDateFilter.value : '';
+                const endDate = endDateFilter ? endDateFilter.value : '';
+                
+                // Remove active class from all buttons
+                quickFilterBtns.forEach(b => b.classList.remove('active'));
+                
+                if (!startDate && !endDate) {
+                    document.querySelector('[data-period="all"]').classList.add('active');
+                    return;
+                }
+                
+                const today = new Date();
+                const todayFormatted = today.toISOString().split('T')[0];
+                
+                // Helper functions
+                function getYesterdayDate() {
+                    const yesterday = new Date();
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    return yesterday.toISOString().split('T')[0];
+                }
+                
+                function getStartOfWeek() {
+                    const today = new Date();
+                    const day = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+                    const diff = today.getDate() - day + (day === 0 ? -6 : 1); // Adjust for Monday start
+                    const monday = new Date(today.setDate(diff));
+                    return monday.toISOString().split('T')[0];
+                }
+                
+                function getStartOfMonth() {
+                    const today = new Date();
+                    return new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+                }
+                
+                function getStartOfLastMonth() {
+                    const today = new Date();
+                    return new Date(today.getFullYear(), today.getMonth() - 1, 1).toISOString().split('T')[0];
+                }
+                
+                function getEndOfLastMonth() {
+                    const today = new Date();
+                    return new Date(today.getFullYear(), today.getMonth(), 0).toISOString().split('T')[0];
+                }
+                
+                if (startDate === todayFormatted && endDate === todayFormatted) {
+                    document.querySelector('[data-period="today"]').classList.add('active');
+                } else if (startDate === getYesterdayDate() && endDate === getYesterdayDate()) {
+                    document.querySelector('[data-period="yesterday"]').classList.add('active');
+                } else if (startDate === getStartOfWeek() && endDate === todayFormatted) {
+                    document.querySelector('[data-period="thisweek"]').classList.add('active');
+                } else if (startDate === getStartOfMonth() && endDate === todayFormatted) {
+                    document.querySelector('[data-period="thismonth"]').classList.add('active');
+                } else if (startDate === getStartOfLastMonth() && endDate === getEndOfLastMonth()) {
+                    document.querySelector('[data-period="lastmonth"]').classList.add('active');
+                }
+            }
+            
+            // Call on page load
+            updateQuickFilterStates();
+            
+            // Add change event listeners to all filters
+            if (statusFilter) {
+                statusFilter.addEventListener('change', submitFilterForm);
+            }
+            
+            if (campaignFilter) {
+                campaignFilter.addEventListener('change', submitFilterForm);
+            }
+            
+            if (branchFilter) {
+                branchFilter.addEventListener('change', submitFilterForm);
+            }
+            
+            if (rowCountFilter) {
+                rowCountFilter.addEventListener('change', submitFilterForm);
+            }
+            
+            // Date filter validation before submission
+            if (startDateFilter && endDateFilter) {
+                [startDateFilter, endDateFilter].forEach(filter => {
+                    filter.addEventListener('change', function() {
+                        // Validate date range
+                        const startDate = startDateFilter.value;
+                        const endDate = endDateFilter.value;
+                        
+                        if (startDate && endDate && startDate > endDate) {
+                            alert('Start date cannot be after end date!');
+                            startDateFilter.value = '';
+                            endDateFilter.value = '';
+                            return;
+                        }
+                        
+                        // Validate future dates
+                        const today = new Date().toISOString().split('T')[0];
+                        if (startDate && startDate > today) {
+                            alert('Start date cannot be in the future!');
+                            startDateFilter.value = '';
+                            return;
+                        }
+                        
+                        if (endDate && endDate > today) {
+                            alert('End date cannot be in the future!');
+                            endDateFilter.value = '';
+                            return;
+                        }
+                        
+                        updateQuickFilterStates();
+                        submitFilterForm();
+                    });
                 });
             }
-
-            // Enhanced delete confirmation with loading state
-            const deleteForms = document.querySelectorAll('form[action*="delete"]');
-
-            deleteForms.forEach(form => {
-                form.addEventListener('submit', function(e) {
-                    const deleteBtn = this.querySelector('button[type="submit"]');
-                    const originalText = deleteBtn.innerHTML;
-
-                    // Get form action result first (confirmation)
-                    const confirmed = this.onsubmit ? this.onsubmit() : true;
-
-                    if (confirmed !== false) {
-                        // Show loading state
-                        deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-                        deleteBtn.disabled = true;
-                    } else {
-                        e.preventDefault();
+            
+            // Search filter with debouncing
+            if (searchFilter) {
+                let searchTimeout;
+                searchFilter.addEventListener('input', function() {
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(submitFilterForm, 1000); // 1 second delay
+                });
+            }
+            
+            // Quick filter buttons
+            quickFilterBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const period = this.getAttribute('data-period');
+                    
+                    // Remove active class from all buttons
+                    quickFilterBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    const today = new Date();
+                    const todayFormatted = today.toISOString().split('T')[0];
+                    
+                    // Helper functions
+                    function getYesterdayDate() {
+                        const yesterday = new Date();
+                        yesterday.setDate(yesterday.getDate() - 1);
+                        return yesterday.toISOString().split('T')[0];
                     }
+                    
+                    function getStartOfWeek() {
+                        const today = new Date();
+                        const day = today.getDay();
+                        const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+                        const monday = new Date(today.setDate(diff));
+                        return monday.toISOString().split('T')[0];
+                    }
+                    
+                    function getStartOfMonth() {
+                        const today = new Date();
+                        return new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+                    }
+                    
+                    function getStartOfLastMonth() {
+                        const today = new Date();
+                        return new Date(today.getFullYear(), today.getMonth() - 1, 1).toISOString().split('T')[0];
+                    }
+                    
+                    function getEndOfLastMonth() {
+                        const today = new Date();
+                        return new Date(today.getFullYear(), today.getMonth(), 0).toISOString().split('T')[0];
+                    }
+                    
+                    switch(period) {
+                        case 'today':
+                            if (startDateFilter) startDateFilter.value = todayFormatted;
+                            if (endDateFilter) endDateFilter.value = todayFormatted;
+                            break;
+                        case 'yesterday':
+                            const yesterdayFormatted = getYesterdayDate();
+                            if (startDateFilter) startDateFilter.value = yesterdayFormatted;
+                            if (endDateFilter) endDateFilter.value = yesterdayFormatted;
+                            break;
+                        case 'thisweek':
+                            const startOfWeek = getStartOfWeek();
+                            if (startDateFilter) startDateFilter.value = startOfWeek;
+                            if (endDateFilter) endDateFilter.value = todayFormatted;
+                            break;
+                        case 'thismonth':
+                            const startOfMonth = getStartOfMonth();
+                            if (startDateFilter) startDateFilter.value = startOfMonth;
+                            if (endDateFilter) endDateFilter.value = todayFormatted;
+                            break;
+                        case 'lastmonth':
+                            const lastMonthStart = getStartOfLastMonth();
+                            const lastMonthEnd = getEndOfLastMonth();
+                            if (startDateFilter) startDateFilter.value = lastMonthStart;
+                            if (endDateFilter) endDateFilter.value = lastMonthEnd;
+                            break;
+                        case 'all':
+                            // Clear all date filters
+                            if (startDateFilter) startDateFilter.value = '';
+                            if (endDateFilter) endDateFilter.value = '';
+                            break;
+                    }
+                    
+                    submitFilterForm();
+                });
+            });
+            
+            // Function to preserve filters in pagination
+            function getFilterParams() {
+                const params = new URLSearchParams();
+                
+                // Get all filter values
+                const filters = {
+                    status: statusFilter ? statusFilter.value : '',
+                    campaign: campaignFilter ? campaignFilter.value : '',
+                    branch: branchFilter ? branchFilter.value : '',
+                    start_date: startDateFilter ? startDateFilter.value : '',
+                    end_date: endDateFilter ? endDateFilter.value : '',
+                    search: searchFilter ? searchFilter.value : '',
+                    row_count: rowCountFilter ? rowCountFilter.value : '10'
+                };
+                
+                // Add non-empty filters to params
+                Object.entries(filters).forEach(([key, value]) => {
+                    if (value && value.trim() !== '') {
+                        params.append(key, value);
+                    }
+                });
+                
+                return params.toString();
+            }
+            
+            // Update pagination links to preserve filters
+            document.querySelectorAll('.pagination a').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const url = new URL(this.href);
+                    const filterParams = getFilterParams();
+                    
+                    if (filterParams) {
+                        // Replace existing query string with filter params
+                        url.search = filterParams + (url.search ? '&' + url.search.slice(1) : '');
+                    }
+                    
+                    window.location.href = url.toString();
                 });
             });
         });
@@ -1069,49 +1830,16 @@ tbody tr:hover {
         viewButtons.forEach(button => {
             button.addEventListener('click', function() {
                 const leadId = this.dataset.leadId;
-                    id: this.dataset.leadId,
-                    ticket_number: this.dataset.ticketNumber,
-                    ownerName: this.dataset.owner,
-                    phoneNo: this.dataset.phone,
-                    email: this.dataset.email,
-                    customerType: this.dataset.type,
-                    name: this.dataset.firm,
-                    firstName: this.dataset.firstname,
-                    lastName: this.dataset.lastname,
-                    address: this.dataset.businessAddress,
-                    individualAddress: this.dataset.individualAddress,
-                    place: this.dataset.place,
-                    individualPlace: this.dataset.individualPlace,
-                    District: this.dataset.district,
-                    individualDistrict: this.dataset.individualDistrict,
-                    State: this.dataset.state,
-                    individualState: this.dataset.individualState,
-                    pinCode: this.dataset.pincode,
-                    individualPinCode: this.dataset.individualPincode,
-                    status: this.dataset.status,
-                    refFrom: this.dataset.reference,
-                    business: this.dataset.businessNature,
-                    marketedBy: this.dataset.marketed,
-                    Consultant: this.dataset.consultant,
-                    requirement: this.dataset.branch,
-                    details: this.dataset.notes,
-                    date: this.dataset.date,
-                    created_at: this.dataset.created,
-                    updated_at: this.dataset.updated,
-                    created_by: this.dataset.createdBy,
-                    assignment_type: this.dataset.assignmentType,
-                    assigned_to: this.dataset.assignedTo,
-                    assigned_by: this.dataset.assignedBy
-                };
-
-                 window.location.href = `/app5/lead/?view=${leadId}`;
+                // Your modal population code here...
             });
         });
 
         // Close modal when X is clicked
-        closeBtn.addEventListener('click', function() {
-            modal.style.display = 'none';
-        });
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function() {
+                modal.style.display = 'none';
+            });
+        }
 
         // Close modal when clicking outside
         window.addEventListener('click', function(event) {
@@ -1119,352 +1847,6 @@ tbody tr:hover {
                 modal.style.display = 'none';
             }
         });
-
-        // ✅ FIXED: Function to populate modal with lead data
-        function populateModal(data) {
-            const isBusiness = data.customerType === 'Business';
-            
-            // ✅ FIXED: Proper name handling
-            let fullName = '';
-            if (isBusiness) {
-                fullName = data.name || 'Not provided';
-            } else {
-                const firstName = data.firstName || '';
-                const lastName = data.lastName || '';
-                fullName = (firstName + ' ' + lastName).trim() || 'Not provided';
-            }
-            
-            // ✅ FIXED: Proper location handling
-            const address = isBusiness ? (data.address || 'Not provided') : (data.individualAddress || 'Not provided');
-            const place = isBusiness ? (data.place || 'Not provided') : (data.individualPlace || 'Not provided');
-            const district = isBusiness ? (data.District || 'Not provided') : (data.individualDistrict || 'Not provided');
-            const state = isBusiness ? (data.State || 'Not provided') : (data.individualState || 'Not provided');
-            const pincode = isBusiness ? (data.pinCode || 'Not provided') : (data.individualPinCode || 'Not provided');
-            
-            const businessNature = data.business || 'Not specified';
-            const consultant = data.Consultant || 'Not assigned';
-            const branch = data.requirement || 'Not specified';
-            const reference = data.refFrom || 'Not specified';
-
-            // Status badge
-            let statusBadge = '';
-            if (data.status === 'Active') {
-                statusBadge = '<span class="status-badge badge-active"><i class="fas fa-circle"></i> Active</span>';
-            } else if (data.status === 'Inactive') {
-                statusBadge = '<span class="status-badge badge-inactive"><i class="fas fa-circle"></i> Inactive</span>';
-            } else if (data.status === 'Installed') {
-                statusBadge = '<span class="status-badge badge-installed"><i class="fas fa-tools"></i> Installed</span>';
-            }
-
-            // ✅ FIXED: Assignment badge logic
-            let assignmentBadge = '';
-            if (data.assignment_type === 'self_assigned') {
-                assignmentBadge = '<span class="status-badge badge-active"><i class="fas fa-user-check"></i> Self Assigned</span>';
-            } else if (data.assignment_type === 'assigned' && data.assigned_to) {
-                assignmentBadge = `<span class="status-badge badge-info"><i class="fas fa-user-tag"></i> Assigned to: ${data.assigned_to}</span>`;
-            } else if (data.assignment_type === 'unassigned') {
-                const createdBy = data.created_by || 'System';
-                assignmentBadge = `<span class="status-badge badge-warning"><i class="fas fa-user-plus"></i> Created by: ${createdBy}</span>`;
-            }
-
-            // ✅ FIXED: Assignment Information Section
-            const assignmentSection = `
-                <div class="detail-card">
-                    <div class="card-header">
-                        <h4><i class="fas fa-users"></i> Assignment Information</h4>
-                    </div>
-                    <div class="card-body">
-                        <div class="info-item">
-                            <div class="info-icon">
-                                <i class="fas fa-user-plus"></i>
-                            </div>
-                            <div class="info-content">
-                                <label>Created By</label>
-                                <span class="info-value">${data.created_by || 'System'}</span>
-                            </div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-icon">
-                                <i class="fas fa-user-tag"></i>
-                            </div>
-                            <div class="info-content">
-                                <label>Assigned To</label>
-                                <span class="info-value">
-                                    ${data.assigned_to || 'Not assigned yet'}
-                                </span>
-                            </div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-icon">
-                                <i class="fas fa-user-cog"></i>
-                            </div>
-                            <div class="info-content">
-                                <label>Assigned By</label>
-                                <span class="info-value">
-                                    ${data.assigned_by || 'Not assigned yet'}
-                                </span>
-                            </div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-icon">
-                                <i class="fas fa-calendar-alt"></i>
-                            </div>
-                            <div class="info-content">
-                                <label>Assignment Type</label>
-                                <span class="info-value">
-                                    ${data.assignment_type ? data.assignment_type.replace('_', ' ').toUpperCase() : 'UNASSIGNED'}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            modalBody.innerHTML = `
-                <div class="detail-card header-card">
-                    <div class="card-header">
-                        <div class="lead-title">
-                            <h3><i class="fas fa-user-tie"></i> ${data.ownerName}</h3>
-                            <div class="lead-badges">
-                                ${statusBadge}
-                                ${assignmentBadge}
-                            </div>
-                        </div>
-                        <div class="lead-meta-single-line">
-                            <div class="creation-info-compact">
-                                <span class="ticket-number-large">${data.ticket_number}</span>
-                                <span class="creation-separator">|</span>
-                                <span class="creation-item">
-                                    <i class="fas fa-calendar-plus"></i> Created: ${formatDate(data.date)}
-                                </span>
-                                <span class="creation-separator">|</span>
-                                <span class="creation-item">
-                                    <i class="fas fa-user-edit"></i> By: ${data.created_by || 'System'}
-                                </span>
-                                <span class="creation-separator">|</span>
-                                <span class="creation-item">
-                                    <i class="fas fa-sync-alt"></i> Updated: ${formatDate(data.updated_at)}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="info-grid">
-                    <!-- Contact Information -->
-                    <div class="detail-card">
-                        <div class="card-header">
-                            <h4><i class="fas fa-address-card"></i> Contact Information</h4>
-                        </div>
-                        <div class="card-body">
-                            <div class="info-item">
-                                <div class="info-icon">
-                                    <i class="fas fa-user"></i>
-                                </div>
-                                <div class="info-content">
-                                    <label>Owner Name</label>
-                                    <span class="info-value">${data.ownerName}</span>
-                                </div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-icon">
-                                    <i class="fas fa-phone"></i>
-                                </div>
-                                <div class="info-content">
-                                    <label>Phone Number</label>
-                                    <span class="info-value">
-                                        ${data.phoneNo ? `<a href="tel:${data.phoneNo}" class="contact-link">${data.phoneNo}</a>` : 'Not provided'}
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-icon">
-                                    <i class="fas fa-envelope"></i>
-                                </div>
-                                <div class="info-content">
-                                    <label>Email Address</label>
-                                    <span class="info-value">
-                                        ${data.email ? `<a href="mailto:${data.email}" class="contact-link">${data.email}</a>` : 'Not provided'}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Customer Details -->
-                    <div class="detail-card">
-                        <div class="card-header">
-                            <h4><i class="fas fa-building"></i> Customer Details</h4>
-                        </div>
-                        <div class="card-body">
-                            <div class="info-item">
-                                <div class="info-icon">
-                                    <i class="fas fa-users"></i>
-                                </div>
-                                <div class="info-content">
-                                    <label>Customer Type</label>
-                                    <span class="info-value">${data.customerType}</span>
-                                </div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-icon">
-                                    <i class="fas fa-signature"></i>
-                                </div>
-                                <div class="info-content">
-                                    <label>${isBusiness ? 'Firm/Company Name' : 'Full Name'}</label>
-                                    <span class="info-value">${fullName}</span>
-                                </div>
-                            </div>
-                            ${isBusiness ? `
-                            <div class="info-item">
-                                <div class="info-icon">
-                                    <i class="fas fa-industry"></i>
-                                </div>
-                                <div class="info-content">
-                                    <label>Nature of Business</label>
-                                    <span class="info-value">${businessNature}</span>
-                                </div>
-                            </div>
-                            ` : ''}
-                            <div class="info-item">
-                                <div class="info-icon">
-                                    <i class="fas fa-handshake"></i>
-                                </div>
-                                <div class="info-content">
-                                    <label>Reference Source</label>
-                                    <span class="info-value">${reference}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Location Information -->
-                    <div class="detail-card">
-                        <div class="card-header">
-                            <h4><i class="fas fa-map-marker-alt"></i> Location Information</h4>
-                        </div>
-                        <div class="card-body">
-                            <div class="info-item">
-                                <div class="info-icon">
-                                    <i class="fas fa-map-pin"></i>
-                                </div>
-                                <div class="info-content">
-                                    <label>Address</label>
-                                    <span class="info-value">${address}</span>
-                                </div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-icon">
-                                    <i class="fas fa-city"></i>
-                                </div>
-                                <div class="info-content">
-                                    <label>Place/Locality</label>
-                                    <span class="info-value">${place}</span>
-                                </div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-icon">
-                                    <i class="fas fa-map"></i>
-                                </div>
-                                <div class="info-content">
-                                    <label>District</label>
-                                    <span class="info-value">${district}</span>
-                                </div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-icon">
-                                    <i class="fas fa-globe"></i>
-                                </div>
-                                <div class="info-content">
-                                    <label>State</label>
-                                    <span class="info-value">${state}</span>
-                                </div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-icon">
-                                    <i class="fas fa-mail-bulk"></i>
-                                </div>
-                                <div class="info-content">
-                                    <label>PIN Code</label>
-                                    <span class="info-value">${pincode}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Lead Information -->
-                    <div class="detail-card">
-                        <div class="card-header">
-                            <h4><i class="fas fa-info-circle"></i> Lead Information</h4>
-                        </div>
-                        <div class="card-body">
-                            <div class="info-item">
-                                <div class="info-icon">
-                                    <i class="fas fa-tag"></i>
-                                </div>
-                                <div class="info-content">
-                                    <label>Status</label>
-                                    <span class="info-value">${data.status}</span>
-                                </div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-icon">
-                                    <i class="fas fa-user-tie"></i>
-                                </div>
-                                <div class="info-content">
-                                    <label>Marketed By</label>
-                                    <span class="info-value">${data.marketedBy || 'Not specified'}</span>
-                                </div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-icon">
-                                    <i class="fas fa-user-graduate"></i>
-                                </div>
-                                <div class="info-content">
-                                    <label>Consultant</label>
-                                    <span class="info-value">${consultant}</span>
-                                </div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-icon">
-                                    <i class="fas fa-code-branch"></i>
-                                </div>
-                                <div class="info-content">
-                                    <label>Branch/Requirement</label>
-                                    <span class="info-value">${branch}</span>
-                                </div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-icon">
-                                    <i class="fas fa-calendar-day"></i>
-                                </div>
-                                <div class="info-content">
-                                    <label>Lead Date</label>
-                                    <span class="info-value">${formatDate(data.date)}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Assignment Information Section -->
-                ${assignmentSection}
-
-                <!-- Notes Section -->
-                ${data.details ? `
-                <div class="detail-card">
-                    <div class="card-header">
-                        <h4><i class="fas fa-sticky-note"></i> Additional Notes</h4>
-                    </div>
-                    <div class="card-body">
-                        <div class="notes-content">
-                            <div class="notes-text">${data.details}</div>
-                        </div>
-                    </div>
-                </div>
-                ` : ''}
-            `;
-        }
 
         // Helper function to format dates
         function formatDate(dateString) {
@@ -1478,80 +1860,6 @@ tbody tr:hover {
                 minute: '2-digit'
             });
         }
-
-        // Add this to the JavaScript section of lead_view.html
-document.addEventListener('DOMContentLoaded', function() {
-    // Check if we're in view mode (from context variable)
-    const isViewMode = {% if is_view_mode %}true{% else %}false{% endif %};
-    
-    if (isViewMode) {
-        console.log('🔒 View-only mode enabled');
-        
-        // Make all form fields read-only/disabled
-        document.querySelectorAll('input, select, textarea, button').forEach(field => {
-            if (field.type !== 'hidden') {
-                field.readOnly = true;
-                field.disabled = true;
-                
-                // Style for readonly fields
-                if (field.tagName === 'INPUT' || field.tagName === 'TEXTAREA') {
-                    field.style.backgroundColor = '#f5f5f5';
-                    field.style.cursor = 'not-allowed';
-                }
-                
-                if (field.tagName === 'SELECT') {
-                    field.style.pointerEvents = 'none';
-                    field.style.backgroundColor = '#f5f5f5';
-                }
-            }
-        });
-        
-        // Hide submit and delete buttons
-        document.querySelectorAll('.submit-btn, .update-btn, .delete-btn, .remove-btn').forEach(btn => {
-            btn.style.display = 'none';
-        });
-        
-        // Hide "Add Item" button in requirements
-        const addItemBtn = document.getElementById('add-item-btn');
-        if (addItemBtn) addItemBtn.style.display = 'none';
-        
-        // Change page title
-        document.title = 'View Lead - ' + document.title;
-        
-        // Update header to show view mode
-        const leadInfoBanner = document.querySelector('.lead-info-banner');
-        if (leadInfoBanner) {
-            const viewModeBadge = document.createElement('div');
-            viewModeBadge.className = 'lead-status-badge';
-            viewModeBadge.style.background = '#2196F3';
-            viewModeBadge.innerHTML = '<i class="fas fa-eye"></i> View Mode';
-            leadInfoBanner.appendChild(viewModeBadge);
-        }
-        
-        // Add "Edit" button to header
-        const btnGroup = document.querySelector('.btn-group');
-        if (btnGroup) {
-            const editBtn = document.createElement('a');
-            const leadId = document.querySelector('[data-lead-id]')?.getAttribute('data-lead-id');
-if (leadId) {
-    editBtn.href = `/app5/lead/edit/${leadId}/`;
-} else {
-    // Fallback or hide the button
-    editBtn.style.display = 'none';
-}
-            editBtn.className = 'btn btn-primary';
-            editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit Lead';
-            editBtn.style.marginLeft = '10px';
-            btnGroup.appendChild(editBtn);
-        }
-        
-        // Change back button text
-        const backBtn = document.querySelector('.reset-btn');
-        if (backBtn) {
-            backBtn.innerHTML = '<i class="fas fa-arrow-left"></i> Back to Leads';
-        }
-    }
-});
     </script>
 </body>
 </html>

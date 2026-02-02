@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -627,7 +628,7 @@
         
         .lead-item {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             padding: 12px 15px;
             border-bottom: 1px solid #f0f0f0;
             transition: background 0.2s;
@@ -656,6 +657,7 @@
             font-size: 12px;
             margin-right: 12px;
             flex-shrink: 0;
+            margin-top: 3px;
         }
         
         .lead-details {
@@ -666,7 +668,7 @@
         .lead-name {
             font-weight: 600;
             color: #333;
-            margin-bottom: 2px;
+            margin-bottom: 4px;
             font-size: 13px;
             white-space: nowrap;
             overflow: hidden;
@@ -684,7 +686,7 @@
         .lead-phone {
             font-size: 11px;
             color: #495057;
-            margin-top: 1px;
+            margin-top: 2px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -696,14 +698,15 @@
             background: #f8f9fa;
             border-radius: 4px;
             display: inline-block;
-            margin-top: 2px;
+            margin-top: 3px;
+            padding: 1px 5px;
         }
         
         .lead-status {
             font-size: 10px;
             color: #28a745;
             font-weight: 600;
-            margin-top: 2px;
+            margin-top: 4px;
         }
         
         .no-results {
@@ -899,6 +902,85 @@
             background-color: rgba(255, 255, 255, 0.2);
             color: white;
         }
+        
+        /* NEW STYLES for right-aligned metadata */
+        .lead-meta-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            text-align: right;
+            min-width: 80px;
+            margin-left: 10px;
+            flex-shrink: 0;
+        }
+        
+        .lead-date-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 2px;
+            margin-bottom: 5px;
+        }
+        
+        .created-date {
+            font-size: 9px;
+            color: #888;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            white-space: nowrap;
+        }
+        
+        .time-elapsed {
+            font-size: 9px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            white-space: nowrap;
+        }
+        
+        .time-icon {
+            font-size: 8px;
+        }
+        
+        .lead-priority-right {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 10px;
+            white-space: nowrap;
+            margin-top: 3px;
+        }
+        
+        .priority-high {
+            background: #ff4444;
+            color: white;
+        }
+        
+        .priority-medium {
+            background: #ffaa00;
+            color: white;
+        }
+        
+        .priority-low {
+            background: #44ff44;
+            color: #333;
+        }
+        
+        .priority-default {
+            background: #ffaa00;
+            color: white;
+        }
+        
+        /* For the main lead details area */
+        .lead-main-info {
+            flex: 1;
+            min-width: 0;
+        }
     </style>
 </head>
 <body>
@@ -945,12 +1027,13 @@
                                  data-priority="{{ lead.priority|default:'Medium' }}"
                                  data-place="{{ lead.place|default:'' }}"
                                  data-business="{{ lead.business|default:'' }}"
+                                 data-created="{{ lead.created_at|date:'Y-m-d H:i:s'|default:'' }}"
                                  {% if quotation.lead.id == lead.id %}style="background: #e3f2fd; border-left: 4px solid #2575fc;"{% endif %}>
                                 <div class="lead-avatar">
                                     {{ lead.ownerName|default:"L"|slice:":2"|upper }}
                                 </div>
 
-                                <div class="lead-details">
+                                <div class="lead-main-info">
                                     <div class="lead-name">
                                         <span style="font-size: 16px; margin-right: 5px;">
                                             {% if lead.priority == 'High' %}🔴
@@ -961,17 +1044,41 @@
                                         {{ lead.ownerName|default:"Unknown" }}
                                     </div>
                                     <div class="lead-phone">{{ lead.phoneNo|default:"No Phone" }}</div>
-                                    <div class="lead-ticket">{{ lead.ticket_number|default:"No Ticket" }}</div>
-                                    {% if lead.place %}
-                                    <div class="lead-info" style="font-size: 11px; color: #666; margin-top: 2px;">
-                                        📍 {{ lead.place }}
+                                    
+                                </div>
+                                
+                                <!-- RIGHT-ALIGNED METADATA -->
+                                <div class="lead-meta-info">
+                                    <div class="lead-date-info">
+                                        {% if lead.created_at %}
+                                        <div class="created-date">
+                                            <i class="far fa-calendar-alt time-icon"></i>
+                                            {{ lead.created_at|date:"d M" }}
+                                        </div>
+                                        <div class="time-elapsed" data-created="{{ lead.created_at|date:'c' }}">
+                                            <i class="far fa-clock time-icon"></i>
+                                            <span class="elapsed-text">
+                                                <!-- This will be populated by JavaScript -->
+                                            </span>
+                                        </div>
+                                        {% else %}
+                                        <div class="created-date">
+                                            <i class="far fa-calendar-alt time-icon"></i>
+                                            N/A
+                                        </div>
+                                        <div class="time-elapsed">
+                                            <i class="far fa-clock time-icon"></i>
+                                            N/A
+                                        </div>
+                                        {% endif %}
                                     </div>
-                                    {% endif %}
-                                    <div class="lead-status" style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
-                                        <span>Status: {{ lead.status|default:"Active" }}</span>
-                                        <span style="color: {% if lead.priority == 'High' %}#ff4444{% elif lead.priority == 'Medium' %}#ffaa00{% elif lead.priority == 'Low' %}#44ff44{% else %}#ffaa00{% endif %}; font-weight:bold; font-size: 10px; padding: 2px 6px; border-radius: 10px;">
-                                            {{ lead.priority|default:"Medium" }}
-                                        </span>
+                                    
+                                    <div class="lead-priority-right 
+                                        {% if lead.priority == 'High' %}priority-high
+                                        {% elif lead.priority == 'Medium' %}priority-medium
+                                        {% elif lead.priority == 'Low' %}priority-low
+                                        {% else %}priority-default{% endif %}">
+                                        {{ lead.priority|default:"Medium" }}
                                     </div>
                                 </div>
                             </div>
@@ -998,36 +1105,6 @@
                         </div>
                     </div>
                     
-                    <!-- Navigation Menu -->
-                    <div class="form-navigation">
-                        <ul class="nav-menu">
-                            <li class="nav-item">
-                                <a href="{% url 'app5:lead' %}" class="nav-link">
-                                    <i class="fas fa-phone-alt"></i>
-                                    Lead Form
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="{% url 'app5:requirements_list' %}" class="nav-link">
-                                    <i class="fas fa-clipboard-list"></i>
-                                    Requirements
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="{% url 'app5:event_form' %}" class="nav-link">
-                                    <i class="fas fa-briefcase"></i>
-                                    Event
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="{% url 'app5:quotation_form' %}" class="nav-link">
-                                    <i class="fas fa-file-invoice"></i>
-                                    Quotation
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                    
                     <div class="form-body" id="formBody">
                         <!-- Selected Lead Information -->
                         <div class="lead-selection-info" id="leadSelectionInfo">
@@ -1037,6 +1114,13 @@
                                 <div><strong>Phone:</strong> <span id="selected-lead-phone">{{ quotation.lead.phoneNo|default:"-" }}</span></div>
                                 <div><strong>Ticket:</strong> <span id="selected-lead-ticket">{{ quotation.lead.ticket_number|default:"-" }}</span></div>
                                 <div><strong>Priority:</strong> <span id="selected-lead-priority">{{ quotation.lead.priority|default:"-" }}</span></div>
+                                <div><strong>Created:</strong> <span id="selected-lead-created">
+                                    {% if quotation.lead.created_at %}
+                                        {{ quotation.lead.created_at|date:"d M Y, h:i A" }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </span></div>
                             </div>
                         </div>
                         
@@ -1171,18 +1255,89 @@
         const quotationStatus = '{{ quotation.status }}';
         const normalizedStatus = quotationStatus ? quotationStatus.charAt(0).toUpperCase() + quotationStatus.slice(1).toLowerCase() : 'Draft';
         
-        // Check if quotation is editable based on status
-        function checkEditableStatus() {
-            const nonEditableStatuses = ['Approved', 'Converted', 'Cancelled'];
-            if (nonEditableStatuses.includes(normalizedStatus)) {
-                // Disable form elements
-                document.getElementById('formBody').classList.add('form-disabled');
-                document.getElementById('saveBtn').disabled = true;
-                document.getElementById('saveBtn').innerHTML = '<i class="fas fa-lock"></i> Read Only';
-                
-                // Show message
-                showNotification(`Quotation is ${normalizedStatus}. Editing is disabled.`, 'warning');
+        // Function to calculate time elapsed
+        function getTimeElapsed(createdDateStr) {
+            if (!createdDateStr) return "N/A";
+            
+            const createdDate = new Date(createdDateStr);
+            const now = new Date();
+            const diffMs = now - createdDate;
+            
+            // Calculate time differences
+            const diffSeconds = Math.floor(diffMs / 1000);
+            const diffMinutes = Math.floor(diffSeconds / 60);
+            const diffHours = Math.floor(diffMinutes / 60);
+            const diffDays = Math.floor(diffHours / 24);
+            const diffWeeks = Math.floor(diffDays / 7);
+            const diffMonths = Math.floor(diffDays / 30);
+            const diffYears = Math.floor(diffDays / 365);
+            
+            // Return appropriate time string
+            if (diffYears > 0) {
+                return `${diffYears}y`;
+            } else if (diffMonths > 0) {
+                return `${diffMonths}mo`;
+            } else if (diffWeeks > 0) {
+                return `${diffWeeks}w`;
+            } else if (diffDays > 0) {
+                return `${diffDays}d`;
+            } else if (diffHours > 0) {
+                return `${diffHours}h`;
+            } else if (diffMinutes > 0) {
+                return `${diffMinutes}m`;
+            } else {
+                return `${diffSeconds}s`;
             }
+        }
+        
+        // Function to update all time elapsed displays
+        function updateTimeElapsedDisplays() {
+            document.querySelectorAll('.time-elapsed[data-created]').forEach(element => {
+                const createdDate = element.getAttribute('data-created');
+                if (createdDate) {
+                    const elapsedText = getTimeElapsed(createdDate);
+                    const elapsedSpan = element.querySelector('.elapsed-text');
+                    if (elapsedSpan) {
+                        elapsedSpan.textContent = elapsedText;
+                    }
+                    
+                    // Add color coding based on age
+                    const createdDateObj = new Date(createdDate);
+                    const now = new Date();
+                    const diffDays = Math.floor((now - createdDateObj) / (1000 * 60 * 60 * 24));
+                    
+                    // Remove existing color classes
+                    element.classList.remove('recent', 'older', 'oldest');
+                    
+                    // Add appropriate color class
+                    if (diffDays < 1) {
+                        element.classList.add('recent');
+                        element.style.color = '#28a745'; // Green for today
+                    } else if (diffDays < 7) {
+                        element.classList.add('older');
+                        element.style.color = '#ff9800'; // Orange for this week
+                    } else {
+                        element.classList.add('oldest');
+                        element.style.color = '#dc3545'; // Red for older
+                    }
+                }
+            });
+        }
+        
+        // Function to format date for display
+        function formatDateDisplay(dateStr) {
+            if (!dateStr) return "N/A";
+            
+            const date = new Date(dateStr);
+            const options = { 
+                day: '2-digit', 
+                month: 'short', 
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            
+            return date.toLocaleDateString('en-US', options);
         }
         
         // Function to handle lead selection from directory
@@ -1208,7 +1363,8 @@
                 name: leadElement.getAttribute('data-name'),
                 phone: leadElement.getAttribute('data-phone'),
                 ticket: leadElement.getAttribute('data-ticket'),
-                priority: leadElement.getAttribute('data-priority')
+                priority: leadElement.getAttribute('data-priority'),
+                created: leadElement.getAttribute('data-created')
             };
             
             // Update lead selection info display
@@ -1217,8 +1373,30 @@
             document.getElementById('selected-lead-ticket').textContent = selectedLead.ticket;
             document.getElementById('selected-lead-priority').textContent = selectedLead.priority;
             
+            // Format and display created date
+            if (selectedLead.created) {
+                const formattedDate = formatDateDisplay(selectedLead.created);
+                document.getElementById('selected-lead-created').textContent = formattedDate;
+            } else {
+                document.getElementById('selected-lead-created').textContent = 'N/A';
+            }
+            
             // Show notification
             showNotification(`Lead changed to "${selectedLead.name}"`, 'info');
+        }
+        
+        // Check if quotation is editable based on status
+        function checkEditableStatus() {
+            const nonEditableStatuses = ['Approved', 'Converted', 'Cancelled'];
+            if (nonEditableStatuses.includes(normalizedStatus)) {
+                // Disable form elements
+                document.getElementById('formBody').classList.add('form-disabled');
+                document.getElementById('saveBtn').disabled = true;
+                document.getElementById('saveBtn').innerHTML = '<i class="fas fa-lock"></i> Read Only';
+                
+                // Show message
+                showNotification(`Quotation is ${normalizedStatus}. Editing is disabled.`, 'warning');
+            }
         }
         
         // Function to filter leads based on search and priority
@@ -1455,21 +1633,7 @@
             const $name = $('<div class="item-name">').text(itemData.name);
             const $details = $('<div class="item-details">');
             
-            // Add section badge
-            if (itemData.section) {
-                $details.append($('<span class="section-tag">').text(itemData.section));
-            }
             
-            // Add unit
-            $details.append($('<span>').text(` ${itemData.unit} | `));
-            
-            // Add department if available
-            if (itemData.department && itemData.department !== 'N/A') {
-                $details.append($('<span>').text(`Dept: ${itemData.department} | `));
-            }
-            
-            // Add MRP
-            $details.append($('<span>').text(`MRP: ₹${itemData.mrp.toFixed(2)}`));
             
             $container.append($name);
             $container.append($details);
@@ -1888,7 +2052,8 @@
                 name: '{{ quotation.lead.ownerName|escapejs }}',
                 phone: '{{ quotation.lead.phoneNo|escapejs }}',
                 ticket: '{{ quotation.lead.ticket_number|escapejs }}',
-                priority: '{{ quotation.lead.priority|escapejs }}'
+                priority: '{{ quotation.lead.priority|escapejs }}',
+                created: '{{ quotation.lead.created_at|date:"c"|default:"" }}'
             };
             
             // Highlight the current lead in directory
@@ -1927,6 +2092,12 @@
                     }, 100);
                 }
             });
+            
+            // Initialize time elapsed displays
+            updateTimeElapsedDisplays();
+            
+            // Update time elapsed every minute
+            setInterval(updateTimeElapsedDisplays, 60000);
             
             // Check if quotation is editable
             checkEditableStatus();

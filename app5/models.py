@@ -536,6 +536,14 @@ class Lead(models.Model):
         default='Business',   # Business or Individual
         help_text="Determines which input group to show"
     )
+    created_by = models.ForeignKey(
+        'app1.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_leads',
+        help_text="User who created this lead"
+    )
 
     # ----------------------------
     # COMMON FIELDS
