@@ -4750,7 +4750,73 @@ import logging
 logger = logging.getLogger(__name__)
 
 def lead_edit(request, lead_id):
-    lead = get_object_or_404(Lead, id=lead_id)
+    """
+    View to edit a specific lead with user-level based access control.
+    - Regular users (3level/5level) can only edit leads created by or assigned to them
+    - Admin users (normal/admin_level/4level) can edit any lead
+    - Superusers can edit any lead
+    """
+    
+    # ========== USER AUTHENTICATION & ACCESS CONTROL ==========
+    current_user = None
+    
+    # Determine current user and check permissions
+    if request.user.is_superuser:
+        # Superuser can edit any lead
+        current_user = User.objects.filter(user_level='admin_level').first()
+        lead = get_object_or_404(Lead, id=lead_id)
+        logger.info(f"Superuser accessing lead {lead_id}")
+        
+    elif request.session.get('custom_user_id'):
+        # Get the custom user from session
+        current_user = User.objects.get(id=request.session['custom_user_id'])
+        
+        # CRITICAL: Check if user has permission to edit this lead
+        if current_user.user_level in ['3level', '5level']:
+            # Regular users can ONLY edit leads created by them or assigned to them
+            from django.db.models import Q
+            
+            # First check if the lead exists at all
+            try:
+                lead_exists = Lead.objects.get(id=lead_id)
+                logger.info(f"Lead {lead_id} exists. created_by: {lead_exists.created_by}, assigned_to_name: {lead_exists.assigned_to_name}")
+                logger.info(f"Current user: {current_user.name} (ID: {current_user.id}), Level: {current_user.user_level}")
+            except Lead.DoesNotExist:
+                logger.error(f"Lead {lead_id} does not exist in database")
+                messages.error(request, f"Lead #{lead_id} not found.")
+                return redirect('app5:lead_report')
+            
+            # Build filter condition
+            user_condition = Q(created_by=current_user)
+            
+            # Also check if assigned to them by name
+            if current_user.name:
+                user_condition |= Q(assigned_to_name__iexact=current_user.name)
+                logger.info(f"Checking if lead is assigned to: {current_user.name}")
+            
+            # Try to get the lead with permission check
+            try:
+                lead = Lead.objects.get(user_condition, id=lead_id)
+                logger.info(f"✅ User {current_user.name} granted access to lead {lead_id}")
+            except Lead.DoesNotExist:
+                # Lead exists but user doesn't have permission
+                logger.warning(f"❌ User {current_user.name} (ID: {current_user.id}) denied access to lead {lead_id}")
+                logger.warning(f"   Lead created_by_id: {lead_exists.created_by_id}, assigned_to_name: '{lead_exists.assigned_to_name}'")
+                
+                messages.error(
+                    request, 
+                    f"You don't have permission to access this lead. "
+                    f"This lead is not created by you or assigned to you."
+                )
+                return redirect('app5:lead_report')
+        else:
+            # Admin users can edit any lead
+            lead = get_object_or_404(Lead, id=lead_id)
+            logger.info(f"Admin user {current_user.name} accessing lead {lead_id}")
+    else:
+        # No user logged in, redirect to login
+        messages.error(request, "Please log in to access this page.")
+        return redirect('login')
     
     # ========== GET QUOTATION FOR THIS LEAD ==========
     quotation = None
@@ -5074,8 +5140,30 @@ def lead_edit(request, lead_id):
     except:
         references = []
     
-    # Get active leads
-    active_leads_data = Lead.objects.filter(status='Active').order_by('-created_at')[:50]
+    # ========== FILTER ACTIVE LEADS BY USER LEVEL ==========
+    # Regular users only see leads created by them or assigned to them in the directory
+    # Admin users see all leads
+    if current_user and current_user.user_level in ['3level', '5level']:
+        # Regular users: Only leads created by them or assigned to them
+        from django.db.models import Q
+        
+        user_filter = Q(created_by=current_user)
+        
+        # Also include leads assigned to them by name
+        if current_user.name:
+            user_filter |= Q(assigned_to_name__iexact=current_user.name)
+        
+        active_leads_queryset = Lead.objects.filter(
+            user_filter,
+            status='Active'
+        )
+        logger.info(f"Regular user {current_user.name} can see {active_leads_queryset.count()} active leads")
+    else:
+        # Admin users and superusers: All leads
+        active_leads_queryset = Lead.objects.filter(status='Active')
+        logger.info(f"Admin user can see {active_leads_queryset.count()} active leads")
+    
+    active_leads_data = active_leads_queryset.order_by('-created_at')[:50]
 
     # ========== GET CURRENT SELECTED VALUES FOR DROPDOWNS ==========
     
@@ -5280,6 +5368,7 @@ def lead_edit(request, lead_id):
         'api_data_count': api_data_count,
         'items_by_section': items_by_section,
         'requirements_data': requirements_data,
+        'current_user': current_user,  # Add current user to context
     }
     
     return render(request, "lead_form_edit.html", context)
