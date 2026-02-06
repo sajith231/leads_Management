@@ -4067,59 +4067,59 @@ def get_user_filtered_leads(user, queryset=None):
     """
     Filter leads based on user permissions.
     """
+
+    from django.db.models import Q
     from .models import Lead
     import logging
+
     logger = logging.getLogger(__name__)
-    
+
     if queryset is None:
         queryset = Lead.objects.all()
-    
+
     if not user:
-        logger.warning("No user provided - returning empty queryset")
         return queryset.none()
-    
-    # ✅ ADMIN CHECK
+
+    # ✅ ADMIN / SUPER ADMIN CHECK
     is_admin = False
-    
+
+    # Django superuser or staff → Full access
     if getattr(user, 'is_superuser', False):
         is_admin = True
-        logger.info(f"User {user} is Django superuser - showing ALL leads")
+
     elif getattr(user, 'is_staff', False):
         is_admin = True
-        logger.info(f"User {user} is staff - showing ALL leads")
+
     elif hasattr(user, 'user_level'):
-        user_level = str(getattr(user, 'user_level', '')).strip()
-        
+        user_level = str(user.user_level).strip()
+
         admin_levels = [
-            'admin_level',
-            'normal',
-            '4level',
-            '5level',
+            'admin_level',   # Super Admin
+            'normal',        # Admin
+            '4level',        # Senior Admin
         ]
-        
+
         if user_level in admin_levels:
             is_admin = True
-            logger.info(f"User {user} has admin level '{user_level}' - showing ALL leads")
-    
+
+    # ✅ ADMIN → SHOW ALL LEADS
     if is_admin:
-        logger.info(f"✅ ADMIN USER: {user} - Returning ALL {queryset.count()} leads")
+        logger.info(f"✅ ADMIN USER {user} → Showing ALL leads")
         return queryset
-    
-    user_name = getattr(user, 'name', None) or \
-                getattr(user, 'username', None) or \
-                str(user)
-    
-    logger.info(f"👤 REGULAR USER: {user_name} - Filtering leads...")
-    
+
+    # ✅ REGULAR USER → FILTER LEADS
+    user_name = getattr(user, 'name', None) or getattr(user, 'username', None) or str(user)
+
     filtered_queryset = queryset.filter(
-        Q(created_by=user) | 
-        Q(assigned_to_name=user_name) |
-        Q(marketedBy=user_name)
+        Q(created_by=user) |
+        Q(assigned_to_name__iexact=user_name) |
+        Q(marketedBy__iexact=user_name)
     ).distinct()
-    
-    logger.info(f"✅ REGULAR USER: {user_name} - Showing {filtered_queryset.count()} filtered leads")
-    
+
+    logger.info(f"✅ REGULAR USER {user_name} → Showing filtered leads")
+
     return filtered_queryset
+
 
 
 def get_items_by_section():
@@ -7213,9 +7213,27 @@ def quotation_form_view(request):
     """
     Display saved quotations in quotation_form.html
     Shows all quotations with their items
+    
+    LEAD FILTERING BY USER PERMISSIONS:
+    - Admin users (user_level='normal', 'admin_level', '4level'): See ALL active leads
+    - Regular users (user_level='3level', '5level'): See ONLY their created & assigned active leads
     """
     try:
         logger.info("🔍 Entering quotation_form_view")
+        
+        # Get current user information
+        current_user = None
+        current_user_name = None
+        user_level = None
+        
+        if request.session.get('custom_user_id'):
+            try:
+                current_user = User.objects.get(id=request.session['custom_user_id'])
+                current_user_name = getattr(current_user, 'name', None)
+                user_level = getattr(current_user, 'user_level', None)
+                logger.info(f"👤 Current user: {current_user_name} (Level: {user_level})")
+            except User.DoesNotExist:
+                logger.warning("⚠️ User not found in session")
         
         # Get all quotations with related data - FIXED JOIN
         quotations = Quotation.objects.select_related(
@@ -7240,13 +7258,79 @@ def quotation_form_view(request):
             lead_info = f"{q.lead.ownerName}" if q.lead else "No Lead"
             logger.info(f"  {i+1}. {q.quotation_number} - {lead_info} - ₹{q.grand_total} - Status: {q.status}")
         
-        # Get active leads for the directory
+        # ========================================
+        # LEAD FILTERING BASED ON USER PERMISSIONS
+        # ========================================
         active_leads = []
         try:
-            leads_qs = Lead.objects.filter(
-                status__iexact='Active'
-            ).order_by('-created_at')[:50]
+            # Determine if user should see all leads or only their own
+            # Admin levels: 'normal' (Admin), 'admin_level' (Super Admin), '4level' (Superuser)
+            # User levels: '3level' (User), '5level' (Branch User)
+            is_admin = user_level in ['normal', 'admin_level', '4level']
             
+            if is_admin:
+                # ========================================
+                # ADMIN USERS: See ALL active leads
+                # ========================================
+                # Super admin sees ALL user-created active leads (no limit)
+                # Other admins see last 50 for performance
+                if user_level == 'admin_level':  # Super Admin
+                    leads_qs = Lead.objects.filter(
+                        status__iexact='Active'
+                    ).order_by('-created_at')
+                    logger.info(f"🔓 Super Admin ({user_level}) - showing ALL active leads (no limit)")
+                else:  # Normal admin or superuser
+                    leads_qs = Lead.objects.filter(
+                        status__iexact='Active'
+                    ).order_by('-created_at')[:50]
+                    logger.info(f"🔓 Admin user ({user_level}) - showing last 50 active leads")
+                
+            else:
+                # ========================================
+                # REGULAR USERS: See only CREATED or ASSIGNED leads
+                # ========================================
+                # Check if Lead model has 'created_by' and 'assignedTo' fields
+                lead_fields = [f.name for f in Lead._meta.get_fields()]
+                logger.info(f"📋 Available Lead fields: {lead_fields}")
+                
+                from django.db.models import Q
+                filters = Q(status__iexact='Active')
+                
+                # Add filters for created_by and assigned leads
+                user_filters = Q()
+                
+                # Option 1: Check for created_by field (ForeignKey)
+                if 'created_by' in lead_fields:
+                    user_filters |= Q(created_by=current_user)
+                    logger.info(f"🔍 Added filter: created_by={current_user}")
+                
+                # Option 2: Check for marketedBy field (CharField - commonly used for assigned user)
+                if 'marketedBy' in lead_fields and current_user_name:
+                    user_filters |= Q(marketedBy=current_user_name)
+                    logger.info(f"🔍 Added filter: marketedBy={current_user_name}")
+                
+                # Option 3: Check for assignedTo field (CharField)
+                if 'assignedTo' in lead_fields and current_user_name:
+                    user_filters |= Q(assignedTo=current_user_name)
+                    logger.info(f"🔍 Added filter: assignedTo={current_user_name}")
+                
+                # Option 4: Check for assigned_user field (ForeignKey - alternative naming)
+                if 'assigned_user' in lead_fields:
+                    user_filters |= Q(assigned_user=current_user)
+                    logger.info(f"🔍 Added filter: assigned_user={current_user}")
+                
+                # Combine filters
+                if user_filters:
+                    filters &= user_filters
+                    leads_qs = Lead.objects.filter(filters).order_by('-created_at')[:50]
+                    logger.info(f"🔒 Regular user ({user_level}) - showing only created/assigned leads")
+                else:
+                    # If no matching fields found, show no leads for safety
+                    leads_qs = Lead.objects.none()
+                    logger.warning(f"⚠️ No user-matching fields found in Lead model. Available fields: {lead_fields}")
+                    logger.warning(f"⚠️ User {current_user_name} will see NO leads. Please check your Lead model configuration.")
+            
+            # Build the active leads list
             for lead in leads_qs:
                 active_leads.append({
                     'id': lead.id,
@@ -7262,10 +7346,12 @@ def quotation_form_view(request):
                     'created_at': lead.created_at if hasattr(lead, 'created_at') else lead.date,
                 })
             
-            logger.info(f"📋 Loaded {len(active_leads)} active leads")
+            logger.info(f"📋 Loaded {len(active_leads)} active leads for user {current_user_name} (Level: {user_level})")
             
         except Exception as e:
             logger.error(f"❌ Error loading leads: {e}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
             active_leads = []
         
         # Get active users
@@ -7302,9 +7388,11 @@ def quotation_form_view(request):
             'departments': departments,  # ✅ ADDED: Departments for branch selection
             'total_quotations': total_quotations,
             'leads_count': len(active_leads),
+            'current_user_level': user_level,  # Add user level to context for debugging
+            'current_user_name': current_user_name,  # Add user name to context
         }
         
-        logger.info(f"✅ Context prepared with {total_quotations} quotations and {departments.count()} departments")
+        logger.info(f"✅ Context prepared with {total_quotations} quotations, {len(active_leads)} leads, and {departments.count()} departments")
         
         return render(request, 'quotation_form.html', context)
         
@@ -7320,15 +7408,10 @@ def quotation_form_view(request):
             'departments': [],  # ✅ ADDED: Empty departments list
             'total_quotations': 0,
             'leads_count': 0,
-            'error_message': f'Error loading quotations: {str(e)}'
+            'error_message': str(e),
         })
 
-# ============================================================================
-# QUOTATION SUBMIT - Save quotation to database
-# ============================================================================
 
-# Fixed quotation_submit function for views.py
-# This replaces the existing quotation_submit function in your views.py file
 
 import json
 import logging
@@ -8255,53 +8338,82 @@ def update_quotation(request, pk):
 
 
 
+from django.shortcuts import render, get_object_or_404
+from django.utils import timezone
+from datetime import timedelta                          # ✅ fixed: was timezone.timedelta
+
+
+# ============================================================
+# MAIN VIEW – renders quotation_download.html
+# ============================================================
+
+# ============================================================================
+# SAFE VERSION - Works WITHOUT department field in model
+# Use this until you add the department field and run migrations
+# ============================================================================
+
 def download_quotation(request, quotation_id):
+    """
+    Display quotation with branch logo and details.
+    SAFE VERSION: Works even if department field doesn't exist yet.
+    """
+    from .models import Quotation
+    
     quotation = get_object_or_404(Quotation, id=quotation_id)
     
-    # Get branch/department ID from request parameter
-    branch_id = request.GET.get('branch_id') or request.GET.get('department_id')
+    # ✅ Get the lead associated with the quotation
+    lead = getattr(quotation, 'lead', None)
+    
+    # ✅ Calculate client address based on lead data (like in lead_report.html)
+    client_address = ''
+    if lead:
+        # Same logic as in your lead_report.html template
+        if getattr(lead, 'customerType', '') == 'Business':
+            client_address = getattr(lead, 'place', '')
+        else:
+            client_address = getattr(lead, 'individualPlace', '')
+    
+    # ✅ SAFE: Check if department field exists before accessing it
+    branch_id = None
+    
+    # Try to get department_id safely
+    if hasattr(quotation, 'department_id') and quotation.department_id:
+        branch_id = str(quotation.department_id)
+        logger.info(f"✅ Using stored branch from quotation: {branch_id}")
+    else:
+        # No department field or not set - try URL parameter
+        branch_id = request.GET.get('branch_id') or request.GET.get('department_id')
+        if branch_id:
+            logger.info(f"📌 Using branch from URL parameter: {branch_id}")
+        else:
+            logger.info("ℹ️ No branch specified, will use default")
+    
+    # ✅ Load the branch/department data
     branch = None
     
-    # Try to get department from purchase_order app
     try:
         from purchase_order.models import Department
         
         if branch_id and branch_id.isdigit():
-            # Try to get the selected department
             try:
                 department = Department.objects.get(id=int(branch_id), is_active=True)
-                branch = {
-                    'id': department.id,
-                    'name': department.name,
-                    'code': f"DEPT-{department.id:03d}",
-                    'address': department.address or '',
-                    'city': department.city or '',
-                    'state': department.state or '',
-                    'pincode': department.pincode or '',
-                    'contact_number': department.contact_number or '',
-                    'alternate_number': department.alternate_number or '',
-                    'email': department.email or '',
-                    'gst_number': department.gst_number or '',
-                    # ✅ FIXED: Properly handle logo URL
-                    'logo_url': department.logo.url if department.logo else '',
-                    'has_logo': bool(department.logo),
-                    'type': 'department',
-                }
+                branch = _dept_to_branch(department)
+                logger.info(f"✅ Loaded branch: {branch['name']} (ID: {branch['id']})")
             except Department.DoesNotExist:
+                logger.warning(f"⚠️ Department {branch_id} not found, using default")
                 branch = get_default_department()
         else:
+            logger.info("ℹ️ No branch ID, using default department")
             branch = get_default_department()
-            
+    
     except ImportError:
+        logger.warning("⚠️ Department model not available, using fallback")
         branch = get_fallback_branch(branch_id)
     
-    # Get all items for this quotation
+    # ✅ Calculate items and totals
     items = quotation.items.all()
-    
-    # Calculate totals (existing code)
     subtotal = 0
     total_tax = 0
-    grand_total = 0
     
     for item in items:
         sale_price = getattr(item, 'sales_price', 0) or 0
@@ -8309,100 +8421,136 @@ def download_quotation(request, quotation_id):
         item_total = quantity * sale_price
         subtotal += item_total
         
-        if hasattr(item, 'tax_percentage'):
-            tax_percentage = getattr(item, 'tax_percentage', 0) or 0
-            item_tax = (item_total * tax_percentage) / 100
-            total_tax += item_tax
+        tax_pct = getattr(item, 'tax_percentage', 0) or 0
+        total_tax += (item_total * tax_pct) / 100
     
     discount_amount = getattr(quotation, 'discount_amount', 0) or 0
     shipping_charges = getattr(quotation, 'shipping_charges', 0) or 0
     grand_total = subtotal + total_tax - discount_amount + shipping_charges
     
-    def format_currency(value):
+    def fmt(value):
         return f"₹{value:,.2f}"
     
-    # Build complete address string
+    # ✅ Build display strings for branch
     if branch:
-        address_parts = []
-        if branch.get('address'):
-            address_parts.append(branch['address'])
-        if branch.get('city'):
-            address_parts.append(branch['city'])
-        if branch.get('state'):
-            address_parts.append(branch['state'])
+        # Full address display
+        parts = []
+        for key in ('address', 'city', 'state'):
+            if branch.get(key):
+                parts.append(branch[key])
         if branch.get('pincode'):
-            address_parts.append(f"PIN: {branch['pincode']}")
+            parts.append(f"PIN: {branch['pincode']}")
+        branch['full_address_display'] = ', '.join(parts)
         
-        branch['full_address_display'] = ', '.join(address_parts)
-        
-        contact_info = []
+        # Contact display
+        cp = []
         if branch.get('contact_number'):
-            contact_info.append(f"📞 {branch['contact_number']}")
+            cp.append(branch['contact_number'])
         if branch.get('alternate_number'):
-            contact_info.append(f" / {branch['alternate_number']}")
-        if branch.get('email'):
-            contact_info.append(f"✉️ {branch['email']}")
-        if branch.get('gst_number'):
-            contact_info.append(f"📋 GST: {branch['gst_number']}")
-        
-        branch['contact_info'] = ' | '.join(contact_info)
+            cp.append(branch['alternate_number'])
+        branch['contact_display'] = ' / '.join(cp) if cp else ''
     
+    # ✅ Get client info from lead if available
+    client_name = getattr(quotation, 'client_name', '') or ''
+    client_phone = getattr(quotation, 'client_phone', '') or ''
+    client_email = getattr(quotation, 'client_email', '') or ''
+    
+    # Override with lead data if lead exists and quotation fields are empty
+    if lead and not client_name:
+        client_name = getattr(lead, 'ownerName', '') or ''
+    
+    if lead and not client_phone:
+        client_phone = getattr(lead, 'phoneNo', '') or ''
+    
+    if lead and not client_email:
+        client_email = getattr(lead, 'email', '') or ''
+    
+    # ✅ Build template context
     context = {
+        # Core objects
         'quotation': quotation,
         'branch': branch,
         'items': items,
-        'subtotal': format_currency(subtotal),
+        'lead_data': lead,  # Pass the lead object to template
+        
+        # Money values
+        'subtotal': fmt(subtotal),
         'subtotal_raw': subtotal,
-        'total_tax': format_currency(total_tax),
+        'total_tax': fmt(total_tax),
         'total_tax_raw': total_tax,
-        'discount_amount': format_currency(discount_amount),
+        'discount_amount': fmt(discount_amount),
         'discount_amount_raw': discount_amount,
-        'shipping_charges': format_currency(shipping_charges) if shipping_charges > 0 else None,
+        'shipping_charges': fmt(shipping_charges) if shipping_charges > 0 else None,
         'shipping_charges_raw': shipping_charges,
-        'grand_total': format_currency(grand_total),
+        'grand_total': fmt(grand_total),
         'grand_total_raw': grand_total,
+        
+        # Metadata
         'item_count': items.count(),
         'today': timezone.now().date(),
-        'valid_until': getattr(quotation, 'valid_until', None) or (timezone.now() + timezone.timedelta(days=30)).date(),
-        'quotation_number': getattr(quotation, 'quotation_number', f"QT-{quotation.id:06d}"),
-        'client_name': getattr(quotation, 'client_name', ''),
-        'client_email': getattr(quotation, 'client_email', ''),
-        'client_phone': getattr(quotation, 'client_phone', ''),
-        'client_address': getattr(quotation, 'client_address', ''),
+        'valid_until': getattr(quotation, 'valid_until', None) or (timezone.now() + timedelta(days=30)).date(),
+        'quotation_number': getattr(quotation, 'quotation_number', None) or f"QT-{quotation.id:06d}",
+        'created_date': getattr(quotation, 'created_at', None) or getattr(quotation, 'quotation_date', None) or timezone.now(),
+        'created_place': branch.get('city', '') if branch else '',
+        
+        # Client info
+        'client_name': client_name,
+        'client_email': client_email,
+        'client_phone': client_phone,
+        'client_address': client_address,  # Now correctly calculated from lead
+        
+        # ✅ Company/Branch info (used by template)
         'company_name': branch['name'] if branch else 'Our Company',
         'company_address': branch.get('full_address_display', '') if branch else '',
-        'company_contact': branch.get('contact_info', '') if branch else '',
+        'company_contact': branch.get('contact_display', '') if branch else '',
         'company_gst': branch.get('gst_number', '') if branch else '',
+        'company_email': branch.get('email', '') if branch else '',
+        'company_logo_url': branch.get('logo_url', '') if branch else '',
+        'company_has_logo': branch.get('has_logo', False) if branch else False,
     }
     
     return render(request, 'quotation_download.html', context)
 
 
+
+
+def _dept_to_branch(department):
+    """Convert Department ORM instance to branch context dict."""
+    logo_url = ''
+    has_logo = False
+    
+    if department.logo:
+        try:
+            logo_url = department.logo.url
+            has_logo = True
+        except:
+            pass
+    
+    return {
+        'id': department.id,
+        'name': department.name,
+        'code': f"DEPT-{department.id:03d}",
+        'address': department.address or '',
+        'city': department.city or '',
+        'state': department.state or '',
+        'pincode': department.pincode or '',
+        'contact_number': department.contact_number or '',
+        'alternate_number': department.alternate_number or '',
+        'email': department.email or '',
+        'gst_number': department.gst_number or '',
+        'logo_url': logo_url,
+        'has_logo': has_logo,
+        'type': 'department',
+    }
+
+
 def get_default_department():
-    """Get the default/fallback department from database"""
+    """Get first active department as default."""
     try:
         from purchase_order.models import Department
-        
-        default_dept = Department.objects.filter(is_active=True).first()
-        
-        if default_dept:
-            return {
-                'id': default_dept.id,
-                'name': default_dept.name,
-                'code': f"DEPT-{default_dept.id:03d}",
-                'address': default_dept.address or '',
-                'city': default_dept.city or '',
-                'state': default_dept.state or '',
-                'pincode': default_dept.pincode or '',
-                'contact_number': default_dept.contact_number or '',
-                'alternate_number': default_dept.alternate_number or '',
-                'email': default_dept.email or '',
-                'gst_number': default_dept.gst_number or '',
-                # ✅ FIXED: Properly handle logo URL
-                'logo_url': default_dept.logo.url if default_dept.logo else '',
-                'has_logo': bool(default_dept.logo),
-                'type': 'department',
-            }
+        dept = Department.objects.filter(is_active=True).first()
+        if dept:
+            return _dept_to_branch(dept)
     except (ImportError, AttributeError):
         pass
     
@@ -8412,7 +8560,9 @@ def get_default_department():
         'address': '123 Business Street',
         'city': 'City',
         'state': 'State',
+        'pincode': '',
         'contact_number': '+91 1234567890',
+        'alternate_number': '',
         'email': 'info@company.com',
         'gst_number': 'GSTINXXXXXXX',
         'logo_url': '',
@@ -8422,192 +8572,195 @@ def get_default_department():
 
 
 def get_fallback_branch(branch_id=None):
-    """Fallback branch data when purchase_order app is not available"""
-    BRANCHES_DATA = {
+    """Hard-coded branch data – used only when the purchase_order app is not installed."""
+    BRANCHES = {
         1: {
-            'name': 'Main Branch',
-            'code': 'BR-001',
-            'address': '123 Business Street, City, State 12345',
-            'contact_number': '+1 (123) 456-7890',
-            'email': 'main@company.com',
-            'gst_number': 'GSTINXXXXXXX',
-            'type': 'fallback',
+            'name':             'Main Branch',
+            'code':             'BR-001',
+            'address':          '123 Business Street',
+            'city':             'City',
+            'state':            'State',
+            'pincode':          '12345',
+            'contact_number':   '+1 (123) 456-7890',
+            'alternate_number': '',
+            'email':            'main@company.com',
+            'gst_number':       'GSTINXXXXXXX',
+            'logo_url':         '',              # ✅
+            'has_logo':         False,           # ✅
+            'type':             'fallback',
         },
         2: {
-            'name': 'North Branch',
-            'code': 'BR-002',
-            'address': '456 North Avenue, Industrial Zone, Delhi 110001',
-            'contact_number': '+91 9876543210',
-            'email': 'north@company.com',
-            'gst_number': 'GSTINXXXXXXX',
-            'type': 'fallback',
+            'name':             'North Branch',
+            'code':             'BR-002',
+            'address':          '456 North Avenue',
+            'city':             'Industrial Zone',
+            'state':            'Delhi',
+            'pincode':          '110001',
+            'contact_number':   '+91 9876543210',
+            'alternate_number': '',
+            'email':            'north@company.com',
+            'gst_number':       'GSTINXXXXXXX',
+            'logo_url':         '',              # ✅
+            'has_logo':         False,           # ✅
+            'type':             'fallback',
         },
         3: {
-            'name': 'South Branch',
-            'code': 'BR-003',
-            'address': '789 South Road, Commercial Area, Bangalore 560001',
-            'contact_number': '+91 8765432109',
-            'email': 'south@company.com',
-            'gst_number': 'GSTINXXXXXXX',
-            'type': 'fallback',
+            'name':             'South Branch',
+            'code':             'BR-003',
+            'address':          '789 South Road',
+            'city':             'Commercial Area',
+            'state':            'Bangalore',
+            'pincode':          '560001',
+            'contact_number':   '+91 8765432109',
+            'alternate_number': '',
+            'email':            'south@company.com',
+            'gst_number':       'GSTINXXXXXXX',
+            'logo_url':         '',              # ✅
+            'has_logo':         False,           # ✅
+            'type':             'fallback',
         },
     }
-    
-    if branch_id and branch_id.isdigit() and int(branch_id) in BRANCHES_DATA:
-        return BRANCHES_DATA[int(branch_id)]
-    
-    # Default to main branch
-    return BRANCHES_DATA.get(1)
 
+    if branch_id and branch_id.isdigit() and int(branch_id) in BRANCHES:
+        return BRANCHES[int(branch_id)]
+    return BRANCHES[1]
+
+
+# ============================================================
+# OPTIONAL – reportlab binary PDF (kept as-is, bugs fixed)
+# ============================================================
 
 def generate_quotation_pdf(context):
-    """Generate PDF version of the quotation"""
+    """Return an HttpResponse containing the PDF bytes."""
     from django.http import HttpResponse
     from reportlab.pdfgen import canvas
     from reportlab.lib.pagesizes import A4
-    from reportlab.lib.units import inch
     from io import BytesIO
-    
-    # Create a file-like buffer to receive PDF data
+
     buffer = BytesIO()
-    
-    # Create the PDF object
-    p = canvas.Canvas(buffer, pagesize=A4)
+    p      = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
-    
-    # Set up document
-    p.setTitle(f"Quotation {context.get('quotation_number', '')}")
-    
-    # Header
+
+    quotation_number = context.get('quotation_number', '')
+    p.setTitle(f"Quotation {quotation_number}")
+
+    # ── header ──
+    y = height - 50
     p.setFont("Helvetica-Bold", 16)
-    p.drawString(50, height - 50, "QUOTATION")
+    p.drawString(50, y, "QUOTATION")
+
+    y -= 20
     p.setFont("Helvetica", 10)
-    p.drawString(50, height - 70, f"Quotation #: {context.get('quotation_number', '')}")
-    p.drawString(50, height - 85, f"Date: {context.get('today', '').strftime('%d/%m/%Y')}")
-    
-    # Company/Branch Info
-    if context.get('branch'):
+    p.drawString(50, y, f"Quotation #: {quotation_number}")
+
+    today = context.get('today')
+    y -= 15
+    p.drawString(50, y, f"Date: {today.strftime('%d/%m/%Y') if today else ''}")
+
+    # ── branch info block ──
+    branch = context.get('branch')
+    if branch:
+        y -= 35
         p.setFont("Helvetica-Bold", 12)
-        p.drawString(50, height - 120, f"{context['branch'].get('name', '')}")
+        p.drawString(50, y, branch.get('name', ''))
+        y -= 18
         p.setFont("Helvetica", 10)
-        
-        y = height - 135
-        if context['branch'].get('full_address_display'):
-            p.drawString(50, y, context['branch']['full_address_display'])
-            y -= 15
-        if context['branch'].get('contact_number'):
-            p.drawString(50, y, f"Phone: {context['branch']['contact_number']}")
-            y -= 15
-        if context['branch'].get('email'):
-            p.drawString(50, y, f"Email: {context['branch']['email']}")
-            y -= 15
-        if context['branch'].get('gst_number'):
-            p.drawString(50, y, f"GST: {context['branch']['gst_number']}")
-    
-    # Client Info
+        for label, key in [("Address", 'full_address_display'),
+                           ("Phone",   'contact_number'),
+                           ("Email",   'email'),
+                           ("GST",     'gst_number')]:
+            val = branch.get(key, '')
+            if val:
+                p.drawString(50, y, f"{label}: {val}")
+                y -= 15
+
+    # ── bill-to ──
     p.setFont("Helvetica-Bold", 12)
-    p.drawString(300, height - 120, "BILL TO:")
+    p.drawString(350, height - 120, "BILL TO:")
     p.setFont("Helvetica", 10)
-    p.drawString(300, height - 135, f"{context.get('client_name', '')}")
-    
-    y = height - 150
-    if context.get('client_address'):
-        p.drawString(300, y, context['client_address'])
-        y -= 15
-    if context.get('client_phone'):
-        p.drawString(300, y, f"Phone: {context['client_phone']}")
-        y -= 15
-    if context.get('client_email'):
-        p.drawString(300, y, f"Email: {context['client_email']}")
-    
-    # Table Header
+    p.drawString(350, height - 138, context.get('client_name', ''))
+
+    y2 = height - 155
+    for val in (context.get('client_address'),
+                context.get('client_phone') and f"Phone: {context['client_phone']}",
+                context.get('client_email') and f"Email: {context['client_email']}"):
+        if val:
+            p.drawString(350, y2, val)
+            y2 -= 15
+
+    # ── items table ──
+    y_table = height - 220
     p.setFont("Helvetica-Bold", 10)
-    y_table_start = height - 220
-    
-    p.drawString(50, y_table_start, "Item")
-    p.drawString(250, y_table_start, "Quantity")
-    p.drawString(320, y_table_start, "Price")
-    p.drawString(380, y_table_start, "Tax")
-    p.drawString(450, y_table_start, "Total")
-    
-    p.line(50, y_table_start - 5, 550, y_table_start - 5)
-    
-    # Items
+    for x, lbl in [(50,"Item"),(250,"Qty"),(320,"Price"),(380,"Tax %"),(450,"Total")]:
+        p.drawString(x, y_table, lbl)
+    p.line(50, y_table - 5, 550, y_table - 5)
+
     p.setFont("Helvetica", 9)
-    y_current = y_table_start - 20
-    
-    for item in context['items']:
-        item_name = getattr(item, 'name', f"Item {item.id}")
-        quantity = getattr(item, 'quantity', 1)
-        price = getattr(item, 'sales_price', 0) or 0
-        tax_percent = getattr(item, 'tax_percentage', 0) or 0
+    y_cur = y_table - 22
+
+    for item in context.get('items', []):
+        name       = getattr(item, 'item_name', '') or getattr(item, 'name', f"Item {item.id}")
+        quantity   = getattr(item, 'quantity', 1)  or 1
+        price      = getattr(item, 'sales_price', 0) or 0
+        tax_pct    = getattr(item, 'tax_percentage', 0) or 0
         item_total = quantity * price
-        item_tax = (item_total * tax_percent) / 100
-        
-        # Truncate long item names
-        if len(item_name) > 30:
-            item_name = item_name[:27] + "..."
-        
-        p.drawString(50, y_current, item_name)
-        p.drawString(250, y_current, str(quantity))
-        p.drawString(320, y_current, f"₹{price:,.2f}")
-        p.drawString(380, y_current, f"{tax_percent}%")
-        p.drawString(450, y_current, f"₹{item_total:,.2f}")
-        
-        y_current -= 15
-        
-        # Check for page break
-        if y_current < 100:
+
+        if len(name) > 30:
+            name = name[:27] + "…"
+
+        p.drawString(50,  y_cur, name)
+        p.drawString(250, y_cur, str(quantity))
+        p.drawString(320, y_cur, f"₹{price:,.2f}")
+        p.drawString(380, y_cur, f"{tax_pct}%")
+        p.drawString(450, y_cur, f"₹{item_total:,.2f}")
+        y_cur -= 16
+
+        if y_cur < 100:
             p.showPage()
             p.setFont("Helvetica", 9)
-            y_current = height - 50
-    
-    # Totals
-    y_totals = y_current - 30
-    
+            y_cur = height - 50
+
+    # ── totals ──
+    y_tot = y_cur - 25
     p.setFont("Helvetica-Bold", 10)
-    p.drawString(350, y_totals, "Subtotal:")
-    p.drawString(450, y_totals, context['subtotal'])
-    
-    y_totals -= 15
-    p.drawString(350, y_totals, "Tax:")
-    p.drawString(450, y_totals, context['total_tax'])
-    
+
+    for label, key in [("Subtotal:", 'subtotal'), ("Tax:", 'total_tax')]:
+        p.drawString(350, y_tot, label)
+        p.drawString(460, y_tot, context.get(key, ''))
+        y_tot -= 16
+
     if context.get('discount_amount_raw', 0) > 0:
-        y_totals -= 15
-        p.drawString(350, y_totals, "Discount:")
-        p.drawString(450, y_totals, f"-{context['discount_amount']}")
-    
+        p.drawString(350, y_tot, "Discount:")
+        p.drawString(460, y_tot, f"-{context['discount_amount']}")
+        y_tot -= 16
+
     if context.get('shipping_charges_raw', 0) > 0:
-        y_totals -= 15
-        p.drawString(350, y_totals, "Shipping:")
-        p.drawString(450, y_totals, context['shipping_charges'])
-    
-    y_totals -= 20
+        p.drawString(350, y_tot, "Shipping:")
+        p.drawString(460, y_tot, context.get('shipping_charges', ''))
+        y_tot -= 16
+
+    y_tot -= 6
     p.setFont("Helvetica-Bold", 12)
-    p.drawString(350, y_totals, "GRAND TOTAL:")
-    p.drawString(450, y_totals, context['grand_total'])
-    
-    # Footer
+    p.drawString(350, y_tot, "GRAND TOTAL:")
+    p.drawString(460, y_tot, context.get('grand_total', ''))
+
+    # ── footer ──
     p.setFont("Helvetica", 8)
     p.drawString(50, 50, "Terms & Conditions:")
     p.drawString(50, 40, "1. Prices are valid for 30 days")
     p.drawString(50, 30, "2. Payment terms: Net 30")
     p.drawString(50, 20, "3. All taxes applicable")
-    
-    # Validity
-    p.drawString(400, 30, f"Valid Until: {context.get('valid_until', '').strftime('%d/%m/%Y')}")
-    
-    # Close the PDF object cleanly
+
+    valid_until = context.get('valid_until')
+    if valid_until:
+        p.drawString(400, 30, f"Valid Until: {valid_until.strftime('%d/%m/%Y')}")
+
     p.showPage()
     p.save()
-    
-    # FileResponse with PDF content
+
     buffer.seek(0)
     response = HttpResponse(buffer, content_type='application/pdf')
-    filename = f"quotation_{context.get('quotation_number', quotation_id)}.pdf"
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    
+    response['Content-Disposition'] = f'attachment; filename="quotation_{quotation_number}.pdf"'   # ✅ fixed
     return response
 
     # app5/views.py

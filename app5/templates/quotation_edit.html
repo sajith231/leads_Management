@@ -967,8 +967,8 @@
         }
         
         .priority-low {
-            background: #44ff44;
-            color: #333;
+            background: #218b21;
+            color: #fcfafa;
         }
         
         .priority-default {
@@ -1145,9 +1145,9 @@
                                     <th width="12%">Section</th>
                                     <th width="25%">Item Description</th>
                                     <th width="8%">Qty</th>
-                                    <th width="10%">Entry Rate (₹)</th>
+                                   
                                     <th width="10%">Sales Price (₹)</th>
-                                    <th width="10%">Unit Price (₹)</th>
+                                    <th width="10%">Cost Price (₹)</th>
                                     <th width="8%">Disc (%)</th>
                                     <th width="8%">Tax (%)</th>
                                     <th width="12%">Total (₹)</th>
@@ -1172,11 +1172,9 @@
                                         <input type="hidden" class="original-item-name" value="{{ item.item.name }}">
                                     </td>
                                     <td>
-                                        <input type="number" class="item-qty" name="quantity[]" value="{{ item.quantity }}" min="0.01" step="0.01" onchange="calculateRow(this)" placeholder="Qty">
+                                        <input type="number" class="item-qty" name="quantity[]" value="{{ item.quantity }}" onchange="calculateRow(this)" placeholder="Qty">
                                     </td>
-                                    <td>
-                                        <input type="number" class="entry-rate" name="entry_rate[]" value="{{ item.entry_rate }}" step="0.01" onchange="calculateRow(this)" placeholder="0.00">
-                                    </td>
+                                    
                                     <td>
                                         <input type="number" class="sales-price" name="sales_price[]" value="{{ item.sales_price }}" step="0.01" onchange="calculateRow(this)" placeholder="0.00">
                                     </td>
@@ -1727,7 +1725,7 @@
                     </select>
                 </td>
                 <td>
-                    <input type="number" class="item-qty" name="quantity[]" value="1" min="0.01" step="0.01" onchange="calculateRow(this)" placeholder="Qty">
+                    <input type="number" class="item-qty" name="quantity[]" value="1" onchange="calculateRow(this)" placeholder="Qty">
                 </td>
                 <td>
                     <input type="number" class="entry-rate" name="entry_rate[]" value="0.00" step="0.01" onchange="calculateRow(this)" placeholder="0.00">
