@@ -253,6 +253,7 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800
 import os
 DXING_SECRET = os.getenv("WA_SECRET")
 DXING_ACCOUNT = os.getenv("WA_ACCOUNT")
+DXING_API = os.getenv("WA_API")
 
 
 if DEBUG:
