@@ -6,10 +6,11 @@ from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from app1.models import Employee, Attendance  # existing
 from .models import WorkFromHomeRequest
+import os
 
 ADMIN_NUMBERS = ["9946545535", "7593820007", "7593820005","8129191379","7306197537"]
-WA_SECRET = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-WA_ACCOUNT = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
+WA_SECRET = os.getenv("WA_SECRET")
+WA_ACCOUNT = os.getenv("WA_ACCOUNT")
 
 def send_whatsapp(to, message):
     encoded = requests.utils.quote(message)

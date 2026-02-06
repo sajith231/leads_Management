@@ -20,8 +20,8 @@ def send_whatsapp_message(recipient, message):
     """Send WhatsApp message via dxing.in API."""
     try:
         base_url = "https://app.dxing.in/api/send/whatsapp"
-        secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-        account = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
+        secret = settings.DXING_SECRET
+        account = settings.DXING_ACCOUNT
         payload = {
             "secret": secret,
             "account": account,
@@ -1380,8 +1380,8 @@ def send_whatsapp_po(request, pk):
         # WhatsApp payload
         base_url = "https://app.dxing.in/api/send/whatsapp"
         payload = {
-            "secret": "7b8ae820ecb39f8d173d57b51e1fce4c023e359e",
-            "account": "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8",
+            "secret": settings.DXING_SECRET,
+            "account": settings.DXING_ACCOUNT,
             "recipient": str(phone),
             "type": "document",
             "document_type": "pdf",

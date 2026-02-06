@@ -21,6 +21,8 @@ from django.core.paginator import Paginator
 from django.utils import timezone
 from app1.models import User 
 from decimal import Decimal, InvalidOperation
+from django.conf import settings
+
 
 def jobcard_list(request):
     jobcards = JobCard.objects.all().order_by('-created_at')
@@ -725,8 +727,10 @@ from .models import JobCard
 from app1.models import User
 
 # âœ… Updated WhatsApp API credentials
-WHATSAPP_API_SECRET = '7b8ae820ecb39f8d173d57b51e1fce4c023e359e'
-WHATSAPP_API_ACCOUNT = '1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8'
+import os
+
+WHATSAPP_API_SECRET = os.getenv("WA_SECRET")
+WHATSAPP_API_ACCOUNT = os.getenv("WA_ACCOUNT")
 
 def send_whatsapp_message(phone_number, message):
     url = f"https://app.dxing.in/api/send/whatsapp?secret={WHATSAPP_API_SECRET}&account={WHATSAPP_API_ACCOUNT}&recipient={phone_number}&type=text&message={message}&priority=1"
@@ -2112,8 +2116,8 @@ def process_warranty_tickets(request):
                 
                 whatsapp_api_base = "https://app.dxing.in/api/send/whatsapp"
                 params = {
-                    "secret": "7b8ae820ecb39f8d173d57b51e1fce4c023e359e",
-                    "account": "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af",
+                    "secret": settings.DXING_SECRET,
+                    "account": settings.DXING_ACCOUNT,
                     "type": "text",
                     "priority": 1,
                     "recipient": "9946545535",
@@ -2756,8 +2760,8 @@ def service_billing_view(request):
                 
                 whatsapp_api_base = "https://app.dxing.in/api/send/whatsapp"
                 params = {
-                    "secret": "7b8ae820ecb39f8d173d57b51e1fce4c023e359e",
-                    "account": "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af",
+                    "secret": settings.DXING_SECRET,
+                    "account": settings.DXING_ACCOUNT,
                     "type": "text",
                     "priority": 1,
                     "recipient": "9946545535",

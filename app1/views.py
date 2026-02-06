@@ -1,6 +1,8 @@
 from django.contrib.auth import authenticate, login as auth_login  # Alias the imported login function
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+
+from leads import settings
 from .forms import BranchForm,RequirementForm
 from django.http import JsonResponse
 from django.contrib.auth import logout as auth_logout
@@ -33,8 +35,8 @@ def send_whatsapp_message(phone_number, message):
     Automatically encodes the message and logs response info.
     """
     # ✅ Updated credentials
-    secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
+    secret = settings.DXING_SECRET
+    account = settings.DXING_ACCOUNT
 
     # ✅ Encode message safely for URL
     encoded_message = requests.utils.quote(message)
@@ -80,8 +82,9 @@ def send_whatsapp_message_for_service_log(phone_number, message):
     import requests
 
     # ✅ API credentials
-    secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
+    secret = settings.DXING_SECRET
+    account = settings.DXING_ACCOUNT
+
 
     # ✅ Ensure message is properly formatted (convert newlines for WhatsApp)
     # Replace double spaces/newlines for better readability
@@ -3405,8 +3408,8 @@ def send_whatsapp_message(phone, message):
         encoded_msg = quote_plus(message)
         url = (
             f"https://app.dxing.in/api/send/whatsapp"
-            f"?secret=7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-            f"&account=1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
+            f"?secret={settings.DXING_SECRET}"
+            f"&account={settings.DXING_ACCOUNT}"
             f"&recipient={phone}"
             f"&type=text"
             f"&message={encoded_msg}"
@@ -4341,8 +4344,8 @@ def send_whatsapp_message_new_request(phone_number, message):
     Send a WhatsApp message using the updated DxIng API.
     Automatically URL-encodes the message and handles connection errors.
     """
-    secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"  # ✅ updated account
+    secret = settings.DXING_SECRET
+    account = settings.DXING_ACCOUNT
 
     # Encode message safely for URL
     encoded_message = requests.utils.quote(message)
