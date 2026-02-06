@@ -275,8 +275,8 @@ def send_whatsapp(request):
         
         # WhatsApp API Configuration
         WHATSAPP_API_URL = 'https://app.dxing.in/api/send/whatsapp'
-        SECRET = '7b8ae820ecb39f8d173d57b51e1fce4c023e359e'
-        ACCOUNT = '1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8'
+        SECRET = settings.DXING_SECRET
+        ACCOUNT = settings.DXING_ACCOUNT
         
         # Get upload URL
         upload_url = request.build_absolute_uri('/public_folder/public-upload/')
