@@ -513,7 +513,7 @@ from django.db import models
 import uuid
 from django.db import models, IntegrityError, transaction
 from django.utils import timezone
-
+from app1.models import User 
 
 class Lead(models.Model):
 
@@ -537,12 +537,11 @@ class Lead(models.Model):
         help_text="Determines which input group to show"
     )
     created_by = models.ForeignKey(
-        'app1.User',
+        User,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='created_leads',
-        help_text="User who created this lead"
+        related_name="leads"
     )
 
     # ----------------------------

@@ -3419,18 +3419,44 @@ def lead_form_view(request):
         try:
             current_user = UserModel.objects.get(id=request.session['custom_user_id'])
             current_user_name = getattr(current_user, 'name', current_user.username if hasattr(current_user, 'username') else str(current_user))
-            
-            # ✅ LOG USER INFO FOR DEBUGGING
-            logger.info(f"========================================")
-            logger.info(f"Current User: {current_user_name}")
-            logger.info(f"User ID: {current_user.id}")
-            logger.info(f"User Level: {getattr(current_user, 'user_level', 'N/A')}")
-            logger.info(f"Is Superuser: {getattr(current_user, 'is_superuser', False)}")
-            logger.info(f"Is Staff: {getattr(current_user, 'is_staff', False)}")
-            logger.info(f"========================================")
-            
         except UserModel.DoesNotExist:
             logger.warning(f"User with ID {request.session['custom_user_id']} not found")
+    elif request.user and getattr(request.user, 'is_authenticated', False):
+        # Try to map Django's authenticated user to the custom User model (app1.User) when session key not present
+        try:
+            mapped = None
+            # Try common lookup fields in order of likelihood
+            if hasattr(UserModel, 'userid'):
+                try:
+                    mapped = UserModel.objects.filter(userid=request.user.username).first()
+                except Exception:
+                    mapped = None
+
+            if not mapped and getattr(request.user, 'email', None):
+                try:
+                    mapped = UserModel.objects.filter(email__iexact=request.user.email).first()
+                except Exception:
+                    mapped = None
+
+            if not mapped:
+                try:
+                    mapped = UserModel.objects.filter(username=getattr(request.user, 'username', '')).first()
+                except Exception:
+                    mapped = None
+
+            if mapped:
+                current_user = mapped
+                current_user_name = getattr(mapped, 'name', None) or getattr(mapped, 'username', None) or str(mapped)
+            else:
+                # Fallback: use the Django user object for permission checks (is_superuser/is_staff)
+                current_user = request.user
+                current_user_name = getattr(request.user, 'get_full_name', None)() if hasattr(request.user, 'get_full_name') else getattr(request.user, 'username', str(request.user))
+
+            logger.info(f"Resolved current_user for lead_form: {current_user_name}")
+        except Exception as e:
+            logger.debug(f"Error mapping request.user to UserModel: {e}")
+            current_user = request.user
+            current_user_name = getattr(request.user, 'username', str(request.user))
 
     # Resolve Lead model defensively
     try:
@@ -3969,45 +3995,63 @@ def lead_form_view(request):
                     lead.created_by = current_user
                     lead.save(update_fields=['created_by'])
 
-                # ✅ NEW: Extract and save requirement items from form
-                requirements_json = data.get('requirements_data', '[]')
-                logger.info(f"Requirements JSON from form: {requirements_json}")
-                
+                # ✅ Extract and save requirement items from form (defensive)
+                requirements_json = data.get('requirements_data', '') or data.get('requirement_details', '') or data.get('requirement_details_json', '')
+                if not requirements_json and data.get('requirement_details'):
+                    requirements_json = data.get('requirement_details')
+
+                logger.info(f"Requirements payload length: {len(requirements_json) if requirements_json else 0}")
+
                 try:
                     import json
                     from decimal import Decimal
-                    requirements_list = json.loads(requirements_json) if requirements_json else []
-                    
-                    # Import RequirementItem model
+
+                    # Normalize to list
+                    if not requirements_json:
+                        requirements_list = []
+                    else:
+                        try:
+                            requirements_list = json.loads(requirements_json)
+                        except Exception:
+                            requirements_list = []
+
+                    # Import RequirementItem model defensively
                     try:
                         from .models import RequirementItem
-                    except:
+                    except Exception:
                         try:
                             RequirementItem = apps.get_model('app5', 'RequirementItem')
-                        except:
+                        except Exception:
                             RequirementItem = None
-                    
-                    # Create RequirementItem objects for each requirement
+
+                    created_count = 0
                     if RequirementItem and requirements_list:
                         for req_data in requirements_list:
-                            RequirementItem.objects.create(
-                                lead=lead,
-                                item_id=req_data.get('item_id'),
-                                item_name=req_data.get('item_name', ''),
-                                ticket_number=lead.ticket_number if hasattr(lead, 'ticket_number') else f'TKT-{lead.id}',
-                                owner_name=lead.ownerName,
-                                phone_no=lead.phoneNo,
-                                email=lead.email if lead.email else '',
-                                section=req_data.get('section', ''),
-                                unit=req_data.get('unit', ''),
-                                price=Decimal(str(req_data.get('price', 0))),
-                                quantity=int(req_data.get('quantity', 1)),
-                            )
-                        
-                        logger.info(f"✅ Created {len(requirements_list)} requirement items for lead {lead.id}")
-                    
-                except json.JSONDecodeError as e:
-                    logger.warning(f"Could not parse requirements JSON: {e}")
+                            try:
+                                item_id = req_data.get('item_id') if isinstance(req_data, dict) else None
+                                item_name = req_data.get('item_name') if isinstance(req_data, dict) else (req_data[0] if isinstance(req_data, (list, tuple)) and req_data else '')
+                                price_val = req_data.get('price') if isinstance(req_data, dict) else 0
+                                qty_val = req_data.get('quantity') if isinstance(req_data, dict) else 1
+
+                                RequirementItem.objects.create(
+                                    lead=lead,
+                                    item_id=item_id,
+                                    item_name=item_name or '',
+                                    ticket_number=getattr(lead, 'ticket_number', f'TKT-{getattr(lead, "id", "") }'),
+                                    owner_name=getattr(lead, 'ownerName', ''),
+                                    phone_no=getattr(lead, 'phoneNo', ''),
+                                    email=getattr(lead, 'email', '') or '',
+                                    section=(req_data.get('section') if isinstance(req_data, dict) else ''),
+                                    unit=(req_data.get('unit') if isinstance(req_data, dict) else 'pcs'),
+                                    price=Decimal(str(price_val or 0)),
+                                    quantity=int(qty_val or 1),
+                                )
+                                created_count += 1
+                            except Exception as e:
+                                logger.debug(f"Skipping requirement row due to error: {e}")
+
+                    logger.info(f"Created {created_count} requirement items for lead {getattr(lead, 'id', 'N/A')}")
+
                 except Exception as e:
                     logger.error(f"Error creating requirement items: {e}", exc_info=True)
 
