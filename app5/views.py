@@ -7265,19 +7265,29 @@ def quotation_form_view(request):
     try:
         logger.info("🔍 Entering quotation_form_view")
         
-        # Get current user information
+        # Get current user information. Prefer custom session user, fallback to Django auth user.
         current_user = None
         current_user_name = None
         user_level = None
-        
+
         if request.session.get('custom_user_id'):
             try:
                 current_user = User.objects.get(id=request.session['custom_user_id'])
                 current_user_name = getattr(current_user, 'name', None)
                 user_level = getattr(current_user, 'user_level', None)
-                logger.info(f"👤 Current user: {current_user_name} (Level: {user_level})")
+                logger.info(f"👤 Current user (from session): {current_user_name} (Level: {user_level})")
             except User.DoesNotExist:
                 logger.warning("⚠️ User not found in session")
+
+        # Fallback: if no custom session user, use Django's request.user when available
+        if not current_user and hasattr(request, 'user') and request.user.is_authenticated:
+            try:
+                current_user = request.user
+                current_user_name = getattr(current_user, 'name', getattr(current_user, 'username', None))
+                user_level = getattr(current_user, 'user_level', None)
+                logger.info(f"👤 Current user (from request.user): {current_user_name} (Level: {user_level})")
+            except Exception:
+                logger.debug("Could not read user attributes from request.user; continuing with defaults")
         
         # Get all quotations with related data - FIXED JOIN
         quotations = Quotation.objects.select_related(
@@ -7309,8 +7319,21 @@ def quotation_form_view(request):
         try:
             # Determine if user should see all leads or only their own
             # Admin levels: 'normal' (Admin), 'admin_level' (Super Admin), '4level' (Superuser)
-            # User levels: '3level' (User), '5level' (Branch User)
-            is_admin = user_level in ['normal', 'admin_level', '4level']
+            # Also treat Django staff/superuser as admins (fallback)
+            is_admin = False
+            try:
+                is_admin = user_level in ['normal', 'admin_level', '4level']
+            except Exception:
+                is_admin = False
+
+            # Fallback: if request.user is staff/superuser, treat as admin
+            if not is_admin and hasattr(request, 'user') and request.user.is_authenticated:
+                try:
+                    if getattr(request.user, 'is_superuser', False) or getattr(request.user, 'is_staff', False):
+                        is_admin = True
+                        logger.info(f"🔓 Fallback: request.user is staff/superuser, treating as admin")
+                except Exception:
+                    pass
             
             if is_admin:
                 # ========================================

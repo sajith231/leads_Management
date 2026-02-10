@@ -56,41 +56,75 @@
         }
 
         /* ====================================================
+           CONSISTENT HEADER FOR ALL PAGES
+           ==================================================== */
+        .page-header {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            padding:20px;
+            border-bottom:3px solid #050505;
+            margin-bottom:40px;
+        }
+
+        /* ✅ CONSISTENT LOGO SIZE FOR ALL PAGES */
+        .page-logo {
+            width:300px;
+            height:150px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            border-radius:10px;
+            color:#3498db;
+            font-size:48px;
+            flex-shrink:0;
+            padding:10px;
+            overflow:hidden;
+            background:#fff;
+        }
+        .page-logo img {
+            width:100%;
+            height:100%;
+            object-fit:contain;
+            border-radius:8px;
+        }
+        /* ✅ Show icon only when no logo */
+        .page-logo.no-logo {
+            background:linear-gradient(135deg,#3498db,#2980b9);
+            color:#fff;
+        }
+
+        .page-header-content {
+            flex:1;
+            text-align:right;
+        }
+        .page-header-content .website {
+            color:#3498db;
+            font-weight:600;
+            margin-bottom:10px;
+            font-size:16px;
+        }
+        .page-header-content h1 {
+            font-size:28px;
+            color:#2c3e50;
+            margin-bottom:10px;
+        }
+        .page-header-content p {
+            color:#555;
+            margin-bottom:5px;
+            display:flex;
+            align-items:center;
+            justify-content:flex-end;
+            gap:8px;
+        }
+
+        /* ====================================================
            IMC LETTER PAGE  (page 1)
            ==================================================== */
         .imc-letter-page {
             min-height:100vh; padding:60px 40px; background:#fff; color:#333;
             position:relative; overflow:hidden;
         }
-        .imc-letter-header {
-            display:flex; align-items:center; justify-content:flex-start;
-            margin-bottom:40px; gap:30px; padding:20px;
-            border-bottom:3px solid #050505;
-        }
-
-        /* ✅ UPDATED: logo box – letter page */
-        .imc-letter-logo {
-            width:400px; height:200px;
-            display:flex; align-items:center; justify-content:center;
-            border-radius:10px;
-            color:#3498db; font-size:48px; flex-shrink:0;
-            box-shadow:0 6px 20px rgba(52,152,219,.2);
-            padding:10px; overflow:hidden;
-            background:#fff;
-        }
-        .imc-letter-logo img {
-            width:100%; height:100%; object-fit:contain; border-radius:8px;
-        }
-        /* ✅ NEW: Show icon only when no logo */
-        .imc-letter-logo.no-logo {
-            background:linear-gradient(135deg,#3498db,#2980b9);
-            color:#fff;
-        }
-
-        .imc-letter-header-content { flex:1; text-align:right; }
-        .imc-letter-header .website { color:#3498db; font-weight:600; margin-bottom:10px; }
-        .imc-letter-header h1       { font-size:28px; color:#2c3e50; margin-bottom:10px; }
-        .imc-letter-header p        { color:#555; margin-bottom:5px; }
 
         .imc-letter-client-info { padding:20px; border-radius:8px; margin:20px 0; }
         .imc-letter-client-info p { margin-bottom:5px; }
@@ -118,30 +152,6 @@
             display:flex; justify-content:space-between;
             align-items:flex-start; flex-wrap:wrap; gap:30px;
         }
-        .company-info { flex:1; min-width:300px; }
-        .company-logo { display:flex; align-items:center; gap:15px; margin-bottom:20px; }
-
-        /* ✅ UPDATED: logo box – quotation header (smaller) */
-        .logo-placeholder {
-            width:70px; height:70px;
-            background:linear-gradient(135deg,#3498db,#2980b9);
-            border-radius:10px;
-            display:flex; align-items:center; justify-content:center;
-            color:#fff; font-size:28px; font-weight:bold; overflow:hidden;
-        }
-        .logo-placeholder img {
-            width:100%; height:100%; object-fit:contain; padding:6px;
-        }
-        /* ✅ UPDATED: when a real logo is present switch bg to white */
-        .logo-placeholder.has-logo {
-            background:#fff;
-            border:2px solid #e0e0e0;
-        }
-
-        .company-name    { font-size:28px; font-weight:700; margin-bottom:5px; }
-        .company-tagline { font-size:16px; opacity:.9; margin-bottom:15px; }
-        .company-details { font-size:14px; opacity:.85; line-height:1.8; }
-        .company-details p { margin-bottom:4px; }
 
         /* ── customer info box on right side ── */
         .customer-info {
@@ -400,7 +410,7 @@
         }
 
         /* ====================================================
-           TERMS & CONDITIONS PAGE (page 3) - UPDATED FOR SINGLE PAGE
+           TERMS & CONDITIONS PAGE (page 3)
            ==================================================== */
         .imc-terms-page {
             page-break-before: always;
@@ -408,63 +418,6 @@
             padding: 30px 25px;
             background: #fff;
             page-break-inside: avoid;
-        }
-
-        .imc-terms-header {
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            margin-bottom: 25px;
-            gap: 20px;
-            padding: 15px 0;
-            border-bottom: 2px solid #e9ecef;
-        }
-
-        /* ✅ UPDATED: logo box – terms page (smaller) */
-        .imc-terms-logo {
-            width: 180px;
-            height: 90px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 8px;
-            color: #3498db;
-            font-size: 24px;
-            flex-shrink: 0;
-            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.15);
-            padding: 8px;
-            overflow: hidden;
-            background: #fff;
-        }
-
-        .imc-terms-logo img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            border-radius: 6px;
-        }
-
-        /* ✅ NEW: Show icon only when no logo */
-        .imc-terms-logo.no-logo {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            color: #fff;
-        }
-
-        .imc-terms-header-content {
-            flex: 1;
-            text-align: right;
-        }
-
-        .imc-terms-header h1 {
-            font-size: 22px;
-            color: #2c3e50;
-            margin-bottom: 8px;
-        }
-
-        .imc-terms-header p {
-            color: #555;
-            margin-bottom: 4px;
-            font-size: 13px;
         }
 
         .imc-terms-content {
@@ -484,8 +437,9 @@
         }
 
         .imc-terms-content h3 {
-            font-size: 16px;
+            font-size: 25px;
             color: #e38c5f;
+            margin-left: 50px;
             margin-top: 18px;
             margin-bottom: 8px;
             page-break-after: avoid;
@@ -493,8 +447,9 @@
 
         .imc-terms-content p {
             color: #555;
-            font-size: 14px;
-            margin: 0 0 12px 0;
+            font-size: 20px;
+            margin-left: 100px;
+            margin-right: 100px;
             text-align: justify;
             line-height: 1.5;
         }
@@ -530,47 +485,45 @@
                 min-height: auto;
             }
 
+            /* Consistent header sizing for print */
+            .page-logo {
+                width: 200px !important;
+                height: 100px !important;
+                font-size: 36px !important;
+            }
+            
+            .page-header-content h1 {
+                font-size: 22px !important;
+            }
+            
+            .page-header-content p {
+                font-size: 12px !important;
+            }
+            
+            .page-header-content .website {
+                font-size: 14px !important;
+            }
+
             /* Ensure logos print properly */
-            .imc-letter-logo img,
-            .logo-placeholder img,
-            .imc-terms-logo img {
+            .page-logo img {
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
             }
             
             /* Terms page print optimization */
-            .imc-terms-header {
-                margin-bottom: 15px !important;
-                padding: 10px 0 !important;
-            }
-            
-            .imc-terms-logo {
-                width: 120px !important;
-                height: 60px !important;
-                font-size: 18px !important;
-            }
-            
-            .imc-terms-header h1 {
-                font-size: 18px !important;
-            }
-            
-            .imc-terms-header p {
-                font-size: 11px !important;
-            }
-            
             .imc-terms-content h2 {
                 font-size: 16px !important;
                 margin-bottom: 12px !important;
             }
             
             .imc-terms-content h3 {
-                font-size: 14px !important;
+                font-size: 18px !important;
                 margin-top: 14px !important;
                 margin-bottom: 6px !important;
             }
             
             .imc-terms-content p {
-                font-size: 12px !important;
+                font-size: 16px !important;
                 margin-bottom: 10px !important;
                 line-height: 1.4 !important;
                 text-align: left !important;
@@ -612,10 +565,10 @@
              PAGE 1 – COVER LETTER (IMC-style)
              ================================================ -->
         <div class="imc-letter-page">
-            <!-- ✅ UPDATED: Header with Branch Logo and Details -->
-            <div class="imc-letter-header">
-                <!-- Logo Section -->
-                <div class="imc-letter-logo {% if not company_has_logo %}no-logo{% endif %}">
+            <!-- ✅ CONSISTENT HEADER: Logo on LEFT, Details on RIGHT -->
+            <div class="page-header">
+                <!-- Logo Section on LEFT -->
+                <div class="page-logo {% if not company_has_logo %}no-logo{% endif %}">
                     {% if company_has_logo %}
                         <img src="{{ company_logo_url }}" alt="{{ company_name }} Logo">
                     {% else %}
@@ -623,8 +576,8 @@
                     {% endif %}
                 </div>
 
-                <!-- Company Details -->
-                <div class="imc-letter-header-content">
+                <!-- Company Details on RIGHT -->
+                <div class="page-header-content">
                     {% if company_email %}
                     <div class="website">{{ company_email }}</div>
                     {% endif %}
@@ -640,9 +593,6 @@
                     {% endif %}
                 </div>
             </div>
-
-            <!-- Date and Quotation Number -->
-            
 
             <!-- Client Info -->
             <div class="imc-letter-client-info">
@@ -663,123 +613,109 @@
                 {% if client_phone %}
                 <p>{{ client_phone }}</p>
                 {% endif %}
-                
-                <!-- ✅ UPDATED: Fetch and display address properly -->
-                
             </div>
+            
              <!-- Salutation -->
-      <div class="imc-letter-salutation" style="text-align: center; color: brown;font-size: 25px;">
-    <p><strong>Warm Greetings From {{ company_name }}</strong></p>
-</div>
-
+            <div class="imc-letter-salutation" style="text-align: center; color: brown;font-size: 25px;">
+                <p><strong>Warm Greetings From {{ company_name }}</strong></p>
+            </div>
 
             <!-- Greeting -->
             <div class="greeting-text" style="font-weight: bold;font-size: larger;">
                 <p>Sir {{ client_name|default:"Valued Customer" }},</p>
             </div>
 
-           
-
             <!-- Letter Content -->
-           <div class="imc-letter-content" style="text-align:left;font-size: 20px;margin-left: 7%;margin-right: 7%;">
-    <p>
-        Thank you for the time you have given in allowing us to discuss with you the opportunity
-        how our software may assist your organization further progressing your productivity and
-        outputs. As agreed, we are submitting to you information about us and our proposed plan
-        to action for your review.
-    </p>
+            <div class="imc-letter-content" style="text-align:left;font-size: 20px;margin-left: 7%;margin-right: 7%;">
+                <p>
+                    Thank you for the time you have given in allowing us to discuss with you the opportunity
+                    how our software may assist your organization further progressing your productivity and
+                    outputs. As agreed, we are submitting to you information about us and our proposed plan
+                    to action for your review.
+                </p>
 
-    <p>
-        IMC Business Solutions is a comprehensive platform that supports overall Business
-        solutions like ERP Softwares, Web Solutions, Mobile Applications, Digital Marketing,
-        Branding, and Business Consultation.
-    </p>
+                <p>
+                    IMC Business Solutions is a comprehensive platform that supports overall Business
+                    solutions like ERP Softwares, Web Solutions, Mobile Applications, Digital Marketing,
+                    Branding, and Business Consultation.
+                </p>
 
-    <p>
-        Here we are attaching the detailed quotation. We are expecting to have a journey together
-        to reach your success.
-    </p>
+                <p>
+                    Here we are attaching the detailed quotation. We are expecting to have a journey together
+                    to reach your success.
+                </p>
+            </div>
 
-    
-</div>
-
-<div style="margin-top: 50px;border-top:3px solid #090909;  text-align: left; font-size: 16px; line-height: 1.6;">
-    <div><strong>Date:</strong> {{ created_date|default:"Date not specified" }}</div>
-    <div><strong>Place:Kalpetta</strong></div>
-</div>
-
-
+            <div style="margin-top: 50px;border-top:3px solid #090909;  text-align: left; font-size: 16px; line-height: 1.6;">
+                <div><strong>Date:</strong> {{ created_date|default:"Date not specified" }}</div>
+                <div><strong>Place:Kalpetta</strong></div>
+            </div>
+        </div>
 
         <!-- ================================================
              PAGE 2 – QUOTATION DETAILS
              ================================================ -->
         <div class="page-break"></div>
 
-        <!-- ✅ UPDATED: Quotation Header with Branch Logo -->
-        <div class="quotation-header">
-            <div class="imc-letter-header">
-                <!-- Logo Section -->
-                <div class="imc-letter-logo {% if not company_has_logo %}no-logo{% endif %}">
-                    {% if company_has_logo %}
-                        <img src="{{ company_logo_url }}" alt="{{ company_name }} Logo">
-                    {% else %}
-                        <i class="fas fa-building"></i>
-                    {% endif %}
-                </div>
-
-                <!-- Company Details -->
-                <div class="imc-letter-header-content">
-                    {% if company_email %}
-                    <div class="website">{{ company_email }}</div>
-                    {% endif %}
-                    <h1>{{ company_name }}</h1>
-                    {% if company_address %}
-                    <p><i class="fas fa-map-marker-alt"></i> {{ company_address }}</p>
-                    {% endif %}
-                    {% if company_contact %}
-                    <p><i class="fas fa-phone"></i> {{ company_contact }}</p>
-                    {% endif %}
-                    {% if company_gst %}
-                    <p><i class="fas fa-file-invoice"></i> GST: {{ company_gst }}</p>
-                    {% endif %}
-                </div>
+        <!-- ✅ CONSISTENT HEADER: Logo on LEFT, Details on RIGHT -->
+        <div class="page-header">
+            <!-- Logo Section on LEFT -->
+            <div class="page-logo {% if not company_has_logo %}no-logo{% endif %}">
+                {% if company_has_logo %}
+                    <img src="{{ company_logo_url }}" alt="{{ company_name }} Logo">
+                {% else %}
+                    <i class="fas fa-building"></i>
+                {% endif %}
             </div>
 
-            <!-- Customer Info Box -->
-            <div class="customer-info">
-                <h3>
-                    <i class="fas fa-user-circle"></i>
-                    Customer Details
-                </h3>
-                <div class="customer-details">
-                    <div>
-                        <strong>Name:</strong>
-                        <span>{{ client_name|default:"Not Specified" }}</span>
-                    </div>
-
-                    <div>
-                        <strong>Address:</strong>
-                        <span>
-                            {% if lead_data.customerType == 'Business' %}
-                                {{ lead_data.place|default:"Not provided" }}
-                            {% else %}
-                                {{ lead_data.individualPlace|default:"Not provided" }}
-                            {% endif %}
-                        </span>
-                    </div>
-                    {% if client_phone %}
-                    <div>
-                        <strong>Phone:</strong>
-                        <span>{{ client_phone }}</span>
-                    </div>
-                    {% endif %}
-                </div>
+            <!-- Company Details on RIGHT -->
+            <div class="page-header-content">
+                {% if company_email %}
+                <div class="website">{{ company_email }}</div>
+                {% endif %}
+                <h1>{{ company_name }}</h1>
+                {% if company_address %}
+                <p><i class="fas fa-map-marker-alt"></i> {{ company_address }}</p>
+                {% endif %}
+                {% if company_contact %}
+                <p><i class="fas fa-phone"></i> {{ company_contact }}</p>
+                {% endif %}
+                {% if company_gst %}
+                <p><i class="fas fa-file-invoice"></i> GST: {{ company_gst }}</p>
+                {% endif %}
             </div>
         </div>
 
-        
-        
-        
+        <!-- Customer Info Box -->
+        <div class="customer-info">
+            <h3>
+                <i class="fas fa-user-circle"></i>
+                Customer Details
+            </h3>
+            <div class="customer-details">
+                <div>
+                    <strong>Name:</strong>
+                    <span>{{ client_name|default:"Not Specified" }}</span>
+                </div>
+
+                <div>
+                    <strong>Address:</strong>
+                    <span>
+                        {% if lead_data.customerType == 'Business' %}
+                            {{ lead_data.place|default:"Not provided" }}
+                        {% else %}
+                            {{ lead_data.individualPlace|default:"Not provided" }}
+                        {% endif %}
+                    </span>
+                </div>
+                {% if client_phone %}
+                <div>
+                    <strong>Phone:</strong>
+                    <span>{{ client_phone }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
 
         <!-- Items Table -->
         <div class="items-section">
@@ -824,7 +760,7 @@
             </table>
         </div>
 
-        <!-- Totals Section - UPDATED for side-by-side display -->
+        <!-- Totals Section -->
         <div class="totals-section">
             <table class="totals-table">
                 <tr>
@@ -845,7 +781,7 @@
                     <td class="totals-value">{{ shipping_charges }}</td>
                 </tr>
                 {% endif %}
-                <!-- ✅ UPDATED: Single row for Grand Total with amount in words on left and number on right -->
+                <!-- Grand Total -->
                 <tr class="grand-total-row">
                     <td colspan="2" style="padding: 15px 0;">
                         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
@@ -876,37 +812,6 @@
         </div>
         {% endif %}
 
-        <!-- Signature Section -->
-        <div class="signature-section">
-            <div class="signature-box">
-                <div class="signature-line"></div>
-                <div class="signature-label">Customer's Signature</div>
-                <div class="signature-details">
-                    Name: ________________________<br>
-                    Date: ________________________
-                </div>
-            </div>
-            <div class="signature-box">
-                <div class="signature-line"></div>
-                <div class="signature-label">Authorized Signatory</div>
-                <div class="signature-details">
-                    For: {{ company_name }}<br>
-                    Name: ________________________<br>
-                    Designation: ________________________<br>
-                    Date: ________________________
-                </div>
-            </div>
-            <div class="signature-box">
-                <div class="signature-line"></div>
-                <div class="signature-label">Branch Manager</div>
-                <div class="signature-details">
-                    Branch: {{ company_name }}<br>
-                    Name: ________________________<br>
-                    Date: ________________________
-                </div>
-            </div>
-        </div>
-
         <!-- Footer Info -->
         <div class="footer-info">
             <p>Thank you for your business! For queries contact us at
@@ -917,13 +822,13 @@
         </div>
 
         <!-- ================================================
-             PAGE 3 – TERMS & CONDITIONS (UPDATED FOR SINGLE PAGE)
+             PAGE 3 – TERMS & CONDITIONS
              ================================================ -->
         <div class="imc-terms-page">
-            <!-- ✅ UPDATED: Terms Header with Branch Logo -->
-            <div class="imc-terms-header">
-                <!-- Logo Section -->
-                <div class="imc-terms-logo {% if not company_has_logo %}no-logo{% endif %}">
+            <!-- ✅ CONSISTENT HEADER: Logo on LEFT, Details on RIGHT -->
+            <div class="page-header">
+                <!-- Logo Section on LEFT -->
+                <div class="page-logo {% if not company_has_logo %}no-logo{% endif %}">
                     {% if company_has_logo %}
                         <img src="{{ company_logo_url }}" alt="{{ company_name }} Logo">
                     {% else %}
@@ -931,8 +836,8 @@
                     {% endif %}
                 </div>
 
-                <!-- Company Details -->
-                <div class="imc-terms-header-content">
+                <!-- Company Details on RIGHT -->
+                <div class="page-header-content">
                     <h1>{{ company_name }}</h1>
                     {% if company_address %}<p><i class="fas fa-map-marker-alt"></i> {{ company_address }}</p>{% endif %}
                     {% if company_contact %}<p><i class="fas fa-phone"></i> {{ company_contact }}</p>{% endif %}

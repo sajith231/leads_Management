@@ -283,7 +283,7 @@ class Supplier(models.Model):
     name = models.CharField(max_length=200)
     place = models.CharField(max_length=100)
     is_active = models.BooleanField(default=True, verbose_name="Active Status",help_text="Whether this supplier is currently active")
-    phone = models.CharField(max_length=15)
+    phone = models.CharField(max_length=30)
     address = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -549,7 +549,7 @@ class Lead(models.Model):
     # ----------------------------
     ticket_number = models.CharField(max_length=30, unique=True, blank=True)
     ownerName = models.CharField(max_length=100)
-    phoneNo = models.CharField(max_length=15)
+    phoneNo = models.CharField(max_length=30)
     email = models.EmailField(blank=True, null=True)
 
     # =====================================================
