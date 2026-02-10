@@ -1,3 +1,4 @@
+
 {% extends "base.html" %}
 
 {% block title %}Lead Report{% endblock %}
@@ -720,8 +721,6 @@
             border: 1px solid rgba(255, 193, 7, 0.3);
         }
 
-        
-
         /* Quick Filter Buttons */
         .quick-filters {
             display: flex;
@@ -841,6 +840,233 @@
             }
         }
 
+        /* Ticket Details Modal Styles */
+        .ticket-modal {
+            display: none;
+            position: fixed;
+            z-index: 1050;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .ticket-modal-content {
+            background-color: #fff;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            animation: modalSlideIn 0.3s;
+        }
+
+        .ticket-modal-header {
+            background: #795548;
+            color: white;
+            padding: 20px;
+            border-radius: 10px 10px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ticket-modal-header h3 {
+            margin: 0;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .ticket-modal-close {
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .ticket-modal-close:hover {
+            color: #ffcccb;
+        }
+
+        .ticket-modal-body {
+            padding: 25px;
+        }
+
+        .ticket-info-item {
+            display: flex;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .ticket-info-label {
+            font-weight: 600;
+            color: #555;
+            min-width: 120px;
+            font-size: 14px;
+        }
+
+        .ticket-info-value {
+            flex: 1;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+
+        .ticket-modal-badge {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 5px;
+        }
+
+        .priority-high {
+            background: #dc3545;
+            color: white;
+        }
+
+        .priority-medium {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .priority-low {
+            background: #28a745;
+            color: white;
+        }
+
+        .status-active {
+            background: #28a745;
+            color: white;
+        }
+
+        .status-inactive {
+            background: #dc3545;
+            color: white;
+        }
+
+        .status-installed {
+            background: #007bff;
+            color: white;
+        }
+
+        .assignment-badge {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .assignment-self {
+            background: rgba(40, 167, 69, 0.2);
+            color: #155724;
+            border: 1px solid #28a745;
+        }
+
+        .assignment-assigned {
+            background: rgba(0, 123, 255, 0.2);
+            color: #004085;
+            border: 1px solid #007bff;
+        }
+
+        .assignment-unassigned {
+            background: rgba(255, 193, 7, 0.2);
+            color: #856404;
+            border: 1px solid #ffc107;
+        }
+
+        /* Owner Details Modal Styles */
+        .owner-modal {
+            display: none;
+            position: fixed;
+            z-index: 1050;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .owner-modal-content {
+            background-color: #fff;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            animation: modalSlideIn 0.3s;
+        }
+
+        .owner-modal-header {
+            background: #795548;
+            color: white;
+            padding: 20px;
+            border-radius: 10px 10px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .owner-modal-header h3 {
+            margin: 0;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .owner-modal-close {
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .owner-modal-close:hover {
+            color: #ffcccb;
+        }
+
+        .owner-modal-body {
+            padding: 25px;
+        }
+
+        .owner-info-item {
+            display: flex;
+            margin-bottom: 15px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+           
+        }
+
+        .owner-info-label {
+            font-weight: 600;
+            color: #555;
+            min-width: 120px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .owner-info-value {
+            flex: 1;
+            font-size: 14px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .owner-info-value.empty {
+            color: #999;
+            font-style: italic;
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .container {
@@ -876,8 +1102,6 @@
                 gap: 4px;
             }
 
-        
-
             .quick-filters {
                 flex-direction: column;
             }
@@ -892,6 +1116,16 @@
                 right: 10px;
                 top: 10px;
                 text-align: center;
+            }
+
+            .ticket-modal-content {
+                width: 95%;
+                margin: 10% auto;
+            }
+
+            .owner-modal-content {
+                width: 95%;
+                margin: 10% auto;
             }
         }
     </style>
@@ -1061,54 +1295,17 @@
                             </td>
                            <td>
     <div style="display: flex; flex-direction: column; gap: 4px;">
-        <!-- First line: Ticket number -->
+        <!-- First line: Ticket number with view icon -->
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
             <span class="ticket-number">{{ lead.ticket_number }}</span>
-        </div>
-        
-        <!-- Second line: Priority and Status badges -->
-        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <!-- Priority Badge -->
-            {% if lead.priority %}
-                {% if lead.priority == 'High' %}
-                    <span class="badge" style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px;">
-                        <i class="fas fa-exclamation-circle"></i> High
-                    </span>
-                {% elif lead.priority == 'Medium' %}
-                    <span class="badge" style="background: #ffc107; color: #212529; padding: 2px 6px; border-radius: 4px; font-size: 10px;">
-                        <i class="fas fa-exclamation-triangle"></i> Medium
-                    </span>
-                {% elif lead.priority == 'Low' %}
-                    <span class="badge" style="background: #28a745; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px;">
-                        <i class="fas fa-arrow-down"></i> Low
-                    </span>
-                {% else %}
-                    <span class="badge" style="background: #6c757d; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px;">
-                        {{ lead.priority }}
-                    </span>
-                {% endif %}
-            {% endif %}
             
-            <!-- Status Badge -->
-            {% if lead.status %}
-                {% if lead.status == 'Active' %}
-                    <span class="badge" style="background: #28a745; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px;">
-                        <i class="fas fa-circle"></i> Active
-                    </span>
-                {% elif lead.status == 'Inactive' %}
-                    <span class="badge" style="background: #dc3545; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px;">
-                        <i class="fas fa-circle"></i> Inactive
-                    </span>
-                {% elif lead.status == 'Installed' %}
-                    <span class="badge" style="background: #007bff; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px;">
-                        <i class="fas fa-check-circle"></i> Installed
-                    </span>
-                {% else %}
-                    <span class="badge" style="background: #6c757d; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px;">
-                        {{ lead.status }}
-                    </span>
-                {% endif %}
-            {% endif %}
+            <!-- ✅ ADDED: View icon button -->
+            <button class="view-icon-btn" 
+                    style="background: none; border: none; cursor: pointer; color: #007bff; font-size: 16px; padding: 2px;"
+                    title="View Ticket Details"
+                    onclick="showTicketDetails('{{ lead.ticket_number }}', '{{ lead.priority }}', '{{ lead.status }}', '{% if lead.created_by %}{% if lead.created_by.name %}{{ lead.created_by.name }}{% elif lead.created_by.username %}{{ lead.created_by.username }}{% elif lead.created_by.email %}{{ lead.created_by.email }}{% else %}User #{{ lead.created_by.id }}{% endif %}{% else %}System{% endif %}', '{{ lead.date|date:"d M Y" }}', '{{ lead.assignment_type }}', '{{ lead.assigned_to_name|default:"" }}', '{{ lead.ownerName }}')">
+                <i class="fas fa-eye"></i>
+            </button>
         </div>
         
         <!-- Third line: Created Date + Assignment status -->
@@ -1120,43 +1317,25 @@
             </span>
             
             <!-- Assignment status -->
-            {% if lead.assignment_type == 'self_assigned' %}
-                <span class="badge" style="background: #28a745; color: white; padding: 1px 6px; border-radius: 3px; font-size: 9px; margin-left: 4px;">
-                    <i class="fas fa-user-check" style="font-size: 9px; margin-right: 2px;"></i>
-                    Self Assigned
-                </span>
-            {% elif lead.assignment_type == 'assigned' and lead.assigned_to_name %}
-                <span class="badge" style="background: #007bff; color: white; padding: 1px 6px; border-radius: 3px; font-size: 9px; margin-left: 4px;">
-                    <i class="fas fa-user-tag" style="font-size: 9px; margin-right: 2px;"></i>
-                    {{ lead.assigned_to_name|truncatechars:12 }}
-                </span>
-            {% elif lead.assignment_type == 'unassigned' %}
-                <span class="badge" style="color: #212529; padding: 1px 6px; border-radius: 3px; font-size: 9px; margin-left: 4px;">
-                    <i class="fas fa-user-plus" style="font-size: 9px; margin-right: 2px;"></i>
-                    {% if lead.created_by %}
-                        {% if lead.created_by.name %}
-                            {{ lead.created_by.name|truncatechars:10 }}
-                        {% elif lead.created_by.username %}
-                            {{ lead.created_by.username|truncatechars:10 }}
-                        {% elif lead.created_by.email %}
-                            {{ lead.created_by.email|truncatechars:10 }}
-                        {% else %}
-                            User #{{ lead.created_by.id }}
-                        {% endif %}
-                    {% else %}
-                        System
-                    {% endif %}
-                </span>
-            {% endif %}
+           
         </div>
     </div>
 </td>
 
                            
                             <td>
-                                <!-- Owner icon + name (colored) -->
-                                <i class="fa-solid fa-user icon-owner me-1" title="Owner"></i>
-                                <strong>{{ lead.ownerName }}</strong><br>
+                                <!-- Owner icon + name (colored) with view icon -->
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+                                    <i class="fa-solid fa-user icon-owner me-1" title="Owner"></i>
+                                    <strong>{{ lead.ownerName }}</strong>
+                                    <!-- ✅ ADDED: View icon for owner details -->
+                                    <button class="view-owner-btn" 
+                                            style="background: none; border: none; cursor: pointer; color: #795548; font-size: 14px; padding: 2px;"
+                                            title="View Owner Details"
+                                            onclick="showOwnerDetails('{{ lead.ownerName|default:''|escapejs }}', '{{ lead.phoneNo|default:"Not provided"|escapejs }}', '{{ lead.email|default:"Not provided"|escapejs }}', '{{ lead.customerType|default:""|escapejs }}', '{% if lead.customerType == "Business" %}{{ lead.name|default:"Not provided"|escapejs }}{% else %}{{ lead.firstName|default:""|escapejs }} {{ lead.lastName|default:""|escapejs }}{% endif %}', '{% if lead.customerType == "Business" %}{{ lead.place|default:"Not provided"|escapejs }}{% else %}{{ lead.individualPlace|default:"Not provided"|escapejs }}{% endif %}', '{{ lead.requirement|default:""|escapejs }}')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
 
                                 <!-- Phone -->
                                 {% if lead.phoneNo %}
@@ -1169,47 +1348,7 @@
                                 <br>
 
                                 <!-- ✅ FIXED: Place (business vs individual) with maps link -->
-                                {% if lead.customerType == 'Business' %}
-                                    {% if lead.place %}
-                                        <a href="https://www.google.com/maps/search/{{ lead.place|urlencode }}" target="_blank" style="color: #dc3545; text-decoration: none;">
-                                            <i class="fa-solid fa-location-dot icon-place me-1" title="Place"></i>
-                                            {{ lead.place }}
-                                        </a>
-                                    {% else %}
-                                        <span style="color: #999;">No location</span>
-                                    {% endif %}
-                                {% else %}
-                                    {% if lead.individualPlace %}
-                                        <a href="https://www.google.com/maps/search/{{ lead.individualPlace|urlencode }}" target="_blank" style="color: #dc3545; text-decoration: none;">
-                                            <i class="fa-solid fa-location-dot icon-place me-1" title="Place"></i>
-                                            {{ lead.individualPlace }}
-                                        </a>
-                                    {% else %}
-                                        <span style="color: #999;">No location</span>
-                                    {% endif %}
-                                {% endif %}
-
-                                <br>{% if lead.customerType == 'Business' %}
-                                    {% if lead.name %}
-                                        <i class="fas fa-building" style="color: #6a11cb; margin-right: 5px;"></i>
-                                        {{ lead.name }}
-                                        <br>
-                                        <span class="badge business-type"></span>
-                                    {% else %}
-                                        <span style="color: #999;">No firm name</span>
-                                    {% endif %}
-                                {% else %}
-                                    {% if lead.firstName or lead.lastName %}
-                                        <i class="fas fa-user-circle" style="color: #7b1fa2; margin-right: 5px;"></i>
-                                        {{ lead.firstName|default:"" }} {{ lead.lastName|default:"" }}
-                                        <br>
-                                        <!-- <span class="badge individual-type">Individual</span> -->
-                                    {% else %}
-                                        <span style="color: #999;">No name</span>
-                                    {% endif %}
-                                {% endif %}
-                                {{ lead.requirement|default:'' }}
-                            </td>
+                                
                             
                             <!-- Campaign Column - FIXED TO SHOW CAMPAIGN NAME -->
                             <td>
@@ -1366,10 +1505,284 @@
         </div>
     </div>
 
+    <!-- Ticket Details Modal -->
+    <div id="ticketDetailsModal" class="ticket-modal">
+        <div class="ticket-modal-content">
+            <div class="ticket-modal-header">
+                <h3><i class="fas fa-ticket-alt"></i> Ticket Details</h3>
+                <span class="ticket-modal-close">&times;</span>
+            </div>
+            <div class="ticket-modal-body" id="ticketDetailsBody">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Owner Details Modal -->
+    <div id="ownerDetailsModal" class="owner-modal">
+        <div class="owner-modal-content">
+            <div class="owner-modal-header">
+                <h3><i class="fas fa-user-circle"></i> Owner Details</h3>
+                <span class="owner-modal-close">&times;</span>
+            </div>
+            <div class="owner-modal-body" id="ownerDetailsBody">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification Container -->
     <div id="toastContainer"></div>
 
     <script>
+        // ✅ ADDED: Owner Details Modal Function
+        function showOwnerDetails(ownerName, phone, email, customerType, name, address, branch) {
+            const modal = document.getElementById('ownerDetailsModal');
+            const modalBody = document.getElementById('ownerDetailsBody');
+            
+            // Escape HTML to prevent XSS
+            const escapeHtml = (text) => {
+                if (!text) return '';
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            };
+            
+            // Format empty values
+            function formatValue(value) {
+                const val = escapeHtml(value);
+                if (!val || val === 'Not provided' || val === 'Not specified' || val.trim() === '') {
+                    return '<span class="owner-info-value empty">Not provided</span>';
+                }
+                return `<span class="owner-info-value">${val}</span>`;
+            }
+            
+            // Determine customer type display
+            function getCustomerTypeDisplay(type) {
+                if (type === 'Business') {
+                    return '<span style="background: #e3f2fd; color: #1976d2; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Business</span>';
+                } else {
+                    return '<span style="background: #f3e5f5; color: #7b1fa2; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Individual</span>';
+                }
+            }
+            
+            // Create modal content
+            const content = `
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #795548; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px;">
+                        <i class="fas fa-info-circle"></i> Owner Information
+                    </h4>
+                    
+                    <div class="owner-info-item">
+                        <div class="owner-info-label">
+                            <i class="fas fa-user" style="color: #6a11cb;"></i>
+                            Owner Name:
+                        </div>
+                        ${formatValue(ownerName)}
+                    </div>
+                    
+                    <div class="owner-info-item">
+                        <div class="owner-info-label">
+                            <i class="fas fa-phone" style="color: #28a745;"></i>
+                            Phone:
+                        </div>
+                        ${formatValue(phone)}
+                    </div>
+                    
+                    <div class="owner-info-item">
+                        <div class="owner-info-label">
+                            <i class="fas fa-envelope" style="color: #007bff;"></i>
+                            Email:
+                        </div>
+                        ${formatValue(email)}
+                    </div>
+                    
+                   
+                    
+                    <div class="owner-info-item">
+                        <div class="owner-info-label">
+                            <i class="${customerType === 'Business' ? 'fas fa-building' : 'fas fa-user-circle'}" style="color: ${customerType === 'Business' ? '#6a11cb' : '#7b1fa2'};"></i>
+                            ${customerType === 'Business' ? 'Firm Name:' : 'Personal Name:'}
+                        </div>
+                        ${formatValue(name)}
+                    </div>
+                    
+                    <div class="owner-info-item">
+                        <div class="owner-info-label">
+                            <i class="fas fa-map-marker-alt" style="color: #dc3545;"></i>
+                            Address:
+                        </div>
+                        ${formatValue(address)}
+                    </div>
+                    
+                    <div class="owner-info-item">
+                        <div class="owner-info-label">
+                            <i class="fas fa-code-branch" style="color: #a27d0c;"></i>
+                            Branch:
+                        </div>
+                        ${formatValue(branch)}
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 20px;">
+                    <button onclick="document.getElementById('ownerDetailsModal').style.display='none'" 
+                            class="btn btn-primary"
+                            style="padding: 8px 20px; font-size: 14px;">
+                        <i class="fas fa-times"></i> Close
+                    </button>
+                </div>
+            `;
+            
+            modalBody.innerHTML = content;
+            modal.style.display = 'block';
+        }
+
+        // Close owner modal when X is clicked
+        document.querySelector('.owner-modal-close').addEventListener('click', function() {
+            document.getElementById('ownerDetailsModal').style.display = 'none';
+        });
+
+        // Close owner modal when clicking outside
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('ownerDetailsModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        // Ticket Details Modal Function
+        function showTicketDetails(ticketNumber, priority, status, createdBy, createdDate, assignmentType, assignedTo, owner) {
+            const modal = document.getElementById('ticketDetailsModal');
+            const modalBody = document.getElementById('ticketDetailsBody');
+            
+            // Escape HTML to prevent XSS
+            const escapeHtml = (text) => {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            };
+            
+            // Get priority badge HTML
+            function getPriorityBadge(priority) {
+                if (!priority || priority === 'None' || priority === 'null') return '<span style="color: #999;">Not set</span>';
+                
+                switch(priority) {
+                    case 'High':
+                        return '<span class="ticket-modal-badge priority-high"><i class="fas fa-exclamation-circle"></i> High</span>';
+                    case 'Medium':
+                        return '<span class="ticket-modal-badge priority-medium"><i class="fas fa-exclamation-triangle"></i> Medium</span>';
+                    case 'Low':
+                        return '<span class="ticket-modal-badge priority-low"><i class="fas fa-arrow-down"></i> Low</span>';
+                    default:
+                        return `<span class="ticket-modal-badge" style="background: #6c757d; color: white;">${escapeHtml(priority)}</span>`;
+                }
+            }
+            
+            // Get status badge HTML
+            function getStatusBadge(status) {
+                if (!status || status === 'None' || status === 'null') return '<span style="color: #999;">Not set</span>';
+                
+                switch(status) {
+                    case 'Active':
+                        return '<span class="ticket-modal-badge status-active"><i class="fas fa-circle"></i> Active</span>';
+                    case 'Inactive':
+                        return '<span class="ticket-modal-badge status-inactive"><i class="fas fa-circle"></i> Inactive</span>';
+                    case 'Installed':
+                        return '<span class="ticket-modal-badge status-installed"><i class="fas fa-check-circle"></i> Installed</span>';
+                    default:
+                        return `<span class="ticket-modal-badge" style="background: #6c757d; color: white;">${escapeHtml(status)}</span>`;
+                }
+            }
+            
+            // Get assignment badge HTML
+            function getAssignmentBadge(assignmentType, assignedTo) {
+                if (!assignmentType || assignmentType === 'None' || assignmentType === 'null') {
+                    return '<span style="color: #999;">Not specified</span>';
+                }
+                
+                switch(assignmentType) {
+                    case 'self_assigned':
+                        return '<span class="assignment-badge assignment-self"><i class="fas fa-user-check"></i> Self Assigned</span>';
+                    case 'assigned':
+                        return `<span class="assignment-badge assignment-assigned"><i class="fas fa-user-tag"></i> Assigned to: ${escapeHtml(assignedTo || 'Unknown')}</span>`;
+                    case 'unassigned':
+                        return '<span class="assignment-badge assignment-unassigned"><i class="fas fa-user-plus"></i> Not Assigned</span>';
+                    default:
+                        return `<span style="color: #999;">${escapeHtml(assignmentType)}</span>`;
+                }
+            }
+            
+            // Create modal content
+            const content = `
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #795548; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px;">
+                        <i class="fas fa-info-circle"></i> Ticket Information
+                    </h4>
+                    
+                    <div class="ticket-info-item">
+                        <div class="ticket-info-label">Ticket Number:</div>
+                        <div class="ticket-info-value">
+                            <strong style="color: #795548;">${escapeHtml(ticketNumber)}</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="ticket-info-item">
+                        <div class="ticket-info-label">Ticket Owner:</div>
+                        <div class="ticket-info-value">${escapeHtml(owner || 'Not specified')}</div>
+                    </div>
+                    
+                    <div class="ticket-info-item">
+                        <div class="ticket-info-label">Priority:</div>
+                        <div class="ticket-info-value">${getPriorityBadge(priority)}</div>
+                    </div>
+                    
+                    <div class="ticket-info-item">
+                        <div class="ticket-info-label">Status:</div>
+                        <div class="ticket-info-value">${getStatusBadge(status)}</div>
+                    </div>
+                    
+                    <div class="ticket-info-item">
+                        <div class="ticket-info-label">Created By:</div>
+                        <div class="ticket-info-value">${escapeHtml(createdBy || 'System')}</div>
+                    </div>
+                    
+                    <div class="ticket-info-item">
+                        <div class="ticket-info-label">Created Date:</div>
+                        <div class="ticket-info-value">${escapeHtml(createdDate || 'Not available')}</div>
+                    </div>
+                    
+                    <div class="ticket-info-item">
+                        <div class="ticket-info-label">Assignment Status:</div>
+                        <div class="ticket-info-value">${getAssignmentBadge(assignmentType, assignedTo)}</div>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 20px;">
+                    <button onclick="document.getElementById('ticketDetailsModal').style.display='none'" 
+                            class="btn btn-primary"
+                            style="padding: 8px 20px; font-size: 14px;">
+                        <i class="fas fa-times"></i> Close
+                    </button>
+                </div>
+            `;
+            
+            modalBody.innerHTML = content;
+            modal.style.display = 'block';
+        }
+
+        // Close ticket modal when X is clicked
+        document.querySelector('.ticket-modal-close').addEventListener('click', function() {
+            document.getElementById('ticketDetailsModal').style.display = 'none';
+        });
+
+        // Close ticket modal when clicking outside
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('ticketDetailsModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
         // Toast notification function
         function showToast(message, type = 'success') {
             const toast = document.createElement('div');

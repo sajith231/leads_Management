@@ -283,7 +283,7 @@ class Supplier(models.Model):
     name = models.CharField(max_length=200)
     place = models.CharField(max_length=100)
     is_active = models.BooleanField(default=True, verbose_name="Active Status",help_text="Whether this supplier is currently active")
-    phone = models.CharField(max_length=15)
+    phone = models.CharField(max_length=30)
     address = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -513,7 +513,7 @@ from django.db import models
 import uuid
 from django.db import models, IntegrityError, transaction
 from django.utils import timezone
-
+from app1.models import User 
 
 class Lead(models.Model):
 
@@ -537,12 +537,11 @@ class Lead(models.Model):
         help_text="Determines which input group to show"
     )
     created_by = models.ForeignKey(
-        'app1.User',
+        User,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='created_leads',
-        help_text="User who created this lead"
+        related_name="leads"
     )
 
     # ----------------------------
@@ -550,7 +549,7 @@ class Lead(models.Model):
     # ----------------------------
     ticket_number = models.CharField(max_length=30, unique=True, blank=True)
     ownerName = models.CharField(max_length=100)
-    phoneNo = models.CharField(max_length=15)
+    phoneNo = models.CharField(max_length=30)
     email = models.EmailField(blank=True, null=True)
 
     # =====================================================
