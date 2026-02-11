@@ -750,29 +750,14 @@
         </div>
     </div>
 
-    <!-- Add Select2 JS -->
+    <!-- Add jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <script>
         // Global variable to store items from Purchase Order app
         let purchaseOrderItems = [];
         let selectedLead = null;
-        let itemsLoaded = false; // NEW: Flag to track if items are loaded
-        
-        // Initialize Select2 for lead ticket dropdown
-        $(document).ready(function() {
-            $('#lead-ticket-select').select2({
-                placeholder: "Select a ticket number",
-                allowClear: true,
-                width: '100%'
-            });
-            
-            // Handle ticket selection change
-            $('#lead-ticket-select').on('change', function() {
-                handleTicketSelection(this);
-            });
-        });
+        let itemsLoaded = false; // Flag to track if items are loaded
         
         // Function to handle ticket selection
         function handleTicketSelection(selectElement) {
@@ -796,7 +781,7 @@
             // Store only necessary lead data
             selectedLead = {
                 id: selectedOption.val(),
-                ticket_number: selectedOption.text(),
+                ticket_number: selectedOption.text().split(' - ')[0],
                 owner_name: name,
                 phone_number: phone
             };
@@ -877,11 +862,6 @@
         function updateSectionDropdown(dropdown) {
             const $dropdown = $(dropdown);
             
-            // Destroy existing Select2 if it exists
-            if ($dropdown.hasClass('select2-hidden-accessible')) {
-                $dropdown.select2('destroy');
-            }
-            
             // Clear existing options
             $dropdown.empty();
             
@@ -903,13 +883,6 @@
                     disabled: true
                 }));
                 
-                // Initialize Select2
-                $dropdown.select2({
-                    placeholder: "No sections available",
-                    allowClear: false,
-                    width: '100%'
-                });
-                
                 showNotification('No items/sections found. Please check Purchase Order app.', 'warning');
                 return;
             }
@@ -920,13 +893,6 @@
                     value: section,
                     text: section
                 }));
-            });
-            
-            // Initialize Select2 for section dropdown
-            $dropdown.select2({
-                placeholder: "Select Section",
-                allowClear: true,
-                width: '100%'
             });
         }
         
@@ -947,18 +913,7 @@
                     text: 'Select Item',
                     selected: true
                 }));
-                
-                // Destroy and re-initialize Select2 properly
-                if (itemSelect.hasClass('select2-hidden-accessible')) {
-                    itemSelect.select2('destroy');
-                }
-                
-                itemSelect.select2({
-                    placeholder: "Select Item",
-                    allowClear: true,
-                    width: '100%',
-                    disabled: true
-                });
+                itemSelect.prop('disabled', true);
                 return;
             }
             
@@ -974,16 +929,7 @@
             
             if (filteredItems.length === 0) {
                 // No items in this section
-                if (itemSelect.hasClass('select2-hidden-accessible')) {
-                    itemSelect.select2('destroy');
-                }
-                
-                itemSelect.select2({
-                    placeholder: "No items in this section",
-                    allowClear: true,
-                    width: '100%',
-                    disabled: false
-                });
+                itemSelect.prop('disabled', false);
                 return;
             }
             
@@ -1012,51 +958,8 @@
                 itemSelect.append(option);
             });
             
-            // Destroy existing Select2 instance if it exists
-            if (itemSelect.hasClass('select2-hidden-accessible')) {
-                itemSelect.select2('destroy');
-            }
-            
-            // Enable and initialize Select2
-            itemSelect.select2({
-                placeholder: "Select Item",
-                allowClear: true,
-                width: '100%',
-                disabled: false,
-                templateResult: formatItemDisplay,
-                templateSelection: formatItemSelection
-            });
-        }
-        
-        // Format how items appear in dropdown
-        function formatItemDisplay(item) {
-            if (!item.id) {
-                return item.text;
-            }
-            
-            const itemData = $(item.element).data('item-data');
-            if (!itemData) return item.text;
-            
-            const $container = $('<div class="item-option">');
-            const $name = $('<div class="item-name">').text(itemData.name);
-            const $details = $('<div class="item-details">');
-            
-            $container.append($name);
-            $container.append($details);
-            
-            return $container;
-        }
-        
-        // Format how selected item appears
-        function formatItemSelection(item) {
-            if (!item.id) {
-                return item.text;
-            }
-            
-            const itemData = $(item.element).data('item-data');
-            if (!itemData) return item.text;
-            
-            return `${itemData.name} (${itemData.unit})`;
+            // Enable dropdown
+            itemSelect.prop('disabled', false);
         }
         
         // Function to load item details when selected
@@ -1084,18 +987,7 @@
         // Function to initialize empty item dropdown
         function initializeItemDropdown(selectElement) {
             const $select = $(selectElement);
-            
-            // Destroy existing Select2 if it exists
-            if ($select.hasClass('select2-hidden-accessible')) {
-                $select.select2('destroy');
-            }
-            
-            $select.select2({
-                placeholder: "Select Item",
-                allowClear: true,
-                width: '100%',
-                disabled: true
-            });
+            $select.prop('disabled', true);
         }
         
         // Function to add new item row
@@ -1125,7 +1017,7 @@
                 </td>
                 <!-- ITEM DESCRIPTION SECOND -->
                 <td>
-                    <select class="item-desc" name="item_id[]" onchange="loadItemDetails(this)" required>
+                    <select class="item-desc" name="item_id[]" onchange="loadItemDetails(this)" required disabled>
                         <option value="">Select Item</option>
                     </select>
                 </td>
@@ -1174,14 +1066,6 @@
         // Function to delete row
         function deleteRow(button) {
             const row = $(button).closest('tr');
-            
-            // Destroy Select2 instances before removing row
-            row.find('select').each(function() {
-                if ($(this).hasClass('select2-hidden-accessible')) {
-                    $(this).select2('destroy');
-                }
-            });
-            
             row.remove();
             updateTotals();
         }
@@ -1381,18 +1265,13 @@
             }
         }
         
-        // Function to download quotation PDF
-        function downloadQuotation(quotationId) {
-            window.open('/quotation/download/' + quotationId + '/', '_blank');
-        }
-        
         // Function to reset form after successful submission
         function resetForm() {
             // Clear form fields
             document.getElementById('notes').value = '';
             
             // Clear lead selection
-            $('#lead-ticket-select').val('').trigger('change');
+            $('#lead-ticket-select').val('');
             clearTicketFields();
             selectedLead = null;
             
@@ -1409,26 +1288,31 @@
         }
         
         // Initialize when page loads
-        document.addEventListener('DOMContentLoaded', async function() {
+        $(document).ready(function() {
             console.log('Initializing quotation form with Purchase Order items...');
             
-            // Load items from Purchase Order app
-            await loadItemsFromPurchaseOrderApp();
+            // Set up event listener for ticket selection
+            $('#lead-ticket-select').on('change', function() {
+                handleTicketSelection(this);
+            });
             
-            // If items are loaded successfully, add one default row automatically
-            if (itemsLoaded && purchaseOrderItems.length > 0) {
-                // Wait a bit for UI to settle
-                setTimeout(() => {
-                    showNotification(`Loaded ${purchaseOrderItems.length} items from Purchase Order app. Add items to create quotation.`, 'info');
-                    // Auto-add one row for convenience
-                    addNewItem();
-                }, 1000);
-            } else {
-                showNotification('Warning: No items available. Please check Purchase Order app.', 'warning');
-                // Disable the "Add Item" button if no items
-                document.querySelector('.btn-add').disabled = true;
-                document.querySelector('.btn-add').innerHTML = '<i class="fas fa-exclamation-triangle"></i> No Items Available';
-            }
+            // Load items from Purchase Order app
+            loadItemsFromPurchaseOrderApp().then(() => {
+                // If items are loaded successfully, add one default row automatically
+                if (itemsLoaded && purchaseOrderItems.length > 0) {
+                    // Wait a bit for UI to settle
+                    setTimeout(() => {
+                        showNotification(`Loaded ${purchaseOrderItems.length} items from Purchase Order app. Add items to create quotation.`, 'info');
+                        // Auto-add one row for convenience
+                        addNewItem();
+                    }, 1000);
+                } else {
+                    showNotification('Warning: No items available. Please check Purchase Order app.', 'warning');
+                    // Disable the "Add Item" button if no items
+                    document.querySelector('.btn-add').disabled = true;
+                    document.querySelector('.btn-add').innerHTML = '<i class="fas fa-exclamation-triangle"></i> No Items Available';
+                }
+            });
             
             console.log('Quotation form initialized');
         });

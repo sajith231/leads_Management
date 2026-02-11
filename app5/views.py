@@ -8078,12 +8078,35 @@ def edit_quotation(request, quotation_id):
         items = Item.objects.all()  # From purchase order app
         leads = Lead.objects.filter(status='Active')
         
+        # Get unique sections from items
+        sections = items.values_list('section', flat=True).distinct()
+        
+        # Create a safe JSON serializable version of items for JavaScript
+        items_json = []
+        for item in items:
+            items_json.append({
+                'id': item.id,
+                'name': item.name,
+                'description': item.description or '',
+                'unit_of_measure': item.unit_of_measure,
+                'mrp': float(item.mrp) if item.mrp else 0,
+                'purchase_price': float(item.purchase_price) if item.purchase_price else 0,
+                'cost': float(item.cost) if item.cost else 0,
+                'tax_percentage': float(item.tax_percentage) if item.tax_percentage else 0,
+                'hsn_code': item.hsn_code or '',
+                'section': item.section or '',
+                'department': item.department.name if item.department else 'N/A',
+                'is_active': item.is_active
+            })
+        
         context = {
             'quotation': quotation,
-            'quotation_items': quotation_items,
+            'quotation_items': quotation_items,  # Pass as separate variable
             'items': items,
             'active_leads': leads,
             'leads_count': leads.count(),
+            'sections': sections,
+            'items_json': items_json,  # For JavaScript
         }
         return render(request, 'quotation_edit.html', context)
     except Quotation.DoesNotExist:
@@ -8500,7 +8523,7 @@ def download_quotation(request, quotation_id):
     grand_total = subtotal + total_tax - discount_amount + shipping_charges
     
     def fmt(value):
-        return f"₹{value:,.2f}"
+        return f"{value:,.2f}"
     
     # ✅ Build display strings for branch
     if branch:
@@ -8781,9 +8804,9 @@ def generate_quotation_pdf(context):
 
         p.drawString(50,  y_cur, name)
         p.drawString(250, y_cur, str(quantity))
-        p.drawString(320, y_cur, f"₹{price:,.2f}")
+        p.drawString(320, y_cur, f"{price:,.2f}")
         p.drawString(380, y_cur, f"{tax_pct}%")
-        p.drawString(450, y_cur, f"₹{item_total:,.2f}")
+        p.drawString(450, y_cur, f"{item_total:,.2f}")
         y_cur -= 16
 
         if y_cur < 100:
