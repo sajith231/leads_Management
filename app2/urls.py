@@ -66,11 +66,14 @@ urlpatterns = [
 
 
     
-    path('daily_task_admin/', views.daily_task_admin, name='daily_task_admin'),
-    path('daily_task_user/', views.daily_task_user, name='daily_task_user'),
-    path('add_daily_task/', views.add_daily_task, name='add_daily_task'),
-    path('edit_daily_task/<int:task_id>/', views.edit_daily_task, name='edit_daily_task'),
-    path('delete_daily_task/<int:task_id>/', views.delete_daily_task, name='delete_daily_task'),
+path('daily_task_admin/', views.daily_task_admin, name='daily_task_admin'),
+path('daily_task_user/', views.daily_task_user, name='daily_task_user'),
+path('add_daily_task/', views.add_daily_task, name='add_daily_task'),
+path('edit_daily_task/<int:task_id>/', views.edit_daily_task, name='edit_daily_task'),
+path('delete_daily_task/<int:task_id>/', views.delete_daily_task, name='delete_daily_task'),
+path('update_task_status_admin/', views.update_task_status_admin, name='update_task_status_admin'),
+path('update_task_status_user/', views.update_task_status_user, name='update_task_status_user'),
+path('get_project_details/', views.get_project_details, name='get_project_details'),
 
 
 
@@ -135,6 +138,9 @@ urlpatterns = [
     path('standby/customer-info/<int:item_id>/', views.Standby_get_customer_info, name='standby_customer_info'),
   # urls.py
    path('standby/return/<int:item_id>/', views.standby_return_item, name='standby_return_item'), 
+   path('project-work/', views.project_work_list, name='project_work'),
+   path('my-projects/', views.user_project_assignments, name='user_project_assignments'),
+
 
 
 

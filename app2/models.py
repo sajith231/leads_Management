@@ -96,29 +96,129 @@ class InformationCenter(models.Model):
 
 
 
+# =============================================================================
+# UPDATED DAILYTASK MODEL WITH DURATION TRACKING
+# Add these fields and methods to your existing DailyTask model in models.py
+# =============================================================================
 
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 
 class DailyTask(models.Model):
     STATUS_CHOICES = [
-        ('complete', 'Complete'),
-        ('started', 'Started'),
-        ('finish', 'Finish'),
+        ('backlog', 'Backlog'),
+        ('pending', 'Pending'),
         ('in_progress', 'In Progress'),
+        ('review', 'Review/Testing'),
+        ('completed', 'Completed'),
+        ('hold', 'Hold'),
     ]
+    
+    PRIORITY_CHOICES = [
+        ('high', 'High'),
+        ('medium', 'Medium'),
+        ('low', 'Low'),
+    ]
+    
+    # Existing fields
+    task_key = models.CharField(max_length=20, blank=True, null=True, editable=False)
     project = models.CharField(max_length=255)
     task = models.CharField(max_length=255)
-    duration = models.CharField(max_length=50)  # Changed to CharField
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='in_progress')#CHANGED AS NEW
+    duration = models.CharField(max_length=50)  # Display duration like "2h 30m 15s"
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='in_progress')
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
+    due_date = models.DateField(blank=True, null=True)
     added_by = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    remark = models.TextField(blank=True, null=True) 
+    remark = models.TextField(blank=True, null=True)
+    
+    # ✅ NEW FIELDS FOR DURATION TRACKING
+    # Add these three fields to your existing model:
+    elapsed_seconds = models.IntegerField(
+        default=0, 
+        help_text="Total elapsed time in seconds"
+    )
+    last_started_at = models.DateTimeField(
+        null=True, 
+        blank=True, 
+        help_text="When task was last started/resumed"
+    )
+    is_timer_running = models.BooleanField(
+        default=False, 
+        help_text="Is the timer currently running"
+    )
 
     def __str__(self):
         return f"{self.task} in {self.project}"
+    
+    # ✅ NEW METHODS - Add these to your model:
+    
+    def get_current_duration(self):
+        """
+        Calculate current duration including active time
+        Returns formatted string like "2h 30m 15s"
+        """
+        total_seconds = self.elapsed_seconds
+        
+        # If timer is running, add the current active time
+        if self.is_timer_running and self.last_started_at:
+            current_time = timezone.now()
+            active_duration = (current_time - self.last_started_at).total_seconds()
+            total_seconds += active_duration
+        
+        # Format as "Xh Ym Zs"
+        hours, remainder = divmod(int(total_seconds), 3600)
+        minutes, seconds = divmod(remainder, 60)
+        return f"{hours}h {minutes}m {seconds}s"
+    
+    def start_timer(self):
+        """
+        Start or resume the timer
+        Called when status changes to 'in_progress'
+        """
+        if not self.is_timer_running:
+            self.last_started_at = timezone.now()
+            self.is_timer_running = True
+            self.status = 'in_progress'
+            self.save()
+    
+    def pause_timer(self):
+        """
+        Pause the timer and save elapsed time
+        Called when status changes from 'in_progress' to 'hold' or other statuses
+        """
+        if self.is_timer_running and self.last_started_at:
+            current_time = timezone.now()
+            active_duration = (current_time - self.last_started_at).total_seconds()
+            self.elapsed_seconds += int(active_duration)
+            self.is_timer_running = False
+            self.last_started_at = None
+            self.status = 'hold'
+            self.duration = self.get_current_duration()
+            self.save()
+    
+    def stop_timer(self):
+        """
+        Stop the timer completely
+        Called when task is marked as 'completed'
+        """
+        if self.is_timer_running:
+            self.pause_timer()
+        # Final duration update
+        self.duration = self.get_current_duration()
+        self.save()
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Daily Task'
+        verbose_name_plural = 'Daily Tasks'
+
+
+# =============================================================================
+
     
 
 

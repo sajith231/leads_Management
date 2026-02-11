@@ -1,195 +1,1444 @@
 {% extends 'base.html' %}
-{% load static %}
 
 {% block content %}
-<div class=" py-4" style="margin-top: 6%;">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class=>My Daily Tasks</h2>
-        <a href="{% url 'add_daily_task' %}" class="btn btn-success shadow-sm">
-            <i class="fa fa-plus me-1"></i> Add New
-        </a>
-    </div>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-    <div class="table-responsive shadow-sm rounded bg-white">
-        <div class="mt-3">
-            <nav aria-label="Page navigation">
-                <ul class="pagination justify-content-center">
-                    {% if page_obj.has_previous %}
-                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
-                    {% endif %}
-                    <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
-                    {% if page_obj.has_next %}
-                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
-                    {% endif %}
-                </ul>
-            </nav>
+<style>
+    /* Jira Color Palette */
+    :root {
+        --jira-blue: #0052CC;
+        --jira-blue-hover: #0747A6;
+        --jira-blue-light: #DEEBFF;
+        --jira-purple: #6554C0;
+        --jira-green: #00875A;
+        --jira-green-light: #E3FCEF;
+        --jira-yellow: #FF991F;
+        --jira-yellow-light: #FFFAE6;
+        --jira-red: #DE350B;
+        --jira-red-light: #FFEBE6;
+        --jira-gray-bg: #F4F5F7;
+        --jira-gray-border: #DFE1E6;
+        --jira-gray-text: #5E6C84;
+        --jira-dark-text: #172B4D;
+        --jira-white: #FFFFFF;
+    }
+
+    /* Jira-style Body */
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+        background-color: var(--jira-gray-bg);
+        color: var(--jira-dark-text);
+    }
+
+    /* Jira-style Buttons */
+    .jira-btn {
+        padding: 8px 16px;
+        border-radius: 3px;
+        font-weight: 500;
+        font-size: 14px;
+        transition: all 0.15s ease;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .jira-btn-primary {
+        background-color: var(--jira-blue);
+        color: white;
+    }
+
+    .jira-btn-primary:hover {
+        background-color: var(--jira-blue-hover);
+    }
+
+    /* Jira-style Search Bar */
+    .jira-search {
+        background-color: var(--jira-white);
+        border: 2px solid var(--jira-gray-border);
+        border-radius: 3px;
+        padding: 8px 12px;
+        font-size: 14px;
+        transition: all 0.2s ease;
+    }
+
+    .jira-search:focus {
+        background-color: white;
+        border-color: var(--jira-blue);
+        outline: none;
+    }
+
+    /* Jira-style Dropdown Filters */
+    .jira-filter-dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+    .jira-filter-dropdown-btn {
+        background-color: white;
+        border: 2px solid var(--jira-gray-border);
+        border-radius: 3px;
+        padding: 6px 12px;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--jira-dark-text);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s ease;
+        min-width: 120px;
+        justify-content: space-between;
+    }
+
+    .jira-filter-dropdown-btn:hover {
+        background-color: var(--jira-gray-bg);
+    }
+
+    .jira-filter-dropdown-btn.active {
+        background-color: var(--jira-blue-light);
+        border-color: var(--jira-blue);
+        color: var(--jira-blue);
+    }
+
+    .jira-filter-dropdown-content {
+        display: none;
+        position: absolute;
+        background-color: white;
+        min-width: 200px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        border: 1px solid var(--jira-gray-border);
+        border-radius: 3px;
+        z-index: 1000;
+        max-height: 300px;
+        overflow-y: auto;
+        margin-top: 4px;
+    }
+
+    .jira-filter-dropdown-content.show {
+        display: block;
+    }
+
+    .jira-filter-dropdown-item {
+        padding: 10px 16px;
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+        font-size: 14px;
+        color: var(--jira-dark-text);
+    }
+
+    .jira-filter-dropdown-item:hover {
+        background-color: var(--jira-gray-bg);
+    }
+
+    .jira-filter-dropdown-item.selected {
+        background-color: var(--jira-blue-light);
+        color: var(--jira-blue);
+        font-weight: 500;
+    }
+
+    /* Filter Bar Container */
+    .jira-filter-bar {
+        background-color: white;
+        border: 1px solid var(--jira-gray-border);
+        border-radius: 3px;
+        padding: 12px 16px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+    }
+
+    /* Clear Filters Button */
+    .clear-filters-btn {
+        background-color: transparent;
+        border: none;
+        color: var(--jira-gray-text);
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        padding: 6px 12px;
+        transition: all 0.15s ease;
+    }
+
+    .clear-filters-btn:hover {
+        color: var(--jira-blue);
+        background-color: var(--jira-gray-bg);
+        border-radius: 3px;
+    }
+
+    /* Jira-style Table with VISIBLE BORDERS */
+    .jira-table {
+        background-color: white;
+        border-radius: 3px;
+        border: 2px solid var(--jira-gray-border);
+        overflow: hidden;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .jira-table thead {
+        background-color: var(--jira-gray-bg);
+        border-bottom: 2px solid var(--jira-gray-border);
+    }
+
+    .jira-table thead th {
+        padding: 12px 16px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--jira-gray-text);
+        text-align: left;
+        border-right: 1px solid var(--jira-gray-border);
+        border-bottom: 2px solid var(--jira-gray-border);
+    }
+
+    .jira-table thead th:last-child {
+        border-right: none;
+    }
+
+    .jira-table tbody tr {
+        border-bottom: 1px solid var(--jira-gray-border);
+        transition: background-color 0.15s ease;
+    }
+
+    .jira-table tbody tr:hover {
+        background-color: #F4F5F7;
+    }
+
+    .jira-table tbody td {
+        padding: 12px 16px;
+        font-size: 14px;
+        color: var(--jira-dark-text);
+        border-right: 1px solid var(--jira-gray-border);
+        border-bottom: 1px solid var(--jira-gray-border);
+    }
+
+    .jira-table tbody td:last-child {
+        border-right: none;
+    }
+
+    .jira-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* No Column Styling */
+    .no-column {
+        font-weight: 600;
+        color: var(--jira-gray-text);
+        text-align: center;
+        min-width: 50px;
+    }
+
+    /* Task Key Badge */
+    .task-key {
+        display: inline-block;
+        padding: 4px 8px;
+        background: #e0e7ff;
+        color: #3730a3;
+        border-radius: 3px;
+        font-size: 11px;
+        font-weight: 600;
+        font-family: 'Courier New', monospace;
+        text-transform: uppercase;
+    }
+
+    /* Status Select Dropdown */
+    .status-select {
+        border: none;
+        background: transparent;
+        padding: 4px 24px 4px 8px;
+        border-radius: 3px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        appearance: none;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        transition: all 0.2s;
+        position: relative;
+    }
+
+    .status-select:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+    }
+
+    /* Status Colors */
+    .status-backlog {
+        background-color: #2C3E50;
+        color: #FFFFFF;
+    }
+
+    .status-pending {
+        background-color: var(--jira-yellow-light);
+        color: #974F0C;
+    }
+
+    .status-in_progress {
+        background-color: var(--jira-blue-light);
+        color: var(--jira-blue);
+    }
+
+    .status-review {
+        background-color: #EAE6FF;
+        color: var(--jira-purple);
+    }
+
+    .status-completed {
+        background-color: var(--jira-green-light);
+        color: var(--jira-green);
+    }
+
+    .status-hold {
+        background-color: #FFF4E6;
+        color: #D97706;
+    }
+
+    /* Dropdown Arrow for Status */
+    .status-wrapper {
+        position: relative;
+        display: inline-block;
+    }
+
+    .status-wrapper::after {
+        content: '▼';
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 7px;
+        color: currentColor;
+        pointer-events: none;
+    }
+
+    /* Jira-style Priority Badges */
+    .jira-priority {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .jira-priority-high {
+        color: var(--jira-red);
+    }
+
+    .jira-priority-high i {
+        color: var(--jira-red);
+    }
+
+    .jira-priority-medium {
+        color: var(--jira-yellow);
+    }
+
+    .jira-priority-medium i {
+        color: var(--jira-yellow);
+    }
+
+    .jira-priority-low {
+        color: var(--jira-green);
+    }
+
+    .jira-priority-low i {
+        color: var(--jira-green);
+    }
+
+    /* Jira-style Icons */
+    .jira-icon {
+        color: var(--jira-gray-text);
+        transition: color 0.15s ease;
+        cursor: pointer;
+    }
+
+    .jira-icon:hover {
+        color: var(--jira-blue);
+    }
+
+    .jira-icon-danger:hover {
+        color: var(--jira-red);
+    }
+
+    /* Jira-style Pagination */
+    .jira-pagination {
+        display: inline-flex;
+        border-radius: 3px;
+        overflow: hidden;
+        border: 1px solid var(--jira-gray-border);
+        background-color: white;
+    }
+
+    .jira-pagination a,
+    .jira-pagination span {
+        padding: 8px 12px;
+        font-size: 14px;
+        color: var(--jira-dark-text);
+        border-right: 1px solid var(--jira-gray-border);
+        transition: background-color 0.15s ease;
+        text-decoration: none;
+    }
+
+    .jira-pagination a:last-child,
+    .jira-pagination span:last-child {
+        border-right: none;
+    }
+
+    .jira-pagination a:hover {
+        background-color: var(--jira-gray-bg);
+    }
+
+    .jira-pagination .active {
+        background-color: var(--jira-blue-light);
+        color: var(--jira-blue);
+        font-weight: 600;
+    }
+
+    .jira-pagination .disabled {
+        color: var(--jira-gray-border);
+        cursor: not-allowed;
+    }
+
+    /* Jira-style Modal */
+    .jira-modal-content {
+        background-color: white;
+        border-radius: 3px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    }
+
+    .jira-modal-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--jira-gray-border);
+    }
+
+    .jira-modal-header h3 {
+        font-size: 20px;
+        font-weight: 500;
+        color: var(--jira-dark-text);
+    }
+
+    .jira-modal-body {
+        padding: 24px;
+    }
+
+    /* Container Styling */
+    .jira-container {
+        max-width: 100%;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .jira-card {
+        background-color: white;
+        border-radius: 3px;
+        border: 1px solid var(--jira-gray-border);
+        padding: 20px;
+        margin-bottom: 16px;
+    }
+
+    /* Project Tag */
+    .project-tag {
+        font-weight: 600;
+        color: var(--jira-dark-text);
+        text-transform: uppercase;
+        font-size: 12px;
+        letter-spacing: 0.3px;
+    }
+
+    /* Duration Badge */
+    .duration-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 8px;
+        background: var(--jira-gray-bg);
+        border-radius: 3px;
+        font-size: 12px;
+        font-family: 'Courier New', monospace;
+        color: var(--jira-gray-text);
+    }
+
+    /* Summary Cell */
+    .summary-cell {
+        max-width: 300px;
+    }
+
+    .summary-text {
+        color: var(--jira-dark-text);
+        margin-bottom: 4px;
+        line-height: 1.4;
+    }
+
+    .view-details {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        color: var(--jira-gray-text);
+        font-size: 12px;
+        text-decoration: none;
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+
+    .view-details:hover {
+        color: var(--jira-blue);
+    }
+
+    /* Modal Overlay */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+
+    /* Empty State */
+    .empty-state {
+        padding: 60px 20px;
+        text-align: center;
+    }
+
+    .empty-state i {
+        font-size: 48px;
+        color: #cbd5e1;
+        margin-bottom: 16px;
+    }
+
+    .empty-state p {
+        color: var(--jira-gray-text);
+        font-size: 16px;
+        margin: 0;
+    }
+
+    /* ========== MOBILE RESPONSIVE STYLES ========== */
+    
+    /* Mobile: Container adjustments */
+    @media (max-width: 768px) {
+        .jira-container {
+            padding: 12px;
+        }
+
+        .jira-card {
+            padding: 16px;
+        }
+
+        /* Header Section - Stack on mobile */
+        .jira-card .flex {
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .jira-card .flex > div:first-child h1 {
+            font-size: 20px;
+        }
+
+        .jira-card .flex > div:first-child p {
+            font-size: 13px;
+        }
+
+        .jira-card .flex > a {
+            width: 100%;
+        }
+
+        .jira-btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        /* Filter Bar - Stack filters */
+        .jira-filter-bar {
+            padding: 12px;
+            gap: 8px;
+        }
+
+        .jira-filter-bar > .relative {
+            flex: 1 1 100% !important;
+            width: 100%;
+        }
+
+        .jira-search {
+            width: 100%;
+        }
+
+        .jira-filter-dropdown {
+            flex: 1 1 calc(50% - 4px);
+        }
+
+        .jira-filter-dropdown-btn {
+            width: 100%;
+            min-width: auto;
+        }
+
+        .clear-filters-btn {
+            flex: 1 1 100%;
+            width: 100%;
+            text-align: center;
+        }
+
+        /* Table - Hide on mobile, show card view */
+        .jira-table {
+            display: none;
+        }
+
+        /* Mobile Card View */
+        .mobile-task-card {
+            background-color: white;
+            border: 1px solid var(--jira-gray-border);
+            border-radius: 3px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .mobile-task-card:hover {
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .mobile-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            gap: 8px;
+        }
+
+        .mobile-card-title {
+            flex: 1;
+        }
+
+        .mobile-card-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .mobile-card-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--jira-gray-bg);
+        }
+
+        .mobile-card-row:last-child {
+            border-bottom: none;
+        }
+
+        .mobile-card-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            color: var(--jira-gray-text);
+        }
+
+        .mobile-card-value {
+            font-size: 13px;
+            color: var(--jira-dark-text);
+            text-align: right;
+        }
+
+        /* Pagination - Compact on mobile */
+        .jira-pagination {
+            flex-wrap: wrap;
+        }
+
+        .jira-pagination a,
+        .jira-pagination span {
+            padding: 6px 10px;
+            font-size: 13px;
+        }
+
+        /* Modal - Full width on mobile */
+        .jira-modal-content {
+            width: 95% !important;
+            max-width: 95% !important;
+            margin: 10px;
+        }
+
+        .jira-modal-header {
+            padding: 16px;
+        }
+
+        .jira-modal-header h3 {
+            font-size: 18px;
+        }
+
+        .jira-modal-body {
+            padding: 16px;
+            font-size: 14px;
+        }
+
+        /* Adjust action buttons on mobile */
+        .jira-icon {
+            width: 36px !important;
+            height: 36px !important;
+        }
+
+        /* Status select - full width on mobile card */
+        .mobile-card-value .status-wrapper {
+            display: block;
+        }
+
+        .mobile-card-value .status-select {
+            width: 100%;
+            text-align: center;
+        }
+    }
+
+    /* Tablet adjustments */
+    @media (min-width: 769px) and (max-width: 1024px) {
+        .jira-container {
+            padding: 16px;
+        }
+
+        .summary-cell {
+            max-width: 200px;
+        }
+
+        .jira-table thead th,
+        .jira-table tbody td {
+            padding: 10px 12px;
+            font-size: 13px;
+        }
+    }
+
+    /* Desktop - Show table, hide mobile cards */
+    @media (min-width: 769px) {
+        .mobile-task-card {
+            display: none;
+        }
+    }
+</style>
+
+<div class="min-h-screen w-full" style="background-color: var(--jira-gray-bg); margin-top: 6%;">
+    <div class="jira-container">
+        <!-- Header Section -->
+        <div class="jira-card">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 style="font-size: 24px; font-weight: 600; color: var(--jira-dark-text); margin: 0 0 4px 0;">My Daily Tasks</h1>
+                    <p style="font-size: 14px; color: var(--jira-gray-text); margin: 0;">Manage and track your daily work items</p>
+                </div>
+                <a href="{% url 'add_daily_task' %}">
+                    <button class="jira-btn jira-btn-primary">
+                        <i class="fa-solid fa-plus"></i> Create Task
+                    </button>
+                </a>
+            </div>
         </div>
-        <table class="table table-bordered align-middle mb-0">
-            <thead class="table-light">
-                <tr class="text-center">
-                    <th scope="col">#</th>
-                    <th scope="col">Added Date</th>
-                    <th scope="col">Project</th>
-                    <th scope="col">Task</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Duration</th>
-                    <th scope="col">Remark</th> 
-                    <th scope="col">Edit</th>
-                    <th scope="col">Delete</th>
-                    <th scope="col">Action</th>
-                </tr>
-            </thead>
-            <tbody>
+
+        <!-- Filter Bar Section -->
+        <div class="jira-filter-bar">
+            <!-- Search Bar -->
+            <div class="relative" style="flex: 0 0 250px;">
+                <input type="text" id="taskSearch" 
+                       placeholder="Search tasks" 
+                       class="jira-search pr-4 w-full">
+            </div>
+
+            <!-- Status Dropdown -->
+            <div class="jira-filter-dropdown">
+                <button class="jira-filter-dropdown-btn" id="status-btn" onclick="toggleDropdown('status')">
+                    <span>Status</span>
+                    <i class="fas fa-chevron-down" style="font-size: 10px;"></i>
+                </button>
+                <div id="dropdown-status" class="jira-filter-dropdown-content">
+                    <div class="jira-filter-dropdown-item" onclick="selectFilter('status', '', 'All Statuses')">All Statuses</div>
+                    <div class="jira-filter-dropdown-item" onclick="selectFilter('status', 'backlog', 'Backlog')">Backlog</div>
+                    <!-- <div class="jira-filter-dropdown-item" onclick="selectFilter('status', 'pending', 'Pending')">Pending</div> -->
+                    <div class="jira-filter-dropdown-item" onclick="selectFilter('status', 'in_progress', 'In Progress')">In Progress</div>
+                    <div class="jira-filter-dropdown-item" onclick="selectFilter('status', 'review', 'Review/Testing')">Review/Testing</div>
+                    <div class="jira-filter-dropdown-item" onclick="selectFilter('status', 'completed', 'Completed')">Completed</div>
+                    <div class="jira-filter-dropdown-item" onclick="selectFilter('status', 'hold', 'Hold')">Hold</div>
+                </div>
+            </div>
+
+            <!-- Project Dropdown -->
+            <div class="jira-filter-dropdown">
+                <button class="jira-filter-dropdown-btn" id="project-btn" onclick="toggleDropdown('project')">
+                    <span>Project</span>
+                    <i class="fas fa-chevron-down" style="font-size: 10px;"></i>
+                </button>
+                <div id="dropdown-project" class="jira-filter-dropdown-content">
+                    <div class="jira-filter-dropdown-item" onclick="selectFilter('project', '', 'All Projects')">All Projects</div>
+                </div>
+            </div>
+
+            <!-- Priority Dropdown -->
+            <div class="jira-filter-dropdown">
+                <button class="jira-filter-dropdown-btn" id="priority-btn" onclick="toggleDropdown('priority')">
+                    <span>Priority</span>
+                    <i class="fas fa-chevron-down" style="font-size: 10px;"></i>
+                </button>
+                <div id="dropdown-priority" class="jira-filter-dropdown-content">
+                    <div class="jira-filter-dropdown-item" onclick="selectFilter('priority', '', 'All Priorities')">All Priorities</div>
+                    <div class="jira-filter-dropdown-item" onclick="selectFilter('priority', 'high', 'High')">High</div>
+                    <div class="jira-filter-dropdown-item" onclick="selectFilter('priority', 'medium', 'Medium')">Medium</div>
+                    <div class="jira-filter-dropdown-item" onclick="selectFilter('priority', 'low', 'Low')">Low</div>
+                </div>
+            </div>
+
+            <!-- Clear Filters Button -->
+            <button class="clear-filters-btn" onclick="clearFilters()">
+                Clear filters
+            </button>
+        </div>
+
+        <!-- Desktop Table View -->
+        <div class="overflow-x-auto">
+            <table class="jira-table min-w-full">
+                <thead>
+                    <tr>
+                        <th class="no-column">No</th>
+                        <th>Key</th>
+                        <th>Created</th>
+                        <th>Project</th>
+                        <th>Summary</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                        <th>Due Date</th>
+                        <th>Duration</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
 {% for task in page_obj %}
-<tr >
-    <td>{{ forloop.counter }}</td>
-    <td>{{ task.created_at|date:"d-m-Y" }}</td>
-    <td class="text-capitalize">{{ task.project }}</td>
-    <td>{{ task.task }}</td>
-    <td class="text-center">
-        {% if task.status == 'completed' %}
-            <span class="badge bg-success">Completed</span>
-        {% elif task.status == 'in_progress' %}
-            <span class="badge bg-primary">In Progress</span>
+<tr class="task-row" 
+    data-status="{{ task.status }}" 
+    data-project="{{ task.project }}" 
+    data-priority="{{ task.priority|lower }}">
+    <td class="no-column">{{ forloop.counter }}</td>
+    
+    <td>
+        <span class="task-key">{{ task.project|upper|slice:":2" }}-{{ task.id }}</span>
+    </td>
+    
+    <td>
+        <div style="font-size: 13px; font-weight: 500;">{{ task.created_at|date:"M d, Y" }}</div>
+        <div style="font-size: 11px; color: var(--jira-gray-text);">{{ task.created_at|date:"h:i A" }}</div>
+    </td>
+    
+    <td>
+        <span class="project-name project-tag">{{ task.project }}</span>
+    </td>
+    
+    <td>
+        <div class="summary-cell">
+            <div class="summary-text">
+                <i class="fas fa-align-left" style="margin-right: 6px; color: var(--jira-gray-text); font-size: 11px;"></i>
+                {% if task.task|length > 50 %}
+                    {{ task.task|slice:":50" }}...
+                {% else %}
+                    {{ task.task }}
+                {% endif %}
+            </div>
+            {% if task.remark %}
+            <a class="view-details" onclick="showRemarkPopup('{{ task.remark|escapejs }}')">
+                <i class="fas fa-comment-dots"></i>
+                View details
+            </a>
+            {% endif %}
+        </div>
+    </td>
+    
+    <td>
+        <div class="status-wrapper">
+            <select class="status-select status-{{ task.status }}" 
+                    data-task-id="{{ task.id }}" 
+                    onchange="updateTaskStatus(this)">
+                <option value="backlog" {% if task.status == 'backlog' %}selected{% endif %}>Backlog</option>
+                <!-- <option value="pending" {% if task.status == 'pending' %}selected{% endif %}>Pending</option> -->
+                <option value="in_progress" {% if task.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                <option value="review" {% if task.status == 'review' %}selected{% endif %}>Review/Testing</option>
+                <option value="completed" {% if task.status == 'completed' %}selected{% endif %}>Completed</option>
+                <option value="hold" {% if task.status == 'hold' %}selected{% endif %}>Hold</option>
+            </select>
+        </div>
+    </td>
+    
+    <td class="priority-cell" data-priority="{{ task.priority }}">
+        {% with priority=task.priority|lower %}
+            {% if priority == 'high' %}
+                <span class="jira-priority jira-priority-high">
+                    <i class="fas fa-arrow-up"></i>
+                    High
+                </span>
+            {% elif priority == 'low' %}
+                <span class="jira-priority jira-priority-low">
+                    <i class="fas fa-arrow-up"></i>
+                    Low
+                </span>
+            {% else %}
+                <span class="jira-priority jira-priority-medium">
+                    <i class="fas fa-arrow-up"></i>
+                    Medium
+                </span>
+            {% endif %}
+        {% endwith %}
+    </td>
+    
+    <td>
+        {% if task.due_date %}
+            <div class="due-date-display" style="color: var(--jira-gray-text); font-size: 13px; display: inline-flex; align-items: center;">
+                <i class="far fa-calendar" style="margin-right: 6px; font-size: 12px;"></i>
+                {{ task.due_date|date:"M d, Y" }}
+            </div>
         {% else %}
-            <span class="badge bg-secondary">{{ task.status|capfirst }}</span>
+            <span style="color: var(--jira-gray-text); font-size: 13px;">No due date</span>
         {% endif %}
     </td>
-    <td>
+    
+    <td class="text-center">
         {% if task.duration %}
-            {{ task.duration }}
+            <span class="duration-badge duration-cell" 
+                  data-task-id="{{ task.id }}"
+                  data-elapsed="{{ task.elapsed_seconds }}"
+                  data-is-running="{{ task.is_timer_running }}"
+                  {% if task.is_timer_running %}data-started-at="{{ task.last_started_at|date:'c' }}"{% endif %}>
+                <i class="far fa-clock"></i><span class="duration-text">{{ task.duration }}</span>
+            </span>
         {% else %}
-            <span class="text-muted">-</span>
+            <span class="duration-badge duration-cell" 
+                  data-task-id="{{ task.id }}"
+                  data-elapsed="0"
+                  data-is-running="False">
+                <i class="far fa-clock"></i><span class="duration-text">-</span>
+            </span>
         {% endif %}
     </td>
+    
     <td class="text-center">
-        <button onclick="showRemarkPopup('{{ task.remark|escapejs }}')" style="background: none; border: none; cursor: pointer;">
-            <i class="fas fa-comment-dots" style="color: #555; font-size: 18px;"></i>
-        </button>
-    </td>
-    <td>
-        <a href="{% url 'edit_daily_task' task.id %}" class="btn btn-warning btn-sm">
-            <i class="fa fa-edit"></i>
-        </a>
-    </td>
-    <td>
-        <form method="post" action="{% url 'delete_daily_task' task.id %}" class="d-inline">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-danger btn-sm"
-                onclick="return confirm('Are you sure you want to delete this task?');">
-                <i class="fa fa-trash"></i>
+        <div style="display: inline-flex; gap: 6px;">
+            <button class="jira-icon" 
+                    onclick="location.href='{% url 'edit_daily_task' task.id %}'"
+                    title="Edit"
+                    style="width: 32px; height: 32px; border: 1px solid var(--jira-gray-border); background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
+                <i class="fa fa-edit"></i>
             </button>
-        </form>
-    </td>
-    <td>
-        {% if task.status == 'in_progress' %}
-            <button class="btn btn-danger btn-sm" onclick="stopTask({{ task.id }})">
-                <i class="fa fa-stop"></i> Stop
-            </button>
-        {% endif %}
+            <form method="post" action="{% url 'delete_daily_task' task.id %}" class="d-inline" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" 
+                        class="jira-icon jira-icon-danger" 
+                        title="Delete"
+                        onclick="return confirm('Are you sure you want to delete this task?');"
+                        style="width: 32px; height: 32px; border: 1px solid var(--jira-gray-border); background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fa fa-trash"></i>
+                </button>
+            </form>
+        </div>
     </td>
 </tr>
 {% empty %}
 <tr>
-    <td colspan="10" class="text-center text-muted">No tasks available.</td>
+    <td colspan="10">
+        <div class="empty-state">
+            <i class="fa fa-inbox"></i>
+            <p>No tasks available. Create your first task to get started!</p>
+        </div>
+    </td>
 </tr>
 {% endfor %}
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Mobile Card View -->
+        <div class="mobile-cards-container">
+{% for task in page_obj %}
+            <div class="mobile-task-card task-row" 
+                 data-status="{{ task.status }}" 
+                 data-project="{{ task.project }}" 
+                 data-priority="{{ task.priority|lower }}">
+                
+                <!-- Header with Key and Actions -->
+                <div class="mobile-card-header">
+                    <div class="mobile-card-title">
+                        <span class="task-key">{{ task.project|upper|slice:":2" }}-{{ task.id }}</span>
+                        <div style="margin-top: 8px; color: var(--jira-dark-text); font-weight: 500; line-height: 1.4;">
+                            {{ task.task }}
+                        </div>
+                    </div>
+                    <div class="mobile-card-actions">
+                        <button class="jira-icon" 
+                                onclick="location.href='{% url 'edit_daily_task' task.id %}'"
+                                title="Edit"
+                                style="width: 32px; height: 32px; border: 1px solid var(--jira-gray-border); background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa fa-edit"></i>
+                        </button>
+                        <form method="post" action="{% url 'delete_daily_task' task.id %}" class="d-inline" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" 
+                                    class="jira-icon jira-icon-danger" 
+                                    title="Delete"
+                                    onclick="return confirm('Are you sure you want to delete this task?');"
+                                    style="width: 32px; height: 32px; border: 1px solid var(--jira-gray-border); background: white; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Task Details -->
+                <div style="margin-top: 12px;">
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label">Status</span>
+                        <div class="mobile-card-value">
+                            <div class="status-wrapper">
+                                <select class="status-select status-{{ task.status }}" 
+                                        data-task-id="{{ task.id }}" 
+                                        onchange="updateTaskStatus(this)">
+                                    <option value="backlog" {% if task.status == 'backlog' %}selected{% endif %}>Backlog</option>
+                                    <option value="pending" {% if task.status == 'pending' %}selected{% endif %}>Pending</option>
+                                    <option value="in_progress" {% if task.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                                    <option value="review" {% if task.status == 'review' %}selected{% endif %}>Review/Testing</option>
+                                    <option value="completed" {% if task.status == 'completed' %}selected{% endif %}>Completed</option>
+                                    <option value="hold" {% if task.status == 'hold' %}selected{% endif %}>Hold</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label">Priority</span>
+                        <div class="mobile-card-value priority-cell" data-priority="{{ task.priority }}">
+                            {% with priority=task.priority|lower %}
+                                {% if priority == 'high' %}
+                                    <span class="jira-priority jira-priority-high">
+                                        <i class="fas fa-arrow-up"></i>
+                                        High
+                                    </span>
+                                {% elif priority == 'low' %}
+                                    <span class="jira-priority jira-priority-low">
+                                        <i class="fas fa-arrow-up"></i>
+                                        Low
+                                    </span>
+                                {% else %}
+                                    <span class="jira-priority jira-priority-medium">
+                                        <i class="fas fa-arrow-up"></i>
+                                        Medium
+                                    </span>
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                    </div>
+
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label">Project</span>
+                        <span class="mobile-card-value project-name project-tag">{{ task.project }}</span>
+                    </div>
+
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label">Created</span>
+                        <span class="mobile-card-value">{{ task.created_at|date:"M d, Y" }}</span>
+                    </div>
+
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label">Due Date</span>
+                        <span class="mobile-card-value">
+                            {% if task.due_date %}
+                                {{ task.due_date|date:"M d, Y" }}
+                            {% else %}
+                                No due date
+                            {% endif %}
+                        </span>
+                    </div>
+
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label">Duration</span>
+                        <span class="mobile-card-value">
+                            {% if task.duration %}
+                                <span class="duration-badge duration-cell" 
+                                      data-task-id="{{ task.id }}"
+                                      data-elapsed="{{ task.elapsed_seconds }}"
+                                      data-is-running="{{ task.is_timer_running }}"
+                                      {% if task.is_timer_running %}data-started-at="{{ task.last_started_at|date:'c' }}"{% endif %}>
+                                    <i class="far fa-clock"></i><span class="duration-text">{{ task.duration }}</span>
+                                </span>
+                            {% else %}
+                                <span class="duration-badge duration-cell" 
+                                      data-task-id="{{ task.id }}"
+                                      data-elapsed="0"
+                                      data-is-running="False">
+                                    <i class="far fa-clock"></i><span class="duration-text">-</span>
+                                </span>
+                            {% endif %}
+                        </span>
+                    </div>
+
+                    {% if task.remark %}
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label">Details</span>
+                        <a class="view-details" onclick="showRemarkPopup('{{ task.remark|escapejs }}')">
+                            <i class="fas fa-comment-dots"></i>
+                            View details
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+{% empty %}
+            <div class="empty-state">
+                <i class="fa fa-inbox"></i>
+                <p>No tasks available. Create your first task to get started!</p>
+            </div>
+{% endfor %}
+        </div>
+
+        <!-- Pagination Bottom -->
+        {% if page_obj.paginator.num_pages > 1 %}
+        <div class="flex justify-center items-center mt-4">
+            <nav aria-label="Page navigation">
+                <ul class="jira-pagination">
+                    <li>
+                        <a href="?page=1">
+                            First
+                        </a>
+                    </li>
+                    <li>
+                        {% if page_obj.has_previous %}
+                            <a href="?page={{ page_obj.previous_page_number }}">
+                                Previous
+                            </a>
+                        {% else %}
+                            <span class="disabled">
+                                Previous
+                            </span>
+                        {% endif %}
+                    </li>
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li>
+                                <span class="active">
+                                    {{ num }}
+                                </span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li>
+                                <a href="?page={{ num }}">
+                                    {{ num }}
+                                </a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    <li>
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}">
+                                Next
+                            </a>
+                        {% else %}
+                            <span class="disabled">
+                                Next
+                            </span>
+                        {% endif %}
+                    </li>
+                    <li>
+                        <a href="?page={{ page_obj.paginator.num_pages }}">
+                            Last
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
     </div>
 </div>
 
-<!-- Remark Popup Modal -->
-<div id="remarkModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-     background-color: rgba(0, 0, 0, 0.6); justify-content: center; align-items: center; z-index: 9999;">
-  <div style="background-color: #fff; padding: 20px; border-radius: 10px; max-width: 400px; width: 80%; position: relative;">
-    <span onclick="closeRemarkPopup()" style="position: absolute; top: 10px; right: 15px; cursor: pointer; font-size: 20px;">&times;</span>
-    <h5 style="margin-bottom: 15px; color: #333;">Task Remark</h5>
-    <p id="remarkContent" style="white-space: pre-wrap; color: #666; line-height: 1.5;"></p>
-  </div>
+<!-- Remark Modal -->
+<div id="remarkModal" class="modal-overlay">
+    <div class="jira-modal-content" style="max-width: 600px; width: 90%; position: relative;">
+        <div class="jira-modal-header">
+            <h3><i class="fas fa-comment-alt" style="color: var(--jira-blue); margin-right: 8px;"></i>Task Details</h3>
+        </div>
+        <div class="jira-modal-body" style="white-space: pre-wrap; line-height: 1.6;" id="remarkContent"></div>
+        <button onclick="closeRemarkPopup()" style="position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 24px; color: var(--jira-gray-text); cursor: pointer;">&times;</button>
+    </div>
 </div>
 
 <script>
-  function showRemarkPopup(remark) {
+let currentFilters = {
+    status: '',
+    project: '',
+    priority: ''
+};
+
+function toggleDropdown(name) {
+    const dropdown = document.getElementById('dropdown-' + name);
+    const allDropdowns = document.querySelectorAll('.jira-filter-dropdown-content');
+    
+    allDropdowns.forEach(dd => {
+        if (dd !== dropdown) {
+            dd.classList.remove('show');
+        }
+    });
+    
+    dropdown.classList.toggle('show');
+}
+
+function selectFilter(filterType, value, label) {
+    currentFilters[filterType] = value;
+    applyFilters();
+}
+
+function applyFilters() {
+    const searchTerm = document.getElementById('taskSearch').value.toLowerCase();
+    const statusFilter = currentFilters.status.toLowerCase();
+    const projectFilter = currentFilters.project.toLowerCase();
+    const priorityFilter = currentFilters.priority.toLowerCase();
+    const rows = document.querySelectorAll('.task-row');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        const rowStatus = row.getAttribute('data-status');
+        const rowProject = row.getAttribute('data-project');
+        const rowPriority = row.getAttribute('data-priority');
+        
+        const matchesSearch = !searchTerm || text.includes(searchTerm);
+        const matchesStatus = !statusFilter || (rowStatus && rowStatus.toLowerCase() === statusFilter);
+        const matchesProject = !projectFilter || (rowProject && rowProject.toLowerCase().includes(projectFilter));
+        const matchesPriority = !priorityFilter || (rowPriority && rowPriority.toLowerCase() === priorityFilter);
+        
+        row.style.display = (matchesSearch && matchesStatus && matchesProject && matchesPriority) ? '' : 'none';
+    });
+}
+
+function clearFilters() {
+    currentFilters = {
+        status: '',
+        project: '',
+        priority: ''
+    };
+    document.getElementById('taskSearch').value = '';
+    
+    document.querySelectorAll('.task-row').forEach(row => {
+        row.style.display = '';
+    });
+    
+    // Reset button states
+    document.querySelectorAll('.jira-filter-dropdown-btn').forEach(btn => {
+        btn.classList.remove('active');
+        const filterType = btn.id.replace('-btn', '');
+        const displayName = filterType.charAt(0).toUpperCase() + filterType.slice(1);
+        btn.innerHTML = `<span>${displayName}</span><i class="fas fa-chevron-down" style="font-size: 10px;"></i>`;
+    });
+}
+
+function showRemarkPopup(remark) {
     const content = remark || 'No remark provided.';
     document.getElementById('remarkContent').innerText = content;
     document.getElementById('remarkModal').style.display = 'flex';
-  }
+}
 
-  function closeRemarkPopup() {
+function closeRemarkPopup() {
     document.getElementById('remarkModal').style.display = 'none';
-  }
+}
 
-  // Close modal when clicking outside
-  document.getElementById('remarkModal').addEventListener('click', function(e) {
+// Close modal when clicking outside
+document.getElementById('remarkModal').addEventListener('click', function(e) {
     if (e.target === this) {
-      closeRemarkPopup();
+        closeRemarkPopup();
     }
-  });
+});
 
-  // Get CSRF token from cookies
-  function getCookie(name) {
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeRemarkPopup();
+    }
+});
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.jira-filter-dropdown')) {
+        document.querySelectorAll('.jira-filter-dropdown-content').forEach(dd => {
+            dd.classList.remove('show');
+        });
+    }
+});
+
+// Get CSRF token
+function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
-      const cookies = document.cookie.split(';');
-      for (let i = 0; i < cookies.length; i++) {
-        const cookie = cookies[i].trim();
-        if (cookie.substring(0, name.length + 1) === (name + '=')) {
-          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-          break;
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
         }
-      }
     }
     return cookieValue;
-  }
+}
 
-  function stopTask(taskId) {
-    console.log('Stopping task with ID:', taskId);
+// ✅ FIXED: Update task status function
+function updateTaskStatus(selectElement) {
+    const taskId = selectElement.getAttribute('data-task-id');
+    const newStatus = selectElement.value;
     
-    // Disable the button to prevent multiple clicks
-    const button = event.target.closest('button');
-    button.disabled = true;
-    button.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Stopping...';
+    const originalValue = selectElement.getAttribute('data-original-value') || selectElement.value;
+    if (!selectElement.hasAttribute('data-original-value')) {
+        selectElement.setAttribute('data-original-value', originalValue);
+    }
     
-    // Create form data
+    selectElement.disabled = true;
+    
     const formData = new FormData();
     formData.append('task_id', taskId);
+    formData.append('status', newStatus);
     formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
     
-    fetch("{% url 'stop_task' %}", {
-      method: 'POST',
-      body: formData,
-      headers: {
-        'X-CSRFToken': getCookie('csrftoken')
-      }
+    fetch("{% url 'update_task_status_user' %}", {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
     })
     .then(response => {
-      console.log('Response status:', response.status);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.json();
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
     })
     .then(data => {
-      console.log('Response data:', data);
-      if (data.success) {
-        alert('Task stopped successfully.');
-        location.reload();
-      } else {
-        alert('Failed to stop task: ' + (data.error || 'Unknown error'));
-        // Re-enable button on error
-        button.disabled = false;
-        button.innerHTML = '<i class="fa fa-stop"></i> Stop';
-      }
+        if (data.success) {
+            selectElement.setAttribute('data-original-value', newStatus);
+            selectElement.className = `status-select status-${newStatus}`;
+            selectElement.disabled = false;
+            
+            // Update both desktop and mobile views
+            const taskRow = selectElement.closest('.task-row');
+            if (taskRow) {
+                taskRow.setAttribute('data-status', newStatus);
+                
+                // ✅ CRITICAL FIX: Update duration cell with new timer data
+                const durationCells = taskRow.querySelectorAll('.duration-cell');
+                durationCells.forEach(durationCell => {
+                    // ✅ Get the ORIGINAL started_at time (if it exists)
+                    const originalStartedAt = durationCell.getAttribute('data-started-at');
+                    
+                    durationCell.setAttribute('data-elapsed', data.elapsed_seconds || 0);
+                    durationCell.setAttribute('data-is-running', data.is_running ? 'True' : 'False');
+                    
+                    if (data.is_running) {
+                        // ✅ CRITICAL FIX: Preserve original start time if timer was already running
+                        if (originalStartedAt) {
+                            // Timer was already running - keep the original start time
+                            durationCell.setAttribute('data-started-at', originalStartedAt);
+                        } else {
+                            // Timer just started - set new start time
+                            durationCell.setAttribute('data-started-at', new Date().toISOString());
+                        }
+                    } else {
+                        // Timer is not running - remove start time
+                        durationCell.removeAttribute('data-started-at');
+                        
+                        // Update display with final duration
+                        const durationText = durationCell.querySelector('.duration-text');
+                        if (durationText && data.current_duration) {
+                            durationText.textContent = data.current_duration;
+                        }
+                    }
+                });
+                
+                // Update all status selects in this row (desktop and mobile)
+                taskRow.querySelectorAll('.status-select').forEach(select => {
+                    if (select !== selectElement) {
+                        select.value = newStatus;
+                        select.className = `status-select status-${newStatus}`;
+                        select.setAttribute('data-original-value', newStatus);
+                    }
+                });
+            }
+        } else {
+            throw new Error(data.error || 'Unknown error');
+        }
     })
     .catch(error => {
-      console.error('Fetch error:', error);
-      alert('An error occurred while stopping the task: ' + error.message);
-      // Re-enable button on error
-      button.disabled = false;
-      button.innerHTML = '<i class="fa fa-stop"></i> Stop';
+        console.error('Error:', error);
+        alert('Failed to update status: ' + error.message);
+        selectElement.value = originalValue;
+        selectElement.disabled = false;
     });
-  }
+}
+
+// Populate project dropdown with unique projects
+document.addEventListener('DOMContentLoaded', function() {
+    const projectFilter = document.getElementById('dropdown-project');
+    const projectCells = document.querySelectorAll('.project-name');
+    const uniqueProjects = new Set();
+    
+    projectCells.forEach(cell => {
+        const projectName = cell.textContent.trim();
+        if (projectName) {
+            uniqueProjects.add(projectName);
+        }
+    });
+    
+    // Sort and add to dropdown
+    Array.from(uniqueProjects).sort().forEach(project => {
+        const item = document.createElement('div');
+        item.className = 'jira-filter-dropdown-item';
+        item.textContent = project;
+        item.onclick = () => selectFilter('project', project, project);
+        projectFilter.appendChild(item);
+    });
+    
+    // Attach event listeners
+    document.getElementById('taskSearch')?.addEventListener('input', applyFilters);
+    
+    // ============================================================================
+    // REAL-TIME TIMER UPDATES
+    // ============================================================================
+    
+    // Function to format seconds to "Xh Ym Zs"
+    function formatDuration(totalSeconds) {
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        return `${hours}h ${minutes}m ${seconds}s`;
+    }
+    
+    // Update all running timers every second
+    setInterval(() => {
+        document.querySelectorAll('.duration-cell').forEach(cell => {
+            const isRunning = cell.getAttribute('data-is-running') === 'True';
+            
+            if (isRunning) {
+                const elapsedSeconds = parseInt(cell.getAttribute('data-elapsed') || 0);
+                const startedAt = cell.getAttribute('data-started-at');
+                
+                if (startedAt) {
+                    // Calculate current active time
+                    const startTime = new Date(startedAt);
+                    const now = new Date();
+                    const activeSeconds = Math.floor((now - startTime) / 1000);
+                    
+                    // Total time = elapsed + active
+                    const totalSeconds = elapsedSeconds + activeSeconds;
+                    
+                    // Update the display
+                    const durationText = cell.querySelector('.duration-text');
+                    if (durationText) {
+                        durationText.textContent = formatDuration(totalSeconds);
+                    }
+                }
+            }
+        });
+    }, 1000); // Update every 1 second
+});
 </script>
 
 {% endblock %}
