@@ -172,7 +172,7 @@ DATABASES = {
         'NAME': 'leading_management',
         'USER': 'postgres',
         'PASSWORD':'info@imc',
-        'HOST': 'localhost',
+        'HOST': '88.222.212.14',
         'PORT': '5432',
     }
 }
