@@ -16,6 +16,8 @@ import io
 import piexif
 from app1.models import Branch
 from django.utils import timezone
+from django.conf import settings
+
 # ------------------------------------------------------------------
 # Helper: Convert decimal coordinates to GPS EXIF format
 # ------------------------------------------------------------------
@@ -244,8 +246,8 @@ def _send_otp_via_whatsapp(phone: str, otp: str) -> None:
         message = f"Your verification code is {otp}. Valid for 5 minutes."
         url = (
             "https://app.dxing.in/api/send/whatsapp"
-            "?secret=7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-            "&account=1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
+            f"?secret={settings.DXING_SECRET}"
+            f"&account={settings.DXING_ACCOUNT}"
             f"&recipient={phone}"
             "&type=text"
             f"&message={message}"

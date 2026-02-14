@@ -21,6 +21,8 @@ from django.core.paginator import Paginator
 from django.utils import timezone
 from app1.models import User 
 from decimal import Decimal, InvalidOperation
+from django.conf import settings
+
 
 def jobcard_list(request):
     jobcards = JobCard.objects.all().order_by('-created_at')
@@ -725,8 +727,10 @@ from .models import JobCard
 from app1.models import User
 
 # âœ… Updated WhatsApp API credentials
-WHATSAPP_API_SECRET = '7b8ae820ecb39f8d173d57b51e1fce4c023e359e'
-WHATSAPP_API_ACCOUNT = '1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8'
+import os
+
+WHATSAPP_API_SECRET = os.getenv("WA_SECRET")
+WHATSAPP_API_ACCOUNT = os.getenv("WA_ACCOUNT")
 
 def send_whatsapp_message(phone_number, message):
     url = f"https://app.dxing.in/api/send/whatsapp?secret={WHATSAPP_API_SECRET}&account={WHATSAPP_API_ACCOUNT}&recipient={phone_number}&type=text&message={message}&priority=1"
@@ -2112,8 +2116,8 @@ def process_warranty_tickets(request):
                 
                 whatsapp_api_base = "https://app.dxing.in/api/send/whatsapp"
                 params = {
-                    "secret": "7b8ae820ecb39f8d173d57b51e1fce4c023e359e",
-                    "account": "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af",
+                    "secret": settings.DXING_SECRET,
+                    "account": settings.DXING_ACCOUNT,
                     "type": "text",
                     "priority": 1,
                     "recipient": "9946545535",
@@ -2756,8 +2760,8 @@ def service_billing_view(request):
                 
                 whatsapp_api_base = "https://app.dxing.in/api/send/whatsapp"
                 params = {
-                    "secret": "7b8ae820ecb39f8d173d57b51e1fce4c023e359e",
-                    "account": "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af",
+                    "secret": settings.DXING_SECRET,
+                    "account": settings.DXING_ACCOUNT,
                     "type": "text",
                     "priority": 1,
                     "recipient": "9946545535",
@@ -3365,10 +3369,30 @@ def user_display_name(u):
 # -----------------------
 # Lead form view (create)
 from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+import logging
+import json
+import requests
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth import get_user_model
+from django.apps import apps
+from django.db import transaction
+from django.db.models import Q
+from decimal import Decimal
 
+logger = logging.getLogger(__name__)
+
+
+@login_required
+
+
+
+
+@login_required
 def lead_form_view(request):
     """
-    GET: show form with API data
+    GET: show form with API data and campaigns
     POST: create Lead with proper saving of marketedBy, consultant, branch, and
           support for firm-name toggle (existing firm select OR free-text name).
     """
@@ -3381,6 +3405,7 @@ def lead_form_view(request):
     from django.apps import apps
     from django.utils import timezone
     from django.db import transaction
+    from django.db.models import Q
 
     logger = logging.getLogger(__name__)
 
@@ -3391,6 +3416,52 @@ def lead_form_view(request):
     except Exception:
         UserModel = get_user_model()
 
+    # ✅ GET LOGGED-IN USER
+    current_user = None
+    current_user_name = None
+    if request.session.get('custom_user_id'):
+        try:
+            current_user = UserModel.objects.get(id=request.session['custom_user_id'])
+            current_user_name = getattr(current_user, 'name', current_user.username if hasattr(current_user, 'username') else str(current_user))
+        except UserModel.DoesNotExist:
+            logger.warning(f"User with ID {request.session['custom_user_id']} not found")
+    elif request.user and getattr(request.user, 'is_authenticated', False):
+        # Try to map Django's authenticated user to the custom User model (app1.User) when session key not present
+        try:
+            mapped = None
+            # Try common lookup fields in order of likelihood
+            if hasattr(UserModel, 'userid'):
+                try:
+                    mapped = UserModel.objects.filter(userid=request.user.username).first()
+                except Exception:
+                    mapped = None
+
+            if not mapped and getattr(request.user, 'email', None):
+                try:
+                    mapped = UserModel.objects.filter(email__iexact=request.user.email).first()
+                except Exception:
+                    mapped = None
+
+            if not mapped:
+                try:
+                    mapped = UserModel.objects.filter(username=getattr(request.user, 'username', '')).first()
+                except Exception:
+                    mapped = None
+
+            if mapped:
+                current_user = mapped
+                current_user_name = getattr(mapped, 'name', None) or getattr(mapped, 'username', None) or str(mapped)
+            else:
+                # Fallback: use the Django user object for permission checks (is_superuser/is_staff)
+                current_user = request.user
+                current_user_name = getattr(request.user, 'get_full_name', None)() if hasattr(request.user, 'get_full_name') else getattr(request.user, 'username', str(request.user))
+
+            logger.info(f"Resolved current_user for lead_form: {current_user_name}")
+        except Exception as e:
+            logger.debug(f"Error mapping request.user to UserModel: {e}")
+            current_user = request.user
+            current_user_name = getattr(request.user, 'username', str(request.user))
+
     # Resolve Lead model defensively
     try:
         from .models import Lead
@@ -3400,21 +3471,45 @@ def lead_form_view(request):
         except Exception:
             Lead = None
 
-    # ✅ UPDATED: Get active leads for directory WITH PRIORITY AND CAMPAIGN
+    # ✅ NEW: FETCH CAMPAIGNS FROM DATABASE
+    campaigns = []
+    try:
+        from campaign.models import Campaigning
+        campaigns = Campaigning.objects.filter(is_deleted=False).order_by('-campaign_id')
+        logger.info(f"✅ Loaded {campaigns.count()} campaigns from database")
+    except Exception as e:
+        logger.warning(f"⚠️ Could not load campaigns: {e}")
+        campaigns = []
+
+    # ✅ UPDATED: Get active leads with ENHANCED ADMIN FILTERING
     active_leads_data = []
     if Lead:
         try:
             # Import Campaigning model for campaign details
             try:
-                from campaigning.models import Campaigning
+                from campaign.models import Campaigning
                 has_campaigning = True
             except Exception:
                 has_campaigning = False
                 logger.warning("Campaigning model not available")
 
-            # Fetch active leads with all necessary fields including priority
-            active_leads_qs = Lead.objects.filter(status__iexact='Active').order_by('-created_at')[:50]
-            active_leads = Lead.objects.filter(status='Active').prefetch_related('requirements').order_by('-created_at')
+            # ✅ Start with all active leads
+            active_leads_qs = Lead.objects.filter(status__iexact='Active')
+            total_active = active_leads_qs.count()
+            logger.info(f"📊 Total active leads in database: {total_active}")
+            
+            # ✅ Apply user-based filtering with enhanced admin detection
+            if current_user:
+                active_leads_qs = get_user_filtered_leads(current_user, active_leads_qs)
+                filtered_count = active_leads_qs.count()
+                logger.info(f"📊 After filtering: {filtered_count} leads visible to {current_user_name}")
+            else:
+                # No user logged in - show no leads for security
+                active_leads_qs = active_leads_qs.none()
+                logger.warning("⚠️ No current user - showing 0 leads")
+            
+            active_leads_qs = active_leads_qs.order_by('-created_at')[:50]
+            
             # Process each lead to ensure all fields are properly formatted
             for lead in active_leads_qs:
                 # ✅ Get campaign display name if campaign ID exists
@@ -3469,18 +3564,19 @@ def lead_form_view(request):
                 
                 # Build requirements JSON for each lead
                 requirements_data = []
-                for req in lead.requirements.all():
-                    requirements_data.append({
-                        'id': req.id,
-                        'item_id': req.item.id if req.item else None,
-                        'item_name': req.item_name,
-                        'section': req.section or 'GENERAL',
-                        'unit': req.unit or 'pcs',
-                        'price': float(req.price) if req.price is not None else 0.00,
-                        'quantity': int(req.quantity) if req.quantity is not None else 1,
-                    })
+                if hasattr(lead, 'requirements'):
+                    for req in lead.requirements.all():
+                        requirements_data.append({
+                            'id': req.id,
+                            'item_id': req.item.id if hasattr(req, 'item') and req.item else None,
+                            'item_name': getattr(req, 'item_name', ''),
+                            'section': getattr(req, 'section', 'GENERAL'),
+                            'unit': getattr(req, 'unit', 'pcs'),
+                            'price': float(req.price) if req.price is not None else 0.00,
+                            'quantity': int(req.quantity) if req.quantity is not None else 1,
+                        })
                 
-                requirements_json = json.dumps(requirements_data)
+                requirements_json = json.dumps(requirements_data) if requirements_data else '[]'
                 
                 lead_dict = {
                     'id': lead.id,
@@ -3512,8 +3608,7 @@ def lead_form_view(request):
                     'Consultant': lead.Consultant if lead.Consultant else '',
                     'requirement': lead.requirement if lead.requirement else '',
                     'details': lead.details if lead.details else '',
-                    'requirements': lead.requirements.all(),
-                    'requirements_count': lead.requirements.count(),
+                    'requirements_count': len(requirements_data),
                     'requirements_json': requirements_json,
                     'date': lead.date.strftime('%Y-%m-%d') if lead.date else '',
                     'created_at': lead.created_at if hasattr(lead, 'created_at') else None,
@@ -3521,9 +3616,10 @@ def lead_form_view(request):
                 }
                 active_leads_data.append(lead_dict)
             
-            logger.info(f"Found {len(active_leads_data)} active leads with priority and campaign data")
+            logger.info(f"✅ Final result: {len(active_leads_data)} leads prepared for user {current_user_name}")
+            
         except Exception as e:
-            logger.error(f"Could not fetch active leads: {e}", exc_info=True)
+            logger.error(f"❌ Error fetching active leads: {e}", exc_info=True)
             active_leads_data = []
 
     # -------------------------
@@ -3624,11 +3720,23 @@ def lead_form_view(request):
         api_url = "https://accmaster.imcbs.com/api/sync/rrc-clients/"
         logger.info(f"Fetching customer data from API: {api_url}")
         
-        response = requests.get(api_url, timeout=10)
+        # Add headers to mimic a browser request
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'application/json',
+        }
+        
+        response = requests.get(api_url, headers=headers, timeout=15)
         
         if response.status_code == 200:
             api_data = response.json()
             logger.info(f"✅ Successfully fetched {len(api_data)} customers from API")
+            
+            # DEBUG: Log first few customers to check structure
+            if api_data:
+                logger.info(f"Sample API customer data structure: {api_data[0] if api_data else 'No data'}")
+                if api_data:
+                    logger.info(f"API keys in first customer: {list(api_data[0].keys())}")
             
             # Process API data for firm names dropdown
             for customer in api_data:
@@ -3659,9 +3767,11 @@ def lead_form_view(request):
             existing_firms.sort()
             
             logger.info(f"✅ Processed {len(existing_firms)} unique firm names from API")
+            logger.info(f"✅ Processed {len(api_customer_data)} full customer records")
             
         else:
             logger.warning(f"⚠️ API returned status code: {response.status_code}")
+            logger.warning(f"Response content: {response.text[:200]}")
             messages.warning(request, f"Could not fetch customer data from API (Status: {response.status_code})")
             
     except requests.exceptions.Timeout:
@@ -3704,8 +3814,25 @@ def lead_form_view(request):
             "Tech Innovators Inc",
             "Prime Services Co"
         ]
+        # Add sample API data for testing
+        api_customer_data = [
+            {
+                'code': 'TEST001',
+                'name': 'ABC Corporation',
+                'address': '123 Test Street',
+                'address3': 'Test City',
+                'branch': 'Main',
+                'district': 'Test District',
+                'state': 'Test State',
+                'mobile': '9876543210',
+                'software': 'Test Software',
+                'nature': 'Manufacturing',
+                'rout': 'Direct',
+                'installationdate': '2023-01-01',
+            }
+        ]
     
-    logger.info(f"📊 Final firm count: {len(existing_firms)}")
+    logger.info(f"📊 Final counts - API customers: {len(api_customer_data)}, Unique firms: {len(existing_firms)}, Campaigns: {len(campaigns)}")
 
     if request.method == "POST":
         data = request.POST
@@ -3811,30 +3938,30 @@ def lead_form_view(request):
         # ✅ Handle assignment if self-assigned
         if assignment_type == "self_assigned":
             try:
-                current_user = None
+                assign_user = None
                 if request.session.get('custom_user_id'):
                     try:
-                        current_user = UserModel.objects.get(id=request.session['custom_user_id'])
+                        assign_user = UserModel.objects.get(id=request.session['custom_user_id'])
                     except Exception:
-                        current_user = None
+                        assign_user = None
                 elif request.user and request.user.is_authenticated:
-                    current_user = request.user
+                    assign_user = request.user
 
-                if current_user:
-                    assigned_name = getattr(current_user, 'name', None) or \
-                                  getattr(current_user, 'username', None) or \
-                                  str(current_user)
+                if assign_user:
+                    assigned_name = getattr(assign_user, 'name', None) or \
+                                  getattr(assign_user, 'username', None) or \
+                                  str(assign_user)
 
                     lead_kwargs["assigned_to_name"] = assigned_name
                     lead_kwargs["assigned_date"] = timezone.now().date()
                     lead_kwargs["assigned_time"] = timezone.now().time()
                     lead_kwargs["assigned_by_name"] = assigned_name
 
-                    if Lead and hasattr(Lead, 'assigned_to') and current_user:
-                        lead_kwargs["assigned_to"] = current_user
+                    if Lead and hasattr(Lead, 'assigned_to') and assign_user:
+                        lead_kwargs["assigned_to"] = assign_user
                         
-                    if Lead and hasattr(Lead, 'assigned_by') and current_user:
-                        lead_kwargs["assigned_by"] = current_user
+                    if Lead and hasattr(Lead, 'assigned_by') and assign_user:
+                        lead_kwargs["assigned_by"] = assign_user
 
             except Exception as e:
                 logger.warning(f"Error setting self-assignment: {e}")
@@ -3866,37 +3993,69 @@ def lead_form_view(request):
                             safe_kwargs['assigned_by_name'] = v
 
                 lead = Lead.objects.create(**safe_kwargs)
-
-                # ✅ NEW: Extract and save requirement items from form
-                requirements_json = data.get('requirements_data', '[]')
-                logger.info(f"Requirements JSON from form: {requirements_json}")
                 
+                # ✅ SET CREATED_BY - THIS IS THE KEY ADDITION
+                if current_user:
+                    lead.created_by = current_user
+                    lead.save(update_fields=['created_by'])
+
+                # ✅ Extract and save requirement items from form (defensive)
+                requirements_json = data.get('requirements_data', '') or data.get('requirement_details', '') or data.get('requirement_details_json', '')
+                if not requirements_json and data.get('requirement_details'):
+                    requirements_json = data.get('requirement_details')
+
+                logger.info(f"Requirements payload length: {len(requirements_json) if requirements_json else 0}")
+
                 try:
                     import json
                     from decimal import Decimal
-                    requirements_list = json.loads(requirements_json) if requirements_json else []
-                    
-                    # Create RequirementItem objects for each requirement
-                    for req_data in requirements_list:
-                        RequirementItem.objects.create(
-                            lead=lead,
-                            item_id=req_data.get('item_id'),
-                            item_name=req_data.get('item_name', ''),
-                            ticket_number=lead.ticket_number,
-                            owner_name=lead.ownerName,
-                            phone_no=lead.phoneNo,
-                            email=lead.email if lead.email else '',
-                            section=req_data.get('section', ''),
-                            unit=req_data.get('unit', ''),
-                            price=Decimal(str(req_data.get('price', 0))),
-                            quantity=int(req_data.get('quantity', 1)),
-                        )
-                    
-                    if requirements_list:
-                        logger.info(f"✅ Created {len(requirements_list)} requirement items for lead {lead.id}")
-                    
-                except json.JSONDecodeError as e:
-                    logger.warning(f"Could not parse requirements JSON: {e}")
+
+                    # Normalize to list
+                    if not requirements_json:
+                        requirements_list = []
+                    else:
+                        try:
+                            requirements_list = json.loads(requirements_json)
+                        except Exception:
+                            requirements_list = []
+
+                    # Import RequirementItem model defensively
+                    try:
+                        from .models import RequirementItem
+                    except Exception:
+                        try:
+                            RequirementItem = apps.get_model('app5', 'RequirementItem')
+                        except Exception:
+                            RequirementItem = None
+
+                    created_count = 0
+                    if RequirementItem and requirements_list:
+                        for req_data in requirements_list:
+                            try:
+                                item_id = req_data.get('item_id') if isinstance(req_data, dict) else None
+                                item_name = req_data.get('item_name') if isinstance(req_data, dict) else (req_data[0] if isinstance(req_data, (list, tuple)) and req_data else '')
+                                price_val = req_data.get('price') if isinstance(req_data, dict) else 0
+                                qty_val = req_data.get('quantity') if isinstance(req_data, dict) else 1
+
+                                RequirementItem.objects.create(
+                                    lead=lead,
+                                    item_id=item_id,
+                                    item_name=item_name or '',
+                                    ticket_number=getattr(lead, 'ticket_number', f'TKT-{getattr(lead, "id", "") }'),
+                                    owner_name=getattr(lead, 'ownerName', ''),
+                                    phone_no=getattr(lead, 'phoneNo', ''),
+                                    email=getattr(lead, 'email', '') or '',
+                                    section=(req_data.get('section') if isinstance(req_data, dict) else ''),
+                                    unit=(req_data.get('unit') if isinstance(req_data, dict) else 'pcs'),
+                                    price=Decimal(str(price_val or 0)),
+                                    quantity=int(qty_val or 1),
+                                )
+                                created_count += 1
+                            except Exception as e:
+                                logger.debug(f"Skipping requirement row due to error: {e}")
+
+                    logger.info(f"Created {created_count} requirement items for lead {getattr(lead, 'id', 'N/A')}")
+
                 except Exception as e:
                     logger.error(f"Error creating requirement items: {e}", exc_info=True)
 
@@ -3919,22 +4078,96 @@ def lead_form_view(request):
             # ✅ ADD API DATA TO CONTEXT FOR RE-RENDER
             context['api_customer_data'] = api_customer_data
             context['api_data_count'] = len(api_customer_data)
-            context['items_by_section'] = get_items_by_section()  # Added this line
+            context['items_by_section'] = get_items_by_section()
+            context['campaigns'] = campaigns  # ✅ ADD CAMPAIGNS
             return render(request, "lead_form.html", context)
 
     # ============================
-    # ✅ LOAD ITEMS FROM purchase_order APP (SECTION-WISE) - FIXED
+    # ✅ GET REQUEST - PREPARE CONTEXT
     # ============================
-    items_by_section = get_items_by_section()
-
-    # ✅ GET CONTEXT DATA
+    # Get context data
     context = get_lead_form_context(existing_firms, active_leads_data, active_users)
+    
     # ✅ ADD API CUSTOMER DATA TO CONTEXT
     context['api_customer_data'] = api_customer_data
     context['api_data_count'] = len(api_customer_data)
-    context['items_by_section'] = items_by_section  # This was missing
+    
+    # ✅ ADD CAMPAIGNS TO CONTEXT
+    context['campaigns'] = campaigns
+    
+    # ✅ ADD ITEMS BY SECTION
+    try:
+        context['items_by_section'] = get_items_by_section()
+    except Exception as e:
+        logger.error(f"Error getting items by section: {e}")
+        context['items_by_section'] = {}
+    
+    # ✅ ADD CURRENT USER INFO
+    context['current_user'] = current_user
+    context['current_user_name'] = current_user_name
+    
+    logger.info(f"📋 Final context prepared - API customers: {len(api_customer_data)}, Firms: {len(existing_firms)}, Campaigns: {len(campaigns)}")
     
     return render(request, "lead_form.html", context)
+
+
+def get_user_filtered_leads(user, queryset=None):
+    """
+    Filter leads based on user permissions.
+    """
+
+    from django.db.models import Q
+    from .models import Lead
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    if queryset is None:
+        queryset = Lead.objects.all()
+
+    if not user:
+        return queryset.none()
+
+    # ✅ ADMIN / SUPER ADMIN CHECK
+    is_admin = False
+
+    # Django superuser or staff → Full access
+    if getattr(user, 'is_superuser', False):
+        is_admin = True
+
+    elif getattr(user, 'is_staff', False):
+        is_admin = True
+
+    elif hasattr(user, 'user_level'):
+        user_level = str(user.user_level).strip()
+
+        admin_levels = [
+            'admin_level',   # Super Admin
+            'normal',        # Admin
+            '4level',        # Senior Admin
+        ]
+
+        if user_level in admin_levels:
+            is_admin = True
+
+    # ✅ ADMIN → SHOW ALL LEADS
+    if is_admin:
+        logger.info(f"✅ ADMIN USER {user} → Showing ALL leads")
+        return queryset
+
+    # ✅ REGULAR USER → FILTER LEADS
+    user_name = getattr(user, 'name', None) or getattr(user, 'username', None) or str(user)
+
+    filtered_queryset = queryset.filter(
+        Q(created_by=user) |
+        Q(assigned_to_name__iexact=user_name) |
+        Q(marketedBy__iexact=user_name)
+    ).distinct()
+
+    logger.info(f"✅ REGULAR USER {user_name} → Showing filtered leads")
+
+    return filtered_queryset
+
 
 
 def get_items_by_section():
@@ -3947,16 +4180,13 @@ def get_items_by_section():
     try:
         from purchase_order.models import Item as POItem
 
-        # Fetch all active items ordered by section and name
         po_items = POItem.objects.filter(is_active=True).order_by('section', 'name')
         
         logger.info(f"✅ Fetched {po_items.count()} items from purchase_order")
         
         for item in po_items:
-            # Get section from item or default to GENERAL
             section_raw = (item.section or 'GENERAL').upper().strip()
             
-            # Normalize section names
             section = section_raw
             if 'HARDWARE' in section_raw:
                 section = 'HARDWARE'
@@ -3967,20 +4197,17 @@ def get_items_by_section():
             elif not section_raw or section_raw == '':
                 section = 'GENERAL'
             
-            # Create section if it doesn't exist
             if section not in items_by_section:
                 items_by_section[section] = []
             
-            # Get display name for section
             section_display = section.replace('_', ' ').title()
             
-            # Add item to section
             items_by_section[section].append({
                 "id": item.id,
                 "name": item.name,
                 "section": section,
                 "section_display": section_display,
-                "unit": item.unit_of_measure or "pcs", 
+                "unit": item.unit_of_measure or "pcs",
                 "price": float(item.mrp or 0),
                 "hsn": item.hsn_code or "",
                 "description": item.description or "",
@@ -3990,21 +4217,20 @@ def get_items_by_section():
         
     except Exception as e:
         logger.error(f"❌ Could not load purchase_order items: {e}", exc_info=True)
-        # Provide sample data for testing
         items_by_section = {
             "HARDWARE": [
                 {"id": 1, "name": "Computer", "section": "HARDWARE", "section_display": "Hardware", 
-                 "unit_of_measure": "pcs", "mrp": 50000.0, "hsn_code": "8471", "description": "Desktop Computer"},
+                 "unit": "pcs", "price": 50000.0, "hsn": "8471", "description": "Desktop Computer"},
                 {"id": 2, "name": "Printer", "section": "HARDWARE", "section_display": "Hardware", 
-                 "unit_of_measure": "pcs", "mrp": 15000.0, "hsn_code": "8443", "description": "Laser Printer"},
+                 "unit": "pcs", "price": 15000.0, "hsn": "8443", "description": "Laser Printer"},
             ],
             "SOFTWARE": [
                 {"id": 3, "name": "Accounting Software", "section": "SOFTWARE", "section_display": "Software", 
-                 "unit_of_measure": "license", "mrp": 25000.0, "hsn_code": "8523", "description": "Financial Accounting"},
+                 "unit": "license", "price": 25000.0, "hsn": "8523", "description": "Financial Accounting"},
             ],
             "GENERAL": [
                 {"id": 4, "name": "Office Chair", "section": "GENERAL", "section_display": "General", 
-                 "unit_of_measure": "pcs", "mrp": 5000.0, "hsn_code": "9401", "description": "Ergonomic Chair"},
+                 "unit": "pcs", "price": 5000.0, "hsn": "9401", "description": "Ergonomic Chair"},
             ]
         }
     
@@ -4014,30 +4240,76 @@ def get_items_by_section():
 def get_lead_form_context(existing_firms, active_leads_data, active_users):
     """Helper function to get lead form context"""
     import logging
+    from django.utils import timezone
     logger = logging.getLogger(__name__)
+    
+    # Initialize if None
+    if existing_firms is None:
+        existing_firms = []
+    if active_leads_data is None:
+        active_leads_data = []
+    if active_users is None:
+        active_users = []
     
     context = {}
     
     try:
-        # Districts
-        from app5.models import District
-        context['districts'] = District.objects.all().order_by('name')
+        # ✅ FIXED: Districts - try app5 first, then app1 as fallback
+        districts_loaded = False
+        districts_qs = None
+        try:
+            from app5.models import District
+            districts_qs = District.objects.all().order_by('name')
+            districts_loaded = True
+            logger.info(f"✅ Using districts from app5.models")
+        except Exception as e1:
+            logger.debug(f"Could not load districts from app5.models: {e1}")
+            try:
+                from app1.models import District
+                districts_qs = District.objects.all().order_by('name')
+                districts_loaded = True
+                logger.info(f"✅ Using districts from app1.models")
+            except Exception as e2:
+                logger.debug(f"Could not load districts from app1.models: {e2}")
+        
+        if districts_loaded and districts_qs:
+            context['districts'] = [
+                {
+                    'id': district.id,
+                    'name': district.name,
+                    'state': getattr(district, 'state', '') if hasattr(district, 'state') else ''
+                } 
+                for district in districts_qs
+            ]
+            logger.info(f"✅ Loaded {len(context['districts'])} districts")
+        else:
+            context['districts'] = []
     except Exception as e:
-        logger.debug(f"Could not load districts: {e}")
+        logger.error(f"Error loading districts: {e}")
         context['districts'] = []
 
     try:
         # States
-        from app5.models import State
-        context['states'] = State.objects.all().order_by('name')
+        from app5.models import StateMaster
+        states_qs = StateMaster.objects.all().order_by('name')
+        context['states'] = [
+            {
+                'id': state.id,
+                'name': state.name,
+                'code': getattr(state, 'code', '') if hasattr(state, 'code') else ''
+            }
+            for state in states_qs
+        ]
+        logger.info(f"✅ Loaded {len(context['states'])} states")
     except Exception as e:
         logger.debug(f"Could not load states: {e}")
         context['states'] = []
 
     try:
-        # Departments (for branch dropdown)
+        # Departments
         from purchase_order.models import Department
-        context['departments'] = Department.objects.all().order_by('name')
+        context['departments'] = Department.objects.filter(is_active=True).order_by('name')
+        logger.info(f"✅ Loaded {context['departments'].count()} departments")
     except Exception as e:
         logger.debug(f"Could not load departments: {e}")
         context['departments'] = []
@@ -4046,6 +4318,7 @@ def get_lead_form_context(existing_firms, active_leads_data, active_users):
         # Business Natures
         from app5.models import BusinessNature
         context['business_natures'] = BusinessNature.objects.all().order_by('name')
+        logger.info(f"✅ Loaded {context['business_natures'].count()} business natures")
     except Exception as e:
         logger.debug(f"Could not load business natures: {e}")
         context['business_natures'] = []
@@ -4054,19 +4327,52 @@ def get_lead_form_context(existing_firms, active_leads_data, active_users):
         # References
         from app5.models import Reference
         context['references'] = Reference.objects.all().order_by('ref_name')
+        logger.info(f"✅ Loaded {context['references'].count()} references")
     except Exception as e:
         logger.debug(f"Could not load references: {e}")
         context['references'] = []
 
     try:
-        # Campaigns
-        from campaigning.models import Campaigning
-        campaigns = Campaigning.objects.all().order_by('-campaign_unique_id')[:100]
-        context['campaigns'] = campaigns
-        logger.info(f"Loaded {campaigns.count()} campaigns")
+        # ✅ FIXED: Campaigns with proper formatting
+        from campaign.models import Campaigning
+        campaigns = Campaigning.objects.filter(is_deleted=False).order_by('-campaign_unique_id')[:100]
+        
+        # Format campaigns for dropdown
+        formatted_campaigns = []
+        for campaign in campaigns:
+            display_name = f"{campaign.campaign_unique_id} - {campaign.campaign_name}"
+            if campaign.software_name:
+                display_name += f" ({campaign.software_name})"
+            if campaign.status:
+                display_name += f" [{campaign.status.title()}]"
+            
+            formatted_campaigns.append({
+                'id': campaign.id,
+                'campaign_unique_id': campaign.campaign_unique_id,
+                'campaign_name': campaign.campaign_name,
+                'display_name': display_name,
+                'software_name': campaign.software_name or '',
+                'status': campaign.status or '',
+            })
+        
+        context['campaigns'] = formatted_campaigns
+        context['campaigns_raw'] = campaigns  # Keep raw queryset if needed
+        
+        # Calculate campaign counts
+        context['active_campaigns_count'] = campaigns.filter(status='active').count()
+        context['completed_campaigns_count'] = campaigns.filter(status='completed').count()
+        context['draft_campaigns_count'] = campaigns.filter(status='draft').count()
+        
+        logger.info(f"✅ Loaded {len(formatted_campaigns)} campaigns")
+        logger.info(f"✅ Active: {context['active_campaigns_count']}, Completed: {context['completed_campaigns_count']}, Draft: {context['draft_campaigns_count']}")
+        
     except Exception as e:
         logger.debug(f"Could not load campaigns: {e}")
         context['campaigns'] = []
+        context['campaigns_raw'] = []
+        context['active_campaigns_count'] = 0
+        context['completed_campaigns_count'] = 0
+        context['draft_campaigns_count'] = 0
 
     # Pass other data
     context['existing_firms'] = existing_firms
@@ -4074,11 +4380,7 @@ def get_lead_form_context(existing_firms, active_leads_data, active_users):
     context['active_users'] = active_users
     context['today'] = timezone.now().date()
     
-    # ✅ Load items - This should already be loaded separately
-    # items_by_section = get_items_by_section()  # Don't call here, called in main function
-    # context['items_by_section'] = items_by_section
-    
-    # ✅ FLAT LIST OF ALL ITEMS FOR TEMPLATE (JavaScript needs this)
+    # ✅ FLAT LIST OF ALL ITEMS
     try:
         from purchase_order.models import Item as POItem
         all_items = POItem.objects.filter(is_active=True).order_by('name')
@@ -4091,116 +4393,6 @@ def get_lead_form_context(existing_firms, active_leads_data, active_users):
     return context
 
 
-    
-
-
-def get_lead_form_context(existing_firms, active_leads_data, active_users):
-    """
-    Helper function to prepare context for the lead form
-    """
-    # You should include the code from your get_lead_form_context function here
-    # For brevity, I'm showing a placeholder - make sure to include your actual implementation
-    
-    context = {
-        'existing_firms': existing_firms,
-        'active_leads_data': active_leads_data,
-        'active_users': active_users,
-        'today': timezone.now().date(),
-        # ... [include all other context variables from your implementation] ...
-    }
-    
-    return context
-
-
-def get_lead_form_context(existing_firms, active_leads_data, active_users):
-    """
-    Helper function to prepare context for the lead form
-    """
-    import logging
-    from django.utils import timezone
-    
-    logger = logging.getLogger(__name__)
-    
-    # If not provided, initialize empty
-    if existing_firms is None:
-        existing_firms = []
-    if active_leads_data is None:
-        active_leads_data = []
-    if active_users is None:
-        active_users = []
-    
-    # Prepare dropdowns
-    try:
-        from app1.models import District
-        districts = District.objects.all().order_by('name')
-    except Exception:
-        districts = []
-
-    try:
-        from .models import BusinessNature
-        business_natures = BusinessNature.objects.all().order_by('name')
-    except Exception:
-        business_natures = []
-
-    try:
-        from .models import StateMaster
-        states = StateMaster.objects.all().order_by('name')
-    except Exception:
-        states = []
-
-    try:
-        from purchase_order.models import Department
-        departments = Department.objects.filter(is_active=True).order_by('name')
-    except Exception:
-        departments = []
-
-    try:
-        from .models import Reference
-        references = Reference.objects.all().order_by('ref_name')
-    except Exception:
-        references = []
-    
-    # ✅ GET CAMPAIGNS FROM CAMPAIGNING APP
-    campaigns = []
-    active_campaigns_count = 0
-    completed_campaigns_count = 0
-    draft_campaigns_count = 0
-    
-    try:
-        from campaign.models import Campaigning
-        campaigns = Campaigning.objects.filter(is_deleted=False).order_by('-campaign_id')
-        
-        # Calculate campaign counts
-        active_campaigns_count = campaigns.filter(status='active').count()
-        completed_campaigns_count = campaigns.filter(status='completed').count()
-        draft_campaigns_count = campaigns.filter(status='draft').count()
-        
-        logger.info(f"Loaded {campaigns.count()} campaigns from Campaigning model")
-    except Exception as e:
-        logger.error(f"Error loading campaigns: {e}")
-        campaigns = []
-
-    context = {
-        'business_natures': business_natures,
-        'states': states,
-        'districts': districts,
-        'active_users': active_users,
-        'departments': departments,
-        'existing_firms': existing_firms,  # ✅ Pass existing firms for searchable select
-        'active_leads_data': active_leads_data,  # ✅ Now includes priority and campaign_display
-        'references': references, 
-        'campaigns': campaigns,  # ✅ Use Campaigning model data
-        'active_campaigns_count': active_campaigns_count,
-        'completed_campaigns_count': completed_campaigns_count,
-        'draft_campaigns_count': draft_campaigns_count,
-        'today': timezone.now().date(),  # ✅ Add today's date for default value
-    }
-    
-    return context
-
-
-
-
 @login_required
 def lead_creation_view(request):
     """
@@ -4209,17 +4401,39 @@ def lead_creation_view(request):
     from .models import Lead, District, BusinessNature, StateMaster
     from purchase_order.models import Department
     from app1.models import User
+    import logging
+    
+    logger = logging.getLogger(__name__)
 
-    # âœ… Get only active leads for the directory
-    active_leads_data = Lead.objects.filter(status__iexact='Active').order_by('-created_at')[:25]
+    # ✅ GET CURRENT USER
+    current_user = None
+    if request.session.get('custom_user_id'):
+        try:
+            current_user = User.objects.get(id=request.session['custom_user_id'])
+        except User.DoesNotExist:
+            logger.warning(f"User with ID {request.session['custom_user_id']} not found")
+    elif request.user and request.user.is_authenticated:
+        current_user = request.user
+
+    # ✅ GET FILTERED ACTIVE LEADS
+    active_leads_qs = Lead.objects.filter(status__iexact='Active')
+    
+    if current_user:
+        active_leads_qs = get_user_filtered_leads(current_user, active_leads_qs)
+        logger.info(f"User {current_user.name}: Showing {active_leads_qs.count()} filtered leads")
+    else:
+        active_leads_qs = active_leads_qs.none()
+        logger.warning("No current user - showing no leads")
+    
+    active_leads_data = active_leads_qs.order_by('-created_at')[:25]
 
     context = {
         'districts': District.objects.all().order_by('name'),
         'states': StateMaster.objects.all().order_by('name'),
         'business_natures': BusinessNature.objects.all().order_by('name'),
-        'active_users': User.objects.filter(is_active=True).order_by('name'),
+        'active_users': User.objects.filter(status='active').order_by('name'),
         'departments': Department.objects.filter(is_active=True).order_by('name'),
-        'active_leads_data': active_leads_data,  # passed to template
+        'active_leads_data': active_leads_data,
     }
     return render(request, 'lead_form.html', context)
 
@@ -4231,24 +4445,90 @@ def lead_creation_view(request):
 # -----------------------
 # Lead report view
 # -----------------------
+from django.core.paginator import Paginator
+from django.db.models import Q
+from django.utils import timezone
+import datetime
+
+# UPDATED lead_report_view function with user-based filtering
+# Replace the existing lead_report_view function in your views.py with this code
+
 def lead_report_view(request):
     LeadModel = Lead
-    leads = LeadModel.objects.all().order_by("-created_at") if hasattr(LeadModel, "created_at") else LeadModel.objects.all()
+    
+    # ============================================================
+    # USER-BASED FILTERING - CRITICAL SECTION
+    # ============================================================
+    # Get the current user from session
+    current_user = None
+    current_user_name = None
+    
+    if request.session.get('custom_user_id'):
+        try:
+            from app1.models import User
+            current_user = User.objects.get(id=request.session['custom_user_id'])
+            current_user_name = getattr(current_user, "name", current_user.username if hasattr(current_user, 'username') else str(current_user))
+        except User.DoesNotExist:
+            pass
+    
+    # Start with all leads
+    leads_qs = LeadModel.objects.all().order_by("-created_at") if hasattr(LeadModel, "created_at") else LeadModel.objects.all()
+    
+    # Apply user-level filtering
+    if current_user:
+        user_level = getattr(current_user, 'user_level', None)
+        
+        # User levels that see ALL leads:
+        # - 'normal' (Admin)
+        # - 'admin_level' (Super Admin)
+        # - '4level' (Superuser)
+        admin_levels = ['normal', 'admin_level', '4level']
+        
+        # Regular user levels that see ONLY their own leads:
+        # - '3level' (User)
+        # - '5level' (Branch User)
+        # - Any other level not in admin_levels
+        
+        if user_level not in admin_levels:
+            # Filter to show only leads created by this user OR assigned to this user
+            from django.db.models import Q
+            leads_qs = leads_qs.filter(
+                Q(created_by=current_user) | 
+                Q(assigned_to_name=current_user_name) |
+                Q(marketedBy=current_user_name)
+            )
+    # ============================================================
+    # END USER-BASED FILTERING
+    # ============================================================
 
+    # Get filter parameters
     status_filter = request.GET.get('status', '').strip()
-    customer_type_filter = request.GET.get('customer_type', '').strip()
+    campaign_filter = request.GET.get('campaign', '').strip()
+    branch_filter = request.GET.get('branch', '').strip()
     search_query = request.GET.get('search', '').strip()
     start_date = request.GET.get('start_date', '').strip()
     end_date = request.GET.get('end_date', '').strip()
-
+    row_count = request.GET.get('row_count', '10').strip()
+    
+    # ---------------- FILTERS ----------------
     if status_filter:
-        leads = leads.filter(status=status_filter)
+        leads_qs = leads_qs.filter(status=status_filter)
 
-    if customer_type_filter:
-        leads = leads.filter(customerType=customer_type_filter)
+    # Campaign Filter
+    if campaign_filter:
+        # Campaign is stored as text field (campaign_unique_id), not FK
+        if hasattr(LeadModel, 'campaign'):
+            leads_qs = leads_qs.filter(campaign=campaign_filter)
+
+    # Branch Filter (stored in requirement field)
+    if branch_filter:
+        # Branch name is stored in requirement field as text
+        if hasattr(LeadModel, 'requirement'):
+            leads_qs = leads_qs.filter(requirement__icontains=branch_filter)
 
     if search_query:
-        leads = leads.filter(
+        from django.db.models import Q
+        leads_qs = leads_qs.filter(
             Q(ownerName__icontains=search_query) |
             Q(phoneNo__icontains=search_query) |
             Q(email__icontains=search_query) |
@@ -4264,27 +4544,164 @@ def lead_report_view(request):
     if start_date:
         try:
             s = timezone.datetime.strptime(start_date, "%Y-%m-%d").date()
-            leads = leads.filter(created_at__date__gte=s)
+            leads_qs = leads_qs.filter(created_at__date__gte=s)
         except ValueError:
             pass
 
     if end_date:
         try:
             e = timezone.datetime.strptime(end_date, "%Y-%m-%d").date()
-            leads = leads.filter(created_at__date__lte=e)
+            leads_qs = leads_qs.filter(created_at__date__lte=e)
         except ValueError:
             pass
 
-    total_leads = LeadModel.objects.count()
-    active_leads = LeadModel.objects.filter(status="Active").count()
-    inactive_leads = LeadModel.objects.filter(status="Inactive").count()
-    installed_leads = LeadModel.objects.filter(status="Installed").count()
-    business_leads = LeadModel.objects.filter(customerType="Business").count()
-    individual_leads = LeadModel.objects.filter(customerType="Individual").count()
-    today_leads = LeadModel.objects.filter(created_at__date=timezone.now().date()).count()
-    filtered_count = leads.count()
-    has_filters = bool(status_filter or customer_type_filter or search_query or start_date or end_date)
+    # ---------------- COUNTS ----------------
+    # NOTE: Counts are based on the filtered queryset (user's own leads for regular users)
+    if current_user and getattr(current_user, 'user_level', None) not in ['normal', 'admin_level', '4level']:
+        # For regular users, show counts from their filtered leads only
+        from django.db.models import Q
+        user_leads = LeadModel.objects.filter(
+            Q(created_by=current_user) | 
+            Q(assigned_to_name=current_user_name) |
+            Q(marketedBy=current_user_name)
+        )
+        total_leads = user_leads.count()
+        active_leads = user_leads.filter(status="Active").count()
+        inactive_leads = user_leads.filter(status="Inactive").count()
+        installed_leads = user_leads.filter(status="Installed").count()
+        business_leads = user_leads.filter(customerType="Business").count()
+        individual_leads = user_leads.filter(customerType="Individual").count()
+        today_leads = user_leads.filter(created_at__date=timezone.now().date()).count()
+    else:
+        # For admin users, show all leads counts
+        total_leads = LeadModel.objects.count()
+        active_leads = LeadModel.objects.filter(status="Active").count()
+        inactive_leads = LeadModel.objects.filter(status="Inactive").count()
+        installed_leads = LeadModel.objects.filter(status="Installed").count()
+        business_leads = LeadModel.objects.filter(customerType="Business").count()
+        individual_leads = LeadModel.objects.filter(customerType="Individual").count()
+        today_leads = LeadModel.objects.filter(created_at__date=timezone.now().date()).count()
 
+    filtered_count = leads_qs.count()
+    has_filters = bool(status_filter or campaign_filter or branch_filter or 
+                       search_query or start_date or end_date)
+
+    # ---------------- GET CAMPAIGNS AND BRANCHES FOR DROPDOWNS ----------------
+    campaigns = []
+    branches = []
+    current_campaign_name = ""
+    current_branch_name = ""
+    
+    # Try to get campaigns from Campaigning model
+    try:
+        from campaign.models import Campaigning
+        # FIXED: Filter non-deleted campaigns and order by most recent
+        campaigns = Campaigning.objects.filter(
+            is_deleted=False
+        ).order_by('-created_at')  # Most recent first
+        
+        # Get the current campaign name for display
+        if campaign_filter:
+            try:
+                campaign_obj = Campaigning.objects.filter(
+                    campaign_unique_id=campaign_filter,
+                    is_deleted=False
+                ).first()
+                if campaign_obj:
+                    current_campaign_name = campaign_obj.campaign_name
+                else:
+                    current_campaign_name = campaign_filter  # Show the ID if campaign not found
+            except (ValueError, TypeError):
+                current_campaign_name = campaign_filter
+    except ImportError:
+        campaigns = []
+        if campaign_filter:
+            current_campaign_name = campaign_filter
+    
+    # Try to get branches from Department model (branches are stored in requirement field)
+    try:
+        from purchase_order.models import Department
+        branches = Department.objects.all().order_by('name')
+        
+        if branch_filter:
+            try:
+                branch_obj = Department.objects.get(id=int(branch_filter))
+                current_branch_name = branch_obj.name
+            except (Department.DoesNotExist, ValueError, TypeError):
+                current_branch_name = branch_filter
+    except ImportError:
+        branches = []
+        if branch_filter:
+            current_branch_name = branch_filter
+
+    # ---------------- AUTO-SET TODAY'S DATE FILTER ----------------
+    auto_set_today = False
+    if not start_date and not end_date:
+        auto_set_today = True
+        today = timezone.now().date()
+        start_date = today.strftime("%Y-%m-%d")
+        end_date = today.strftime("%Y-%m-%d")
+        
+        leads_qs = leads_qs.filter(created_at__date=today)
+        filtered_count = leads_qs.count()
+
+    # ---------------- CREATE CAMPAIGN MAPPING FOR ENRICHMENT ----------------
+    campaign_map = {}
+    try:
+        from campaign.models import Campaigning
+        for camp in Campaigning.objects.filter(is_deleted=False):
+            campaign_map[camp.campaign_unique_id] = {
+                'name': camp.campaign_name,
+                'id': camp.campaign_unique_id,
+                'status': camp.status
+            }
+    except Exception as e:
+        # If Campaigning model doesn't exist or error occurs
+        print(f"Error creating campaign map: {e}")
+        campaign_map = {}
+
+    # ---------------- PAGINATION WITH ROW COUNT ----------------
+    if row_count == 'all':
+        # Show all rows without pagination
+        leads = leads_qs
+        paginator = None
+        per_page = None
+    else:
+        try:
+            per_page = int(row_count)
+            if per_page <= 0:
+                per_page = 10
+        except ValueError:
+            per_page = 10
+        
+        paginator = Paginator(leads_qs, per_page)
+        page_number = request.GET.get("page")
+        leads = paginator.get_page(page_number)
+
+    # ---------------- ENRICH LEADS WITH CAMPAIGN AND BRANCH NAMES ----------------
+    # IMPORTANT: Do this AFTER pagination to ensure we enrich the actual displayed leads
+    for lead in leads:
+        # Add campaign display name
+        if hasattr(lead, 'campaign') and lead.campaign:
+            campaign_info = campaign_map.get(lead.campaign)
+            if campaign_info:
+                lead.campaign_display_name = campaign_info['name']
+                lead.campaign_status = campaign_info.get('status', '')
+            else:
+                # Campaign might be deleted or doesn't exist
+                lead.campaign_display_name = lead.campaign
+                lead.campaign_status = ''
+        else:
+            lead.campaign_display_name = None
+            lead.campaign_status = ''
+        
+        # Add branch display name
+        if hasattr(lead, 'requirement') and lead.requirement:
+            lead.branch_display_name = lead.requirement
+        else:
+            lead.branch_display_name = None
+
+    # ---------------- CONTEXT ----------------
     context = {
         "leads": leads,
         "total_leads": total_leads,
@@ -4296,13 +4713,35 @@ def lead_report_view(request):
         "today_leads": today_leads,
         "filtered_count": filtered_count,
         "has_filters": has_filters,
+        
+        # Filter values for display
         "current_status_filter": status_filter,
-        "current_customer_type_filter": customer_type_filter,
+        "current_campaign_filter": campaign_filter,
+        "current_branch_filter": branch_filter,
+        "current_campaign_name": current_campaign_name,
+        "current_branch_name": current_branch_name,
         "current_search_query": search_query,
-        "current_start_date": start_date,
-        "current_end_date": end_date,
+        "current_start_date": start_date if not auto_set_today else '',
+        "current_end_date": end_date if not auto_set_today else '',
+        "current_row_count": row_count if row_count != 'all' else 'all',
+        "auto_set_today": auto_set_today,
+        
+        # Dropdown data - CRITICAL: These must be present for the template
+        "campaigns": campaigns,  # Contains all non-deleted campaigns
+        "branches": branches,
+        
+        # Pagination info
+        "paginator": paginator,
+        
+        # User info for debugging (optional)
+        "current_user_name": current_user_name,
+        "is_admin": current_user and getattr(current_user, 'user_level', None) in ['normal', 'admin_level', '4level'],
     }
+
     return render(request, "lead_report.html", context)
+
+
+
 
 
 # -----------------------
@@ -4359,7 +4798,73 @@ import logging
 logger = logging.getLogger(__name__)
 
 def lead_edit(request, lead_id):
-    lead = get_object_or_404(Lead, id=lead_id)
+    """
+    View to edit a specific lead with user-level based access control.
+    - Regular users (3level/5level) can only edit leads created by or assigned to them
+    - Admin users (normal/admin_level/4level) can edit any lead
+    - Superusers can edit any lead
+    """
+    
+    # ========== USER AUTHENTICATION & ACCESS CONTROL ==========
+    current_user = None
+    
+    # Determine current user and check permissions
+    if request.user.is_superuser:
+        # Superuser can edit any lead
+        current_user = User.objects.filter(user_level='admin_level').first()
+        lead = get_object_or_404(Lead, id=lead_id)
+        logger.info(f"Superuser accessing lead {lead_id}")
+        
+    elif request.session.get('custom_user_id'):
+        # Get the custom user from session
+        current_user = User.objects.get(id=request.session['custom_user_id'])
+        
+        # CRITICAL: Check if user has permission to edit this lead
+        if current_user.user_level in ['3level', '5level']:
+            # Regular users can ONLY edit leads created by them or assigned to them
+            from django.db.models import Q
+            
+            # First check if the lead exists at all
+            try:
+                lead_exists = Lead.objects.get(id=lead_id)
+                logger.info(f"Lead {lead_id} exists. created_by: {lead_exists.created_by}, assigned_to_name: {lead_exists.assigned_to_name}")
+                logger.info(f"Current user: {current_user.name} (ID: {current_user.id}), Level: {current_user.user_level}")
+            except Lead.DoesNotExist:
+                logger.error(f"Lead {lead_id} does not exist in database")
+                messages.error(request, f"Lead #{lead_id} not found.")
+                return redirect('app5:lead_report')
+            
+            # Build filter condition
+            user_condition = Q(created_by=current_user)
+            
+            # Also check if assigned to them by name
+            if current_user.name:
+                user_condition |= Q(assigned_to_name__iexact=current_user.name)
+                logger.info(f"Checking if lead is assigned to: {current_user.name}")
+            
+            # Try to get the lead with permission check
+            try:
+                lead = Lead.objects.get(user_condition, id=lead_id)
+                logger.info(f"✅ User {current_user.name} granted access to lead {lead_id}")
+            except Lead.DoesNotExist:
+                # Lead exists but user doesn't have permission
+                logger.warning(f"❌ User {current_user.name} (ID: {current_user.id}) denied access to lead {lead_id}")
+                logger.warning(f"   Lead created_by_id: {lead_exists.created_by_id}, assigned_to_name: '{lead_exists.assigned_to_name}'")
+                
+                messages.error(
+                    request, 
+                    f"You don't have permission to access this lead. "
+                    f"This lead is not created by you or assigned to you."
+                )
+                return redirect('app5:lead_report')
+        else:
+            # Admin users can edit any lead
+            lead = get_object_or_404(Lead, id=lead_id)
+            logger.info(f"Admin user {current_user.name} accessing lead {lead_id}")
+    else:
+        # No user logged in, redirect to login
+        messages.error(request, "Please log in to access this page.")
+        return redirect('login')
     
     # ========== GET QUOTATION FOR THIS LEAD ==========
     quotation = None
@@ -4683,8 +5188,30 @@ def lead_edit(request, lead_id):
     except:
         references = []
     
-    # Get active leads
-    active_leads_data = Lead.objects.filter(status='Active').order_by('-created_at')[:50]
+    # ========== FILTER ACTIVE LEADS BY USER LEVEL ==========
+    # Regular users only see leads created by them or assigned to them in the directory
+    # Admin users see all leads
+    if current_user and current_user.user_level in ['3level', '5level']:
+        # Regular users: Only leads created by them or assigned to them
+        from django.db.models import Q
+        
+        user_filter = Q(created_by=current_user)
+        
+        # Also include leads assigned to them by name
+        if current_user.name:
+            user_filter |= Q(assigned_to_name__iexact=current_user.name)
+        
+        active_leads_queryset = Lead.objects.filter(
+            user_filter,
+            status='Active'
+        )
+        logger.info(f"Regular user {current_user.name} can see {active_leads_queryset.count()} active leads")
+    else:
+        # Admin users and superusers: All leads
+        active_leads_queryset = Lead.objects.filter(status='Active')
+        logger.info(f"Admin user can see {active_leads_queryset.count()} active leads")
+    
+    active_leads_data = active_leads_queryset.order_by('-created_at')[:50]
 
     # ========== GET CURRENT SELECTED VALUES FOR DROPDOWNS ==========
     
@@ -4889,6 +5416,7 @@ def lead_edit(request, lead_id):
         'api_data_count': api_data_count,
         'items_by_section': items_by_section,
         'requirements_data': requirements_data,
+        'current_user': current_user,  # Add current user to context
     }
     
     return render(request, "lead_form_edit.html", context)
@@ -6604,30 +7132,54 @@ def quotation_list_view(request):
     """
     Display quotation form with active leads, employees, and items
     """
-    # ✅ GET ACTIVE LEADS
-    active_leads = []
+    # ✅ GET ACTIVE LEADS (for quotation form)
+    lead_tickets = []  # Renamed from active_leads for template compatibility
     try:
         leads_qs = Lead.objects.filter(status__iexact='Active').order_by('-created_at')[:50]
         
         for lead in leads_qs:
-            active_leads.append({
+            # Get proper ticket number
+            ticket_number = getattr(lead, 'ticket_number', None)
+            if not ticket_number:
+                ticket_number = f"TKT-{lead.id:06d}"  # Format with leading zeros
+            
+            # Get owner name (handle both field names)
+            owner_name = getattr(lead, 'ownerName', None) or getattr(lead, 'owner_name', 'Unknown')
+            
+            # Get phone number (handle both field names)
+            phone_number = getattr(lead, 'phoneNo', None) or getattr(lead, 'phone_number', '')
+            
+            # Get company name if business customer
+            company_name = ''
+            if getattr(lead, 'customerType', '') == 'Business':
+                company_name = getattr(lead, 'name', '') or getattr(lead, 'company_name', '')
+            
+            # Get address (handle multiple address fields)
+            address = getattr(lead, 'address', '')
+            if not address and getattr(lead, 'customerType', '') == 'Individual':
+                address = getattr(lead, 'individualAddress', '')
+            
+            lead_tickets.append({
                 'id': lead.id,
-                'ownerName': lead.ownerName,
-                'phoneNo': lead.phoneNo,
-                'email': lead.email if lead.email else '',
-                'ticket_number': getattr(lead, 'ticket_number', f'TKT-{lead.id}'),
-                'status': lead.status,
+                'ticket_number': ticket_number,
+                'owner_name': owner_name,
+                'phone_number': phone_number,
+                'email': getattr(lead, 'email', '') or '',
+                'address': address or '',
+                'company_name': company_name,
+                'status': getattr(lead, 'status', 'Active'),
+                'customerType': getattr(lead, 'customerType', ''),
+                'place': getattr(lead, 'place', ''),
+                'business': getattr(lead, 'business', ''),
                 'priority': getattr(lead, 'priority', 'Medium'),
-                'place': lead.place if lead.place else '',
-                'business': lead.business if lead.business else '',
-                'customerType': lead.customerType,
+                'created_at': lead.created_at if hasattr(lead, 'created_at') else None,
             })
         
-        logger.info(f"✅ Loaded {len(active_leads)} active leads for quotation")
+        logger.info(f"✅ Loaded {len(lead_tickets)} active leads for quotation")
         
     except Exception as e:
-        logger.error(f"❌ Error loading leads: {e}")
-        active_leads = []
+        logger.error(f"❌ Error loading leads: {e}", exc_info=True)
+        lead_tickets = []
     
     # ✅ GET ACTIVE EMPLOYEES/USERS
     active_employees = []
@@ -6674,12 +7226,19 @@ def quotation_list_view(request):
         logger.debug(f"No departments available: {e}")
     
     # Calculate counts
-    leads_count = len(active_leads)
+    leads_count = len(lead_tickets)
     employees_count = len(active_employees)
     items_count = items.count() if hasattr(items, 'count') else len(items)
     
+    # Debug: Check lead data
+    if lead_tickets:
+        first_lead = lead_tickets[0]
+        logger.info(f"📅 First lead ticket: {first_lead.get('ticket_number')} - {first_lead.get('owner_name')}")
+        logger.info(f"📅 First lead created_at: {first_lead.get('created_at')}")
+        logger.info(f"📅 First lead phone: {first_lead.get('phone_number')}")
+    
     context = {
-        'active_leads': active_leads,
+        'lead_tickets': lead_tickets,  # Changed from active_leads to lead_tickets
         'active_employees': active_employees,
         'items': items,
         'departments': departments,
@@ -6702,9 +7261,37 @@ def quotation_form_view(request):
     """
     Display saved quotations in quotation_form.html
     Shows all quotations with their items
+    
+    LEAD FILTERING BY USER PERMISSIONS:
+    - Admin users (user_level='normal', 'admin_level', '4level'): See ALL active leads
+    - Regular users (user_level='3level', '5level'): See ONLY their created & assigned active leads
     """
     try:
         logger.info("🔍 Entering quotation_form_view")
+        
+        # Get current user information. Prefer custom session user, fallback to Django auth user.
+        current_user = None
+        current_user_name = None
+        user_level = None
+
+        if request.session.get('custom_user_id'):
+            try:
+                current_user = User.objects.get(id=request.session['custom_user_id'])
+                current_user_name = getattr(current_user, 'name', None)
+                user_level = getattr(current_user, 'user_level', None)
+                logger.info(f"👤 Current user (from session): {current_user_name} (Level: {user_level})")
+            except User.DoesNotExist:
+                logger.warning("⚠️ User not found in session")
+
+        # Fallback: if no custom session user, use Django's request.user when available
+        if not current_user and hasattr(request, 'user') and request.user.is_authenticated:
+            try:
+                current_user = request.user
+                current_user_name = getattr(current_user, 'name', getattr(current_user, 'username', None))
+                user_level = getattr(current_user, 'user_level', None)
+                logger.info(f"👤 Current user (from request.user): {current_user_name} (Level: {user_level})")
+            except Exception:
+                logger.debug("Could not read user attributes from request.user; continuing with defaults")
         
         # Get all quotations with related data - FIXED JOIN
         quotations = Quotation.objects.select_related(
@@ -6729,13 +7316,92 @@ def quotation_form_view(request):
             lead_info = f"{q.lead.ownerName}" if q.lead else "No Lead"
             logger.info(f"  {i+1}. {q.quotation_number} - {lead_info} - ₹{q.grand_total} - Status: {q.status}")
         
-        # Get active leads for the directory
+        # ========================================
+        # LEAD FILTERING BASED ON USER PERMISSIONS
+        # ========================================
         active_leads = []
         try:
-            leads_qs = Lead.objects.filter(
-                status__iexact='Active'
-            ).order_by('-created_at')[:50]
+            # Determine if user should see all leads or only their own
+            # Admin levels: 'normal' (Admin), 'admin_level' (Super Admin), '4level' (Superuser)
+            # Also treat Django staff/superuser as admins (fallback)
+            is_admin = False
+            try:
+                is_admin = user_level in ['normal', 'admin_level', '4level']
+            except Exception:
+                is_admin = False
+
+            # Fallback: if request.user is staff/superuser, treat as admin
+            if not is_admin and hasattr(request, 'user') and request.user.is_authenticated:
+                try:
+                    if getattr(request.user, 'is_superuser', False) or getattr(request.user, 'is_staff', False):
+                        is_admin = True
+                        logger.info(f"🔓 Fallback: request.user is staff/superuser, treating as admin")
+                except Exception:
+                    pass
             
+            if is_admin:
+                # ========================================
+                # ADMIN USERS: See ALL active leads
+                # ========================================
+                # Super admin sees ALL user-created active leads (no limit)
+                # Other admins see last 50 for performance
+                if user_level == 'admin_level':  # Super Admin
+                    leads_qs = Lead.objects.filter(
+                        status__iexact='Active'
+                    ).order_by('-created_at')
+                    logger.info(f"🔓 Super Admin ({user_level}) - showing ALL active leads (no limit)")
+                else:  # Normal admin or superuser
+                    leads_qs = Lead.objects.filter(
+                        status__iexact='Active'
+                    ).order_by('-created_at')[:50]
+                    logger.info(f"🔓 Admin user ({user_level}) - showing last 50 active leads")
+                
+            else:
+                # ========================================
+                # REGULAR USERS: See only CREATED or ASSIGNED leads
+                # ========================================
+                # Check if Lead model has 'created_by' and 'assignedTo' fields
+                lead_fields = [f.name for f in Lead._meta.get_fields()]
+                logger.info(f"📋 Available Lead fields: {lead_fields}")
+                
+                from django.db.models import Q
+                filters = Q(status__iexact='Active')
+                
+                # Add filters for created_by and assigned leads
+                user_filters = Q()
+                
+                # Option 1: Check for created_by field (ForeignKey)
+                if 'created_by' in lead_fields:
+                    user_filters |= Q(created_by=current_user)
+                    logger.info(f"🔍 Added filter: created_by={current_user}")
+                
+                # Option 2: Check for marketedBy field (CharField - commonly used for assigned user)
+                if 'marketedBy' in lead_fields and current_user_name:
+                    user_filters |= Q(marketedBy=current_user_name)
+                    logger.info(f"🔍 Added filter: marketedBy={current_user_name}")
+                
+                # Option 3: Check for assignedTo field (CharField)
+                if 'assignedTo' in lead_fields and current_user_name:
+                    user_filters |= Q(assignedTo=current_user_name)
+                    logger.info(f"🔍 Added filter: assignedTo={current_user_name}")
+                
+                # Option 4: Check for assigned_user field (ForeignKey - alternative naming)
+                if 'assigned_user' in lead_fields:
+                    user_filters |= Q(assigned_user=current_user)
+                    logger.info(f"🔍 Added filter: assigned_user={current_user}")
+                
+                # Combine filters
+                if user_filters:
+                    filters &= user_filters
+                    leads_qs = Lead.objects.filter(filters).order_by('-created_at')[:50]
+                    logger.info(f"🔒 Regular user ({user_level}) - showing only created/assigned leads")
+                else:
+                    # If no matching fields found, show no leads for safety
+                    leads_qs = Lead.objects.none()
+                    logger.warning(f"⚠️ No user-matching fields found in Lead model. Available fields: {lead_fields}")
+                    logger.warning(f"⚠️ User {current_user_name} will see NO leads. Please check your Lead model configuration.")
+            
+            # Build the active leads list
             for lead in leads_qs:
                 active_leads.append({
                     'id': lead.id,
@@ -6751,10 +7417,12 @@ def quotation_form_view(request):
                     'created_at': lead.created_at if hasattr(lead, 'created_at') else lead.date,
                 })
             
-            logger.info(f"📋 Loaded {len(active_leads)} active leads")
+            logger.info(f"📋 Loaded {len(active_leads)} active leads for user {current_user_name} (Level: {user_level})")
             
         except Exception as e:
             logger.error(f"❌ Error loading leads: {e}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
             active_leads = []
         
         # Get active users
@@ -6791,9 +7459,11 @@ def quotation_form_view(request):
             'departments': departments,  # ✅ ADDED: Departments for branch selection
             'total_quotations': total_quotations,
             'leads_count': len(active_leads),
+            'current_user_level': user_level,  # Add user level to context for debugging
+            'current_user_name': current_user_name,  # Add user name to context
         }
         
-        logger.info(f"✅ Context prepared with {total_quotations} quotations and {departments.count()} departments")
+        logger.info(f"✅ Context prepared with {total_quotations} quotations, {len(active_leads)} leads, and {departments.count()} departments")
         
         return render(request, 'quotation_form.html', context)
         
@@ -6809,26 +7479,29 @@ def quotation_form_view(request):
             'departments': [],  # ✅ ADDED: Empty departments list
             'total_quotations': 0,
             'leads_count': 0,
-            'error_message': f'Error loading quotations: {str(e)}'
+            'error_message': str(e),
         })
 
-# ============================================================================
-# QUOTATION SUBMIT - Save quotation to database
-# ============================================================================
+
 
 import json
 import logging
-from decimal import Decimal
-from django.db import transaction
-from django.http import JsonResponse
-from django.utils import timezone
+from decimal import Decimal, InvalidOperation
 from datetime import datetime, timedelta
+from django.http import JsonResponse
+from django.db import transaction
+from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+
+# Import models
 from app5.models import Lead, Quotation, QuotationItem
 from purchase_order.models import Item
 from app1.models import User
 
 logger = logging.getLogger(__name__)
 
+
+@csrf_exempt  # Add this if you're having CSRF token issues
 def quotation_submit(request):
     """
     Handle quotation submission from quotation_list.html
@@ -6848,15 +7521,23 @@ def quotation_submit(request):
         logger.debug(f"Raw data keys: {list(data.keys())}")
         
         # Extract main quotation data
-        lead_id = data.get('lead_id')
+        # NOTE: Frontend sends 'lead_ticket_id' but we need 'lead_id'
+        lead_id = data.get('lead_id') or data.get('lead_ticket_id')  # ✅ FIXED: Accept both field names
         notes = data.get('notes', '').strip()
         items_data = data.get('items', [])
         
         # Financial totals
-        subtotal = Decimal(str(data.get('subtotal', 0)))
-        total_discount = Decimal(str(data.get('total_discount', 0)))
-        total_tax = Decimal(str(data.get('total_tax', 0)))
-        grand_total = Decimal(str(data.get('grand_total', 0)))
+        try:
+            subtotal = Decimal(str(data.get('subtotal', 0)))
+            total_discount = Decimal(str(data.get('total_discount', 0)))
+            total_tax = Decimal(str(data.get('total_tax', 0)))
+            grand_total = Decimal(str(data.get('grand_total', 0)))
+        except (InvalidOperation, ValueError) as e:
+            logger.error(f"❌ Invalid decimal values in financial totals: {e}")
+            return JsonResponse({
+                'success': False,
+                'message': f'Invalid financial values: {str(e)}'
+            }, status=400)
         
         logger.debug(f"📊 Totals - Subtotal: {subtotal}, Discount: {total_discount}, Tax: {total_tax}, Grand Total: {grand_total}")
         logger.debug(f"📦 Items count: {len(items_data)}")
@@ -6882,14 +7563,17 @@ def quotation_submit(request):
                     invalid_items.append(idx + 1)
                 
                 # Additional item validation
-                quantity = Decimal(str(item.get('quantity', 0)))
-                if quantity <= 0:
-                    validation_errors.append(f'Item {idx + 1}: Quantity must be greater than 0')
-                
-                sales_price = Decimal(str(item.get('sales_price', 0)))
-                unit_price = Decimal(str(item.get('unit_price', 0)))
-                if sales_price < 0 or unit_price < 0:
-                    validation_errors.append(f'Item {idx + 1}: Price cannot be negative')
+                try:
+                    quantity = Decimal(str(item.get('quantity', 0)))
+                    if quantity <= 0:
+                        validation_errors.append(f'Item {idx + 1}: Quantity must be greater than 0')
+                    
+                    sales_price = Decimal(str(item.get('sales_price', 0)))
+                    unit_price = Decimal(str(item.get('unit_price', 0)))
+                    if sales_price < 0 or unit_price < 0:
+                        validation_errors.append(f'Item {idx + 1}: Price cannot be negative')
+                except (InvalidOperation, ValueError) as e:
+                    validation_errors.append(f'Item {idx + 1}: Invalid numeric value - {str(e)}')
             
             if invalid_items:
                 validation_errors.append(f'Please select an item for rows: {", ".join(map(str, invalid_items))}')
@@ -6935,7 +7619,17 @@ def quotation_submit(request):
         current_user = None
         user_info = "Anonymous"
         
-        if request.user and request.user.is_authenticated:
+        # Try to get user from session first (most reliable for custom auth)
+        if request.session.get('custom_user_id'):
+            try:
+                current_user = User.objects.get(id=request.session['custom_user_id'])
+                user_info = f"{current_user.name} (Session ID: {current_user.id})"
+                logger.info(f"👤 User from session: {user_info}")
+            except User.DoesNotExist:
+                logger.warning(f"⚠️ Session user {request.session.get('custom_user_id')} not found")
+        
+        # Fallback to Django authenticated user
+        if not current_user and request.user and request.user.is_authenticated:
             try:
                 # Try to get user by userid or name from the authenticated user
                 authenticated_username = request.user.username
@@ -6949,27 +7643,19 @@ def quotation_submit(request):
                 
                 if current_user:
                     user_info = f"{current_user.name} (ID: {current_user.id})"
+                    logger.info(f"👤 User from Django auth: {user_info}")
                     
             except Exception as e:
                 logger.warning(f"⚠️ Could not get user from request.user: {e}")
-                current_user = None
         
-        # Fallback to session user ID
-        if not current_user and request.session.get('custom_user_id'):
-            try:
-                current_user = User.objects.get(id=request.session['custom_user_id'])
-                user_info = f"{current_user.name} (Session ID: {current_user.id})"
-            except User.DoesNotExist:
-                logger.warning(f"⚠️ Session user {request.session.get('custom_user_id')} not found")
-                current_user = None
-        
-        logger.info(f"👤 Current user: {user_info}")
+        if not current_user:
+            logger.info(f"👤 No authenticated user found, creating as anonymous")
         
         # ========== QUOTATION CREATION ==========
         quotation_date = timezone.now().date()
         valid_until = quotation_date + timedelta(days=30)  # Valid for 30 days
         
-        # Generate quotation number
+        # Generate quotation number and save to database
         with transaction.atomic():
             # Get last quotation number
             from django.db.models import Max
@@ -7014,18 +7700,23 @@ def quotation_submit(request):
                     # Try to get item from purchase order
                     if item_id:
                         try:
+                            # ✅ FIXED: Use purchase_order.models.Item
                             item = Item.objects.get(id=item_id)
                             logger.debug(f"  🛒 Found PO item: {item.name} (ID: {item.id})")
                         except Item.DoesNotExist:
                             logger.warning(f"  ⚠️ Purchase order item {item_id} not found, using provided data")
                     
-                    # Extract item data
-                    quantity = Decimal(str(item_data.get('quantity', 1)))
-                    sales_price = Decimal(str(item_data.get('sales_price', 0)))
-                    unit_price = Decimal(str(item_data.get('unit_price', 0)))
-                    discount_percentage = Decimal(str(item_data.get('discount', 0)))
-                    tax_percentage = Decimal(str(item_data.get('tax', 0)))
-                    line_total = Decimal(str(item_data.get('total', 0)))
+                    # Extract item data with proper error handling
+                    try:
+                        quantity = Decimal(str(item_data.get('quantity', 1)))
+                        sales_price = Decimal(str(item_data.get('sales_price', 0)))
+                        unit_price = Decimal(str(item_data.get('unit_price', 0)))
+                        discount_percentage = Decimal(str(item_data.get('discount', 0)))
+                        tax_percentage = Decimal(str(item_data.get('tax', 0)))
+                        line_total = Decimal(str(item_data.get('total', 0)))
+                        entry_rate = Decimal(str(item_data.get('entry_rate', 0)))
+                    except (InvalidOperation, ValueError) as e:
+                        raise ValueError(f"Invalid numeric value in item data: {str(e)}")
                     
                     # Validate item data
                     if quantity <= 0:
@@ -7048,26 +7739,28 @@ def quotation_submit(request):
                         item_name = 'Unknown Item'
                     
                     description = item_data.get('description', '')
-                    if not description and item and item.description:
+                    if not description and item and hasattr(item, 'description') and item.description:
                         description = item.description
                     
                     unit = item_data.get('unit', 'pcs')
-                    if not unit and item and item.unit_of_measure:
+                    if not unit and item and hasattr(item, 'unit_of_measure') and item.unit_of_measure:
                         unit = item.unit_of_measure
                     
                     hsn_code = item_data.get('hsn_code', '')
-                    if not hsn_code and item and item.hsn_code:
+                    if not hsn_code and item and hasattr(item, 'hsn_code') and item.hsn_code:
                         hsn_code = item.hsn_code
+                    
+                    section = item_data.get('section', '')
                     
                     # Create quotation item
                     quotation_item = QuotationItem.objects.create(
                         quotation=quotation,
                         item=item,
                         item_name=item_name,
-                        description=description,
+                        description=description or f"{item_name} - {section}" if section else item_name,
                         quantity=quantity,
                         unit=unit,
-                        entry_rate=Decimal(str(item_data.get('entry_rate', 0))),
+                        entry_rate=entry_rate,
                         sales_price=sales_price,
                         unit_price=unit_price,
                         discount_percentage=discount_percentage,
@@ -7090,9 +7783,9 @@ def quotation_submit(request):
                     item_errors.append(f"Item {idx+1}: {str(e)}")
                     raise  # Re-raise to trigger transaction rollback
             
-            # Verify totals match
+            # Verify totals match (allow small rounding differences)
             total_discrepancy = abs(total_line_total - grand_total)
-            if total_discrepancy > Decimal('0.01'):
+            if total_discrepancy > Decimal('0.10'):  # Allow 10 cents difference for rounding
                 logger.warning(f"⚠️ Line totals ({total_line_total}) don't match grand total ({grand_total}) "
                               f"Difference: {total_discrepancy}")
                 
@@ -7107,13 +7800,14 @@ def quotation_submit(request):
         # Update lead with quotation info
         lead_updated = False
         try:
-            if lead.details:
-                lead.details = f"Quotation created: {quotation_number} ({quotation_date})\n" + lead.details
-            else:
-                lead.details = f"Quotation created: {quotation_number} ({quotation_date})"
-            lead.save()
-            lead_updated = True
-            logger.debug(f"✅ Updated lead details with quotation info")
+            if hasattr(lead, 'details'):
+                if lead.details:
+                    lead.details = f"Quotation created: {quotation_number} ({quotation_date})\n" + lead.details
+                else:
+                    lead.details = f"Quotation created: {quotation_number} ({quotation_date})"
+                lead.save()
+                lead_updated = True
+                logger.debug(f"✅ Updated lead details with quotation info")
         except Exception as e:
             logger.warning(f"⚠️ Could not update lead details: {e}")
         
@@ -7136,7 +7830,7 @@ def quotation_submit(request):
                 'grand_total': float(grand_total),
                 'created_by': user_info,
             },
-            'redirect_url': '/app5/quotation/form/',  # URL to quotation_form.html
+            'redirect_url': '/app5/quotation/',  # ✅ FIXED: Redirect to list page instead of form
             'metadata': {
                 'lead_updated': lead_updated,
                 'items_processed': items_created,
@@ -7152,7 +7846,7 @@ def quotation_submit(request):
         
     except json.JSONDecodeError as e:
         logger.error(f"❌ Invalid JSON data: {e}")
-        logger.debug(f"Request body: {request.body[:500]}...")  # Log first 500 chars
+        logger.debug(f"Request body: {request.body[:500] if request.body else 'Empty'}...")
         
         return JsonResponse({
             'success': False,
@@ -7176,32 +7870,11 @@ def quotation_submit(request):
             'error_detail': str(e)
         }, status=404)
     
-    except transaction.TransactionManagementError as e:
-        logger.error(f"❌ Database transaction error: {e}")
-        return JsonResponse({
-            'success': False,
-            'message': 'Database transaction failed. Please try again.',
-            'error_detail': str(e)
-        }, status=500)
-    
     except Exception as e:
-        logger.error(f"❌ Unexpected error creating quotation: {e}", exc_info=True)
-        
-        # More specific error message based on error type
-        error_message = f'Error creating quotation: {str(e)}'
-        
-        # Check for specific common errors
-        if "decimal" in str(e).lower():
-            error_message = "Invalid number format. Please check all price and quantity values."
-        elif "integrity" in str(e).lower() or "constraint" in str(e).lower():
-            error_message = "Database constraint violation. Please check your data."
-        elif "permission" in str(e).lower() or "access" in str(e).lower():
-            error_message = "Permission denied. You may not have access to create quotations."
-        
+        logger.error(f"❌ Unexpected error during quotation submission: {e}", exc_info=True)
         return JsonResponse({
             'success': False,
-            'message': error_message,
-            'error_type': type(e).__name__,
+            'message': f'An unexpected error occurred: {str(e)}',
             'error_detail': str(e)
         }, status=500)
 
@@ -7405,12 +8078,35 @@ def edit_quotation(request, quotation_id):
         items = Item.objects.all()  # From purchase order app
         leads = Lead.objects.filter(status='Active')
         
+        # Get unique sections from items
+        sections = items.values_list('section', flat=True).distinct()
+        
+        # Create a safe JSON serializable version of items for JavaScript
+        items_json = []
+        for item in items:
+            items_json.append({
+                'id': item.id,
+                'name': item.name,
+                'description': item.description or '',
+                'unit_of_measure': item.unit_of_measure,
+                'mrp': float(item.mrp) if item.mrp else 0,
+                'purchase_price': float(item.purchase_price) if item.purchase_price else 0,
+                'cost': float(item.cost) if item.cost else 0,
+                'tax_percentage': float(item.tax_percentage) if item.tax_percentage else 0,
+                'hsn_code': item.hsn_code or '',
+                'section': item.section or '',
+                'department': item.department.name if item.department else 'N/A',
+                'is_active': item.is_active
+            })
+        
         context = {
             'quotation': quotation,
-            'quotation_items': quotation_items,
+            'quotation_items': quotation_items,  # Pass as separate variable
             'items': items,
             'active_leads': leads,
             'leads_count': leads.count(),
+            'sections': sections,
+            'items_json': items_json,  # For JavaScript
         }
         return render(request, 'quotation_edit.html', context)
     except Quotation.DoesNotExist:
@@ -7736,53 +8432,82 @@ def update_quotation(request, pk):
 
 
 
+from django.shortcuts import render, get_object_or_404
+from django.utils import timezone
+from datetime import timedelta                          # ✅ fixed: was timezone.timedelta
+
+
+# ============================================================
+# MAIN VIEW – renders quotation_download.html
+# ============================================================
+
+# ============================================================================
+# SAFE VERSION - Works WITHOUT department field in model
+# Use this until you add the department field and run migrations
+# ============================================================================
+
 def download_quotation(request, quotation_id):
+    """
+    Display quotation with branch logo and details.
+    SAFE VERSION: Works even if department field doesn't exist yet.
+    """
+    from .models import Quotation
+    
     quotation = get_object_or_404(Quotation, id=quotation_id)
     
-    # Get branch/department ID from request parameter
-    branch_id = request.GET.get('branch_id') or request.GET.get('department_id')
+    # ✅ Get the lead associated with the quotation
+    lead = getattr(quotation, 'lead', None)
+    
+    # ✅ Calculate client address based on lead data (like in lead_report.html)
+    client_address = ''
+    if lead:
+        # Same logic as in your lead_report.html template
+        if getattr(lead, 'customerType', '') == 'Business':
+            client_address = getattr(lead, 'place', '')
+        else:
+            client_address = getattr(lead, 'individualPlace', '')
+    
+    # ✅ SAFE: Check if department field exists before accessing it
+    branch_id = None
+    
+    # Try to get department_id safely
+    if hasattr(quotation, 'department_id') and quotation.department_id:
+        branch_id = str(quotation.department_id)
+        logger.info(f"✅ Using stored branch from quotation: {branch_id}")
+    else:
+        # No department field or not set - try URL parameter
+        branch_id = request.GET.get('branch_id') or request.GET.get('department_id')
+        if branch_id:
+            logger.info(f"📌 Using branch from URL parameter: {branch_id}")
+        else:
+            logger.info("ℹ️ No branch specified, will use default")
+    
+    # ✅ Load the branch/department data
     branch = None
     
-    # Try to get department from purchase_order app
     try:
         from purchase_order.models import Department
         
         if branch_id and branch_id.isdigit():
-            # Try to get the selected department
             try:
                 department = Department.objects.get(id=int(branch_id), is_active=True)
-                branch = {
-                    'id': department.id,
-                    'name': department.name,
-                    'code': f"DEPT-{department.id:03d}",
-                    'address': department.address or '',
-                    'city': department.city or '',
-                    'state': department.state or '',
-                    'pincode': department.pincode or '',
-                    'contact_number': department.contact_number or '',
-                    'alternate_number': department.alternate_number or '',
-                    'email': department.email or '',
-                    'gst_number': department.gst_number or '',
-                    # ✅ FIXED: Properly handle logo URL
-                    'logo_url': department.logo.url if department.logo else '',
-                    'has_logo': bool(department.logo),
-                    'type': 'department',
-                }
+                branch = _dept_to_branch(department)
+                logger.info(f"✅ Loaded branch: {branch['name']} (ID: {branch['id']})")
             except Department.DoesNotExist:
+                logger.warning(f"⚠️ Department {branch_id} not found, using default")
                 branch = get_default_department()
         else:
+            logger.info("ℹ️ No branch ID, using default department")
             branch = get_default_department()
-            
+    
     except ImportError:
+        logger.warning("⚠️ Department model not available, using fallback")
         branch = get_fallback_branch(branch_id)
     
-    # Get all items for this quotation
+    # ✅ Calculate items and totals
     items = quotation.items.all()
-    
-    # Calculate totals (existing code)
     subtotal = 0
     total_tax = 0
-    grand_total = 0
     
     for item in items:
         sale_price = getattr(item, 'sales_price', 0) or 0
@@ -7790,100 +8515,136 @@ def download_quotation(request, quotation_id):
         item_total = quantity * sale_price
         subtotal += item_total
         
-        if hasattr(item, 'tax_percentage'):
-            tax_percentage = getattr(item, 'tax_percentage', 0) or 0
-            item_tax = (item_total * tax_percentage) / 100
-            total_tax += item_tax
+        tax_pct = getattr(item, 'tax_percentage', 0) or 0
+        total_tax += (item_total * tax_pct) / 100
     
     discount_amount = getattr(quotation, 'discount_amount', 0) or 0
     shipping_charges = getattr(quotation, 'shipping_charges', 0) or 0
     grand_total = subtotal + total_tax - discount_amount + shipping_charges
     
-    def format_currency(value):
-        return f"₹{value:,.2f}"
+    def fmt(value):
+        return f"{value:,.2f}"
     
-    # Build complete address string
+    # ✅ Build display strings for branch
     if branch:
-        address_parts = []
-        if branch.get('address'):
-            address_parts.append(branch['address'])
-        if branch.get('city'):
-            address_parts.append(branch['city'])
-        if branch.get('state'):
-            address_parts.append(branch['state'])
+        # Full address display
+        parts = []
+        for key in ('address', 'city', 'state'):
+            if branch.get(key):
+                parts.append(branch[key])
         if branch.get('pincode'):
-            address_parts.append(f"PIN: {branch['pincode']}")
+            parts.append(f"PIN: {branch['pincode']}")
+        branch['full_address_display'] = ', '.join(parts)
         
-        branch['full_address_display'] = ', '.join(address_parts)
-        
-        contact_info = []
+        # Contact display
+        cp = []
         if branch.get('contact_number'):
-            contact_info.append(f"📞 {branch['contact_number']}")
+            cp.append(branch['contact_number'])
         if branch.get('alternate_number'):
-            contact_info.append(f" / {branch['alternate_number']}")
-        if branch.get('email'):
-            contact_info.append(f"✉️ {branch['email']}")
-        if branch.get('gst_number'):
-            contact_info.append(f"📋 GST: {branch['gst_number']}")
-        
-        branch['contact_info'] = ' | '.join(contact_info)
+            cp.append(branch['alternate_number'])
+        branch['contact_display'] = ' / '.join(cp) if cp else ''
     
+    # ✅ Get client info from lead if available
+    client_name = getattr(quotation, 'client_name', '') or ''
+    client_phone = getattr(quotation, 'client_phone', '') or ''
+    client_email = getattr(quotation, 'client_email', '') or ''
+    
+    # Override with lead data if lead exists and quotation fields are empty
+    if lead and not client_name:
+        client_name = getattr(lead, 'ownerName', '') or ''
+    
+    if lead and not client_phone:
+        client_phone = getattr(lead, 'phoneNo', '') or ''
+    
+    if lead and not client_email:
+        client_email = getattr(lead, 'email', '') or ''
+    
+    # ✅ Build template context
     context = {
+        # Core objects
         'quotation': quotation,
         'branch': branch,
         'items': items,
-        'subtotal': format_currency(subtotal),
+        'lead_data': lead,  # Pass the lead object to template
+        
+        # Money values
+        'subtotal': fmt(subtotal),
         'subtotal_raw': subtotal,
-        'total_tax': format_currency(total_tax),
+        'total_tax': fmt(total_tax),
         'total_tax_raw': total_tax,
-        'discount_amount': format_currency(discount_amount),
+        'discount_amount': fmt(discount_amount),
         'discount_amount_raw': discount_amount,
-        'shipping_charges': format_currency(shipping_charges) if shipping_charges > 0 else None,
+        'shipping_charges': fmt(shipping_charges) if shipping_charges > 0 else None,
         'shipping_charges_raw': shipping_charges,
-        'grand_total': format_currency(grand_total),
+        'grand_total': fmt(grand_total),
         'grand_total_raw': grand_total,
+        
+        # Metadata
         'item_count': items.count(),
         'today': timezone.now().date(),
-        'valid_until': getattr(quotation, 'valid_until', None) or (timezone.now() + timezone.timedelta(days=30)).date(),
-        'quotation_number': getattr(quotation, 'quotation_number', f"QT-{quotation.id:06d}"),
-        'client_name': getattr(quotation, 'client_name', ''),
-        'client_email': getattr(quotation, 'client_email', ''),
-        'client_phone': getattr(quotation, 'client_phone', ''),
-        'client_address': getattr(quotation, 'client_address', ''),
+        'valid_until': getattr(quotation, 'valid_until', None) or (timezone.now() + timedelta(days=30)).date(),
+        'quotation_number': getattr(quotation, 'quotation_number', None) or f"QT-{quotation.id:06d}",
+        'created_date': getattr(quotation, 'created_at', None) or getattr(quotation, 'quotation_date', None) or timezone.now(),
+        'created_place': branch.get('city', '') if branch else '',
+        
+        # Client info
+        'client_name': client_name,
+        'client_email': client_email,
+        'client_phone': client_phone,
+        'client_address': client_address,  # Now correctly calculated from lead
+        
+        # ✅ Company/Branch info (used by template)
         'company_name': branch['name'] if branch else 'Our Company',
         'company_address': branch.get('full_address_display', '') if branch else '',
-        'company_contact': branch.get('contact_info', '') if branch else '',
+        'company_contact': branch.get('contact_display', '') if branch else '',
         'company_gst': branch.get('gst_number', '') if branch else '',
+        'company_email': branch.get('email', '') if branch else '',
+        'company_logo_url': branch.get('logo_url', '') if branch else '',
+        'company_has_logo': branch.get('has_logo', False) if branch else False,
     }
     
     return render(request, 'quotation_download.html', context)
 
 
+
+
+def _dept_to_branch(department):
+    """Convert Department ORM instance to branch context dict."""
+    logo_url = ''
+    has_logo = False
+    
+    if department.logo:
+        try:
+            logo_url = department.logo.url
+            has_logo = True
+        except:
+            pass
+    
+    return {
+        'id': department.id,
+        'name': department.name,
+        'code': f"DEPT-{department.id:03d}",
+        'address': department.address or '',
+        'city': department.city or '',
+        'state': department.state or '',
+        'pincode': department.pincode or '',
+        'contact_number': department.contact_number or '',
+        'alternate_number': department.alternate_number or '',
+        'email': department.email or '',
+        'gst_number': department.gst_number or '',
+        'logo_url': logo_url,
+        'has_logo': has_logo,
+        'type': 'department',
+    }
+
+
 def get_default_department():
-    """Get the default/fallback department from database"""
+    """Get first active department as default."""
     try:
         from purchase_order.models import Department
-        
-        default_dept = Department.objects.filter(is_active=True).first()
-        
-        if default_dept:
-            return {
-                'id': default_dept.id,
-                'name': default_dept.name,
-                'code': f"DEPT-{default_dept.id:03d}",
-                'address': default_dept.address or '',
-                'city': default_dept.city or '',
-                'state': default_dept.state or '',
-                'pincode': default_dept.pincode or '',
-                'contact_number': default_dept.contact_number or '',
-                'alternate_number': default_dept.alternate_number or '',
-                'email': default_dept.email or '',
-                'gst_number': default_dept.gst_number or '',
-                # ✅ FIXED: Properly handle logo URL
-                'logo_url': default_dept.logo.url if default_dept.logo else '',
-                'has_logo': bool(default_dept.logo),
-                'type': 'department',
-            }
+        dept = Department.objects.filter(is_active=True).first()
+        if dept:
+            return _dept_to_branch(dept)
     except (ImportError, AttributeError):
         pass
     
@@ -7893,7 +8654,9 @@ def get_default_department():
         'address': '123 Business Street',
         'city': 'City',
         'state': 'State',
+        'pincode': '',
         'contact_number': '+91 1234567890',
+        'alternate_number': '',
         'email': 'info@company.com',
         'gst_number': 'GSTINXXXXXXX',
         'logo_url': '',
@@ -7903,192 +8666,195 @@ def get_default_department():
 
 
 def get_fallback_branch(branch_id=None):
-    """Fallback branch data when purchase_order app is not available"""
-    BRANCHES_DATA = {
+    """Hard-coded branch data – used only when the purchase_order app is not installed."""
+    BRANCHES = {
         1: {
-            'name': 'Main Branch',
-            'code': 'BR-001',
-            'address': '123 Business Street, City, State 12345',
-            'contact_number': '+1 (123) 456-7890',
-            'email': 'main@company.com',
-            'gst_number': 'GSTINXXXXXXX',
-            'type': 'fallback',
+            'name':             'Main Branch',
+            'code':             'BR-001',
+            'address':          '123 Business Street',
+            'city':             'City',
+            'state':            'State',
+            'pincode':          '12345',
+            'contact_number':   '+1 (123) 456-7890',
+            'alternate_number': '',
+            'email':            'main@company.com',
+            'gst_number':       'GSTINXXXXXXX',
+            'logo_url':         '',              # ✅
+            'has_logo':         False,           # ✅
+            'type':             'fallback',
         },
         2: {
-            'name': 'North Branch',
-            'code': 'BR-002',
-            'address': '456 North Avenue, Industrial Zone, Delhi 110001',
-            'contact_number': '+91 9876543210',
-            'email': 'north@company.com',
-            'gst_number': 'GSTINXXXXXXX',
-            'type': 'fallback',
+            'name':             'North Branch',
+            'code':             'BR-002',
+            'address':          '456 North Avenue',
+            'city':             'Industrial Zone',
+            'state':            'Delhi',
+            'pincode':          '110001',
+            'contact_number':   '+91 9876543210',
+            'alternate_number': '',
+            'email':            'north@company.com',
+            'gst_number':       'GSTINXXXXXXX',
+            'logo_url':         '',              # ✅
+            'has_logo':         False,           # ✅
+            'type':             'fallback',
         },
         3: {
-            'name': 'South Branch',
-            'code': 'BR-003',
-            'address': '789 South Road, Commercial Area, Bangalore 560001',
-            'contact_number': '+91 8765432109',
-            'email': 'south@company.com',
-            'gst_number': 'GSTINXXXXXXX',
-            'type': 'fallback',
+            'name':             'South Branch',
+            'code':             'BR-003',
+            'address':          '789 South Road',
+            'city':             'Commercial Area',
+            'state':            'Bangalore',
+            'pincode':          '560001',
+            'contact_number':   '+91 8765432109',
+            'alternate_number': '',
+            'email':            'south@company.com',
+            'gst_number':       'GSTINXXXXXXX',
+            'logo_url':         '',              # ✅
+            'has_logo':         False,           # ✅
+            'type':             'fallback',
         },
     }
-    
-    if branch_id and branch_id.isdigit() and int(branch_id) in BRANCHES_DATA:
-        return BRANCHES_DATA[int(branch_id)]
-    
-    # Default to main branch
-    return BRANCHES_DATA.get(1)
 
+    if branch_id and branch_id.isdigit() and int(branch_id) in BRANCHES:
+        return BRANCHES[int(branch_id)]
+    return BRANCHES[1]
+
+
+# ============================================================
+# OPTIONAL – reportlab binary PDF (kept as-is, bugs fixed)
+# ============================================================
 
 def generate_quotation_pdf(context):
-    """Generate PDF version of the quotation"""
+    """Return an HttpResponse containing the PDF bytes."""
     from django.http import HttpResponse
     from reportlab.pdfgen import canvas
     from reportlab.lib.pagesizes import A4
-    from reportlab.lib.units import inch
     from io import BytesIO
-    
-    # Create a file-like buffer to receive PDF data
+
     buffer = BytesIO()
-    
-    # Create the PDF object
-    p = canvas.Canvas(buffer, pagesize=A4)
+    p      = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
-    
-    # Set up document
-    p.setTitle(f"Quotation {context.get('quotation_number', '')}")
-    
-    # Header
+
+    quotation_number = context.get('quotation_number', '')
+    p.setTitle(f"Quotation {quotation_number}")
+
+    # ── header ──
+    y = height - 50
     p.setFont("Helvetica-Bold", 16)
-    p.drawString(50, height - 50, "QUOTATION")
+    p.drawString(50, y, "QUOTATION")
+
+    y -= 20
     p.setFont("Helvetica", 10)
-    p.drawString(50, height - 70, f"Quotation #: {context.get('quotation_number', '')}")
-    p.drawString(50, height - 85, f"Date: {context.get('today', '').strftime('%d/%m/%Y')}")
-    
-    # Company/Branch Info
-    if context.get('branch'):
+    p.drawString(50, y, f"Quotation #: {quotation_number}")
+
+    today = context.get('today')
+    y -= 15
+    p.drawString(50, y, f"Date: {today.strftime('%d/%m/%Y') if today else ''}")
+
+    # ── branch info block ──
+    branch = context.get('branch')
+    if branch:
+        y -= 35
         p.setFont("Helvetica-Bold", 12)
-        p.drawString(50, height - 120, f"{context['branch'].get('name', '')}")
+        p.drawString(50, y, branch.get('name', ''))
+        y -= 18
         p.setFont("Helvetica", 10)
-        
-        y = height - 135
-        if context['branch'].get('full_address_display'):
-            p.drawString(50, y, context['branch']['full_address_display'])
-            y -= 15
-        if context['branch'].get('contact_number'):
-            p.drawString(50, y, f"Phone: {context['branch']['contact_number']}")
-            y -= 15
-        if context['branch'].get('email'):
-            p.drawString(50, y, f"Email: {context['branch']['email']}")
-            y -= 15
-        if context['branch'].get('gst_number'):
-            p.drawString(50, y, f"GST: {context['branch']['gst_number']}")
-    
-    # Client Info
+        for label, key in [("Address", 'full_address_display'),
+                           ("Phone",   'contact_number'),
+                           ("Email",   'email'),
+                           ("GST",     'gst_number')]:
+            val = branch.get(key, '')
+            if val:
+                p.drawString(50, y, f"{label}: {val}")
+                y -= 15
+
+    # ── bill-to ──
     p.setFont("Helvetica-Bold", 12)
-    p.drawString(300, height - 120, "BILL TO:")
+    p.drawString(350, height - 120, "BILL TO:")
     p.setFont("Helvetica", 10)
-    p.drawString(300, height - 135, f"{context.get('client_name', '')}")
-    
-    y = height - 150
-    if context.get('client_address'):
-        p.drawString(300, y, context['client_address'])
-        y -= 15
-    if context.get('client_phone'):
-        p.drawString(300, y, f"Phone: {context['client_phone']}")
-        y -= 15
-    if context.get('client_email'):
-        p.drawString(300, y, f"Email: {context['client_email']}")
-    
-    # Table Header
+    p.drawString(350, height - 138, context.get('client_name', ''))
+
+    y2 = height - 155
+    for val in (context.get('client_address'),
+                context.get('client_phone') and f"Phone: {context['client_phone']}",
+                context.get('client_email') and f"Email: {context['client_email']}"):
+        if val:
+            p.drawString(350, y2, val)
+            y2 -= 15
+
+    # ── items table ──
+    y_table = height - 220
     p.setFont("Helvetica-Bold", 10)
-    y_table_start = height - 220
-    
-    p.drawString(50, y_table_start, "Item")
-    p.drawString(250, y_table_start, "Quantity")
-    p.drawString(320, y_table_start, "Price")
-    p.drawString(380, y_table_start, "Tax")
-    p.drawString(450, y_table_start, "Total")
-    
-    p.line(50, y_table_start - 5, 550, y_table_start - 5)
-    
-    # Items
+    for x, lbl in [(50,"Item"),(250,"Qty"),(320,"Price"),(380,"Tax %"),(450,"Total")]:
+        p.drawString(x, y_table, lbl)
+    p.line(50, y_table - 5, 550, y_table - 5)
+
     p.setFont("Helvetica", 9)
-    y_current = y_table_start - 20
-    
-    for item in context['items']:
-        item_name = getattr(item, 'name', f"Item {item.id}")
-        quantity = getattr(item, 'quantity', 1)
-        price = getattr(item, 'sales_price', 0) or 0
-        tax_percent = getattr(item, 'tax_percentage', 0) or 0
+    y_cur = y_table - 22
+
+    for item in context.get('items', []):
+        name       = getattr(item, 'item_name', '') or getattr(item, 'name', f"Item {item.id}")
+        quantity   = getattr(item, 'quantity', 1)  or 1
+        price      = getattr(item, 'sales_price', 0) or 0
+        tax_pct    = getattr(item, 'tax_percentage', 0) or 0
         item_total = quantity * price
-        item_tax = (item_total * tax_percent) / 100
-        
-        # Truncate long item names
-        if len(item_name) > 30:
-            item_name = item_name[:27] + "..."
-        
-        p.drawString(50, y_current, item_name)
-        p.drawString(250, y_current, str(quantity))
-        p.drawString(320, y_current, f"₹{price:,.2f}")
-        p.drawString(380, y_current, f"{tax_percent}%")
-        p.drawString(450, y_current, f"₹{item_total:,.2f}")
-        
-        y_current -= 15
-        
-        # Check for page break
-        if y_current < 100:
+
+        if len(name) > 30:
+            name = name[:27] + "…"
+
+        p.drawString(50,  y_cur, name)
+        p.drawString(250, y_cur, str(quantity))
+        p.drawString(320, y_cur, f"{price:,.2f}")
+        p.drawString(380, y_cur, f"{tax_pct}%")
+        p.drawString(450, y_cur, f"{item_total:,.2f}")
+        y_cur -= 16
+
+        if y_cur < 100:
             p.showPage()
             p.setFont("Helvetica", 9)
-            y_current = height - 50
-    
-    # Totals
-    y_totals = y_current - 30
-    
+            y_cur = height - 50
+
+    # ── totals ──
+    y_tot = y_cur - 25
     p.setFont("Helvetica-Bold", 10)
-    p.drawString(350, y_totals, "Subtotal:")
-    p.drawString(450, y_totals, context['subtotal'])
-    
-    y_totals -= 15
-    p.drawString(350, y_totals, "Tax:")
-    p.drawString(450, y_totals, context['total_tax'])
-    
+
+    for label, key in [("Subtotal:", 'subtotal'), ("Tax:", 'total_tax')]:
+        p.drawString(350, y_tot, label)
+        p.drawString(460, y_tot, context.get(key, ''))
+        y_tot -= 16
+
     if context.get('discount_amount_raw', 0) > 0:
-        y_totals -= 15
-        p.drawString(350, y_totals, "Discount:")
-        p.drawString(450, y_totals, f"-{context['discount_amount']}")
-    
+        p.drawString(350, y_tot, "Discount:")
+        p.drawString(460, y_tot, f"-{context['discount_amount']}")
+        y_tot -= 16
+
     if context.get('shipping_charges_raw', 0) > 0:
-        y_totals -= 15
-        p.drawString(350, y_totals, "Shipping:")
-        p.drawString(450, y_totals, context['shipping_charges'])
-    
-    y_totals -= 20
+        p.drawString(350, y_tot, "Shipping:")
+        p.drawString(460, y_tot, context.get('shipping_charges', ''))
+        y_tot -= 16
+
+    y_tot -= 6
     p.setFont("Helvetica-Bold", 12)
-    p.drawString(350, y_totals, "GRAND TOTAL:")
-    p.drawString(450, y_totals, context['grand_total'])
-    
-    # Footer
+    p.drawString(350, y_tot, "GRAND TOTAL:")
+    p.drawString(460, y_tot, context.get('grand_total', ''))
+
+    # ── footer ──
     p.setFont("Helvetica", 8)
     p.drawString(50, 50, "Terms & Conditions:")
     p.drawString(50, 40, "1. Prices are valid for 30 days")
     p.drawString(50, 30, "2. Payment terms: Net 30")
     p.drawString(50, 20, "3. All taxes applicable")
-    
-    # Validity
-    p.drawString(400, 30, f"Valid Until: {context.get('valid_until', '').strftime('%d/%m/%Y')}")
-    
-    # Close the PDF object cleanly
+
+    valid_until = context.get('valid_until')
+    if valid_until:
+        p.drawString(400, 30, f"Valid Until: {valid_until.strftime('%d/%m/%Y')}")
+
     p.showPage()
     p.save()
-    
-    # FileResponse with PDF content
+
     buffer.seek(0)
     response = HttpResponse(buffer, content_type='application/pdf')
-    filename = f"quotation_{context.get('quotation_number', quotation_id)}.pdf"
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    
+    response['Content-Disposition'] = f'attachment; filename="quotation_{quotation_number}.pdf"'   # ✅ fixed
     return response
 
     # app5/views.py

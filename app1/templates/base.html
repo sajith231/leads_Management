@@ -473,6 +473,11 @@
                             <i class="fas fa-bullhorn"></i> Campaign
                         </a>
 
+
+                         <a href="{% url 'app5:quotation_form' %}">
+    <i class="fas fa-id-card"></i> Quotation
+</a>
+
             </div>
             {% endif %}
 
@@ -942,7 +947,7 @@
                 <!-- <a href="{% url 'all_leads' %}"><i class="fas fa-user"></i> Leads</a> -->
                 {% endif %}
                 {% if 'user_dashboard' in allowed_menus %}
-                <a href="{% url 'user_dashboard' %}"><i class="fas fa-user"></i> Leads</a>
+                <!-- <a href="{% url 'user_dashboard' %}"><i class="fas fa-user"></i> Leads</a> -->
                 {% endif %}
 
             {% if 'lead_form' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
@@ -965,6 +970,10 @@
     <a href="{% url 'campaigning_list' %}">
         <i class="fas fa-bullhorn"></i> Campaign
     </a>
+
+      <a href="{% url 'app5:quotation_form' %}">
+    <i class="fas fa-id-card"></i> Quotation
+</a>
 
             </div>
 

@@ -14,9 +14,12 @@ import mimetypes
 # Load environment variables
 load_dotenv()
 
-WHATSAPP_API_URL = os.getenv("WHATSAPP_API_URL", "https://app.dxing.in/api/send/whatsapp")
-WHATSAPP_API_SECRET = os.getenv("WHATSAPP_API_SECRET", "7b8ae820ecb39f8d173d57b51e1fce4c023e359e")
-WHATSAPP_API_ACCOUNT = os.getenv("WHATSAPP_API_ACCOUNT", "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8")
+import os
+
+WHATSAPP_API_URL = os.getenv("WA_API")
+WHATSAPP_API_SECRET = os.getenv("WA_SECRET")
+WHATSAPP_API_ACCOUNT = os.getenv("WA_ACCOUNT")
+
 
 
 def is_admin_user(request):
