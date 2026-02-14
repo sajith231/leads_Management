@@ -157,24 +157,28 @@ class DailyTask(models.Model):
     # ✅ NEW METHODS - Add these to your model:
     
     def get_current_duration(self):
+        """
+        Calculate current duration including active time
+        Returns formatted string like "2h 30m 15s"
+        """
         total_seconds = self.elapsed_seconds
-
+        
+        # If timer is running, add the current active time
         if self.is_timer_running and self.last_started_at:
-            last_started = self.last_started_at
-
-            if timezone.is_naive(last_started):
-                last_started = timezone.make_aware(
-                    last_started,
-                    timezone.get_current_timezone()
-                )
-
-            total_seconds += (timezone.now() - last_started).total_seconds()
-
+            current_time = timezone.now()
+            active_duration = (current_time - self.last_started_at).total_seconds()
+            total_seconds += active_duration
+        
+        # Format as "Xh Ym Zs"
         hours, remainder = divmod(int(total_seconds), 3600)
         minutes, seconds = divmod(remainder, 60)
         return f"{hours}h {minutes}m {seconds}s"
     
     def start_timer(self):
+        """
+        Start or resume the timer
+        Called when status changes to 'in_progress'
+        """
         if not self.is_timer_running:
             self.last_started_at = timezone.now()
             self.is_timer_running = True
@@ -182,26 +186,19 @@ class DailyTask(models.Model):
             self.save()
     
     def pause_timer(self):
+        """
+        Pause the timer and save elapsed time
+        Called when status changes from 'in_progress' to 'hold' or other statuses
+        """
         if self.is_timer_running and self.last_started_at:
-            now = timezone.now()
-            last_started = self.last_started_at
-
-            # ✅ FIX: make datetime aware if needed
-            if timezone.is_naive(last_started):
-                last_started = timezone.make_aware(
-                    last_started,
-                    timezone.get_current_timezone()
-                )
-
-            elapsed = (now - last_started).total_seconds()
-
-            self.elapsed_seconds += int(elapsed)
+            current_time = timezone.now()
+            active_duration = (current_time - self.last_started_at).total_seconds()
+            self.elapsed_seconds += int(active_duration)
             self.is_timer_running = False
             self.last_started_at = None
             self.status = 'hold'
             self.duration = self.get_current_duration()
             self.save()
-
     
     def stop_timer(self):
         """
