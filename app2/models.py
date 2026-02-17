@@ -186,7 +186,7 @@ class DailyTask(models.Model):
             self.save()
     
     def pause_timer(self):
-        """
+        """c
         Pause the timer and save elapsed time
         Called when status changes from 'in_progress' to 'hold' or other statuses
         """
