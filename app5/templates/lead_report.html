@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block title %}Lead Report{% endblock %}
@@ -20,55 +19,68 @@
         }
         body {
             overflow-x: auto;
-            overflow-y: auto;
+            overflow-y: hidden;
+            height: 100vh;
+        }
+
+        /* Content class override - full screen */
+        .content {
+            margin-left: 255px;
+            transition: margin-left 0.3s ease;
+            padding: 0 !important;
+            height: 100vh;
+            overflow: hidden;
         }
 
         .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
+            width: 100%;
+            height: 100vh;
+            margin: 0;
+            padding: 10px;
+            overflow-y: auto;
+            overflow-x: auto;
+            max-width: none;
         }
 
         .header {
             background:#795548;
             color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
             text-align: center;
         }
 
         .header h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
+            font-size: 24px;
+            margin-bottom: 5px;
         }
 
         /* ---------------- CUSTOM ICON COLORS ---------------- */
         .icon-owner {
-            color: #6a11cb; /* purple-blue */
+            color: #0a0a0a;
             transition: transform 0.18s ease, filter 0.18s ease;
             display: inline-block;
         }
 
         .icon-email {
-            color: #007bff; /* bright blue */
+            color: #007bff;
             transition: transform 0.18s ease, filter 0.18s ease;
             display: inline-block;
         }
 
         .icon-phone {
-            color: #28a745; /* green */
+            color: #080808;
             transition: transform 0.18s ease, filter 0.18s ease;
             display: inline-block;
         }
 
         .icon-place {
-            color: #dc3545; /* red */
+            color: #dc3545;
             transition: transform 0.18s ease, filter 0.18s ease;
             display: inline-block;
         }
 
-        /* Hover / focus styles */
         .icon-owner:hover, .icon-owner:focus,
         .icon-email:hover, .icon-email:focus,
         .icon-phone:hover, .icon-phone:focus,
@@ -77,45 +89,44 @@
             filter: brightness(1.25);
         }
 
-        /* small spacing utility since template uses me-1 */
         .me-1 { margin-right: 0.25rem; }
         .me-2 { margin-right: 0.5rem; }
 
         .filters {
-            background: #795548;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
+           
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
             box-shadow: 0 3px 10px rgba(0,0,0,0.1);
         }
 
         .filter-row {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 10px;
             align-items: flex-end;
         }
 
         .filter-group {
             flex: 1;
-            min-width: 150px;
+            min-width: 140px;
         }
 
         .filter-group label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
             font-weight: 600;
-            color: #f8f5f5;
-            font-size: 13px;
+            color: #020202;
+            font-size: 12px;
         }
 
         .filter-group select,
         .filter-group input {
             width: 100%;
-            padding: 10px;
+            padding: 8px 10px;
             border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 14px;
+            border-radius: 5px;
+            font-size: 13px;
             transition: border-color 0.3s;
         }
 
@@ -134,13 +145,16 @@
 
         .leads-table {
             background: white;
-            border-radius: 10px;
+            border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 220px);
         }
 
         .table-header {
-            padding: 15px 20px;
+            padding: 12px 15px;
             background: #f8f9fa;
             border-bottom: 2px solid #dee2e6;
             display: flex;
@@ -155,7 +169,7 @@
 
         .table-info {
             color: #666;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         table {
@@ -164,15 +178,16 @@
         }
 
         th, td {
-            padding: 12px 15px;
+            padding: 10px 12px;
             color: #0b0b0b;
             text-align: left;
+            font-size: 13px;
         }
 
         th {
-            background:#795548;
+            
             font-weight: 600;
-            color: #fffdfd;
+            color: #070707;
             position: sticky;
             top: 0;
             z-index: 10;
@@ -228,16 +243,16 @@
         }
 
         .btn {
-            padding: 10px 16px;
+            padding: 8px 12px;
             border: none;
-            border-radius: 6px;
+            border-radius: 5px;
             cursor: pointer;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
             font-weight: 600;
-            font-size: 13px;
+            font-size: 12px;
             transition: all 0.2s;
         }
 
@@ -253,7 +268,7 @@
         }
 
         .btn-secondary {
-            background: #f12a0b;
+            background: #999c9d;
             color: white;
         }
 
@@ -264,7 +279,7 @@
         }
 
         .btn-success {
-            background: rgba(100, 81, 81, 0.899);
+            background: #999c9d;
             color: white;
         }
 
@@ -273,7 +288,7 @@
         }
 
         .btn-info {
-            background: #17a2b8;
+            background: #999c9d;
             color: white;
         }
 
@@ -295,13 +310,13 @@
         }
 
         .btn-small {
-            padding: 8px 12px;
-            font-size: 12px;
+            padding: 6px 10px;
+            font-size: 11px;
         }
 
         .action-buttons {
             display: flex;
-            gap: 6px;
+            gap: 4px;
             justify-content: flex-start;
         }
 
@@ -309,22 +324,22 @@
             text-align: center;
             font-weight: 600;
             color: #090909;
-            min-width: 50px;
+            min-width: 40px;
         }
 
         .ticket-number {
             font-family: 'Courier New', monospace;
             font-weight: bold;
             color: #0c0c0c;
-            background: #f3e8e5;
-            padding: 4px 8px;
-            border-radius: 4px;
-            border: 1px solid #070707;
+            background: #bdddf5;
+            padding: 3px 6px;
+            border-radius: 3px;
+           
             display: inline-block;
             margin-bottom: 2px;
+            font-size: 12px;
         }
 
-        /* Badge styles */
         .badge {
             display: inline-block;
             padding: 2px 6px;
@@ -355,7 +370,6 @@
             color: #212529;
         }
 
-        /* Form inline alignment fix */
         form[action*="delete"] {
             margin: 0;
             display: inline-block;
@@ -471,27 +485,28 @@
         
         /* Enable vertical + horizontal scroll for table */
         .table-scroll {
-            max-height: 550px;
+            flex: 1;
             overflow-x: auto;
             overflow-y: auto;
-            white-space: nowrap;     /* prevents column wrapping */
+            white-space: nowrap;
+            min-height: 0;
         }
 
-        /* Force table to be wider than container */
+        /* Force table to take full width */
         .table-scroll table {
-            min-width: 1200px;       /* increase if you have many columns */
+            min-width: 1400px;
+            width: 100%;
         }
         
         /* Zebra striping for table rows */
         tbody tr:nth-child(odd) {
-            background-color: #eaeae9;   /* light color */
+            background-color: #eaeae9;
         }
 
         tbody tr:nth-child(even) {
-            background-color: #ffffff;   /* white */
+            background-color: #ffffff;
         }
 
-        /* Keep hover effect visible */
         tbody tr:hover {
             background-color: #eaeaea !important;
         }
@@ -691,7 +706,6 @@
             border: 1px solid rgba(0, 123, 255, 0.3);
         }
 
-        /* Assignment Status Styles */
         .assignment-status {
             display: inline-flex;
             align-items: center;
@@ -721,26 +735,25 @@
             border: 1px solid rgba(255, 193, 7, 0.3);
         }
 
-        /* Quick Filter Buttons */
         .quick-filters {
             display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
+            gap: 6px;
+            margin-bottom: 15px;
             flex-wrap: wrap;
         }
 
         .quick-filter-btn {
-            padding: 10px 16px;
+            padding: 8px 12px;
             background: #f8f9fa;
             border: 1px solid #dee2e6;
-            border-radius: 6px;
+            border-radius: 5px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 500;
             transition: all 0.2s;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             color: #495057;
         }
 
@@ -752,16 +765,15 @@
         }
 
         .quick-filter-btn.active {
-            background: #795548;
+            background: #0c0c0c;
             color: white;
-            border-color: #795548;
+            border-color: #070707;
         }
 
         .quick-filter-btn i {
-            font-size: 14px;
+            font-size: 13px;
         }
 
-        /* Row Count Filter Styles */
         .row-count-filter {
             display: flex;
             align-items: center;
@@ -769,26 +781,24 @@
         }
 
         .row-count-filter select {
-            padding: 8px 12px;
+            padding: 6px 10px;
             border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 13px;
+            border-radius: 5px;
+            font-size: 12px;
             background: white;
             cursor: pointer;
         }
 
-        /* Row Count Display */
         .row-count-display {
-            font-size: 13px;
+            font-size: 12px;
             color: #666;
             background: #f8f9fa;
-            padding: 6px 12px;
-            border-radius: 6px;
+            padding: 5px 10px;
+            border-radius: 5px;
             border: 1px solid #dee2e6;
             font-weight: 500;
         }
 
-        /* Delete button loading styles */
         .delete-btn.loading {
             opacity: 0.7;
             cursor: not-allowed;
@@ -803,18 +813,18 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Toast notification styles */
         .toast {
             position: fixed;
             top: 20px;
             right: 20px;
-            padding: 15px 20px;
-            border-radius: 8px;
+            padding: 12px 18px;
+            border-radius: 6px;
             color: white;
             font-weight: 600;
             z-index: 9999;
             animation: slideInRight 0.3s ease-out;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            font-size: 14px;
         }
 
         .toast-success {
@@ -840,7 +850,6 @@
             }
         }
 
-        /* Ticket Details Modal Styles */
         .ticket-modal {
             display: none;
             position: fixed;
@@ -866,7 +875,7 @@
         .ticket-modal-header {
             background: #795548;
             color: white;
-            padding: 20px;
+            padding: 15px 20px;
             border-radius: 10px 10px 0 0;
             display: flex;
             justify-content: space-between;
@@ -875,15 +884,15 @@
 
         .ticket-modal-header h3 {
             margin: 0;
-            font-size: 20px;
+            font-size: 18px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .ticket-modal-close {
             color: white;
-            font-size: 24px;
+            font-size: 22px;
             font-weight: bold;
             cursor: pointer;
         }
@@ -893,34 +902,34 @@
         }
 
         .ticket-modal-body {
-            padding: 25px;
+            padding: 20px;
         }
 
         .ticket-info-item {
             display: flex;
-            margin-bottom: 15px;
-            padding: 10px;
+            margin-bottom: 12px;
+            padding: 8px 12px;
             background: #f8f9fa;
-            border-radius: 8px;
+            border-radius: 6px;
         }
 
         .ticket-info-label {
             font-weight: 600;
             color: #555;
-            min-width: 120px;
-            font-size: 14px;
+            min-width: 110px;
+            font-size: 13px;
         }
 
         .ticket-info-value {
             flex: 1;
-            font-size: 14px;
+            font-size: 13px;
             color: #2c3e50;
         }
 
         .ticket-modal-badge {
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 12px;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 11px;
             font-weight: 600;
             margin-right: 5px;
         }
@@ -956,9 +965,9 @@
         }
 
         .assignment-badge {
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 12px;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 11px;
             font-weight: 600;
         }
 
@@ -980,7 +989,6 @@
             border: 1px solid #ffc107;
         }
 
-        /* Owner Details Modal Styles */
         .owner-modal {
             display: none;
             position: fixed;
@@ -1006,7 +1014,7 @@
         .owner-modal-header {
             background: #795548;
             color: white;
-            padding: 20px;
+            padding: 15px 20px;
             border-radius: 10px 10px 0 0;
             display: flex;
             justify-content: space-between;
@@ -1015,15 +1023,15 @@
 
         .owner-modal-header h3 {
             margin: 0;
-            font-size: 20px;
+            font-size: 18px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .owner-modal-close {
             color: white;
-            font-size: 24px;
+            font-size: 22px;
             font-weight: bold;
             cursor: pointer;
         }
@@ -1033,31 +1041,30 @@
         }
 
         .owner-modal-body {
-            padding: 25px;
+            padding: 20px;
         }
 
         .owner-info-item {
             display: flex;
-            margin-bottom: 15px;
-            padding: 12px;
+            margin-bottom: 12px;
+            padding: 10px;
             background: #f8f9fa;
-            border-radius: 8px;
-           
+            border-radius: 6px;
         }
 
         .owner-info-label {
             font-weight: 600;
             color: #555;
-            min-width: 120px;
-            font-size: 14px;
+            min-width: 110px;
+            font-size: 13px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .owner-info-value {
             flex: 1;
-            font-size: 14px;
+            font-size: 13px;
             color: #2c3e50;
             font-weight: 500;
         }
@@ -1067,15 +1074,18 @@
             font-style: italic;
         }
 
-        /* Responsive Design */
         @media (max-width: 768px) {
+            .content {
+                margin-left: 0;
+            }
+            
             .container {
-                padding: 10px;
+                padding: 8px;
             }
 
             .filter-row {
                 flex-direction: column;
-                gap: 15px;
+                gap: 12px;
             }
 
             .filter-group {
@@ -1093,13 +1103,13 @@
             }
 
             th, td {
-                padding: 8px 10px;
+                padding: 6px 8px;
             }
 
             .action-buttons {
                 flex-direction: column;
                 align-items: center;
-                gap: 4px;
+                gap: 3px;
             }
 
             .quick-filters {
@@ -1127,14 +1137,16 @@
                 width: 95%;
                 margin: 10% auto;
             }
+            
+            .leads-table {
+                height: calc(100vh - 280px);
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
        
-      
-        
         <!-- Quick Filter Buttons -->
         <div class="quick-filters">
             <button type="button" class="quick-filter-btn {% if not current_start_date and not current_end_date %}active{% endif %}" data-period="all">
@@ -1162,7 +1174,7 @@
                 <div class="filter-row">
                     <!-- Status Filter -->
                     <div class="filter-group">
-                        <label><i class="fas fa-filter"></i> Status</label>
+                        
                         <select name="status" id="statusFilter">
                             <option value="">All Status</option>
                             <option value="Active" {% if current_status_filter == 'Active' %}selected{% endif %}>🟢 Active</option>
@@ -1173,7 +1185,7 @@
 
                     <!-- Campaign Filter -->
                     <div class="filter-group">
-                        <label><i class="fas fa-bullhorn"></i> Campaign</label>
+                        
                         <select name="campaign" id="campaignFilter">
                             <option value="">All Campaigns</option>
                             {% for campaign in campaigns %}
@@ -1186,7 +1198,7 @@
 
                     <!-- Branch Filter -->
                     <div class="filter-group">
-                        <label><i class="fas fa-code-branch"></i> Branch</label>
+                       
                         <select name="branch" id="branchFilter">
                             <option value="">All Branches</option>
                             {% for branch in branches %}
@@ -1198,23 +1210,23 @@
                     </div>
 
                     <div class="filter-group">
-                        <label><i class="fas fa-calendar-alt"></i> From Date</label>
+                       
                         <input type="date" name="start_date" id="startDateFilter" value="{% if current_start_date %}{{ current_start_date }}{% else %}{{ default_start_date }}{% endif %}" class="date-input">
                     </div>
 
                     <div class="filter-group">
-                        <label><i class="fas fa-calendar-alt"></i> To Date</label>
+                       
                         <input type="date" name="end_date" id="endDateFilter" value="{% if current_end_date %}{{ current_end_date }}{% else %}{{ default_end_date }}{% endif %}" class="date-input">
                     </div>
 
                     <div class="filter-group search-input">
-                        <label><i class="fas fa-search"></i> Search</label>
+                        
                         <input type="text" name="search" id="searchFilter" value="{{ current_search_query }}" placeholder="Ticket no, name, phone, email...">
                     </div>
 
                     <!-- Row Count Filter - DEFAULT SET TO 10 ROWS -->
                     <div class="filter-group">
-                        <label><i class="fas fa-list-ol"></i> Rows per page</label>
+                       
                         <select name="row_count" id="rowCountFilter">
                             <option value="10" {% if current_row_count == 10 or not current_row_count %}selected{% endif %}>10 rows</option>
                             <option value="20" {% if current_row_count == 20 %}selected{% endif %}>20 rows</option>
@@ -1339,7 +1351,7 @@
 
                                 <!-- Phone -->
                                 {% if lead.phoneNo %}
-                                    <a href="tel:{{ lead.phoneNo }}" style="color: #28a745; text-decoration: none;">
+                                    <a href="tel:{{ lead.phoneNo }}" style="color: #080808; text-decoration: none;">
                                         <i class="fas fa-phone icon-phone me-1" title="Phone"></i> {{ lead.phoneNo }}
                                     </a>
                                 {% else %}
@@ -1419,9 +1431,9 @@
 
                 <!-- ✅ Fixed Pagination with filter parameters -->
                 {% if current_row_count != 'all' %}
-                <div style="display:flex; justify-content:center; margin:20px 0;">
+                <div style="display:flex; justify-content:center; margin:15px 0; padding:10px;">
                     <nav>
-                        <ul style="list-style:none; display:flex; gap:8px; padding:0; align-items:center;">
+                        <ul style="list-style:none; display:flex; gap:6px; padding:0; align-items:center;">
 
                             <!-- Previous Page -->
                             {% if leads.has_previous %}
@@ -1466,7 +1478,7 @@
                 </div>
                 {% else %}
                 <!-- Show "Showing All" message when showing all rows -->
-                <div style="text-align:center; padding:20px; color:#666; font-style:italic;">
+                <div style="text-align:center; padding:15px; color:#666; font-style:italic;">
                     <i class="fas fa-list-alt"></i> Showing all {{ filtered_count }} leads (no pagination)
                 </div>
                 {% endif %}

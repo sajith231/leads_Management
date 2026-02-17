@@ -8,243 +8,444 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         /* ====================================================
-           RESET & BASE
+           RESET & BASE - Improved for cross-browser consistency
            ==================================================== */
-        * { margin:0; padding:0; box-sizing:border-box; }
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
 
         body {
-            font-family:'Poppins','Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
-            line-height:1.6; color:#333; background:#f5f7fa; padding:20px;
+            font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f7fa;
+            padding: 20px;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
         }
-        .container { max-width:1200px; margin:0 auto; }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            width: 100%;
+        }
 
-        /* ── print-control bar ── */
+        /* ── print-control bar (hidden in print) ── */
         .print-controls {
-            background:#fff; padding:20px; border-radius:10px;
-            box-shadow:0 4px 15px rgba(0,0,0,.08); margin-bottom:25px;
-            display:flex; justify-content:space-between; align-items:center;
-            flex-wrap:wrap; gap:15px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,.08);
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
         }
+        
         .controls-left h1 {
-            font-size:24px; color:#2c3e50; margin-bottom:5px;
-            display:flex; align-items:center; gap:10px;
+            font-size: 24px;
+            color: #2c3e50;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
-        .controls-left h1 i { color:#3498db; }
-        .controls-right { display:flex; gap:12px; flex-wrap:wrap; }
+        
+        .controls-left h1 i { 
+            color: #3498db; 
+        }
+        
+        .controls-right { 
+            display: flex; 
+            gap: 12px; 
+            flex-wrap: wrap; 
+        }
 
         /* ── buttons ── */
         .btn {
-            padding:12px 24px; border:none; border-radius:8px; cursor:pointer;
-            font-weight:600; font-size:15px; transition:all .3s;
-            display:flex; align-items:center; gap:8px;
-            text-decoration:none; min-width:120px; justify-content:center;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 15px;
+            transition: all .3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            min-width: 120px;
+            justify-content: center;
         }
-        .btn-primary   { background:linear-gradient(135deg,#3498db,#2980b9); color:#fff; }
-        .btn-primary:hover   { background:linear-gradient(135deg,#2980b9,#2573a7); transform:translateY(-2px); box-shadow:0 6px 15px rgba(52,152,219,.3); }
-        .btn-success   { background:linear-gradient(135deg,#2ecc71,#27ae60); color:#fff; }
-        .btn-success:hover   { background:linear-gradient(135deg,#27ae60,#219653); transform:translateY(-2px); box-shadow:0 6px 15px rgba(46,204,113,.3); }
-        .btn-secondary { background:linear-gradient(135deg,#95a5a6,#7f8c8d); color:#fff; }
-        .btn-secondary:hover { background:linear-gradient(135deg,#7f8c8d,#718093); transform:translateY(-2px); box-shadow:0 6px 15px rgba(149,165,166,.3); }
+        
+        .btn-primary { 
+            background: linear-gradient(135deg,#3498db,#2980b9); 
+            color: #fff; 
+        }
+        
+        .btn-primary:hover { 
+            background: linear-gradient(135deg,#2980b9,#2573a7); 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 15px rgba(52,152,219,.3); 
+        }
+        
+        .btn-success { 
+            background: linear-gradient(135deg,#2ecc71,#27ae60); 
+            color: #fff; 
+        }
+        
+        .btn-success:hover { 
+            background: linear-gradient(135deg,#27ae60,#219653); 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 15px rgba(46,204,113,.3); 
+        }
+        
+        .btn-secondary { 
+            background: linear-gradient(135deg,#95a5a6,#7f8c8d); 
+            color: #fff; 
+        }
+        
+        .btn-secondary:hover { 
+            background: linear-gradient(135deg,#7f8c8d,#718093); 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 15px rgba(149,165,166,.3); 
+        }
 
         /* ====================================================
            QUOTATION WRAPPER
            ==================================================== */
         .quotation-container {
-            background:#fff; border-radius:10px;
-            box-shadow:0 5px 20px rgba(0,0,0,.1);
-            overflow:hidden; margin-bottom:30px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,.1);
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        /* ====================================================
+           PAGE STRUCTURE - 3 Pages with Dotted Separators
+           ==================================================== */
+        .page {
+            min-height: 100vh;
+            padding: 30px 40px;
+            background: #fff;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .page-1, .page-2 {
+            page-break-after: always;
+            border-bottom: 2px dotted #999;
+            margin-bottom: 20px;
+            padding-bottom: 30px;
+        }
+        
+        .page-3 {
+            page-break-after: auto;
+        }
+
+        /* Dotted page separator (visible only on screen) */
+        .page-separator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 10px 0 20px 0;
+            color: #999;
+            font-size: 14px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .page-separator .line {
+            flex: 1;
+            height: 2px;
+            background: repeating-linear-gradient(
+                90deg,
+                #999,
+                #999 5px,
+                transparent 5px,
+                transparent 10px
+            );
+            margin: 0 15px;
+        }
+        
+        .page-separator i {
+            color: #3498db;
+            font-size: 18px;
+        }
+
+        /* Hide separators in print */
+        @media print {
+            .page-1, .page-2 {
+                border-bottom: none;
+                margin-bottom: 0;
+                padding-bottom: 0;
+            }
+            .page-separator {
+                display: none !important;
+            }
         }
 
         /* ====================================================
            CONSISTENT HEADER FOR ALL PAGES
            ==================================================== */
         .page-header {
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            padding:20px;
-            border-bottom:3px solid #050505;
-            margin-bottom:40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 0;
+            border-bottom: 3px solid #050505;
+            margin-bottom: 20px;
+            page-break-inside: avoid;
         }
 
         /* ✅ CONSISTENT LOGO SIZE FOR ALL PAGES */
         .page-logo {
-            width:300px;
-            height:150px;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            border-radius:10px;
-            color:#3498db;
-            font-size:48px;
-            flex-shrink:0;
-            padding:10px;
-            overflow:hidden;
-            background:#fff;
+            width: 220px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            color: #3498db;
+            font-size: 38px;
+            flex-shrink: 0;
+            padding: 8px;
+            overflow: hidden;
+            background: #fff;
         }
+        
         .page-logo img {
-            width:100%;
-            height:100%;
-            object-fit:contain;
-            border-radius:8px;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 6px;
         }
+        
         /* ✅ Show icon only when no logo */
         .page-logo.no-logo {
-            background:linear-gradient(135deg,#3498db,#2980b9);
-            color:#fff;
+            background: linear-gradient(135deg,#3498db,#2980b9);
+            color: #fff;
         }
 
         .page-header-content {
-            flex:1;
-            text-align:right;
-        }
-        .page-header-content .website {
-            color:#3498db;
-            font-weight:600;
-            margin-bottom:10px;
-            font-size:16px;
-        }
-        .page-header-content h1 {
-            font-size:28px;
-            color:#2c3e50;
-            margin-bottom:10px;
-        }
-        .page-header-content p {
-            color:#555;
-            margin-bottom:5px;
-            display:flex;
-            align-items:center;
-            justify-content:flex-end;
-            gap:8px;
-        }
-
-        /* ====================================================
-           IMC LETTER PAGE  (page 1)
-           ==================================================== */
-        .imc-letter-page {
-            min-height:100vh; padding:60px 40px; background:#fff; color:#333;
-            position:relative; overflow:hidden;
-        }
-
-        .imc-letter-client-info { padding:20px; border-radius:8px; margin:20px 0; }
-        .imc-letter-client-info p { margin-bottom:5px; }
-
-        .greeting-text { margin:15px 0; font-size:16px; }
-
-        .imc-letter-salutation { margin:20px 0; font-weight:600; }
-
-        .imc-letter-content { margin:30px 0; line-height:1.8; }
-        .imc-letter-content p { margin-bottom:15px; }
-
-        .imc-letter-signature { margin-top:60px; text-align:left; }
-        .imc-letter-signature p { margin-bottom:5px; }
-
-        /* ====================================================
-           QUOTATION DETAIL PAGE  (page 2)
-           ==================================================== */
-        .page-break {
-            page-break-before:always;
-            border-top:1px dashed #090909; margin-top:20px; padding-top:20px;
-        }
-
-        .quotation-header {
-            color:rgb(22,21,21); padding:30px;
-            display:flex; justify-content:space-between;
-            align-items:flex-start; flex-wrap:wrap; gap:30px;
-        }
-
-        /* ── customer info box on right side ── */
-        .customer-info {
             flex: 1;
-            min-width: 300px;
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            text-align: right;
         }
-
-        .customer-info h3 {
-            color: #2c3e50;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .customer-details {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            align-items: center;
-        }
-
-        .customer-details div {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            white-space: nowrap;
-        }
-
-        .customer-details strong {
-            color: #555;
+        
+        .page-header-content .website {
+            color: #3498db;
+            font-weight: 600;
+            margin-bottom: 5px;
             font-size: 14px;
-            margin-bottom: 0;
         }
-
-        .customer-details span {
+        
+        .page-header-content h1 {
+            font-size: 24px;
             color: #2c3e50;
-            font-size: 15px;
+            margin-bottom: 5px;
+        }
+        
+        .page-header-content p {
+            color: #555;
+            margin-bottom: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 6px;
+            font-size: 13px;
         }
 
-        /* ── quotation metadata ── */
-        .quotation-meta {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            padding: 20px 30px;
-            background: #f8f9fa;
-            border-top: 1px solid #e9ecef;
-            border-bottom: 1px solid #e9ecef;
+        /* Address container for 3-line display */
+        .address-container {
+            text-align: right;
+            margin-bottom: 5px;
+        }
+        
+        .address-container p {
+            margin-bottom: 2px;
+            white-space: nowrap;
+            font-size: 13px;
         }
 
-        .meta-item {
+        /* ====================================================
+           PAGE 1 – COVER LETTER (IMC-style)
+           ==================================================== */
+        .page-1-content {
+            flex: 1;
             display: flex;
             flex-direction: column;
         }
 
-        .meta-item strong {
+        .client-info-box {
+            background: #f8f9fa;
+            padding: 18px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #3498db;
+        }
+        
+        .client-info-box p { 
+            margin-bottom: 4px; 
+            font-size: 14px;
+        }
+        
+        .client-info-box strong {
+            color: #2c3e50;
+            font-size: 15px;
+        }
+
+        .salutation-box {
+            margin: 15px 0;
+            text-align: center;
+        }
+        
+        .salutation-box p {
+            color: #b45f06;
+            font-size: 22px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .greeting-box {
+            margin: 15px 0;
+            font-weight: 600;
+            font-size: 17px;
+        }
+
+        .letter-content {
+            margin: 15px 0;
+            line-height: 1.7;
+            font-size: 15px;
+            text-align: justify;
+            padding: 0 15px;
+            flex: 1;
+        }
+        
+        .letter-content p { 
+            margin-bottom: 15px; 
+        }
+
+        .date-place-box {
+            margin-top: 20px;
+            border-top: 2px solid #090909;
+            padding-top: 15px;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        /* ====================================================
+           PAGE 2 – QUOTATION DETAILS (Single Page Optimized)
+           ==================================================== */
+        .page-2-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── customer info box (compact) ── */
+        .customer-info-box {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-radius: 6px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            margin-bottom: 15px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .customer-info-box h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 16px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 8px;
+        }
+
+        .customer-details-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .customer-detail-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .customer-detail-item strong {
             color: #555;
             font-size: 13px;
-            margin-bottom: 5px;
+            min-width: 55px;
         }
 
-        .meta-item span {
+        .customer-detail-item span {
             color: #2c3e50;
-            font-size: 16px;
-            font-weight: 600;
+            font-size: 14px;
+            font-weight: 500;
         }
 
-        /* ── items table ── */
+        /* ── items section (compact) ── */
         .items-section {
-            padding: 30px;
+            margin: 10px 0;
+            flex: 1;
+        }
+
+        .section-title {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 6px;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            margin-bottom: 10px;
+            max-height: 350px;
+            overflow-y: auto;
         }
 
         .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
-            font-size: 14px;
+            font-size: 13px;
+            table-layout: fixed;
         }
 
+        .items-table colgroup col:nth-child(1) { width: 5%; }
+        .items-table colgroup col:nth-child(2) { width: 38%; }
+        .items-table colgroup col:nth-child(3) { width: 7%; }
+        .items-table colgroup col:nth-child(4) { width: 10%; }
+        .items-table colgroup col:nth-child(5) { width: 7%; }
+        .items-table colgroup col:nth-child(6) { width: 10%; }
+        .items-table colgroup col:nth-child(7) { width: 10%; }
+
         .items-table thead {
-            background: linear-gradient(135deg, #3498db, #2980b9);
+            background: #3498db;
             color: white;
         }
 
         .items-table th {
-            padding: 12px 8px;
+            padding: 8px 5px;
             text-align: left;
             font-weight: 600;
+            font-size: 12px;
         }
 
         .items-table th.text-center { text-align: center; }
@@ -258,12 +459,10 @@
             background: #f8f9fa;
         }
 
-        .items-table tbody tr:hover {
-            background: #e3f2fd;
-        }
-
         .items-table td {
-            padding: 12px 8px;
+            padding: 6px 5px;
+            word-wrap: break-word;
+            font-size: 12px;
         }
 
         .items-table td.text-center { text-align: center; }
@@ -272,24 +471,25 @@
         .item-name {
             font-weight: 600;
             color: #2c3e50;
+            font-size: 12px;
         }
 
         .item-description {
-            font-size: 12px;
+            font-size: 10px;
             color: #7f8c8d;
-            margin-top: 4px;
+            margin-top: 2px;
         }
 
-        /* ── totals section ── */
+        /* ── totals section (compact) ── */
         .totals-section {
-            padding: 20px 30px;
             display: flex;
             justify-content: flex-end;
+            margin: 10px 0;
         }
 
         .totals-table {
-            min-width: 300px;
-            font-size: 15px;
+            width: 320px;
+            font-size: 13px;
             border-collapse: collapse;
         }
 
@@ -298,169 +498,190 @@
         }
 
         .totals-table td {
-            padding: 8px 0;
+            padding: 5px 0;
         }
 
         .totals-label {
             text-align: right;
             color: #555;
             font-weight: 500;
-            padding-right: 15px;
-            white-space: nowrap;
+            padding-right: 12px;
         }
 
         .totals-value {
             text-align: right;
             font-weight: 600;
             color: #2c3e50;
-            white-space: nowrap;
-            min-width: 120px;
+            min-width: 90px;
         }
 
-        .grand-total-row {
-            border-top: 2px solid #2c3e50;
-            margin-top: 5px;
-            padding-top: 10px;
+        .grand-total-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            gap: 15px;
+            margin: 10px 0;
         }
 
-        .grand-total-row .totals-label,
-        .grand-total-row .totals-value {
+        .amount-in-words-box {
+            flex: 1;
+            
+            padding: 8px 12px;
+            border-radius: 5px;
+            
+        }
+
+        .amount-in-words-label {
+            font-weight: 600;
             color: #2c3e50;
-            font-size: 16px;
+            margin-bottom: 3px;
+            font-size: 12px;
+        }
+
+        #amountInWords {
+            font-style: italic;
+            color: #2c3e50;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .grand-total-number-box {
+            text-align: right;
+            
+            color: rgb(3, 3, 3);
+            padding: 8px 15px;
+            border-radius: 5px;
+            min-width: 130px;
+        }
+
+        .grand-total-number-box .label {
+            font-size: 11px;
+            opacity: 0.9;
+            margin-bottom: 2px;
+        }
+
+        .grand-total-number-box .amount {
             font-weight: 700;
-            padding-top: 10px;
+            font-size: 18px;
         }
 
-        .grand-total-row td {
-            padding: 12px 0 !important;
-        }
-
-        .grand-total-row .totals-label {
-            padding-right: 0;
-        }
-
-        /* ── notes ── */
+        /* ── notes section (compact) ── */
         .notes-section {
-            padding: 20px 30px;
+            margin-top: 10px;
         }
 
         .notes-box {
-            padding: 15px 20px;
+            
+            padding: 10px 15px;
             border-radius: 5px;
+           
         }
 
         .notes-box h4 {
-            margin-bottom: 10px;
+            margin-bottom: 5px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+            color: #2c3e50;
+            font-size: 14px;
         }
 
         .notes-content {
-            color: #333;
-            line-height: 1.6;
-        }
-
-        /* ── signatures ── */
-        .signature-section {
-            padding: 40px 30px;
-            display: flex;
-            justify-content: space-between;
-            gap: 30px;
-            flex-wrap: wrap;
-        }
-
-        .signature-box {
-            flex: 1;
-            min-width: 200px;
-            text-align: center;
-        }
-
-        .signature-line {
-            height: 60px;
-            border-bottom: 2px solid #2c3e50;
-            margin-bottom: 10px;
-        }
-
-        .signature-label {
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 5px;
-        }
-
-        .signature-details {
+            color: #555;
+            line-height: 1.5;
             font-size: 12px;
-            color: #7f8c8d;
-            text-align: left;
-            line-height: 1.8;
-        }
-
-        /* ── footer info ── */
-        .footer-info {
-            padding: 20px 30px;
-            background: #f8f9fa;
-            border-top: 1px solid #e9ecef;
-            text-align: center;
-            font-size: 13px;
-            color: #7f8c8d;
-        }
-
-        .footer-info p {
-            margin-bottom: 5px;
         }
 
         /* ====================================================
-           TERMS & CONDITIONS PAGE (page 3)
+           PAGE 3 – TERMS & CONDITIONS (Single Page)
            ==================================================== */
-        .imc-terms-page {
-            page-break-before: always;
-            min-height: 100vh;
-            padding: 30px 25px;
-            background: #fff;
-            page-break-inside: avoid;
+        .page-3-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
 
-        .imc-terms-content {
-            line-height: 1.6;
-            page-break-inside: avoid;
+        .client-summary {
+            background: #f8f9fa;
+            padding: 12px 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            border: 1px solid #e0e0e0;
         }
 
-        .imc-terms-content h2 {
+        .terms-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .terms-content h2 {
             font-size: 20px;
             color: #2c3e50;
-            margin-bottom: 15px;
+            margin: 0 0 15px 0;
             text-align: center;
             text-transform: uppercase;
             border-bottom: 2px solid #3498db;
             padding-bottom: 8px;
-            page-break-after: avoid;
         }
 
-        .imc-terms-content h3 {
-            font-size: 25px;
+        .terms-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 15px;
+            flex: 1;
+        }
+
+        .term-item {
+            margin-bottom: 3px;
+        }
+
+        .term-item h3 {
+            font-size: 16px;
             color: #e38c5f;
-            margin-left: 50px;
-            margin-top: 18px;
-            margin-bottom: 8px;
-            page-break-after: avoid;
+            margin: 0 0 3px 20px;
+            font-weight: 600;
         }
 
-        .imc-terms-content p {
+        .term-item p {
             color: #555;
-            font-size: 20px;
-            margin-left: 100px;
-            margin-right: 100px;
+            font-size: 13px;
+            margin: 0 0 0 35px;
             text-align: justify;
             line-height: 1.5;
+            padding-right: 15px;
+        }
+
+        .terms-footer {
+            margin-top: 15px;
+            padding-top: 12px;
+            border-top: 1px solid #e0e0e0;
+            text-align: center;
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+
+        .terms-footer p {
+            margin-bottom: 3px;
         }
 
         /* ====================================================
-           PRINT STYLES
+           PRINT STYLES - Optimized for all browsers
            ==================================================== */
         @media print {
+            @page {
+                size: A4;
+                margin: 1cm;
+            }
+            
             body {
                 background: #fff;
                 padding: 0;
+                margin: 0;
+                font-size: 10pt;
             }
 
             .print-controls {
@@ -470,63 +691,203 @@
             .quotation-container {
                 box-shadow: none;
                 border-radius: 0;
+                margin: 0;
+                padding: 0;
             }
 
-            .page-break {
-                page-break-before: always;
-                border-top: none;
-                margin-top: 0;
-                padding-top: 0;
+            .page {
+                padding: 0.4cm !important;
+                min-height: 100vh;
+                page-break-inside: avoid;
+                border-bottom: none !important;
+                margin-bottom: 0 !important;
+                padding-bottom: 0 !important;
             }
-
-            .imc-terms-page {
+            
+            .page-1, .page-2 {
+                page-break-after: always !important;
+                border-bottom: none !important;
+            }
+            
+            .page-3 {
+                page-break-after: auto !important;
                 page-break-before: always !important;
-                padding: 15px 20px !important;
-                min-height: auto;
             }
 
             /* Consistent header sizing for print */
             .page-logo {
-                width: 200px !important;
-                height: 100px !important;
-                font-size: 36px !important;
+                width: 160px !important;
+                height: 80px !important;
+                font-size: 28px !important;
             }
             
             .page-header-content h1 {
-                font-size: 22px !important;
+                font-size: 18pt !important;
             }
             
-            .page-header-content p {
-                font-size: 12px !important;
+            .page-header-content p,
+            .address-container p {
+                font-size: 9pt !important;
+                margin-bottom: 1px !important;
             }
             
             .page-header-content .website {
-                font-size: 14px !important;
+                font-size: 10pt !important;
             }
 
-            /* Ensure logos print properly */
-            .page-logo img {
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
+            /* Table styles for print */
+            .table-wrapper {
+                max-height: none !important;
+                overflow: visible !important;
             }
             
-            /* Terms page print optimization */
-            .imc-terms-content h2 {
-                font-size: 16px !important;
-                margin-bottom: 12px !important;
+            .items-table {
+                font-size: 9pt;
             }
             
-            .imc-terms-content h3 {
-                font-size: 18px !important;
-                margin-top: 14px !important;
-                margin-bottom: 6px !important;
+            .items-table th {
+                background: #3498db !important;
+                color: white !important;
+                padding: 4px 3px;
+                font-size: 8pt;
             }
             
-            .imc-terms-content p {
-                font-size: 16px !important;
-                margin-bottom: 10px !important;
-                line-height: 1.4 !important;
-                text-align: left !important;
+            .items-table td {
+                padding: 3px 3px;
+                border-bottom: 1px solid #ddd;
+                font-size: 8pt;
+            }
+            
+            .item-name {
+                font-size: 8pt;
+            }
+            
+            .item-description {
+                font-size: 7pt;
+            }
+            
+            /* Totals in print */
+            .totals-table {
+                font-size: 9pt;
+            }
+            
+            .totals-table td {
+                padding: 3px 0;
+            }
+            
+            .grand-total-number-box {
+                padding: 5px 10px;
+            }
+            
+            .grand-total-number-box .amount {
+                font-size: 14pt;
+            }
+            
+            #amountInWords {
+                font-size: 8pt;
+            }
+            
+            /* Terms page print */
+            .terms-content h2 {
+                font-size: 14pt;
+                margin: 0 0 10px;
+            }
+            
+            .term-item h3 {
+                font-size: 12pt;
+                margin-left: 10px;
+            }
+            
+            .term-item p {
+                font-size: 9pt;
+                margin-left: 25px;
+                margin-right: 10px;
+                line-height: 1.3;
+            }
+            
+            .terms-footer {
+                font-size: 8pt;
+                margin-top: 10px;
+                padding-top: 8px;
+            }
+            
+            /* Force all content to stay on respective pages */
+            .page-2 {
+                page-break-after: always !important;
+                max-height: 100vh;
+                overflow: hidden;
+            }
+            
+            .page-2-content {
+                max-height: 95vh;
+            }
+            
+            /* Force background colors to print */
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+        }
+        
+        /* ====================================================
+           RESPONSIVE STYLES
+           ==================================================== */
+        @media screen and (max-width: 992px) {
+            .page {
+                padding: 20px;
+            }
+            
+            .grand-total-wrapper {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .amount-in-words-box {
+                width: 100%;
+            }
+            
+            .grand-total-number-box {
+                width: 100%;
+                text-align: center;
+            }
+            
+            .term-item p {
+                margin-left: 25px;
+                margin-right: 5px;
+            }
+        }
+        
+        @media screen and (max-width: 768px) {
+            .page-header {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            
+            .page-header-content {
+                text-align: center;
+                margin-top: 15px;
+            }
+            
+            .page-header-content p,
+            .address-container {
+                justify-content: center;
+                text-align: center;
+            }
+            
+            .customer-details-grid {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            
+            .term-item h3 {
+                margin-left: 10px;
+            }
+            
+            .term-item p {
+                margin-left: 20px;
             }
         }
     </style>
@@ -539,7 +900,6 @@
          ============================================================ -->
     <div class="print-controls">
         <div class="controls-left">
-            
             <p style="color:#7f8c8d; font-size:14px;">
                 {{ company_name }} | Valid Until: {{ valid_until }}
             </p>
@@ -562,321 +922,332 @@
 
     <div class="quotation-container">
         <!-- ================================================
-             PAGE 1 – COVER LETTER (IMC-style)
+             PAGE 1 – COVER LETTER
              ================================================ -->
-        <div class="imc-letter-page">
-            <!-- ✅ CONSISTENT HEADER: Logo on LEFT, Details on RIGHT -->
-            <div class="page-header">
-                <!-- Logo Section on LEFT -->
-                <div class="page-logo {% if not company_has_logo %}no-logo{% endif %}">
-                    {% if company_has_logo %}
-                        <img src="{{ company_logo_url }}" alt="{{ company_name }} Logo">
-                    {% else %}
-                        <i class="fas fa-building"></i>
-                    {% endif %}
-                </div>
-
-                <!-- Company Details on RIGHT -->
-                <div class="page-header-content">
-                    {% if company_email %}
-                    <div class="website">{{ company_email }}</div>
-                    {% endif %}
-                    <h1>{{ company_name }}</h1>
-                    {% if company_address %}
-                    <p><i class="fas fa-map-marker-alt"></i> {{ company_address }}</p>
-                    {% endif %}
-                    {% if company_contact %}
-                    <p><i class="fas fa-phone"></i> {{ company_contact }}</p>
-                    {% endif %}
-                    {% if company_gst %}
-                    <p><i class="fas fa-file-invoice"></i> GST: {{ company_gst }}</p>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Client Info -->
-            <div class="imc-letter-client-info">
-               <p><strong>{{ client_name|default:"Valued Customer" }}</strong></p>
-               {% if lead_data.customerType == 'Business' %}
-                    {% if lead_data.place %}
-                    <p>{{ lead_data.place }}</p>
-                    {% else %}
-                    <p> Address not provided</p>
-                    {% endif %}
-                {% else %}
-                    {% if lead_data.individualPlace %}
-                    <p>{{ lead_data.individualPlace }}</p>
-                    {% else %}
-                    <p> Address not provided</p>
-                    {% endif %}
-                {% endif %}
-                {% if client_phone %}
-                <p>{{ client_phone }}</p>
-                {% endif %}
-            </div>
-            
-             <!-- Salutation -->
-            <div class="imc-letter-salutation" style="text-align: center; color: brown;font-size: 25px;">
-                <p><strong>Warm Greetings From {{ company_name }}</strong></p>
-            </div>
-
-            <!-- Greeting -->
-            <div class="greeting-text" style="font-weight: bold;font-size: larger;">
-                <p>Sir {{ client_name|default:"Valued Customer" }},</p>
-            </div>
-
-            <!-- Letter Content -->
-            <div class="imc-letter-content" style="text-align:left;font-size: 20px;margin-left: 7%;margin-right: 7%;">
-                <p>
-                    Thank you for the time you have given in allowing us to discuss with you the opportunity
-                    how our software may assist your organization further progressing your productivity and
-                    outputs. As agreed, we are submitting to you information about us and our proposed plan
-                    to action for your review.
-                </p>
-
-                <p>
-                    IMC Business Solutions is a comprehensive platform that supports overall Business
-                    solutions like ERP Softwares, Web Solutions, Mobile Applications, Digital Marketing,
-                    Branding, and Business Consultation.
-                </p>
-
-                <p>
-                    Here we are attaching the detailed quotation. We are expecting to have a journey together
-                    to reach your success.
-                </p>
-            </div>
-
-            <div style="margin-top: 50px;border-top:3px solid #090909;  text-align: left; font-size: 16px; line-height: 1.6;">
-                <div><strong>Date:</strong> {{ created_date|default:"Date not specified" }}</div>
-                <div><strong>Place:Kalpetta</strong></div>
-            </div>
-        </div>
-
-        <!-- ================================================
-             PAGE 2 – QUOTATION DETAILS
-             ================================================ -->
-        <div class="page-break"></div>
-
-        <!-- ✅ CONSISTENT HEADER: Logo on LEFT, Details on RIGHT -->
-        <div class="page-header">
-            <!-- Logo Section on LEFT -->
-            <div class="page-logo {% if not company_has_logo %}no-logo{% endif %}">
-                {% if company_has_logo %}
-                    <img src="{{ company_logo_url }}" alt="{{ company_name }} Logo">
-                {% else %}
-                    <i class="fas fa-building"></i>
-                {% endif %}
-            </div>
-
-            <!-- Company Details on RIGHT -->
-            <div class="page-header-content">
-                {% if company_email %}
-                <div class="website">{{ company_email }}</div>
-                {% endif %}
-                <h1>{{ company_name }}</h1>
-                {% if company_address %}
-                <p><i class="fas fa-map-marker-alt"></i> {{ company_address }}</p>
-                {% endif %}
-                {% if company_contact %}
-                <p><i class="fas fa-phone"></i> {{ company_contact }}</p>
-                {% endif %}
-                {% if company_gst %}
-                <p><i class="fas fa-file-invoice"></i> GST: {{ company_gst }}</p>
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- Customer Info Box -->
-        <div class="customer-info">
-            <h3>
-                <i class="fas fa-user-circle"></i>
-                Customer Details
-            </h3>
-            <div class="customer-details">
-                <div>
-                    <strong>Name:</strong>
-                    <span>{{ client_name|default:"Not Specified" }}</span>
-                </div>
-
-                <div>
-                    <strong>Address:</strong>
-                    <span>
-                        {% if lead_data.customerType == 'Business' %}
-                            {{ lead_data.place|default:"Not provided" }}
+        <div class="page page-1">
+            <div class="page-1-content">
+                <!-- Header -->
+                <div class="page-header">
+                    <div class="page-logo {% if not company_has_logo %}no-logo{% endif %}">
+                        {% if company_has_logo %}
+                            <img src="{{ company_logo_url }}" alt="{{ company_name }} Logo">
                         {% else %}
-                            {{ lead_data.individualPlace|default:"Not provided" }}
+                            <i class="fas fa-building"></i>
                         {% endif %}
-                    </span>
+                    </div>
+
+                    <div class="page-header-content">
+                        {% if company_email %}
+                        <div class="website">{{ company_email }}</div>
+                        {% endif %}
+                        <h1>{{ company_name }}</h1>
+                        <div class="address-container" data-address="{{ company_address }}"></div>
+                        {% if company_contact %}
+                        <p><i class="fas fa-phone"></i> {{ company_contact }}</p>
+                        {% endif %}
+                        {% if company_gst %}
+                        <p><i class="fas fa-file-invoice"></i> GST: {{ company_gst }}</p>
+                        {% endif %}
+                    </div>
                 </div>
-                {% if client_phone %}
-                <div>
-                    <strong>Phone:</strong>
-                    <span>{{ client_phone }}</span>
+
+                <!-- Client Info -->
+                <div class="client-info-box">
+                    <p><strong>{{ client_name|default:"Valued Customer" }}</strong></p>
+                    {% if lead_data.customerType == 'Business' %}
+                        <p>{{ lead_data.place|default:"Address not provided" }}</p>
+                    {% else %}
+                        <p>{{ lead_data.individualPlace|default:"Address not provided" }}</p>
+                    {% endif %}
+                    {% if client_phone %}
+                    <p>{{ client_phone }}</p>
+                    {% endif %}
                 </div>
-                {% endif %}
+                
+                <!-- Salutation -->
+                <div class="salutation-box">
+                    <p>Warm Greetings From {{ company_name }}</p>
+                </div>
+
+                <!-- Greeting -->
+                <div class="greeting-box">
+                    <p>Sir {{ client_name|default:"Valued Customer" }},</p>
+                </div>
+
+                <!-- Letter Content -->
+                <div class="letter-content">
+                    <p>
+                        Thank you for the time you have given in allowing us to discuss with you the opportunity
+                        how our software may assist your organization further progressing your productivity and
+                        outputs. As agreed, we are submitting to you information about us and our proposed plan
+                        to action for your review.
+                    </p>
+
+                    <p>
+                        IMC Business Solutions is a comprehensive platform that supports overall Business
+                        solutions like ERP Softwares, Web Solutions, Mobile Applications, Digital Marketing,
+                        Branding, and Business Consultation.
+                    </p>
+
+                    <p>
+                        Here we are attaching the detailed quotation. We are expecting to have a journey together
+                        to reach your success.
+                    </p>
+                </div>
+
+                <!-- Date and Place -->
+                <div class="date-place-box">
+                    <div><strong>Date:</strong> {{ created_date|date:"d M Y"|default:"Date not specified" }}</div>
+                    <div><strong>Place:</strong> Kalpetta</div>
+                </div>
             </div>
         </div>
 
-        <!-- Items Table -->
-        <div class="items-section">
-            <h2 style="color:#2c3e50; margin-bottom:20px; font-size:22px;">
-                <i class="fas fa-list-ul"></i> Items & Services
-            </h2>
-
-            <table class="items-table">
-                <thead>
-                    <tr>
-                        <th width="50" class="text-center">Sl.No</th>
-                        <th>Item Description</th>
-                        <th width="80" class="text-center">Qty</th>
-                        <th width="120" class="text-right">Rate</th>
-                        <th width="120" class="text-right">Unit Price</th>
-                        <th width="80" class="text-right">Tax %</th>
-                        <th width="120" class="text-right">Tax Amount</th>
-                        <th width="120" class="text-right">Amount</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in items %}
-                    <tr>
-                        <td class="text-center">{{ forloop.counter }}</td>
-                        <td>
-                            <div class="item-name">{{ item.item_name }}</div>
-                            {% if item.description %}
-                            <div class="item-description">{{ item.description }}</div>
-                            {% endif %}
-                        </td>
-                        <td class="text-center">{{ item.quantity }}</td>
-                        <td class="text-right">{{ item.sales_price|floatformat:2 }}</td>
-                        <td class="text-right">{{ item.unit_price|floatformat:2 }}</td>
-                        <td class="text-right">{{ item.tax_percentage|floatformat:2 }}%</td>
-                        <td class="text-right">{{ item.tax_amount|floatformat:2 }}</td>
-                        <td class="text-right">{{ item.sales_price|floatformat:2 }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr><td colspan="8" class="text-center">No items added to this quotation</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Totals Section -->
-        <div class="totals-section">
-            <table class="totals-table">
-                <tr>
-                    <td class="totals-label">Subtotal:</td>
-                    <td class="totals-value">{{ subtotal }}</td>
-                </tr>
-                <tr>
-                    <td class="totals-label">Total Tax:</td>
-                    <td class="totals-value">{{ total_tax }}</td>
-                </tr>
-                <tr>
-                    <td class="totals-label">Discount:</td>
-                    <td class="totals-value">-{{ discount_amount }}</td>
-                </tr>
-                {% if shipping_charges %}
-                <tr>
-                    <td class="totals-label">Shipping:</td>
-                    <td class="totals-value">{{ shipping_charges }}</td>
-                </tr>
-                {% endif %}
-                <!-- Grand Total -->
-                <tr class="grand-total-row">
-                    <td colspan="2" style="padding: 15px 0;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                            <div style="text-align: left; flex: 1; padding-right: 500px;">
-                                <div style="font-weight: 600; color: #2c3e50; margin-bottom: 5px; font-size: 14px;">Grand Total (in words):</div>
-                                <div id="amountInWords" style="font-style: italic; color: #2c3e50; font-size: 13px; line-height: 1.4;">
-                                    Rupees ________ Only
-                                </div>
-                            </div>
-                            <div style="text-align: right; flex-shrink: 0;">
-                                <div style="font-weight: 700; color: rgb(11, 11, 11); font-size: 18px;">
-                                    {{ grand_total }}
-                                </div>
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-            </table>
-        </div>
-
-        <!-- Notes Section -->
-        {% if quotation.notes %}
-        <div class="notes-section">
-            <div class="notes-box">
-                <h4><i class="fas fa-sticky-note"></i> Notes</h4>
-                <div class="notes-content">{{ quotation.notes|linebreaks }}</div>
-            </div>
-        </div>
-        {% endif %}
-
-        <!-- Footer Info -->
-        <div class="footer-info">
-            <p>Thank you for your business! For queries contact us at
-                {% if company_email %}{{ company_email }}{% endif %}
-                {% if company_contact %} or call {{ company_contact }}{% endif %}
-            </p>
-            <p>This is a computer-generated quotation and does not require a physical signature until acceptance</p>
-        </div>
+        <!-- Dotted Page Separator -->
+        
 
         <!-- ================================================
-             PAGE 3 – TERMS & CONDITIONS
+             PAGE 2 – QUOTATION DETAILS (Single Page)
              ================================================ -->
-        <div class="imc-terms-page">
-            <!-- ✅ CONSISTENT HEADER: Logo on LEFT, Details on RIGHT -->
-            <div class="page-header">
-                <!-- Logo Section on LEFT -->
-                <div class="page-logo {% if not company_has_logo %}no-logo{% endif %}">
-                    {% if company_has_logo %}
-                        <img src="{{ company_logo_url }}" alt="{{ company_name }} Logo">
+        <div class="page page-2">
+            <div class="page-2-content">
+                <!-- Header -->
+                <div class="page-header">
+                    <div class="page-logo {% if not company_has_logo %}no-logo{% endif %}">
+                        {% if company_has_logo %}
+                            <img src="{{ company_logo_url }}" alt="{{ company_name }} Logo">
+                        {% else %}
+                            <i class="fas fa-building"></i>
+                        {% endif %}
+                    </div>
+
+                    <div class="page-header-content">
+                        {% if company_email %}
+                        <div class="website">{{ company_email }}</div>
+                        {% endif %}
+                        <h1>{{ company_name }}</h1>
+                        <div class="address-container" data-address="{{ company_address }}"></div>
+                        {% if company_contact %}
+                        <p><i class="fas fa-phone"></i> {{ company_contact }}</p>
+                        {% endif %}
+                        {% if company_gst %}
+                        <p><i class="fas fa-file-invoice"></i> GST: {{ company_gst }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Customer Info Box -->
+                <div class="customer-info-box">
+                    <h3><i class="fas fa-user-circle"></i> Customer Details</h3>
+                    <div class="customer-details-grid">
+                        <div class="customer-detail-item">
+                            <strong>Name:</strong>
+                            <span>{{ client_name|default:"Not Specified" }}</span>
+                        </div>
+
+                        <div class="customer-detail-item">
+                            <strong>Address:</strong>
+                            <span>
+                                {% if lead_data.customerType == 'Business' %}
+                                    {{ lead_data.place|default:"Not provided" }}
+                                {% else %}
+                                    {{ lead_data.individualPlace|default:"Not provided" }}
+                                {% endif %}
+                            </span>
+                        </div>
+                        
+                        {% if client_phone %}
+                        <div class="customer-detail-item">
+                            <strong>Phone:</strong>
+                            <span>{{ client_phone }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Items Table -->
+                <div class="items-section">
+                    <h2 class="section-title"><i class="fas fa-list-ul"></i> Items & Services</h2>
+
+                    <div class="table-wrapper">
+                        <table class="items-table">
+                            <colgroup>
+                                <col>
+                                <col>
+                                <col>
+                                <col>
+                                <col>
+                                <col>
+                                <col>
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th class="text-center">Sl.No</th>
+                                    <th>Item Description</th>
+                                    <th class="text-center">Qty</th>
+                                    <th class="text-right">Rate (₹)</th>
+                                    <th class="text-right">Tax %</th>
+                                    <th class="text-right">Tax (₹)</th>
+                                    <th class="text-right">Amount (₹)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in items %}
+                                <tr>
+                                    <td class="text-center">{{ forloop.counter }}</td>
+                                    <td>
+                                        <div class="item-name">{{ item.item_name }}</div>
+                                        {% if item.description %}
+                                        <div class="item-description">{{ item.description|truncatechars:40 }}</div>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">{{ item.quantity }}</td>
+                                    <td class="text-right">{{ item.sales_price|floatformat:2 }}</td>
+                                    <td class="text-right">{{ item.tax_percentage|floatformat:2 }}%</td>
+                                    <td class="text-right">{{ item.tax_amount|floatformat:2 }}</td>
+                                    <td class="text-right">{{ item.line_total|floatformat:2 }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="7" class="text-center">No items added to this quotation</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Totals Section -->
+                    <div class="totals-section">
+                        <table class="totals-table">
+                            <tr>
+                                <td class="totals-label">Subtotal:</td>
+                                <td class="totals-value">₹{{ subtotal }}</td>
+                            </tr>
+                            <tr>
+                                <td class="totals-label">Total Tax:</td>
+                                <td class="totals-value">₹{{ total_tax }}</td>
+                            </tr>
+                            <tr>
+                                <td class="totals-label">Discount:</td>
+                                <td class="totals-value">-₹{{ discount_amount }}</td>
+                            </tr>
+                            {% if shipping_charges %}
+                            <tr>
+                                <td class="totals-label">Shipping:</td>
+                                <td class="totals-value">₹{{ shipping_charges }}</td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+
+                    <!-- Grand Total -->
+                    <div class="grand-total-wrapper">
+                        <div class="amount-in-words-box">
+                            <div class="amount-in-words-label">Grand Total (in words):</div>
+                            <div id="amountInWords">Calculating...</div>
+                        </div>
+                        <div class="grand-total-number-box">
+                            <div class="label">Grand Total</div>
+                            <div class="amount">₹{{ grand_total }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Notes Section -->
+                    {% if quotation.notes %}
+                    <div class="notes-section">
+                        <div class="notes-box">
+                            <h4><i class="fas fa-sticky-note"></i> Notes</h4>
+                            <div class="notes-content">{{ quotation.notes|linebreaks }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Dotted Page Separator -->
+       
+
+        <!-- ================================================
+             PAGE 3 – TERMS & CONDITIONS (Single Page)
+             ================================================ -->
+        <div class="page page-3">
+            <div class="page-3-content">
+                <!-- Header -->
+                <div class="page-header">
+                    <div class="page-logo {% if not company_has_logo %}no-logo{% endif %}">
+                        {% if company_has_logo %}
+                            <img src="{{ company_logo_url }}" alt="{{ company_name }} Logo">
+                        {% else %}
+                            <i class="fas fa-building"></i>
+                        {% endif %}
+                    </div>
+
+                    <div class="page-header-content">
+                        <h1>{{ company_name }}</h1>
+                        <div class="address-container" data-address="{{ company_address }}"></div>
+                        {% if company_contact %}
+                        <p><i class="fas fa-phone"></i> {{ company_contact }}</p>
+                        {% endif %}
+                        {% if company_email %}
+                        <p><i class="fas fa-envelope"></i> {{ company_email }}</p>
+                        {% endif %}
+                        {% if company_gst %}
+                        <p><i class="fas fa-file-invoice"></i> GST: {{ company_gst }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Client Summary -->
+                <div class="client-summary">
+                    <strong>Customer:</strong> {{ client_name|default:"Not Specified" }}
+                    {% if client_phone %} | <strong>Phone:</strong> {{ client_phone }}{% endif %}
+                    {% if lead_data.customerType == 'Business' %}
+                        | <strong>Address:</strong> {{ lead_data.place|default:"Not provided" }}
                     {% else %}
-                        <i class="fas fa-building"></i>
+                        | <strong>Address:</strong> {{ lead_data.individualPlace|default:"Not provided" }}
                     {% endif %}
                 </div>
 
-                <!-- Company Details on RIGHT -->
-                <div class="page-header-content">
-                    <h1>{{ company_name }}</h1>
-                    {% if company_address %}<p><i class="fas fa-map-marker-alt"></i> {{ company_address }}</p>{% endif %}
-                    {% if company_contact %}<p><i class="fas fa-phone"></i> {{ company_contact }}</p>{% endif %}
-                    {% if company_email %}<p><i class="fas fa-envelope"></i> {{ company_email }}</p>{% endif %}
+                <!-- Terms Content -->
+                <div class="terms-content">
+                    <h2>TERMS AND CONDITIONS</h2>
+                    
+                    <div class="terms-list">
+                        <div class="term-item">
+                            <h3>1. Scope of Services:</h3>
+                            <p>{{ company_name }} provides various types of services to clients based on their requirements. The specific services will be detailed in the service agreement.</p>
+                        </div>
+
+                        <div class="term-item">
+                            <h3>2. Payment Terms:</h3>
+                            <p>Payment for services will be made according to the agreed-upon schedule. An advance of 50% is required upon order confirmation, with the balance due upon completion of services. If you are not satisfied with your purchase, you may request a full refund within 10 days.</p>
+                        </div>
+
+                        <div class="term-item">
+                            <h3>3. Confidentiality:</h3>
+                            <p>Both parties agree to keep all information shared during the course of the agreement confidential. This includes client data, marketing strategies, and any proprietary information.</p>
+                        </div>
+
+                        <div class="term-item">
+                            <h3>4. Warranty and Limitation of Liability:</h3>
+                            <p>{{ company_name }} warrants that its services will be performed in a professional and workmanlike manner. However, the company is not liable for any indirect, incidental, or consequential damages.</p>
+                        </div>
+
+                        <div class="term-item">
+                            <h3>5. Termination:</h3>
+                            <p>Either party may terminate the agreement with written notice. In the event of termination, the client will be responsible for any unpaid fees for services rendered up to the termination date.</p>
+                        </div>
+
+                        <div class="term-item">
+                            <h3>6. Governing Law:</h3>
+                            <p>These terms and conditions are governed by the laws of the jurisdiction in which the company operates. The company reserves the right to modify these terms and conditions at any time. Clients will be notified of any changes.</p>
+                        </div>
+                    </div>
+
+                    <div class="terms-footer">
+                        <p>This is a computer generated quotation and does not require signature.</p>
+                        <p>Thank you for your business!</p>
+                    </div>
                 </div>
-            </div>
-
-            <!-- Client Info (simplified) -->
-            <div style="margin-bottom: 20px; font-size: 14px;">
-                <strong>Customer:</strong> {{ client_name|default:"Not Specified" }}
-                {% if client_phone %}| <strong>Phone:</strong> {{ client_phone }}{% endif %}
-                {% if lead_data.customerType == 'Business' %}
-                    | <strong>Address:</strong> {{ lead_data.place|default:"Not provided" }}
-                {% else %}
-                    | <strong>Address:</strong> {{ lead_data.individualPlace|default:"Not provided" }}
-                {% endif %}
-            </div>
-
-            <!-- Terms Content -->
-            <div class="imc-terms-content">
-                <h2>TERMS AND CONDITIONS</h2>
-
-                <h3>1. Scope of Services:</h3>
-                <p>{{ company_name }} provides various types of services to clients based on their requirements. The specific services will be detailed in the service agreement.</p>
-
-                <h3>2. Payment Terms:</h3>
-                <p>Payment for services will be made according to the agreed-upon schedule. An advance of 50% is required upon order confirmation, with the balance due upon completion of services. If you are not satisfied with your purchase, you may request a full refund within 10 days.</p>
-
-                <h3>3. Confidentiality:</h3>
-                <p>Both parties agree to keep all information shared during the course of the agreement confidential. This includes client data, marketing strategies, and any proprietary information.</p>
-
-                <h3>4. Warranty and Limitation of Liability:</h3>
-                <p>{{ company_name }} warrants that its services will be performed in a professional and workmanlike manner. However, the company is not liable for any indirect, incidental, or consequential damages.</p>
-
-                <h3>5. Termination:</h3>
-                <p>Either party may terminate the agreement with written notice. In the event of termination, the client will be responsible for any unpaid fees for services rendered up to the termination date.</p>
-
-                <h3>6. Governing Law:</h3>
-                <p>These terms and conditions are governed by the laws of the jurisdiction in which the company operates. The company reserves the right to modify these terms and conditions at any time. Clients will be notified of any changes.</p>
             </div>
         </div>
 
@@ -884,7 +1255,7 @@
 </div><!-- /container -->
 
 <!-- ============================================================
-     JAVASCRIPT  –  Number to words conversion
+     JAVASCRIPT  –  Number to words conversion & Address split
      ============================================================ -->
 <script>
 // Function to convert number to words (Indian Numbering System)
@@ -935,46 +1306,82 @@ function numberToWords(num) {
 
 // Extract grand total and update words
 function updateAmountInWords() {
-    // Try to extract from the grand total number in the totals table
-    const grandTotalElement = document.querySelector('.grand-total-row .totals-value');
-    if (!grandTotalElement) {
-        // Alternative: look for the grand total number in the updated layout
-        const grandTotalDiv = document.querySelector('.grand-total-row div div:last-child div');
-        if (grandTotalDiv) {
-            const text = grandTotalDiv.textContent.trim();
-            const numericValue = parseFloat(text.replace(/[^0-9.]/g, ''));
-            
-            if (!isNaN(numericValue)) {
-                const words = numberToWords(numericValue);
-                const amountInWordsElement = document.getElementById('amountInWords');
-                if (amountInWordsElement) {
-                    amountInWordsElement.textContent = words;
-                }
+    const grandTotalAmount = document.querySelector('.grand-total-number-box .amount');
+    if (grandTotalAmount) {
+        const text = grandTotalAmount.textContent.trim();
+        const numericValue = parseFloat(text.replace(/[^0-9.]/g, ''));
+        
+        if (!isNaN(numericValue)) {
+            const words = numberToWords(numericValue);
+            const amountInWordsElement = document.getElementById('amountInWords');
+            if (amountInWordsElement) {
+                amountInWordsElement.textContent = words;
             }
-        }
-        return;
-    }
-    
-    const text = grandTotalElement.textContent.trim();
-    const numericValue = parseFloat(text.replace(/[^0-9.]/g, ''));
-    
-    if (!isNaN(numericValue)) {
-        const words = numberToWords(numericValue);
-        const amountInWordsElement = document.getElementById('amountInWords');
-        if (amountInWordsElement) {
-            amountInWordsElement.textContent = words;
         }
     }
 }
 
-// Update when page loads
-document.addEventListener('DOMContentLoaded', updateAmountInWords);
-</script>
+// Function to split address into exactly 3 lines
+function splitAddressIntoLines() {
+    const addressContainers = document.querySelectorAll('.address-container');
+    
+    addressContainers.forEach(container => {
+        const fullAddress = container.getAttribute('data-address');
+        
+        if (fullAddress && fullAddress.trim()) {
+            const addressText = fullAddress.trim();
+            
+            // Create an array to hold the 3 lines
+            let addressLines = ['', '', ''];
+            
+            if (addressText.includes(',')) {
+                const parts = addressText.split(',').map(part => part.trim());
+                
+                // Assign to lines (max 3)
+                for (let i = 0; i < Math.min(parts.length, 3); i++) {
+                    addressLines[i] = parts[i];
+                }
+                
+                // If we have more than 3 parts, combine remaining into the last line
+                if (parts.length > 3) {
+                    addressLines[2] = parts.slice(2).join(', ');
+                }
+            } else {
+                // If no commas, split by words to create 3 lines
+                const words = addressText.split(' ');
+                const wordsPerLine = Math.ceil(words.length / 3);
+                
+                for (let i = 0; i < 3; i++) {
+                    const start = i * wordsPerLine;
+                    const end = Math.min(start + wordsPerLine, words.length);
+                    if (start < words.length) {
+                        addressLines[i] = words.slice(start, end).join(' ');
+                    }
+                }
+            }
+            
+            // Clear the container
+            container.innerHTML = '';
+            
+            // Create a paragraph for each non-empty line
+            addressLines.forEach(line => {
+                if (line && line.trim()) {
+                    const p = document.createElement('p');
+                    p.innerHTML = '<i class="fas fa-map-marker-alt"></i> ' + line;
+                    container.appendChild(p);
+                }
+            });
+        }
+    });
+}
 
-<!-- ============================================================
-     JAVASCRIPT  –  print shortcuts
-     ============================================================ -->
-<script>
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    splitAddressIntoLines();
+    updateAmountInWords();
+});
+
+// Print shortcuts
 document.addEventListener('keydown', function(e) {
     if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 's')) {
         e.preventDefault();
@@ -985,5 +1392,6 @@ document.addEventListener('keydown', function(e) {
     }
 });
 </script>
+
 </body>
 </html>

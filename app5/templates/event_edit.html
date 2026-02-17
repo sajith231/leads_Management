@@ -1,0 +1,884 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Follow-Up{% endblock %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Follow-Up</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(145deg, #eef6fb 0%, #dae9f2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .main-wrapper {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header-bar {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 6px 18px rgba(0,35,50,0.04);
+            padding: 1.2rem 2rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid #e3ecf2;
+        }
+
+        .header-title h1 {
+            color: #2c3e50;
+            font-size: 1.8em;
+            margin-bottom: 4px;
+        }
+
+        .header-title p {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+
+        .back-btn {
+            background: #eaf1f6;
+            color: #135f74;
+            padding: 0.7rem 1.8rem;
+            border-radius: 40px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .back-btn:hover {
+            background: #d0e2eb;
+            color: #0a3a48;
+        }
+
+        .form-container {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 12px 32px rgba(0,35,50,0.04);
+            padding: 2.5rem;
+        }
+
+        .form-header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 18px;
+        }
+
+        .form-header h2 {
+            color: #2c3e50;
+            font-size: 2em;
+            margin-bottom: 8px;
+        }
+
+        .form-header p {
+            color: #7f8c8d;
+        }
+
+        .section {
+            margin-bottom: 25px;
+            background: #f9fbfc;
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid #e3ecf2;
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #2c3e50;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: #667eea;
+            border-radius: 2px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+            margin-bottom: 15px;
+        }
+
+        .form-row-three {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            color: #34495e;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        label .required {
+            color: #e74c3c;
+        }
+
+        input[type="text"],
+        input[type="tel"],
+        input[type="date"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 11px 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95em;
+            font-family: inherit;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        input:read-only,
+        textarea:read-only {
+            background-color: #f8f9fa;
+            cursor: not-allowed;
+            color: #6c757d;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .char-counter {
+            text-align: right;
+            font-size: 0.8em;
+            color: #95a5a6;
+            margin-top: 4px;
+        }
+
+        /* Requirement Checkboxes */
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+            padding: 14px;
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e3ecf2;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 12px;
+            background: white;
+            border: 2px solid #e8eff4;
+            border-radius: 10px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .checkbox-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.12);
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            margin-top: 2px;
+            cursor: pointer;
+            accent-color: #667eea;
+            flex-shrink: 0;
+        }
+
+        .checkbox-content {
+            flex: 1;
+        }
+
+        .item-name {
+            display: block;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+
+        .item-meta {
+            display: flex;
+            gap: 8px;
+            font-size: 0.8em;
+            color: #7f8c8d;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+
+        .badge-pending {
+            background: #ecf4f9;
+            color: #3498db;
+        }
+
+        .badge-follow {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge-proposal {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .selected-count-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        #conditionalFields {
+            display: none;
+            padding: 18px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-top: 18px;
+            margin-bottom: 18px;
+            border-left: 4px solid #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 25px;
+            justify-content: center;
+        }
+
+        .form-btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-reset {
+            background: #ecf0f1;
+            color: #7f8c8d;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-cancel {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-cancel:hover {
+            background: #c0392b;
+        }
+
+        /* Success Message */
+        .success-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #2ecc71;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            opacity: 0;
+            transform: translateX(400px);
+            transition: all 0.3s ease;
+            z-index: 2000;
+        }
+
+        .success-message.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .item-section-badge {
+            background: #6c5ce7;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7em;
+            margin-left: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-wrapper">
+        <div class="header-bar">
+            <div class="header-title">
+                <h1><i class="fas fa-edit" style="color: #667eea; margin-right: 10px;"></i>Edit Follow-Up</h1>
+                <p>Ticket #{{ followup.lead.ticket_number }} - {{ followup.lead.ownerName }}</p>
+            </div>
+            <a href="{% url 'app5:event_list' %}" class="back-btn">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+        </div>
+
+        <div class="form-container">
+            <div class="form-header">
+                <h2>📋 Update Follow-Up Details</h2>
+                <p>Modify the follow-up information below</p>
+            </div>
+
+            <form id="followUpForm">
+                {% csrf_token %}
+                
+                <input type="hidden" name="follow_up_id" value="{{ followup.id }}">
+                
+                <!-- Lead Information -->
+                <div class="section">
+                    <div class="section-title">Lead Information</div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Ticket Number <span class="required">*</span></label>
+                            <select id="ticketNumber" name="ticket_number" required>
+                                <option value="">-- Select Active Lead Ticket --</option>
+                                {% for lead in active_leads %}
+                                <option value="{{ lead.ticket_number }}" 
+                                        data-owner="{{ lead.owner_name }}" 
+                                        data-phone="{{ lead.phone }}"
+                                        data-lead-id="{{ lead.id }}"
+                                        data-req-items='{{ lead.requirements_json|safe }}'
+                                        {% if lead.ticket_number == followup.lead.ticket_number %}selected{% endif %}>
+                                    {{ lead.ticket_number }} - {{ lead.owner_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Date <span class="required">*</span></label>
+                            <input type="date" id="date" name="follow_up_date" value="{{ followup.follow_up_date|date:'Y-m-d' }}" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Owner Name</label>
+                            <input type="text" id="ownerName" name="owner_name" value="{{ followup.lead.ownerName }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Phone Number</label>
+                            <input type="tel" id="phoneNumber" name="phone_number" value="{{ followup.lead.phoneNo }}" readonly>
+                        </div>
+                    </div>
+                    
+                    <input type="hidden" id="selectedLeadId" name="lead_id" value="{{ followup.lead.id }}">
+                </div>
+
+                <!-- Requirement Items Checkboxes -->
+                <div class="section">
+                    <div class="section-title">
+                        Select Items for Follow-up 
+                        <span class="selected-count-badge" id="selectedCountBadge">0 selected (₹0.00)</span>
+                    </div>
+                    <div class="checkbox-grid" id="checkboxGrid">
+                        <div class="empty-state" style="color: #6f8f9a; padding: 1rem; text-align: center; font-style: italic;">
+                            Loading requirement items...
+                        </div>
+                    </div>
+                    <input type="hidden" id="selectedRequirementItems" name="selected_requirement_items" value="{{ followup.selected_requirement_items }}">
+                </div>
+
+                <!-- Follow-up Details -->
+                <div class="section">
+                    <div class="section-title">Follow-up Details</div>
+                    
+                    <div class="form-row-three">
+                        <div class="form-group">
+                            <label>Contact Method <span class="required">*</span></label>
+                            <select id="contactMethod" name="contact_method" required>
+                                <option value="">-- Select --</option>
+                                <option value="Phone Call" {% if followup.contact_method == 'Phone Call' %}selected{% endif %}>📞 Phone Call</option>
+                                <option value="WhatsApp" {% if followup.contact_method == 'WhatsApp' %}selected{% endif %}>💬 WhatsApp</option>
+                                <option value="Email" {% if followup.contact_method == 'Email' %}selected{% endif %}>📧 Email</option>
+                                <option value="SMS" {% if followup.contact_method == 'SMS' %}selected{% endif %}>📱 SMS</option>
+                                <option value="In-Person Meeting" {% if followup.contact_method == 'In-Person Meeting' %}selected{% endif %}>🤝 In-Person Meeting</option>
+                                <option value="Other" {% if followup.contact_method == 'Other' %}selected{% endif %}>🔄 Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Status <span class="required">*</span></label>
+                            <select id="status" name="status" required onchange="toggleConditionalFields()">
+                                <option value="">-- Select --</option>
+                                <option value="Accepted" {% if followup.status == 'Accepted' %}selected{% endif %}>✅ Accepted</option>
+                                <option value="Follow-up Required" {% if followup.status == 'Follow-up Required' %}selected{% endif %}>🔄 Follow-up Required</option>
+                                <option value="Not Attended" {% if followup.status == 'Not Attended' %}selected{% endif %}>❌ Not Attended</option>
+                                <option value="Proposal Sent" {% if followup.status == 'Proposal Sent' %}selected{% endif %}>📄 Proposal Sent</option>
+                                <option value="On Hold" {% if followup.status == 'On Hold' %}selected{% endif %}>⏸️ On Hold</option>
+                                <option value="Rejected" {% if followup.status == 'Rejected' %}selected{% endif %}>🚫 Rejected</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Customer Reply / Remarks <span class="required">*</span></label>
+                        <textarea id="reply" name="reply" rows="3" required maxlength="500">{{ followup.reply }}</textarea>
+                        <div class="char-counter"><span id="replyCount">{{ followup.reply|length }}</span>/500</div>
+                    </div>
+
+                    <!-- Conditional Fields -->
+                    <div id="conditionalFields" {% if followup.status in 'Follow-up Required,Not Attended,On Hold,Proposal Sent' %}style="display: block;"{% endif %}>
+                        <div class="section-title" style="color: #2c3e50;">Action Required</div>
+                        <div class="form-row-three">
+                            <div class="form-group">
+                                <label>Assigned To <span class="required">*</span></label>
+                                <select id="assignedTo" name="assigned_to">
+                                    <option value="">Select User</option>
+                                    {% for user in active_users %}
+                                        <option value="{{ user.name }}" {% if user.name == followup.assigned_to %}selected{% endif %}>{{ user.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Next Follow-up Date <span class="required">*</span></label>
+                                <input type="date" id="conditionalFollowUpDate" name="next_follow_up_date_conditional" 
+                                       value="{{ followup.next_follow_up_date|date:'Y-m-d' }}">
+                            </div>
+                            <div class="form-group">
+                                <label>Next Action <span class="required">*</span></label>
+                                <input type="text" id="nextAction" name="next_action" value="{{ followup.next_action }}" 
+                                       placeholder="e.g., Send quotation, Call back">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Additional Notes</label>
+                        <textarea id="notes" name="notes" rows="2" maxlength="500">{{ followup.notes }}</textarea>
+                        <div class="char-counter"><span id="notesCount">{{ followup.notes|length }}</span>/500</div>
+                    </div>
+                </div>
+
+                <!-- Buttons -->
+                <div class="button-group">
+                    <button type="submit" class="form-btn btn-submit" id="submitBtn">
+                        <i class="fas fa-save"></i> Update Follow-Up
+                    </button>
+                    <a href="{% url 'app5:event_list' %}" class="form-btn btn-cancel">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Success Message -->
+    <div class="success-message" id="successMessage">
+        ✓ Follow-up updated successfully!
+    </div>
+
+    <script>
+        // Global variables
+        let selectedItemsData = {{ selected_items_data|safe }};
+        
+        /**
+         * RENDER REQUIREMENT CHECKBOXES
+         */
+        function renderRequirementCheckboxes(itemsArray) {
+            const container = document.getElementById('checkboxGrid');
+            
+            if (!itemsArray || itemsArray.length === 0) {
+                container.innerHTML = '<div class="empty-state" style="color: #6f8f9a; padding: 1rem; text-align: center; font-style: italic;">📦 No requirement items found for this ticket. Add items in the Lead Creation form.</div>';
+                return;
+            }
+            
+            let html = '';
+            
+            itemsArray.forEach((item, index) => {
+                const itemId = item.id || item.item_id || '';
+                const itemDisplay = item.item_name || item.name || 'Unknown Item';
+                
+                let qtyDisplay = 1;
+                if (item.quantity !== undefined && item.quantity !== null) {
+                    qtyDisplay = parseFloat(item.quantity);
+                } else if (item.qty !== undefined && item.qty !== null) {
+                    qtyDisplay = parseFloat(item.qty);
+                }
+                
+                let price = 0;
+                if (item.price !== undefined && item.price !== null) {
+                    price = parseFloat(item.price);
+                }
+                
+                let total = 0;
+                if (item.total !== undefined && item.total !== null) {
+                    total = parseFloat(item.total);
+                } else {
+                    total = qtyDisplay * price;
+                }
+                
+                const unitDisplay = item.unit || 'pcs';
+                const section = item.section || 'GENERAL';
+                
+                const statusDisplay = item.status || 'pending';
+                let badgeClass = 'badge-pending';
+                let statusIcon = '🕒';
+                
+                if (statusDisplay.toLowerCase().includes('follow')) {
+                    badgeClass = 'badge-follow';
+                    statusIcon = '🔄';
+                } else if (statusDisplay.toLowerCase().includes('proposal')) {
+                    badgeClass = 'badge-proposal';
+                    statusIcon = '📄';
+                } else if (statusDisplay.toLowerCase() === 'accepted') {
+                    badgeClass = 'badge-pending';
+                    statusIcon = '✅';
+                } else if (statusDisplay.toLowerCase() === 'pending') {
+                    badgeClass = 'badge-pending';
+                    statusIcon = '⏳';
+                }
+                
+                const priceFormatted = price > 0 ? `₹${price.toFixed(2)}` : '₹0.00';
+                const totalFormatted = total > 0 ? `₹${total.toFixed(2)}` : '₹0.00';
+                
+                // Check if this item should be checked based on selectedItemsData
+                let isChecked = false;
+                if (selectedItemsData && selectedItemsData.length > 0) {
+                    isChecked = selectedItemsData.some(selectedItem => 
+                        selectedItem.name === itemDisplay || 
+                        selectedItem.item_name === itemDisplay
+                    );
+                }
+                
+                const checkboxId = `req_item_${index}_${Date.now()}`;
+                
+                html += `
+                    <div class="checkbox-item" data-item-id="${itemId}" data-section="${section}">
+                        <input type="checkbox" 
+                               id="${checkboxId}" 
+                               class="req-checkbox" 
+                               value="${itemDisplay}" 
+                               ${isChecked ? 'checked' : ''}
+                               data-item-id="${itemId}"
+                               data-item-name="${itemDisplay}"
+                               data-qty="${qtyDisplay}"
+                               data-price="${price}"
+                               data-total="${total}"
+                               data-unit="${unitDisplay}"
+                               data-section="${section}"
+                               data-status="${statusDisplay}">
+                        <div class="checkbox-content">
+                            <span class="item-name">
+                                ${itemDisplay}
+                                <span style="font-size: 0.7em; background: #e9ecef; padding: 2px 6px; border-radius: 4px; margin-left: 6px; color: #495057;">
+                                    ${section}<br>
+                                </span>
+                            </span>
+                            <span class="item-meta">
+                                <span><strong> Qty:</strong> ${qtyDisplay} ${unitDisplay}</span><br>
+                                <span><strong> Price:</strong> ${priceFormatted}</span><br>
+                                <span><strong>Total:</strong> <span style="color: #28a745; font-weight: 600;">${totalFormatted}</span></span>
+                                <span class="badge ${badgeClass}">${statusIcon} ${statusDisplay}</span>
+                            </span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            updateSelectedCount();
+            
+            document.querySelectorAll('.req-checkbox').forEach(cb => {
+                cb.addEventListener('change', updateSelectedCount);
+            });
+            
+            console.log(`✅ Rendered ${itemsArray.length} requirement items.`);
+        }
+
+        /**
+         * UPDATE SELECTED COUNT BADGE
+         */
+        function updateSelectedCount() {
+            const checkboxes = document.querySelectorAll('.req-checkbox:checked');
+            const selected = checkboxes.length;
+            let selectedTotal = 0;
+            
+            checkboxes.forEach(cb => {
+                const qty = parseFloat(cb.dataset.qty || 1);
+                const price = parseFloat(cb.dataset.price || 0);
+                const total = parseFloat(cb.dataset.total || (qty * price));
+                selectedTotal += total;
+            });
+            
+            const badge = document.getElementById('selectedCountBadge');
+            badge.innerHTML = `${selected} selected ${selected > 0 ? `(₹${selectedTotal.toFixed(2)})` : ''}`;
+            
+            const selectedData = {
+                count: selected,
+                total: selectedTotal,
+                item_details: Array.from(checkboxes).map(cb => ({
+                    id: cb.dataset.itemId,
+                    name: cb.dataset.itemName || cb.value,
+                    quantity: parseFloat(cb.dataset.qty || 1),
+                    price: parseFloat(cb.dataset.price || 0),
+                    total: parseFloat(cb.dataset.total || 0),
+                    unit: cb.dataset.unit || 'pcs',
+                    section: cb.dataset.section || 'GENERAL'
+                }))
+            };
+            
+            document.getElementById('selectedRequirementItems').value = JSON.stringify(selectedData);
+        }
+
+        /**
+         * TICKET SELECTION HANDLER
+         */
+        document.getElementById('ticketNumber').addEventListener('change', function(e) {
+            const selectedOption = e.target.options[e.target.selectedIndex];
+            
+            if (!selectedOption || !selectedOption.value) {
+                clearLeadFields();
+                return;
+            }
+            
+            const leadId = selectedOption.dataset.leadId;
+            if (leadId) {
+                document.getElementById('selectedLeadId').value = leadId;
+            }
+            
+            document.getElementById('ownerName').value = selectedOption.dataset.owner || '';
+            document.getElementById('phoneNumber').value = selectedOption.dataset.phone || '';
+            
+            let items = [];
+            try {
+                const reqItemsData = selectedOption.dataset.reqItems || '[]';
+                items = JSON.parse(reqItemsData);
+                console.log(`✅ Parsed ${items.length} requirement items`);
+            } catch (e) {
+                console.error('❌ Failed to parse requirement items JSON:', e);
+                items = [];
+            }
+            
+            renderRequirementCheckboxes(items);
+        });
+
+        /**
+         * CLEAR LEAD FIELDS
+         */
+        function clearLeadFields() {
+            document.getElementById('ownerName').value = '';
+            document.getElementById('phoneNumber').value = '';
+            document.getElementById('selectedLeadId').value = '';
+            document.getElementById('checkboxGrid').innerHTML = '<div class="empty-state" style="color: #6f8f9a; padding: 1rem; text-align: center; font-style: italic;">← Select a ticket to load requirement items from the lead form</div>';
+            document.getElementById('selectedCountBadge').innerHTML = '0 selected (₹0.00)';
+            document.getElementById('selectedRequirementItems').value = '';
+        }
+
+        /**
+         * TOGGLE CONDITIONAL FIELDS
+         */
+        window.toggleConditionalFields = function() {
+            const status = document.getElementById('status').value;
+            const cond = document.getElementById('conditionalFields');
+            const requires = ['Follow-up Required', 'Not Attended', 'On Hold', 'Proposal Sent'];
+            
+            if (requires.includes(status)) {
+                cond.style.display = 'block';
+                document.getElementById('assignedTo').required = true;
+                document.getElementById('conditionalFollowUpDate').required = true;
+                document.getElementById('nextAction').required = true;
+            } else {
+                cond.style.display = 'none';
+                document.getElementById('assignedTo').required = false;
+                document.getElementById('conditionalFollowUpDate').required = false;
+                document.getElementById('nextAction').required = false;
+            }
+        };
+
+        /**
+         * CHARACTER COUNTERS
+         */
+        function setupCounter(taId, countId) {
+            const ta = document.getElementById(taId);
+            const cnt = document.getElementById(countId);
+            if (ta && cnt) {
+                ta.addEventListener('input', function() { 
+                    cnt.textContent = this.value.length; 
+                });
+                cnt.textContent = ta.value.length;
+            }
+        }
+        
+        setupCounter('reply', 'replyCount');
+        setupCounter('notes', 'notesCount');
+
+        /**
+         * SHOW SUCCESS MESSAGE
+         */
+        function showSuccessMessage(message) {
+            const successMsg = document.getElementById('successMessage');
+            successMsg.innerHTML = message;
+            successMsg.classList.add('show');
+            setTimeout(() => {
+                successMsg.classList.remove('show');
+            }, 2000);
+        }
+
+        /**
+         * FORM SUBMIT - Update
+         */
+        document.getElementById('followUpForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const selected = document.querySelectorAll('.req-checkbox:checked').length;
+            if (selected === 0) {
+                alert('⚠️ Please select at least one requirement item that needs follow-up.');
+                return;
+            }
+
+            const formData = new FormData(this);
+            const data = {};
+            for (let [key, value] of formData.entries()) {
+                data[key] = value;
+            }
+
+            // Get lead_id properly
+            const selectedLeadId = document.getElementById('selectedLeadId').value;
+            const selectedTicket = document.getElementById('ticketNumber').value;
+            const followUpId = '{{ followup.id }}';
+            
+            if (selectedLeadId) {
+                data.lead_id = selectedLeadId;
+                data.leadId = selectedLeadId;
+            }
+            
+            if (selectedTicket) {
+                data.ticket_number = selectedTicket;
+            }
+
+            if (followUpId) {
+                data.follow_up_id = followUpId;
+            }
+
+            // FIXED: Use the correct URL pattern name 'update_followup' instead of 'followup_update'
+            fetch('{% url "app5:update_followup" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    showSuccessMessage('✓ Follow-up updated successfully!');
+                    setTimeout(() => {
+                        window.location.href = '{% url "app5:event_list" %}';
+                    }, 1500);
+                } else {
+                    alert('❌ Error: ' + (result.message || result.error || 'Update failed'));
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error:', error);
+                alert('❌ Failed to update follow-up. Please try again.');
+            });
+        });
+
+        /**
+         * INITIALIZATION
+         */
+        (function init() {
+            toggleConditionalFields();
+            
+            // Load requirements for current ticket
+            const ticketSelect = document.getElementById('ticketNumber');
+            const selectedOption = ticketSelect.options[ticketSelect.selectedIndex];
+            
+            if (selectedOption && selectedOption.value) {
+                let items = [];
+                try {
+                    const reqItemsData = selectedOption.dataset.reqItems || '[]';
+                    items = JSON.parse(reqItemsData);
+                } catch (e) {
+                    console.error('Failed to parse requirement items JSON:', e);
+                }
+                
+                // Merge with selected items data
+                if (selectedItemsData && selectedItemsData.length > 0) {
+                    items = items.map(item => {
+                        const matched = selectedItemsData.find(si => 
+                            si.name === (item.item_name || item.name)
+                        );
+                        if (matched) {
+                            item.status = 'selected';
+                        }
+                        return item;
+                    });
+                }
+                
+                renderRequirementCheckboxes(items);
+            }
+            
+            console.log('🚀 Edit page initialized');
+        })();
+    </script>
+</body>
+</html>
+{% endblock %}

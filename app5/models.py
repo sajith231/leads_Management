@@ -946,6 +946,76 @@ class QuotationItem(models.Model):
         self.calculate_totals()
         super().save(*args, **kwargs)
 
+
+
+from django.db import models
+from django.conf import settings
+
+class FollowUp(models.Model):
+   
+    
+    STATUS_CHOICES = [
+        ('Accepted', 'Accepted'),
+        ('Follow-up Required', 'Follow-up Required'),
+        ('Not Attanted', 'Not Attanted'),
+        ('Proposal Sent', 'Proposal Sent'),
+        ('On Hold', 'On Hold'),
+        ('Rejected', 'Rejected'),
+    ]
+    
+    CONTACT_METHOD_CHOICES = [
+        ('Phone Call', 'Phone Call'),
+        ('WhatsApp', 'WhatsApp'),
+        ('Email', 'Email'),
+        ('SMS', 'SMS'),
+        ('In-Person Meeting', 'In-Person Meeting'),
+        ('Other', 'Other'),
+    ]
+    
+    # Core fields
+    lead = models.ForeignKey('Lead', on_delete=models.CASCADE, related_name='followups')
+    follow_up_date = models.DateField()
+    contact_method = models.CharField(max_length=50, choices=CONTACT_METHOD_CHOICES)
+    reply = models.TextField(help_text="Remarks or notes from the conversation")
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES)
+    notes = models.TextField(blank=True, null=True, help_text="Additional notes")
+    
+    # Track which requirement items this follow-up is for
+    selected_requirement_items = models.TextField(
+        blank=True, 
+        null=True,
+        help_text="Comma-separated list of requirement items that need follow-up"
+    )
+    
+    # Conditional fields (required for certain statuses)
+    assigned_to = models.CharField(max_length=100, blank=True, null=True)
+    next_follow_up_date = models.DateField(blank=True, null=True)
+    next_action = models.CharField(max_length=255, blank=True, null=True)
+    
+    # Metadata
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='created_followups'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-follow_up_date', '-created_at']
+        verbose_name = 'Follow Up'
+        verbose_name_plural = 'Follow Ups'
+    
+    def __str__(self):
+        ticket = self.lead.ticket_number if hasattr(self.lead, 'ticket_number') else f"LD-{self.lead.id}"
+        return f"Follow-up for {ticket} on {self.follow_up_date}"
+    
+    def save(self, *args, **kwargs):
+        # Follow-up status is independent — lead status is NOT updated here
+        super().save(*args, **kwargs)
+
     
 
     

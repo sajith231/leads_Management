@@ -8434,176 +8434,341 @@ def update_quotation(request, pk):
 
 from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
-from datetime import timedelta                          # ✅ fixed: was timezone.timedelta
+from datetime import timedelta
+import logging
 
+logger = logging.getLogger(__name__)
 
 # ============================================================
 # MAIN VIEW – renders quotation_download.html
 # ============================================================
 
-# ============================================================================
-# SAFE VERSION - Works WITHOUT department field in model
-# Use this until you add the department field and run migrations
-# ============================================================================
-
 def download_quotation(request, quotation_id):
     """
     Display quotation with branch logo and details.
-    SAFE VERSION: Works even if department field doesn't exist yet.
+    Branch is resolved from the lead's 'requirement' field (the Branch
+    dropdown in the lead form), so each lead shows its own branch correctly.
     """
     from .models import Quotation
     
     quotation = get_object_or_404(Quotation, id=quotation_id)
     
-    # ✅ Get the lead associated with the quotation
-    lead = getattr(quotation, 'lead', None)
+    # ── Step 1: Get the associated Lead ──────────────────────────────────
+    lead = _get_lead_from_quotation(quotation)
     
-    # ✅ Calculate client address based on lead data (like in lead_report.html)
+    # ── Step 2: Client address (business vs individual) ───────────────────
     client_address = ''
     if lead:
-        # Same logic as in your lead_report.html template
         if getattr(lead, 'customerType', '') == 'Business':
-            client_address = getattr(lead, 'place', '')
+            client_address = getattr(lead, 'place', '') or ''
         else:
-            client_address = getattr(lead, 'individualPlace', '')
+            client_address = getattr(lead, 'individualPlace', '') or ''
     
-    # ✅ SAFE: Check if department field exists before accessing it
-    branch_id = None
+    # ── Step 3: Resolve the correct branch ID ─────────────────────────────
+    branch_id, source = _resolve_branch_id(quotation, lead, request)
     
-    # Try to get department_id safely
-    if hasattr(quotation, 'department_id') and quotation.department_id:
-        branch_id = str(quotation.department_id)
-        logger.info(f"✅ Using stored branch from quotation: {branch_id}")
-    else:
-        # No department field or not set - try URL parameter
-        branch_id = request.GET.get('branch_id') or request.GET.get('department_id')
-        if branch_id:
-            logger.info(f"📌 Using branch from URL parameter: {branch_id}")
-        else:
-            logger.info("ℹ️ No branch specified, will use default")
-    
-    # ✅ Load the branch/department data
+    # ── Step 4: Load Department from DB using the resolved branch_id ──────
     branch = None
-    
     try:
         from purchase_order.models import Department
         
-        if branch_id and branch_id.isdigit():
-            try:
-                department = Department.objects.get(id=int(branch_id), is_active=True)
-                branch = _dept_to_branch(department)
-                logger.info(f"✅ Loaded branch: {branch['name']} (ID: {branch['id']})")
-            except Department.DoesNotExist:
-                logger.warning(f"⚠️ Department {branch_id} not found, using default")
-                branch = get_default_department()
+        if branch_id:
+            # Try to find department by ID (if branch_id is numeric)
+            if str(branch_id).isdigit():
+                try:
+                    department = Department.objects.get(id=int(branch_id), is_active=True)
+                    branch = _dept_to_branch(department)
+                    logger.info(
+                        f"✅ Loaded branch '{branch['name']}' "
+                        f"(ID: {branch['id']}, source: {source})"
+                    )
+                except Department.DoesNotExist:
+                    logger.warning(
+                        f"⚠️ Department ID {branch_id} not found — "
+                        f"falling back to default"
+                    )
+                    branch = get_default_department()
+            else:
+                # If branch_id is not numeric (like a name), try to find by name
+                try:
+                    # Try exact name match first
+                    department = Department.objects.filter(
+                        name__iexact=branch_id.strip(),
+                        is_active=True
+                    ).first()
+                    
+                    if department:
+                        branch = _dept_to_branch(department)
+                        logger.info(
+                            f"✅ Loaded branch '{branch['name']}' by name "
+                            f"(ID: {branch['id']}, source: {source})"
+                        )
+                    else:
+                        # Try partial name match as fallback
+                        department = Department.objects.filter(
+                            name__icontains=branch_id.strip(),
+                            is_active=True
+                        ).first()
+                        
+                        if department:
+                            branch = _dept_to_branch(department)
+                            logger.info(
+                                f"✅ Loaded branch '{branch['name']}' by partial name "
+                                f"(ID: {branch['id']}, source: {source})"
+                            )
+                        else:
+                            logger.warning(f"⚠️ No department found with name '{branch_id}'")
+                            branch = get_default_department()
+                except Exception as e:
+                    logger.warning(f"⚠️ Error looking up department by name: {e}")
+                    branch = get_default_department()
         else:
-            logger.info("ℹ️ No branch ID, using default department")
             branch = get_default_department()
     
     except ImportError:
-        logger.warning("⚠️ Department model not available, using fallback")
+        logger.warning("⚠️ Department model not available — using fallback")
         branch = get_fallback_branch(branch_id)
     
-    # ✅ Calculate items and totals
+    # ── Step 5: Build address & contact display strings ───────────────────
+    if branch:
+        parts = [branch[k] for k in ('address', 'city', 'state') if branch.get(k)]
+        if branch.get('pincode'):
+            parts.append(f"PIN: {branch['pincode']}")
+        branch['full_address_display'] = ', '.join(parts)
+        
+        cp = []
+        if branch.get('contact_number'):   
+            cp.append(branch['contact_number'])
+        if branch.get('alternate_number'): 
+            cp.append(branch['alternate_number'])
+        branch['contact_display'] = ' / '.join(cp) if cp else ''
+        
+        # ✅ Ensure has_logo is properly set
+        if 'has_logo' not in branch:
+            branch['has_logo'] = bool(branch.get('logo_url'))
+    
+    # ── Step 6: Calculate items and totals ────────────────────────────────
     items = quotation.items.all()
     subtotal = 0
     total_tax = 0
     
     for item in items:
         sale_price = getattr(item, 'sales_price', 0) or 0
-        quantity = getattr(item, 'quantity', 1) or 1
+        quantity   = getattr(item, 'quantity', 1) or 1
         item_total = quantity * sale_price
-        subtotal += item_total
-        
-        tax_pct = getattr(item, 'tax_percentage', 0) or 0
+        subtotal  += item_total
+        tax_pct    = getattr(item, 'tax_percentage', 0) or 0
         total_tax += (item_total * tax_pct) / 100
     
-    discount_amount = getattr(quotation, 'discount_amount', 0) or 0
+    discount_amount  = getattr(quotation, 'discount_amount', 0) or 0
     shipping_charges = getattr(quotation, 'shipping_charges', 0) or 0
-    grand_total = subtotal + total_tax - discount_amount + shipping_charges
+    grand_total      = subtotal + total_tax - discount_amount + shipping_charges
     
     def fmt(value):
         return f"{value:,.2f}"
     
-    # ✅ Build display strings for branch
-    if branch:
-        # Full address display
-        parts = []
-        for key in ('address', 'city', 'state'):
-            if branch.get(key):
-                parts.append(branch[key])
-        if branch.get('pincode'):
-            parts.append(f"PIN: {branch['pincode']}")
-        branch['full_address_display'] = ', '.join(parts)
-        
-        # Contact display
-        cp = []
-        if branch.get('contact_number'):
-            cp.append(branch['contact_number'])
-        if branch.get('alternate_number'):
-            cp.append(branch['alternate_number'])
-        branch['contact_display'] = ' / '.join(cp) if cp else ''
-    
-    # ✅ Get client info from lead if available
-    client_name = getattr(quotation, 'client_name', '') or ''
+    # ── Step 7: Client info ───────────────────────────────────────────────
+    client_name  = getattr(quotation, 'client_name', '')  or ''
     client_phone = getattr(quotation, 'client_phone', '') or ''
     client_email = getattr(quotation, 'client_email', '') or ''
     
-    # Override with lead data if lead exists and quotation fields are empty
-    if lead and not client_name:
-        client_name = getattr(lead, 'ownerName', '') or ''
+    if lead:
+        if not client_name:
+            client_name = getattr(lead, 'ownerName', '') or ''
+        if not client_phone:
+            client_phone = getattr(lead, 'phoneNo', '') or ''
+        if not client_email:
+            client_email = getattr(lead, 'email', '') or ''
     
-    if lead and not client_phone:
-        client_phone = getattr(lead, 'phoneNo', '') or ''
-    
-    if lead and not client_email:
-        client_email = getattr(lead, 'email', '') or ''
-    
-    # ✅ Build template context
+    # ── Step 8: Build context ─────────────────────────────────────────────
     context = {
         # Core objects
         'quotation': quotation,
-        'branch': branch,
-        'items': items,
-        'lead_data': lead,  # Pass the lead object to template
+        'branch':    branch,
+        'items':     items,
+        'lead_data': lead,
         
         # Money values
-        'subtotal': fmt(subtotal),
-        'subtotal_raw': subtotal,
-        'total_tax': fmt(total_tax),
-        'total_tax_raw': total_tax,
-        'discount_amount': fmt(discount_amount),
-        'discount_amount_raw': discount_amount,
-        'shipping_charges': fmt(shipping_charges) if shipping_charges > 0 else None,
-        'shipping_charges_raw': shipping_charges,
-        'grand_total': fmt(grand_total),
-        'grand_total_raw': grand_total,
+        'subtotal':              fmt(subtotal),
+        'subtotal_raw':          subtotal,
+        'total_tax':             fmt(total_tax),
+        'total_tax_raw':         total_tax,
+        'discount_amount':       fmt(discount_amount),
+        'discount_amount_raw':   discount_amount,
+        'shipping_charges':      fmt(shipping_charges) if shipping_charges > 0 else None,
+        'shipping_charges_raw':  shipping_charges,
+        'grand_total':           fmt(grand_total),
+        'grand_total_raw':       grand_total,
         
         # Metadata
-        'item_count': items.count(),
-        'today': timezone.now().date(),
-        'valid_until': getattr(quotation, 'valid_until', None) or (timezone.now() + timedelta(days=30)).date(),
-        'quotation_number': getattr(quotation, 'quotation_number', None) or f"QT-{quotation.id:06d}",
-        'created_date': getattr(quotation, 'created_at', None) or getattr(quotation, 'quotation_date', None) or timezone.now(),
-        'created_place': branch.get('city', '') if branch else '',
+        'item_count':       items.count(),
+        'today':            timezone.now().date(),
+        'valid_until':      getattr(quotation, 'valid_until', None)
+                            or (timezone.now() + timedelta(days=30)).date(),
+        'quotation_number': getattr(quotation, 'quotation_number', None)
+                            or f"QT-{quotation.id:06d}",
+        'created_date':     getattr(quotation, 'created_at', None)
+                            or getattr(quotation, 'quotation_date', None)
+                            or timezone.now(),
+        'created_place':    branch.get('city', '') if branch else '',
         
         # Client info
-        'client_name': client_name,
-        'client_email': client_email,
-        'client_phone': client_phone,
-        'client_address': client_address,  # Now correctly calculated from lead
+        'client_name':    client_name,
+        'client_email':   client_email,
+        'client_phone':   client_phone,
+        'client_address': client_address,
         
-        # ✅ Company/Branch info (used by template)
-        'company_name': branch['name'] if branch else 'Our Company',
-        'company_address': branch.get('full_address_display', '') if branch else '',
-        'company_contact': branch.get('contact_display', '') if branch else '',
-        'company_gst': branch.get('gst_number', '') if branch else '',
-        'company_email': branch.get('email', '') if branch else '',
-        'company_logo_url': branch.get('logo_url', '') if branch else '',
-        'company_has_logo': branch.get('has_logo', False) if branch else False,
+        # ✅ Company / Branch info — each lead gets its OWN branch data
+        'company_name':     branch['name']                       if branch else 'Our Company',
+        'company_address':  branch.get('full_address_display', '') if branch else '',
+        'company_contact':  branch.get('contact_display', '')    if branch else '',
+        'company_gst':      branch.get('gst_number', '')         if branch else '',
+        'company_email':    branch.get('email', '')              if branch else '',
+        'company_logo_url': branch.get('logo_url', '')           if branch else '',
+        'company_has_logo': branch.get('has_logo', False)        if branch else False,
     }
     
     return render(request, 'quotation_download.html', context)
+
+
+# ============================================================
+# HELPER FUNCTIONS (unchanged - keep these as they are)
+# ============================================================
+
+# ── Helper: Convert a Department ORM object → plain dict ─────────────────
+def _dept_to_branch(department):
+    """Convert a Department model instance to a branch info dict."""
+    has_logo = bool(getattr(department, 'logo', None))
+    logo_url = department.logo.url if has_logo else ''
+    
+    return {
+        'id':               department.id,
+        'name':             department.name or '',
+        'address':          getattr(department, 'address', '') or '',
+        'city':             getattr(department, 'city', '') or '',
+        'state':            getattr(department, 'state', '') or '',
+        'pincode':          getattr(department, 'pincode', '') or '',
+        'contact_number':   getattr(department, 'contact_number', '') or '',
+        'alternate_number': getattr(department, 'alternate_number', '') or '',
+        'email':            getattr(department, 'email', '') or '',
+        'gst_number':       getattr(department, 'gst_number', '') or '',
+        'has_logo':         has_logo,
+        'logo_url':         logo_url,
+    }
+
+
+# ── Helper: Fetch the first active Department as a fallback ──────────────
+def get_default_department():
+    """Return the first active Department as fallback branch dict, or None."""
+    try:
+        from purchase_order.models import Department
+        dept = Department.objects.filter(is_active=True).order_by('id').first()
+        if dept:
+            return _dept_to_branch(dept)
+    except Exception as e:
+        logger.warning(f"⚠️ Could not load default department: {e}")
+    return None
+
+
+# ── Helper: Minimal fallback when Department model is unavailable ─────────
+def get_fallback_branch(branch_id=None):
+    """Return a minimal branch dict when the Department model can't be imported."""
+    return {
+        'id':               branch_id,
+        'name':             'Our Company',
+        'address':          '',
+        'city':             '',
+        'state':            '',
+        'pincode':          '',
+        'contact_number':   '',
+        'alternate_number': '',
+        'email':            '',
+        'gst_number':       '',
+        'has_logo':         False,
+        'logo_url':         '',
+    }
+
+
+# ── Helper: Safely get the Lead linked to a Quotation ────────────────────
+def _get_lead_from_quotation(quotation):
+    """
+    Safely resolve the Lead from a Quotation.
+    Handles missing FK, RelatedObjectDoesNotExist, and any other exception.
+    Returns Lead instance or None.
+    """
+    # Try direct FK accessor (raises RelatedObjectDoesNotExist if unset)
+    try:
+        lead = quotation.lead
+        if lead is not None:
+            logger.info(f"✅ Found lead via quotation.lead → ID {lead.id}")
+            return lead
+    except Exception:
+        pass
+    
+    # Try via lead_id field → manual lookup
+    lead_id = getattr(quotation, 'lead_id', None)
+    if lead_id:
+        try:
+            from .models import Lead
+            lead = Lead.objects.get(id=lead_id)
+            logger.info(f"✅ Found lead via quotation.lead_id → ID {lead.id}")
+            return lead
+        except Exception:
+            pass
+    
+    logger.info("ℹ️ No lead found for this quotation")
+    return None
+
+
+# ── Helper: Resolve branch_id from all possible sources ──────────────────
+# ── Helper: Resolve branch_id from all possible sources ──────────────────
+def _resolve_branch_id(quotation, lead, request):
+    """
+    Returns (branch_id_str, source_label) using this priority order:
+      1. quotation.department_id   — explicitly saved on the quotation
+      2. lead.requirement          — branch chosen when lead was created  ← KEY
+      3. lead.department_id         — alternative field name
+      4. URL ?branch_id / ?department_id parameter
+      5. None  (caller should then use get_default_department)
+    """
+    # 1 ── quotation has department stored directly
+    dept_id = getattr(quotation, 'department_id', None)
+    if dept_id:
+        logger.info(f"✅ Branch from quotation.department_id: {dept_id}")
+        return str(dept_id), 'quotation.department_id'
+    
+    # 2 ── lead.requirement  (the branch dropdown in the lead form)
+    if lead is not None:
+        req = getattr(lead, 'requirement', None)
+        if req:
+            logger.info(f"✅ Branch from lead.requirement: {req}")
+            
+            # Try to convert to integer if it's a numeric string (department ID)
+            try:
+                # If it's numeric, return as string ID
+                if str(req).isdigit():
+                    return str(req), 'lead.requirement (numeric)'
+                else:
+                    # If it's not numeric, it's a branch name - return as is
+                    # The calling function will handle lookup by name
+                    return str(req), 'lead.requirement (name)'
+            except (ValueError, TypeError):
+                return str(req), 'lead.requirement'
+        
+        # Also try lead.department_id as alternative field name
+        lead_dept = getattr(lead, 'department_id', None)
+        if lead_dept:
+            logger.info(f"✅ Branch from lead.department_id: {lead_dept}")
+            return str(lead_dept), 'lead.department_id'
+    
+    # 3 ── URL query parameter
+    url_param = request.GET.get('branch_id') or request.GET.get('department_id')
+    if url_param:
+        logger.info(f"📌 Branch from URL parameter: {url_param}")
+        return str(url_param), 'url_param'
+    
+    logger.warning("⚠️ No branch ID found from any source — will use default")
+    return None, 'none'
 
 
 
@@ -9040,3 +9205,962 @@ def lead_view_detail(request, pk):
     }
     
     return render(request, 'lead_view.html', context)
+
+
+
+    # event 
+
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import render
+from django.utils import timezone
+from .models import Lead, FollowUp, RequirementItem
+import json
+
+# ============================================================
+# API ENDPOINT: Get active leads for AJAX requests
+# ============================================================
+@require_http_methods(["GET"])
+def get_active_leads(request):
+    """
+    API endpoint to fetch all active leads
+    Returns lead data including ticket number, owner name, phone, and requirements
+    
+    LEAD FILTERING BY USER PERMISSIONS:
+    - Admin users (user_level='normal', 'admin_level', '4level'): See ALL active leads
+    - Regular users (user_level='3level', '5level'): See ONLY their created & assigned active leads
+    """
+    import logging
+    import json
+    from django.db.models import Q
+    
+    logger = logging.getLogger(__name__)
+    
+    # Get current user from session
+    current_user = None
+    current_user_name = None
+    user_level = None
+    
+    if request.session.get('custom_user_id'):
+        try:
+            from app1.models import User
+            current_user = User.objects.get(id=request.session['custom_user_id'])
+            current_user_name = getattr(current_user, "name", current_user.username if hasattr(current_user, 'username') else str(current_user))
+            user_level = getattr(current_user, 'user_level', None)
+            logger.info(f"👤 API: Current user: {current_user_name} (Level: {user_level})")
+        except Exception as e:
+            logger.warning(f"API: Could not get current user: {e}")
+    
+    # ========================================
+    # LEAD FILTERING BASED ON USER PERMISSIONS
+    # ========================================
+    try:
+        # Determine if user should see all leads or only their own
+        admin_levels = ['normal', 'admin_level', '4level']
+        
+        # Base queryset with status filter
+        base_qs = Lead.objects.filter(
+            status__in=['Active', 'New', 'Follow-up Required', 'Not Attented', 'Proposal Sent', 'On Hold']
+        )
+        
+        if user_level in admin_levels:
+            # Admin users: See ALL active leads
+            leads_qs = base_qs
+            logger.info(f"🔓 API: Admin user ({user_level}) - showing ALL active leads")
+            
+        elif current_user:
+            # Regular users: See only CREATED or ASSIGNED leads
+            user_filter = Q(created_by=current_user)
+            
+            if current_user_name:
+                user_filter |= Q(assigned_to_name__iexact=current_user_name)
+                user_filter |= Q(marketedBy__iexact=current_user_name)
+            
+            leads_qs = base_qs.filter(user_filter)
+            logger.info(f"🔒 API: Regular user ({user_level}) - showing only created/assigned leads")
+        else:
+            # No user logged in
+            leads_qs = Lead.objects.none()
+            logger.warning("⚠️ API: No current user - showing 0 leads")
+        
+        # Prefetch requirements
+        active_leads = leads_qs.prefetch_related('requirements').order_by('-created_at')
+        
+        leads_data = []
+        for lead in active_leads:
+            # Get requirements with proper status
+            requirements_list = []
+            if hasattr(lead, 'requirements'):
+                for req in lead.requirements.all():
+                    # Determine status based on lead status
+                    item_status = 'pending'
+                    if lead.status in ['Follow-up Required', 'Not Attented', 'On Hold']:
+                        item_status = 'follow-up'
+                    elif lead.status == 'Proposal Sent':
+                        item_status = 'proposal'
+                    elif lead.status == 'Accepted':
+                        item_status = 'accepted'
+                    elif lead.status == 'Active':
+                        item_status = 'new'
+                    
+                    requirements_list.append({
+                        'id': req.id,
+                        'name': req.item_name,
+                        'item_name': req.item_name,
+                        'qty': req.quantity,
+                        'quantity': req.quantity,
+                        'price': float(req.price) if req.price else 0,
+                        'total': float(req.total) if req.total else float(req.price or 0) * int(req.quantity or 1),
+                        'status': item_status,
+                        'unit': req.unit or 'pcs',
+                        'section': req.section or 'GENERAL'
+                    })
+            
+            # Get ticket number
+            ticket_number = ''
+            if hasattr(lead, 'ticket_number') and lead.ticket_number:
+                ticket_number = lead.ticket_number
+            elif hasattr(lead, 'ticketNumber') and lead.ticketNumber:
+                ticket_number = lead.ticketNumber
+            else:
+                ticket_number = f"TKT-{lead.id:06d}"
+            
+            # Get owner name
+            owner_name = ''
+            if hasattr(lead, 'ownerName') and lead.ownerName:
+                owner_name = lead.ownerName
+            elif hasattr(lead, 'owner_name') and lead.owner_name:
+                owner_name = lead.owner_name
+            elif hasattr(lead, 'name') and lead.name:
+                owner_name = lead.name
+            else:
+                owner_name = ''
+            
+            # Get phone number
+            phone = ''
+            if hasattr(lead, 'phoneNo') and lead.phoneNo:
+                phone = lead.phoneNo
+            elif hasattr(lead, 'phone') and lead.phone:
+                phone = lead.phone
+            elif hasattr(lead, 'phoneNumber') and lead.phoneNumber:
+                phone = lead.phoneNumber
+            elif hasattr(lead, 'mobile') and lead.mobile:
+                phone = lead.mobile
+            
+            # Build requirement summary text
+            requirement_text = '; '.join([
+                f"{req['name']} (Qty: {req['qty']}, ₹{req['total']:.2f})"
+                for req in requirements_list
+            ])
+            
+            lead_dict = {
+                'id': lead.id,
+                'ticketNumber': ticket_number,
+                'ownerName': owner_name,
+                'phone': phone,
+                'ticket_number': ticket_number,
+                'owner_name': owner_name,
+                'phoneNumber': phone,
+                'name': owner_name,
+                'requirement': requirement_text,
+                'status': lead.status if hasattr(lead, 'status') else "",
+                'customerType': lead.customerType if hasattr(lead, 'customerType') else "",
+                'requirements': requirements_list,
+                'requirements_json': json.dumps(requirements_list)
+            }
+            
+            leads_data.append(lead_dict)
+        
+        logger.info(f"✅ API: Returning {len(leads_data)} leads for user {current_user_name}")
+        return JsonResponse(leads_data, safe=False)
+    
+    except Exception as e:
+        import traceback
+        logger.error(f"❌ API Error: {e}")
+        return JsonResponse({
+            'error': str(e),
+            'traceback': traceback.format_exc(),
+            'message': 'Failed to fetch active leads'
+        }, status=500)
+def event_form_view(request):
+    """
+    View to render the event/follow-up form
+    Passes active leads to the template with requirement items
+    
+    LEAD FILTERING BY USER PERMISSIONS:
+    - Admin users (user_level='normal', 'admin_level', '4level'): See ALL active leads
+    - Regular users (user_level='3level', '5level'): See ONLY their created & assigned active leads
+    """
+    import json
+    from django.utils import timezone
+    from django.db.models import Q
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    # Get current user from session
+    current_user = None
+    current_user_name = None
+    user_level = None
+    
+    if request.session.get('custom_user_id'):
+        try:
+            from app1.models import User
+            current_user = User.objects.get(id=request.session['custom_user_id'])
+            current_user_name = getattr(current_user, "name", current_user.username if hasattr(current_user, 'username') else str(current_user))
+            user_level = getattr(current_user, 'user_level', None)
+            logger.info(f"👤 Current user: {current_user_name} (Level: {user_level})")
+        except Exception as e:
+            logger.warning(f"Could not get current user: {e}")
+    
+    # ========================================
+    # LEAD FILTERING BASED ON USER PERMISSIONS
+    # ========================================
+    active_leads_qs = None
+    
+    try:
+        # Determine if user should see all leads or only their own
+        # Admin levels: 'normal' (Admin), 'admin_level' (Super Admin), '4level' (Superuser)
+        admin_levels = ['normal', 'admin_level', '4level']
+        
+        if user_level in admin_levels:
+            # ========================================
+            # ADMIN USERS: See ALL active leads
+            # ========================================
+            active_leads_qs = Lead.objects.filter(
+                status__in=['Active', 'New', 'Follow-up Required', 'Not Attented', 'Proposal Sent', 'On Hold']
+            ).order_by('-created_at')
+            logger.info(f"🔓 Admin user ({user_level}) - showing ALL active leads")
+            
+        elif current_user:
+            # ========================================
+            # REGULAR USERS: See only CREATED or ASSIGNED leads
+            # ========================================
+            from django.db.models import Q
+            
+            # Build filter for created by or assigned to
+            user_filter = Q(created_by=current_user)
+            
+            if current_user_name:
+                user_filter |= Q(assigned_to_name__iexact=current_user_name)
+                user_filter |= Q(marketedBy__iexact=current_user_name)
+            
+            active_leads_qs = Lead.objects.filter(
+                user_filter,
+                status__in=['Active', 'New', 'Follow-up Required', 'Not Attented', 'Proposal Sent', 'On Hold']
+            ).order_by('-created_at')
+            
+            logger.info(f"🔒 Regular user ({user_level}) - showing only created/assigned leads")
+        else:
+            # No user logged in
+            active_leads_qs = Lead.objects.none()
+            logger.warning("⚠️ No current user - showing 0 leads")
+        
+    except Exception as e:
+        logger.error(f"❌ Error filtering leads: {e}")
+        active_leads_qs = Lead.objects.none()
+    
+    # Get active leads with prefetch
+    active_leads = active_leads_qs.prefetch_related('requirements') if active_leads_qs else Lead.objects.none()
+    
+    # Build leads data for template
+    leads_data = []
+    for lead in active_leads:
+        # Build requirements list
+        requirements_list = []
+        if hasattr(lead, 'requirements'):
+            for req in lead.requirements.all():
+                # Determine status based on lead status
+                item_status = 'pending'
+                if lead.status in ['Follow-up Required', 'Not Attented', 'On Hold']:
+                    item_status = 'follow-up'
+                elif lead.status == 'Proposal Sent':
+                    item_status = 'proposal'
+                elif lead.status == 'Accepted':
+                    item_status = 'accepted'
+                elif lead.status == 'Active':
+                    item_status = 'new'
+                
+                requirements_list.append({
+                    'id': req.id,
+                    'name': req.item_name,
+                    'item_name': req.item_name,
+                    'qty': req.quantity,
+                    'quantity': req.quantity,
+                    'price': float(req.price) if req.price else 0,
+                    'total': float(req.total) if req.total else float(req.price or 0) * int(req.quantity or 1),
+                    'status': item_status,
+                    'unit': req.unit or 'pcs',
+                    'section': req.section or 'GENERAL'
+                })
+        
+        # Get ticket number
+        ticket_number = ''
+        if hasattr(lead, 'ticket_number') and lead.ticket_number:
+            ticket_number = lead.ticket_number
+        elif hasattr(lead, 'ticketNumber') and lead.ticketNumber:
+            ticket_number = lead.ticketNumber
+        else:
+            ticket_number = f"TKT-{lead.id:06d}"
+        
+        # Get owner name
+        owner_name = ''
+        if hasattr(lead, 'ownerName') and lead.ownerName:
+            owner_name = lead.ownerName
+        elif hasattr(lead, 'owner_name') and lead.owner_name:
+            owner_name = lead.owner_name
+        elif hasattr(lead, 'name') and lead.name:
+            owner_name = lead.name
+        else:
+            owner_name = ''
+        
+        # Get phone
+        phone = ''
+        if hasattr(lead, 'phoneNo') and lead.phoneNo:
+            phone = lead.phoneNo
+        elif hasattr(lead, 'phone') and lead.phone:
+            phone = lead.phone
+        elif hasattr(lead, 'phoneNumber') and lead.phoneNumber:
+            phone = lead.phoneNumber
+        else:
+            phone = ''
+        
+        leads_data.append({
+            'id': lead.id,
+            'ticket_number': ticket_number,
+            'owner_name': owner_name,
+            'phone': phone,
+            'requirements': requirements_list,
+            'requirements_json': json.dumps(requirements_list),
+            'status': lead.status if hasattr(lead, 'status') else '',
+        })
+    
+    logger.info(f"📋 Returning {len(leads_data)} leads for user {current_user_name}")
+    
+    context = {
+        'active_leads': leads_data,
+        'today': timezone.now().date().isoformat(),
+    }
+    
+    return render(request, 'event_form.html', context)
+
+
+# ============================================================
+# API ENDPOINT: Save follow-up data
+# ============================================================
+@csrf_exempt
+@require_http_methods(["POST"])
+def save_followup(request):
+    """
+    API endpoint to save follow-up data
+    Accepts JSON data and creates a FollowUp record
+    """
+    try:
+        data = json.loads(request.body)
+        
+        # Extract form data
+        ticket_number = data.get('ticketNumber') or data.get('ticket_number')
+        lead_id = data.get('leadId') or data.get('lead_id') or data.get('selectedLeadId')
+        follow_up_date = data.get('date') or data.get('follow_up_date')
+        contact_method = data.get('contactMethod') or data.get('contact_method')
+        reply = data.get('reply')
+        status = data.get('status')
+        notes = data.get('notes', '')
+        
+        # Get selected requirement items
+        selected_items = data.get('selectedRequirementItems') or data.get('selected_requirement_items', '')
+        
+        # Conditional fields
+        assigned_to = data.get('assignedTo') or data.get('assigned_to', '')
+        follow_up_date_next = data.get('followUpDate') or data.get('next_follow_up_date', '') or data.get('next_follow_up_date_conditional', '')
+        next_action = data.get('nextAction') or data.get('next_action', '')
+        
+        # Validate lead_id
+        if not lead_id:
+            return JsonResponse({
+                'success': False,
+                'error': 'Lead ID is required',
+                'message': 'No lead ID provided in the request'
+            }, status=400)
+        
+        # Get the lead
+        try:
+            lead = Lead.objects.get(id=lead_id)
+        except Lead.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'Lead not found',
+                'message': f'No lead found with ID {lead_id}'
+            }, status=404)
+        except ValueError:
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid lead ID',
+                'message': f'Lead ID "{lead_id}" is not valid'
+            }, status=400)
+        
+        # Get current user
+        current_user = None
+        if hasattr(request, 'user') and request.user.is_authenticated:
+            current_user = request.user
+        elif request.session.get('custom_user_id'):
+            try:
+                from app1.models import User as CustomUser
+                current_user = CustomUser.objects.get(id=request.session['custom_user_id'])
+            except:
+                pass
+        
+        # Create FollowUp record - DO NOT UPDATE LEAD STATUS
+        from .models import FollowUp
+        followup = FollowUp.objects.create(
+            lead=lead,
+            follow_up_date=follow_up_date,
+            contact_method=contact_method,
+            reply=reply,
+            status=status,  # This is the FOLLOW-UP status, not lead status
+            notes=notes if notes else None,
+            selected_requirement_items=selected_items,
+            assigned_to=assigned_to if assigned_to else None,
+            next_follow_up_date=follow_up_date_next if follow_up_date_next else None,
+            next_action=next_action if next_action else None,
+            created_by=current_user
+        )
+        
+        # 🔥 CRITICAL FIX: DO NOT change the lead status
+        # Remove or comment out any code that updates lead.status
+        
+        # Get ticket number for response
+        lead_ticket = ''
+        if hasattr(lead, 'ticket_number') and lead.ticket_number:
+            lead_ticket = lead.ticket_number
+        elif hasattr(lead, 'ticketNumber') and lead.ticketNumber:
+            lead_ticket = lead.ticketNumber
+        else:
+            lead_ticket = f"TKT-{lead.id:06d}"
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Follow-up saved successfully',
+            'data': {
+                'followup_id': followup.id,
+                'lead_id': lead.id,
+                'ticket_number': lead_ticket,
+                'followup_status': status,  # This is the follow-up status
+            }
+        })
+    
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid JSON',
+            'message': 'The request body is not valid JSON'
+        }, status=400)
+    
+    except Exception as e:
+        import traceback
+        return JsonResponse({
+            'success': False,
+            'error': str(e),
+            'traceback': traceback.format_exc(),
+            'message': 'Failed to save follow-up'
+        }, status=500)
+
+# ============================================================
+# VIEW: Event/Follow-up list page
+# ============================================================
+def event_list(request):
+    """
+    View to render the event list page with follow-ups.
+
+    Role-based visibility:
+      * '3level' (User)  -> only follow-ups they CREATED or are ASSIGNED to
+      * All other roles  -> all follow-ups including Rejected
+        (normal=Admin, admin_level=Super Admin, 4level=Superuser, 5level=Branch User)
+
+    Ticket dropdown (active leads):
+      * '3level' (User) + '5level' (Branch User) -> only their branch's active leads
+      * All other roles -> all active leads
+    """
+    from .models import FollowUp, Lead
+    import json
+    from django.utils import timezone
+    from django.db.models import Q
+    from app1.models import User
+    from purchase_order.models import Department  # Add this import
+
+    # -- 1. Resolve the current custom user ----------------------------------
+    user_level     = request.session.get('user_level', '')
+    custom_user_id = request.session.get('custom_user_id')
+
+    current_user_name      = None
+    current_user_branch_id = ''   # will hold the branch NAME for comparison
+
+    if custom_user_id:
+        try:
+            cu = User.objects.select_related('branch').filter(id=custom_user_id).first()
+            if cu:
+                current_user_name = cu.name
+                if cu.branch:
+                    # Use branch NAME so it matches lead.requirement directly
+                    current_user_branch_id = cu.branch.name or ''
+        except Exception:
+            pass
+
+    # -- 2. Base queryset filtered by role -----------------------------------
+    #
+    # created_by is a FK to Django's auth.User.
+    # request.user IS that Django user for the logged-in session.
+    # assigned_to is a plain-text CharField (stores a name string).
+    #
+    if user_level == '3level':
+        q_created  = Q(created_by=request.user) if request.user.is_authenticated else Q()
+        q_assigned = Q(assigned_to__iexact=current_user_name) if current_user_name else Q()
+
+        if request.user.is_authenticated or current_user_name:
+            followups = (
+                FollowUp.objects
+                .filter(q_created | q_assigned)
+                .select_related('lead', 'created_by')
+                .prefetch_related('lead__requirements')
+                .order_by('-follow_up_date', '-created_at')
+            )
+        else:
+            followups = FollowUp.objects.none()
+    else:
+        # UPDATED: Removed .exclude(status='Rejected') to show all follow-ups including rejected
+        followups = (
+            FollowUp.objects
+            .select_related('lead', 'created_by')
+            .prefetch_related('lead__requirements')
+            .order_by('-follow_up_date', '-created_at')
+        )
+
+    # -- 3. Annotate each followup -------------------------------------------
+    for followup in followups:
+
+        # parsed_selected_items
+        selected_items_list = []
+        if followup.selected_requirement_items:
+            try:
+                items_data = json.loads(followup.selected_requirement_items)
+
+                if isinstance(items_data, dict):
+                    if 'item_details' in items_data:
+                        for item in items_data['item_details']:
+                            if isinstance(item, dict) and 'name' in item:
+                                selected_items_list.append(item['name'])
+                    elif 'items' in items_data:
+                        for item in items_data['items']:
+                            if isinstance(item, dict) and 'name' in item:
+                                selected_items_list.append(item['name'])
+                elif isinstance(items_data, list):
+                    for item in items_data:
+                        if isinstance(item, dict):
+                            if 'name' in item:
+                                selected_items_list.append(item['name'])
+                            elif 'item_name' in item:
+                                selected_items_list.append(item['item_name'])
+                        elif isinstance(item, str):
+                            selected_items_list.append(item)
+
+            except (json.JSONDecodeError, TypeError, AttributeError) as e:
+                print(f"Error parsing selected items for followup {followup.id}: {e}")
+                raw = followup.selected_requirement_items
+                if raw and ',' in raw:
+                    selected_items_list = [i.strip() for i in raw.split(',') if i.strip()]
+
+        followup.parsed_selected_items = selected_items_list
+
+        # custom_user_name
+        if followup.created_by:
+            try:
+                custom_user = User.objects.filter(
+                    userid=followup.created_by.username
+                ).first()
+                if custom_user and custom_user.name:
+                    followup.custom_user_name = custom_user.name
+                elif custom_user and custom_user.userid:
+                    followup.custom_user_name = custom_user.userid
+                else:
+                    followup.custom_user_name = followup.created_by.username
+            except Exception as e:
+                print(f"Error getting custom user: {e}")
+                followup.custom_user_name = followup.created_by.username
+        else:
+            followup.custom_user_name = "System"
+            
+        # ========== Branch information for row-level filtering ==========
+        # Use lead.requirement directly as the branch name (same value as User.branch.name)
+        followup.branch_id = ''
+        if followup.lead and followup.lead.requirement:
+            followup.branch_id = followup.lead.requirement
+
+    # -- 4. Active leads for the create-form dropdown ------------------------
+    active_leads = Lead.objects.filter(
+        status__in=['Active', 'New', 'Follow-up Required', 'Not Attended', 'Proposal Sent', 'On Hold']
+    ).select_related('created_by__branch').prefetch_related('requirements').order_by('-created_at')
+
+    leads_data = []
+    for lead in active_leads:
+        requirements_list = []
+        if hasattr(lead, 'requirements'):
+            for req in lead.requirements.all():
+                item_status = 'pending'
+                if lead.status in ['Follow-up Required', 'Not Attended', 'On Hold']:
+                    item_status = 'follow-up'
+                elif lead.status == 'Proposal Sent':
+                    item_status = 'proposal'
+                elif lead.status == 'Accepted':
+                    item_status = 'accepted'
+
+                requirements_list.append({
+                    'id':        req.id,
+                    'name':      req.item_name,
+                    'item_name': req.item_name,
+                    'qty':       req.quantity,
+                    'quantity':  req.quantity,
+                    'price':     float(req.price) if req.price else 0,
+                    'total':     float(req.total) if req.total else float(req.price or 0) * int(req.quantity or 1),
+                    'status':    item_status,
+                    'unit':      req.unit or 'pcs',
+                    'section':   req.section or 'GENERAL',
+                })
+
+        if hasattr(lead, 'ticket_number') and lead.ticket_number:
+            ticket_number = lead.ticket_number
+        elif hasattr(lead, 'ticketNumber') and lead.ticketNumber:
+            ticket_number = lead.ticketNumber
+        else:
+            ticket_number = f"TKT-{lead.id:06d}"
+
+        if hasattr(lead, 'ownerName') and lead.ownerName:
+            owner_name = lead.ownerName
+        elif hasattr(lead, 'owner_name') and lead.owner_name:
+            owner_name = lead.owner_name
+        elif hasattr(lead, 'name') and lead.name:
+            owner_name = lead.name
+        else:
+            owner_name = ''
+
+        if hasattr(lead, 'phoneNo') and lead.phoneNo:
+            phone = lead.phoneNo
+        elif hasattr(lead, 'phone') and lead.phone:
+            phone = lead.phone
+        elif hasattr(lead, 'phoneNumber') and lead.phoneNumber:
+            phone = lead.phoneNumber
+        else:
+            phone = ''
+
+        # Use lead.requirement directly as branch name —
+        # matches User.branch.name used in current_user_branch_id above.
+        lead_branch_id = lead.requirement or '' if hasattr(lead, 'requirement') else ''
+
+        leads_data.append({
+            'id':                lead.id,
+            'ticket_number':     ticket_number,
+            'owner_name':        owner_name,
+            'phone':             phone,
+            'requirements':      requirements_list,
+            'requirements_json': json.dumps(requirements_list),
+            'status':            lead.status if hasattr(lead, 'status') else '',
+            'branch_id':         lead_branch_id,  # ← branch NAME, matched against User.branch.name
+        })
+
+    # -- 5. Active users for the assign-to dropdown --------------------------
+    active_users = []
+    try:
+        users = User.objects.filter(status='active').order_by('name')
+        for user in users:
+            display_name = (
+                getattr(user, 'name', None)
+                or (user.get_full_name() if hasattr(user, 'get_full_name') else None)
+                or getattr(user, 'username', None)
+                or getattr(user, 'email', None)
+                or f"User {user.id}"
+            )
+
+            class SimpleUser:
+                def __init__(self, name, user_id):
+                    self.name = name
+                    self.id   = user_id
+
+            active_users.append(SimpleUser(display_name, user.id))
+    except Exception as e:
+        print(f"Error fetching users: {e}")
+        
+    # -- 6. Get all branches for filter dropdown ----------------------------
+    branches = []
+    try:
+        branches = Department.objects.filter(is_active=True).order_by('name')
+    except Exception as e:
+        print(f"Error fetching branches: {e}")
+
+    # -- 7. Calculate month start and end dates ----------------------------
+    from datetime import datetime, timedelta
+    today = timezone.now().date()
+    
+    # Month start (first day of current month)
+    month_start = today.replace(day=1)
+    
+    # Month end (last day of current month)
+    if today.month == 12:
+        month_end = today.replace(year=today.year + 1, month=1, day=1) - timedelta(days=1)
+    else:
+        month_end = today.replace(month=today.month + 1, day=1) - timedelta(days=1)
+
+    # -- 8. Context ----------------------------------------------------------
+    context = {
+        'followups':              followups,
+        'active_leads':           leads_data,
+        'active_users':           active_users,
+        'today':                  today.isoformat(),
+        'month_start':            month_start.isoformat(),
+        'month_end':              month_end.isoformat(),
+        'branches':               branches,
+
+        # Role-visibility helpers used in the template banner
+        'is_filtered_user':       user_level == '3level',
+        'current_user_name':      current_user_name or '',
+
+        # Branch-based ticket filtering in the dropdown:
+        # '3level' (User) + '5level' (Branch User) see only their branch's leads.
+        # current_user_branch_id is the branch NAME (e.g. "IMC BUSINESS SOLUTIONS")
+        # which matches lead.requirement stored on each lead.
+        'current_user_level':     user_level,
+        'current_user_branch_id': current_user_branch_id,
+    }
+
+    return render(request, 'event_list.html', context)
+
+def get_followup(request):
+    """Get follow-up details for editing"""
+    try:
+        followup_id = request.GET.get('id')
+        if not followup_id:
+            return JsonResponse({'success': False, 'message': 'Follow-up ID is required'})
+        
+        followup = get_object_or_404(FollowUp, id=followup_id)
+        
+        # Parse selected items if stored as JSON
+        selected_items = []
+        if followup.selected_items:
+            try:
+                items_data = json.loads(followup.selected_items)
+                if isinstance(items_data, dict) and 'item_details' in items_data:
+                    selected_items = [item.get('name') for item in items_data['item_details']]
+                elif isinstance(items_data, list):
+                    selected_items = items_data
+            except:
+                selected_items = []
+        
+        data = {
+            'id': followup.id,
+            'ticket_number': followup.lead.ticket_number if followup.lead else '',
+            'lead_id': followup.lead.id if followup.lead else '',
+            'follow_up_date': followup.follow_up_date.isoformat() if followup.follow_up_date else '',
+            'contact_method': followup.contact_method,
+            'status': followup.status,
+            'reply': followup.reply,
+            'notes': followup.notes,
+            'next_action': followup.next_action,
+            'next_follow_up_date': followup.next_follow_up_date.isoformat() if followup.next_follow_up_date else '',
+            'assigned_to': followup.assigned_to,
+            'selected_items': selected_items
+        }
+        
+        return JsonResponse({'success': True, 'followup': data})
+        
+    except Exception as e:
+        logger.error(f"Error getting follow-up: {str(e)}")
+        return JsonResponse({'success': False, 'message': str(e)})
+@csrf_exempt
+@require_POST
+def update_followup(request):
+    """Update existing follow-up"""
+    try:
+        data = json.loads(request.body)
+        followup_id = data.get('follow_up_id')
+        
+        if not followup_id:
+            return JsonResponse({'success': False, 'error': 'Follow-up ID is required'})
+        
+        followup = get_object_or_404(FollowUp, id=followup_id)
+        
+        # Update fields
+        followup.follow_up_date = data.get('follow_up_date', followup.follow_up_date)
+        followup.contact_method = data.get('contact_method', followup.contact_method)
+        followup.status = data.get('status', followup.status)
+        followup.reply = data.get('reply', followup.reply)
+        followup.notes = data.get('notes', followup.notes)
+        followup.next_action = data.get('next_action', followup.next_action)
+        
+        # Handle next follow-up date - check multiple possible field names
+        next_date = data.get('next_follow_up_date_conditional') or data.get('next_follow_up_date') or data.get('follow_up_date_next')
+        if next_date:
+            followup.next_follow_up_date = next_date
+        
+        followup.assigned_to = data.get('assigned_to', followup.assigned_to)
+        followup.selected_requirement_items = data.get('selected_requirement_items', followup.selected_requirement_items)
+        
+        followup.save()
+        
+        return JsonResponse({'success': True, 'message': 'Follow-up updated successfully'})
+        
+    except Exception as e:
+        logger.error(f"Error updating follow-up: {str(e)}")
+        return JsonResponse({'success': False, 'error': str(e)})
+
+@csrf_exempt
+@require_POST
+def delete_followup(request):
+    """Delete follow-up"""
+    try:
+        data = json.loads(request.body)
+        followup_id = data.get('follow_up_id')
+        
+        if not followup_id:
+            return JsonResponse({'success': False, 'error': 'Follow-up ID is required'})
+        
+        followup = get_object_or_404(FollowUp, id=followup_id)
+        followup.delete()
+        
+        return JsonResponse({'success': True, 'message': 'Follow-up deleted successfully'})
+        
+    except Exception as e:
+        logger.error(f"Error deleting follow-up: {str(e)}")
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def event_edit(request, pk):
+    """
+    View to render the edit follow-up page
+    """
+    from .models import FollowUp, Lead, RequirementItem
+    from app1.models import User
+    import json
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    # Get the follow-up to edit
+    followup = get_object_or_404(FollowUp.objects.select_related('lead'), pk=pk)
+    
+    # Get active leads for dropdown
+    active_leads = Lead.objects.filter(
+        status__in=['Active', 'New', 'Follow-up Required', 'Not Attended', 'Proposal Sent', 'On Hold']
+    ).prefetch_related('requirements').order_by('-created_at')
+    
+    # Prepare leads data with requirements
+    leads_data = []
+    for lead in active_leads:
+        requirements_list = []
+        if hasattr(lead, 'requirements'):
+            for req in lead.requirements.all():
+                # Determine status based on lead status
+                item_status = 'pending'
+                if lead.status in ['Follow-up Required', 'Not Attended', 'On Hold']:
+                    item_status = 'follow-up'
+                elif lead.status == 'Proposal Sent':
+                    item_status = 'proposal'
+                elif lead.status == 'Accepted':
+                    item_status = 'accepted'
+                
+                requirements_list.append({
+                    'id': req.id,
+                    'name': req.item_name,
+                    'item_name': req.item_name,
+                    'qty': req.quantity,
+                    'quantity': req.quantity,
+                    'price': float(req.price) if req.price else 0,
+                    'total': float(req.total) if req.total else float(req.price or 0) * int(req.quantity or 1),
+                    'status': item_status,
+                    'unit': req.unit or 'pcs',
+                    'section': req.section or 'GENERAL'
+                })
+        
+        # Get ticket number
+        ticket_number = getattr(lead, 'ticket_number', f"TKT-{lead.id:06d}")
+        
+        # Get owner name
+        owner_name = getattr(lead, 'ownerName', getattr(lead, 'owner_name', getattr(lead, 'name', '')))
+        
+        # Get phone
+        phone = getattr(lead, 'phoneNo', getattr(lead, 'phone', getattr(lead, 'phoneNumber', '')))
+        
+        leads_data.append({
+            'id': lead.id,
+            'ticket_number': ticket_number,
+            'owner_name': owner_name,
+            'phone': phone,
+            'requirements_json': json.dumps(requirements_list)
+        })
+    
+    # FIXED: Parse selected items from followup - use selected_requirement_items, not selected_items
+    selected_items_data = []
+    if followup.selected_requirement_items:
+        try:
+            items_data = json.loads(followup.selected_requirement_items)
+            if isinstance(items_data, dict):
+                # Handle structure: {"count": X, "total": Y, "item_details": [...]}
+                if 'item_details' in items_data:
+                    selected_items_data = items_data['item_details']
+                # Handle structure: {"items": [...]}
+                elif 'items' in items_data:
+                    selected_items_data = items_data['items']
+                else:
+                    # If it's a dict but doesn't have expected keys, convert to list if possible
+                    selected_items_data = [items_data]
+            elif isinstance(items_data, list):
+                selected_items_data = items_data
+            else:
+                selected_items_data = []
+                
+            logger.info(f"✅ Parsed {len(selected_items_data)} selected items from followup")
+        except json.JSONDecodeError as e:
+            logger.error(f"❌ Error parsing selected items JSON: {e}")
+            # If parsing fails, try to use the raw string if it looks like a comma-separated list
+            if followup.selected_requirement_items and ',' in followup.selected_requirement_items:
+                selected_items_data = [{'name': item.strip()} for item in followup.selected_requirement_items.split(',') if item.strip()]
+            else:
+                selected_items_data = []
+        except Exception as e:
+            logger.error(f"❌ Unexpected error parsing selected items: {e}")
+            selected_items_data = []
+    else:
+        logger.info("ℹ️ No selected requirement items found")
+    
+    # Get active users for assignment dropdown
+    active_users = []
+    try:
+        users = User.objects.filter(status='active').order_by('name')
+        for user in users:
+            class SimpleUser:
+                def __init__(self, name, user_id):
+                    self.name = name
+                    self.id = user_id
+            active_users.append(SimpleUser(
+                getattr(user, 'name', f"User {user.id}"),
+                user.id
+            ))
+        logger.info(f"✅ Loaded {len(active_users)} active users")
+    except Exception as e:
+        logger.error(f"Error fetching users: {e}")
+        # Fallback sample users
+        sample_names = ["John Doe", "Jane Smith", "Mike Johnson"]
+        for i, name in enumerate(sample_names, 1):
+            class SimpleUser:
+                def __init__(self, name, user_id):
+                    self.name = name
+                    self.id = user_id
+            active_users.append(SimpleUser(name, i))
+    
+    context = {
+        'followup': followup,
+        'active_leads': leads_data,
+        'active_users': active_users,
+        'selected_items_data': json.dumps(selected_items_data),
+    }
+    
+    logger.info(f"🚀 Rendering edit page for followup {pk}")
+    return render(request, 'event_edit.html', context)
+

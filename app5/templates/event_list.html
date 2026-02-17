@@ -1,0 +1,2309 @@
+{% extends "base.html" %}
+
+{% block title %}Lead Report{% endblock %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Follow-up Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* MODERN REDESIGN - CLEAN, PROFESSIONAL, MODERN */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f0f5fa;
+            min-height: 100vh;
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .main-wrapper {
+            max-width: 100%;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 0.75rem;
+        }
+
+        /* MODERN FILTER BAR */
+        .filter-bar {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+            padding: 1.2rem 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 1rem;
+            border: 1px solid #edf2f7;
+            flex-shrink: 0;
+        }
+
+        .filter-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+            min-width: 150px;
+        }
+
+        .filter-item label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #070707;
+        }
+
+        .filter-field, .filter-select {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 0.6rem 0.8rem;
+            font-size: 0.85rem;
+            color: #1e293b;
+            transition: all 0.2s;
+        }
+
+        .filter-field:focus, .filter-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            background: white;
+        }
+
+        .filter-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-left: auto;
+        }
+
+        /* MODERN BUTTONS */
+        .btn {
+            border-radius: 8px;
+            padding: 0.6rem 1.2rem;
+            font-weight: 500;
+            font-size: 0.85rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-filter {
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+
+        .btn-filter:hover {
+            background: #e2e8f0;
+        }
+
+        .btn-clear {
+            background: white;
+            border: 1px solid #e2e8f0;
+            color: #0c0c0c;
+        }
+
+        .btn-clear:hover {
+            background: #f8fafc;
+            border-color: #94a3b8;
+        }
+
+        .create-btn {
+            border-radius: 8px;
+            background: #0f6a33;
+            color: white;
+            padding: 0.6rem 1.5rem;
+            font-weight: 600;
+            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
+        }
+
+        .create-btn:hover {
+            background: #0f6a33;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(59, 130, 246, 0.25);
+        }
+
+        /* PAGINATION CONTROLS */
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            background: white;
+            border-radius: 12px;
+            padding: 0.8rem 1.2rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+            border: 1px solid #edf2f7;
+            flex-shrink: 0;
+        }
+
+        .rows-per-page {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            font-size: 0.85rem;
+        }
+
+        .rows-per-page select {
+            padding: 0.4rem 2rem 0.4rem 0.8rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234b5563' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 0.5rem center;
+            appearance: none;
+            cursor: pointer;
+        }
+
+        .rows-per-page select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .page-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .page-btn {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #334155;
+            min-width: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .page-btn:hover:not(:disabled) {
+            background: #f1f5f9;
+            border-color: #94a3b8;
+        }
+
+        .page-btn.active {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .page-info {
+            margin: 0 0.5rem;
+            color: #334155;
+            font-size: 0.85rem;
+        }
+
+        /* MODERN TABLE CONTAINER - FULL SCREEN FIT */
+        .table-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.02);
+            padding: 0;
+            overflow-x: auto;
+            overflow-y: auto;
+            border: 1px solid #edf2f7;
+            flex: 1;
+            min-height: 0;
+            position: relative;
+        }
+
+        /* Custom scrollbar styling */
+        .table-container::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .table-container::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+
+        .table-container::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 10px;
+            border: 2px solid #f1f5f9;
+        }
+
+        .table-container::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            min-width: 1200px;
+        }
+
+        th {
+            background-color: rgb(8, 8, 8);
+            text-align: left;
+            padding: 0.8rem 0.8rem;
+            font-weight: 600;
+            color: #fdfcfc;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        td {
+            padding: 0.8rem 0.8rem;
+            border-bottom: 1px solid #f1f5f9;
+            color: #1e293b;
+            vertical-align: top;
+        }
+
+        tr:hover td {
+            background-color: #f8fafc;
+        }
+
+        /* MODERN TICKET ID */
+        .ticket-id {
+            font-weight: 600;
+            color: #0f172a;
+            background: #d1e6fa;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            display: inline-block;
+            letter-spacing: -0.01em;
+        }
+
+        .created-by {
+            margin-top: 0.3rem;
+            font-size: 0.75rem;
+        }
+
+        .created-date {
+            color: #64748b;
+            font-size: 0.7rem;
+        }
+
+        /* MODERN STATUS BADGES */
+        .status-badge {
+            display: inline-block;
+            padding: 0.2rem 0.8rem;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+            white-space: nowrap;
+        }
+
+        .status-accepted { 
+            background: #e6f7e6; 
+            color: #0b5e0b; 
+        }
+        .status-followup { 
+            background: #fff7e5; 
+            color: #b45b0a; 
+        }
+        .status-proposal { 
+            background: #e5f0ff; 
+            color: #0047ab; 
+        }
+        .status-hold { 
+            background: #fff0d9; 
+            color: #9e5f00; 
+        }
+        .status-rejected { 
+            background: #ffe5e5; 
+            color: #b01b1b; 
+        }
+
+        /* MODERN REPLY CELL */
+        .reply-cell {
+            max-width: 150px;
+        }
+        
+        .reply-preview {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .view-reply-btn {
+            background: #f1f5f9;
+            border: none;
+            color: #3b82f6;
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        
+        .view-reply-btn:hover {
+            background: #3b82f6;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        /* MODERN SELECTED ITEMS */
+        .selected-items-cell {
+            max-width: 250px;
+        }
+
+        .selected-items-compact {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 3px;
+        }
+
+        .compact-item {
+            background: #f1f5f9;
+            color: #1e293b;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            white-space: nowrap;
+            max-width: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .more-items-badge {
+            background: #e2e8f0;
+            color: #475569;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .selected-items-list {
+            max-height: 150px;
+            overflow-y: auto;
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 8px;
+            margin-top: 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .item-badge {
+            background: #10b981;
+            color: white;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 6px;
+            font-size: 0.6rem;
+            flex-shrink: 0;
+        }
+
+        .details-toggle-btn {
+            background: none;
+            border: 1px solid #e2e8f0;
+            color: #64748b;
+            font-size: 0.65rem;
+            padding: 3px 8px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-top: 4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+
+        .details-toggle-btn:hover {
+            background: #f1f5f9;
+            border-color: #94a3b8;
+            color: #1e293b;
+        }
+
+        /* MODERN NEXT ACTION */
+        .next-action-cell {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 0.6rem !important;
+        }
+        
+        .next-action-item {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            margin-bottom: 3px;
+            font-size: 0.8rem;
+        }
+        
+        .next-action-label {
+            font-weight: 600;
+            color: #64748b;
+            min-width: 60px;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+        }
+        
+        .next-action-value {
+            color: #1e293b;
+            font-weight: 500;
+        }
+        
+        .next-action-date {
+            font-weight: 600;
+            color: #3b82f6;
+            background: #e5f0ff;
+            padding: 2px 6px;
+            border-radius: 20px;
+            font-size: 0.65rem;
+        }
+        
+        .no-action {
+            color: #94a3b8;
+            font-style: italic;
+            font-size: 0.75rem;
+        }
+
+        /* MODERN ACTION BUTTONS */
+        .action-buttons {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        
+        .action-btn {
+            background: none;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            font-size: 0.8rem;
+        }
+        
+        .edit-btn {
+            color: #3b82f6;
+            background: #e5f0ff;
+        }
+        
+        .edit-btn:hover {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .delete-btn {
+            color: #ef4444;
+            background: #fee2e2;
+        }
+        
+        .delete-btn:hover {
+            background: #ef4444;
+            color: white;
+        }
+
+        /* MODERN MODALS */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 1.5rem;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 2rem;
+            position: relative;
+        }
+
+        .close-modal-btn {
+            position: absolute;
+            top: 1.2rem;
+            right: 1.2rem;
+            background: #f1f5f9;
+            border: none;
+            font-size: 1.2rem;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            transition: all 0.2s;
+        }
+
+        .close-modal-btn:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        /* MODERN REPLY MODAL */
+        .reply-modal-header h2 {
+            color: #0f172a;
+            font-size: 1.4rem;
+            margin-bottom: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .reply-meta {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            background: #f8fafc;
+            padding: 1.2rem;
+            border-radius: 16px;
+            margin-bottom: 1.2rem;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .meta-label {
+            font-size: 0.65rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            margin-bottom: 0.2rem;
+        }
+        
+        .meta-value {
+            font-weight: 600;
+            color: #0f172a;
+            font-size: 0.9rem;
+        }
+        
+        .section-label {
+            font-size: 0.85rem;
+            color: #334155;
+            font-weight: 600;
+            margin-bottom: 0.6rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .reply-content, .notes-content {
+            background: #f8fafc;
+            padding: 1.2rem;
+            border-radius: 12px;
+            border-left: 4px solid #3b82f6;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #1e293b;
+            white-space: pre-wrap;
+        }
+        
+        .notes-content {
+            border-left-color: #f59e0b;
+        }
+
+        /* MODERN FORM STYLES */
+        .form-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-header h1 {
+            color: #0f172a;
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+        }
+
+        .form-header p {
+            color: #64748b;
+            font-size: 1rem;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #0f172a;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: #3b82f6;
+            border-radius: 2px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-row-two {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-row-three {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 0.8rem;
+        }
+
+        label {
+            display: block;
+            color: #334155;
+            font-weight: 500;
+            margin-bottom: 0.4rem;
+            font-size: 0.85rem;
+        }
+
+        label .required {
+            color: #ef4444;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-family: inherit;
+            background: white;
+            transition: all 0.2s;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        input:read-only, textarea:read-only {
+            background-color: #f8fafc;
+            color: #64748b;
+        }
+
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 0.6rem;
+            background: #f8fafc;
+            padding: 0.8rem;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 0.6rem;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .checkbox-item:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            margin-right: 10px;
+            margin-top: 2px;
+            accent-color: #3b82f6;
+        }
+
+        .selected-count-badge {
+            background: #3b82f6;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-left: 1rem;
+        }
+
+        #conditionalFields {
+            background: #f8fafc;
+            padding: 1.2rem;
+            border-radius: 10px;
+            margin: 0.8rem 0;
+            border: 1px solid #e2e8f0;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            justify-content: center;
+        }
+
+        .form-btn {
+            padding: 0.6rem 1.8rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-submit {
+            background: #0f6a33;
+            color: white;
+            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
+        }
+
+        .btn-submit:hover {
+            background: #0f6a33;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(59, 130, 246, 0.25);
+        }
+
+        .btn-reset {
+            background: #f1f5f9;
+            color: #090909;
+        }
+
+        .btn-reset:hover {
+            background: #e2e8f0;
+            color: #0a0a0a;
+        }
+
+        /* SUCCESS MESSAGE */
+        .success-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+            opacity: 0;
+            transform: translateX(400px);
+            transition: all 0.3s ease;
+            z-index: 2000;
+            font-weight: 500;
+        }
+
+        .success-message.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* RESULT COUNT */
+        .result-count {
+            margin-bottom: 0.8rem;
+            color: #334155;
+            font-weight: 500;
+            font-size: 0.85rem;
+            background: white;
+            padding: 0.4rem 1rem;
+            border-radius: 30px;
+            display: inline-block;
+            border: 1px solid #e2e8f0;
+            flex-shrink: 0;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 1200px) {
+            .filter-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .filter-actions {
+                margin-left: 0;
+                justify-content: flex-end;
+            }
+            
+            .filter-item {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-wrapper">
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+            <div class="filter-item">
+                
+                <input type="text" class="filter-field" id="searchAll" placeholder="Search...">
+            </div>
+            <div class="filter-item">
+               
+                <input type="date" class="filter-field" id="startDate" value="{{ month_start }}">
+            </div>
+            <div class="filter-item">
+                
+                <input type="date" class="filter-field" id="endDate" value="{{ month_end }}">
+            </div>
+            <div class="filter-item">
+               
+                <select class="filter-select" id="filterFollowup">
+                    <option value="all">All</option>
+                    <option value="Follow-up Required" selected>Follow-up Required</option>
+                    <option value="Accepted">Accepted</option>
+                    <option value="Proposal Sent">Proposal Sent</option>
+                    <option value="On Hold">On Hold</option>
+                    <option value="Rejected">Rejected</option>
+                </select>
+            </div>
+            <div class="filter-item">
+               
+                <select class="filter-select" id="branchFilter">
+                    <option value="all">All Branches</option>
+                    {% for branch in branches %}
+                    <option value="{{ branch.id }}">{{ branch.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-actions">
+                <button class="btn btn-clear" id="clearBtn"><i class="fas fa-times"></i> Clear</button>
+                <button class="create-btn" id="openModalBtn"><i class="fas fa-plus"></i> Create Follow-Up</button>
+            </div>
+        </div>
+
+        <!-- Results Count -->
+        <div class="result-count" id="resultCount">
+            📋 <span id="totalRecords">{{ followups|length }}</span> follow-ups
+        </div>
+
+        <!-- Table Container - Full Screen Fit -->
+        <div class="table-container" id="tableContainer">
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>Ticket No:</th>
+                        <th>Customer Name</th>
+                        <th>Status</th>
+                        <th>Customer Reply</th>
+                        <th>Contact Method</th>
+                        <th>Selected Items</th>
+                        <th>Next Action</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    {% for followup in followups %}
+                    <tr data-created="{{ followup.created_at|date:'Y-m-d' }}"
+                        data-followup="{{ followup.follow_up_date|date:'Y-m-d' }}"
+                        data-ticket="{{ followup.lead.ticket_number }}"
+                        data-status="{{ followup.status }}"
+                        data-followup-id="{{ followup.id }}"
+                        data-branch="{{ followup.branch_id|default:'' }}">
+                        <td>
+                            <span class="ticket-id">{{ followup.lead.ticket_number }}</span>
+                            <div class="created-by">
+                                <strong>👤 {{ followup.custom_user_name|default:"Unknown" }}</strong>
+                                <div class="created-date">
+                                    {{ followup.created_at|date:'M d, Y' }}
+                                    <small>{{ followup.created_at|date:'h:i A' }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <strong>{{ followup.lead.ownerName|default:"N/A" }}</strong>
+                            {% if followup.lead.phoneNo %}
+                                <br><small style="color: #6c757d;">📞 {{ followup.lead.phoneNo }}</small>
+                            {% endif %}
+                        </td>
+                       
+                        <td>
+                            {% if followup.status == 'Accepted' %}
+                                <span class="status-badge status-accepted">✅ Accepted</span>
+                            {% elif followup.status == 'Follow-up Required' %}
+                                <span class="status-badge status-followup">🔄 Follow-up Required</span>
+                            {% elif followup.status == 'Proposal Sent' %}
+                                <span class="status-badge status-proposal">📄 Proposal Sent</span>
+                            {% elif followup.status == 'On Hold' %}
+                                <span class="status-badge status-hold">⏸️ On Hold</span>
+                            {% elif followup.status == 'Rejected' %}
+                                <span class="status-badge status-rejected">🚫 Rejected</span>
+                            {% else %}
+                                {{ followup.status }}
+                            {% endif %}
+                        </td>
+                        <td class="reply-cell">
+                            <div class="reply-preview">
+                                <button class="view-reply-btn" onclick="showReplyModal(
+                                    '{{ followup.lead.ownerName|escapejs }}',
+                                    '{{ followup.lead.ticket_number|escapejs }}',
+                                    '{{ followup.follow_up_date|date:"Y-m-d" }}',
+                                    '{{ followup.status|escapejs }}',
+                                    '{{ followup.reply|escapejs }}',
+                                    '{{ followup.notes|escapejs }}',
+                                    '{{ followup.contact_method|escapejs }}',
+                                    '{{ followup.custom_user_name|default:"Unknown"|escapejs }}',
+                                    '{{ followup.assigned_to|default:""|escapejs }}',
+                                    '{{ followup.next_action|default:""|escapejs }}',
+                                    '{{ followup.next_follow_up_date|date:"Y-m-d"|default:"" }}',
+                                    {{ followup.parsed_selected_items|default:"[]"|safe }}
+                                )" title="View full reply">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="compact-item">{{ followup.contact_method|default:"-" }}</span>
+                        </td>
+                        
+                        <!-- SELECTED ITEMS COLUMN -->
+                        <td>
+                            <div class="selected-items-cell">
+                                {% with selected_items=followup.parsed_selected_items %}
+                                    {% if selected_items and selected_items|length > 0 %}
+                                        <!-- Compact view (badges) -->
+                                        <div class="selected-items-compact">
+                                            {% for item in selected_items|slice:":4" %}
+                                                <span class="compact-item" title="{{ item }}">
+                                                    {{ item|truncatechars:12 }}
+                                                </span>
+                                            {% endfor %}
+                                            {% if selected_items|length > 4 %}
+                                                <span class="more-items-badge" title="{% for item in selected_items %}{% if forloop.counter > 4 %}{{ item }}{% if not forloop.last %}, {% endif %}{% endif %}{% endfor %}">
+                                                    +{{ selected_items|length|add:"-4" }}
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <!-- Detailed list view (hidden by default) -->
+                                        <div class="selected-items-list" id="items-list-{{ followup.id }}" style="display: none;">
+                                            {% for item in selected_items %}
+                                                <div style="display: flex; align-items: center; margin-bottom: 6px; padding: 3px 0; border-bottom: 1px dashed #e9ecef;">
+                                                    <span class="item-badge">✓</span>
+                                                    <span style="flex: 1; word-break: break-word; font-size: 0.8rem;">{{ item }}</span>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                        
+                                        
+                                    {% else %}
+                                        <span style="color: #94a3b8; font-style: italic;">— No items —</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                        </td>
+                        
+                        <!-- Next Action column -->
+                        <td class="next-action-cell">
+                            {% if followup.next_action or followup.next_follow_up_date or followup.assigned_to or followup.status == 'Follow-up Required' %}
+                                {% if followup.next_action %}
+                                <div class="next-action-item">
+                                    <span class="next-action-label">Action:</span>
+                                    <span class="next-action-value"><strong>{{ followup.next_action|truncatechars:15 }}</strong></span>
+                                </div>
+                                {% endif %}
+                                
+                                {% if followup.next_follow_up_date %}
+                                <div class="next-action-item">
+                                    <span class="next-action-label">Follow-up:</span>
+                                    <span class="next-action-value">
+                                        <span class="next-action-date">{{ followup.next_follow_up_date|date:'M d' }}</span>
+                                    </span>
+                                </div>
+                                {% endif %}
+                                
+                                {% if followup.assigned_to %}
+                                <div class="next-action-item">
+                                    <span class="next-action-label">Assigned:</span>
+                                    <span class="next-action-value">{{ followup.assigned_to|truncatechars:12 }}</span>
+                                </div>
+                                {% endif %}
+                                
+                                {% if not followup.next_action and not followup.next_follow_up_date and not followup.assigned_to %}
+                                <div class="next-action-item">
+                                    <span class="next-action-label">Status:</span>
+                                    <span class="next-action-value">{{ followup.status|truncatechars:12 }}</span>
+                                </div>
+                                {% endif %}
+                            {% else %}
+                                <div class="no-action">— No action —</div>
+                            {% endif %}
+                        </td>
+                        
+                        <td>
+                            <div class="action-buttons">
+                                <a href="{% url 'app5:event_edit' followup.id %}" class="action-btn edit-btn" title="Edit Follow-up">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button class="action-btn delete-btn" onclick="deleteFollowUp('{{ followup.id }}', '{{ followup.lead.ticket_number }}')" title="Delete Follow-up">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" style="text-align: center; color: #94a3b8; padding: 2rem;">
+                            <div style="font-size: 1.1em; margin-bottom: 8px;">📭 No follow-ups found</div>
+                            <p style="color: #94a3b8;">Create your first follow-up using the "Create Follow-Up" button above.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="pagination-container">
+            <div class="rows-per-page">
+                <label for="rowsPerPage">page:</label>
+                <select id="rowsPerPage">
+                    <option value="10">10</option>
+                    <option value="25" selected>25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                    <option value="all">All</option>
+                </select>
+            </div>
+            <div class="page-controls">
+                <button class="page-btn" id="firstPage" disabled><i class="fas fa-angle-double-left"></i></button>
+                <button class="page-btn" id="prevPage" disabled><i class="fas fa-angle-left"></i></button>
+                <span class="page-info" id="pageInfo">Page 1 of 1</span>
+                <button class="page-btn" id="nextPage" disabled><i class="fas fa-angle-right"></i></button>
+                <button class="page-btn" id="lastPage" disabled><i class="fas fa-angle-double-right"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reply View Modal -->
+    <div class="modal-overlay" id="replyModal">
+        <div class="modal-content large" id="replyModalContent">
+            <button class="close-modal-btn" onclick="closeReplyModal()">×</button>
+            
+            <div class="reply-modal-header">
+                <h2><i class="fas fa-comment-dots" style="color: #3b82f6; margin-right: 10px;"></i>Follow-up Details</h2>
+            </div>
+            
+            <div class="reply-meta" id="replyMeta">
+                <!-- Will be filled by JavaScript -->
+            </div>
+            
+            <div class="reply-section">
+                <div class="section-label">
+                    <i class="fas fa-reply"></i> Customer Reply
+                </div>
+                <div class="reply-content" id="fullReply">
+                    <!-- Will be filled by JavaScript -->
+                </div>
+            </div>
+            
+            <!-- Selected Items Section -->
+            <div class="reply-section" id="selectedItemsSection" style="display: none;">
+                <div class="section-label">
+                    <i class="fas fa-check-circle" style="color: #10b981;"></i> Selected Items
+                </div>
+                <div class="reply-content" id="selectedItemsList" style="background: #f0f9f0; border-left-color: #10b981;">
+                    <!-- Will be filled by JavaScript -->
+                </div>
+            </div>
+            
+            <div class="reply-section" id="notesSection" style="display: none;">
+                <div class="section-label">
+                    <i class="fas fa-sticky-note"></i> Additional Notes
+                </div>
+                <div class="notes-content" id="fullNotes">
+                    <!-- Will be filled by JavaScript -->
+                </div>
+            </div>
+            
+            <div class="reply-section" id="nextActionSection" style="display: none;">
+                <div class="section-label">
+                    <i class="fas fa-calendar-check"></i> Next Action Details
+                </div>
+                <div class="reply-content" id="nextActionDetails" style="background: #e5f0ff; border-left-color: #3b82f6;">
+                    <!-- Will be filled by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create/Edit Follow-Up Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-content">
+            <button class="close-modal-btn" id="closeModalBtn">×</button>
+            
+            <div class="form-header">
+                <h1 id="modalTitle">Lead Follow-Up</h1>
+                <p id="modalSubtitle">Track and manage customer interactions</p>
+            </div>
+
+            <form id="followUpForm">
+                {% csrf_token %}
+                
+                <!-- Hidden fields for current user context (branch-based ticket filtering) -->
+                <input type="hidden" id="currentUserLevel" value="{{ current_user_level }}">
+                <input type="hidden" id="currentUserBranchId" value="{{ current_user_branch_id }}">
+                
+                <!-- Hidden field for follow-up ID (for edit mode) -->
+                <input type="hidden" id="followUpId" name="follow_up_id" value="">
+                
+                <!-- Lead Information -->
+                <div class="section">
+                    <div class="section-title">Lead Selection</div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Ticket Number <span class="required">*</span></label>
+                            <select id="ticketNumber" name="ticket_number" required {% if edit_mode %}disabled{% endif %}>
+                                <option value="">-- Select Active Lead Ticket --</option>
+                                {% for lead in active_leads %}
+                                <option value="{{ lead.ticket_number }}" 
+                                        data-owner="{{ lead.owner_name }}" 
+                                        data-phone="{{ lead.phone }}"
+                                        data-lead-id="{{ lead.id }}"
+                                        data-branch="{{ lead.branch_id }}"
+                                        data-req-items='{{ lead.requirements_json|safe }}'>
+                                    {{ lead.ticket_number }} - {{ lead.owner_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Date <span class="required">*</span></label>
+                            <input type="date" id="date" name="follow_up_date" value="{{ today }}" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Owner Name</label>
+                            <input type="text" id="ownerName" name="owner_name" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Phone Number</label>
+                            <input type="tel" id="phoneNumber" name="phone_number" readonly>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Requirement Items Checkboxes -->
+                <div class="section">
+                    <div class="section-title">
+                        Select Items for Follow-up 
+                        <span class="selected-count-badge" id="selectedCountBadge">0 selected (₹0.00)</span>
+                    </div>
+                    <div class="checkbox-grid" id="checkboxGrid">
+                        <div class="empty-state" style="color: #6f8f9a; padding: 0.8rem; text-align: center; font-style: italic;">
+                            ← Select a ticket to load requirement items from the lead form
+                        </div>
+                    </div>
+                    <input type="hidden" id="selectedRequirementItems" name="selected_requirement_items">
+                    <input type="hidden" id="selectedLeadId" name="lead_id">
+                </div>
+
+                <!-- Follow-up Details -->
+                <div class="section">
+                    <div class="section-title">Follow-up Details</div>
+                    
+                    <div class="form-row-two">
+                        <div class="form-group">
+                            <label>Contact Method <span class="required">*</span></label>
+                            <select id="contactMethod" name="contact_method" required>
+                                <option value="">-- Select --</option>
+                                <option value="Phone Call">📞 Phone Call</option>
+                                <option value="WhatsApp">💬 WhatsApp</option>
+                                <option value="Email">📧 Email</option>
+                                <option value="SMS">📱 SMS</option>
+                                <option value="In-Person Meeting">🤝 In-Person Meeting</option>
+                                <option value="Other">🔄 Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Status <span class="required">*</span></label>
+                            <select id="status" name="status" required onchange="toggleConditionalFields()">
+                                <option value="">-- Select --</option>
+                                <option value="Accepted">✅ Accepted</option>
+                                <option value="Follow-up Required">🔄 Follow-up Required</option>
+                                <option value="Not Attended">❌ Not Attended</option>
+                                <option value="Proposal Sent">📄 Proposal Sent</option>
+                                <option value="On Hold">⏸️ On Hold</option>
+                                <option value="Rejected">🚫 Rejected</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Customer Reply / Remarks <span class="required">*</span></label>
+                        <textarea id="reply" name="reply" rows="2" required maxlength="500" 
+                                  placeholder="Enter conversation notes or remarks"></textarea>
+                        <div class="char-counter"><span id="replyCount">0</span>/500</div>
+                    </div>
+
+                    <!-- Conditional Fields -->
+                    <div id="conditionalFields">
+                        <div class="section-title" style="color: #2c3e50;">Action Required</div>
+                        <div class="form-row-three">
+                            <div class="form-group">
+                                <label>Assigned To <span class="required">*</span></label>
+                                <select class="filter-select" id="assignedTo" name="assigned_to">
+                                    <option value="">Select User</option>
+                                    {% for user in active_users %}
+                                        <option value="{{ user.name }}">{{ user.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Next Follow-up Date <span class="required">*</span></label>
+                                <input type="date" id="conditionalFollowUpDate" name="next_follow_up_date_conditional">
+                            </div>
+                            <div class="form-group">
+                                <label>Next Action <span class="required">*</span></label>
+                                <input type="text" id="nextAction" name="next_action" placeholder="e.g., Send quotation">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Additional Notes</label>
+                        <textarea id="notes" name="notes" rows="2" maxlength="500" 
+                                  placeholder="Any additional information"></textarea>
+                        <div class="char-counter"><span id="notesCount">0</span>/500</div>
+                    </div>
+                </div>
+
+                <!-- Buttons -->
+                <div class="button-group">
+                    <button type="submit" class="form-btn btn-submit" id="submitBtn"> Save Follow-Up</button>
+                    <button type="button" class="form-btn btn-reset" onclick="clearForm()"><i class="fas fa-undo"></i> Clear Form</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal-content" style="max-width: 400px;">
+            <button class="close-modal-btn" onclick="closeDeleteModal()">×</button>
+            
+            <div style="text-align: center; padding: 15px 0;">
+                <div style="font-size: 3em; color: #ef4444; margin-bottom: 15px;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h2 style="color: #1e293b; margin-bottom: 10px;">Confirm Delete</h2>
+                <p style="color: #64748b; margin-bottom: 20px; font-size: 1em;">
+                    Delete follow-up for ticket <strong id="deleteTicketNumber"></strong>?
+                </p>
+                <p style="color: #94a3b8; margin-bottom: 20px; font-size: 0.8em;">
+                    This action cannot be undone.
+                </p>
+                <div style="display: flex; gap: 15px; justify-content: center;">
+                    <button class="btn btn-clear" onclick="closeDeleteModal()" style="padding: 8px 20px;">Cancel</button>
+                    <button class="btn" id="confirmDeleteBtn" style="background: #ef4444; color: white; padding: 8px 20px;" onclick="confirmDelete()">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Message -->
+    <div class="success-message" id="successMessage">
+        ✓ Operation completed successfully!
+    </div>
+
+    <script>
+        // =========================================================================
+        // EVENT LIST - WITH EDIT, DELETE, VIEW MODAL, BRANCH FILTER, AND PAGINATION
+        // =========================================================================
+
+        // Global variables
+        let currentDeleteId = null;
+        const modal = document.getElementById('modalOverlay');
+        const replyModal = document.getElementById('replyModal');
+        const deleteModal = document.getElementById('deleteModal');
+        const openBtn = document.getElementById('openModalBtn');
+        const closeBtn = document.getElementById('closeModalBtn');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalSubtitle = document.getElementById('modalSubtitle');
+        const submitBtn = document.getElementById('submitBtn');
+
+        // Pagination variables
+        let currentPage = 1;
+        let rowsPerPage = 25;
+        let totalRows = 0;
+        let filteredRows = [];
+
+        /**
+         * BRANCH-BASED TICKET FILTERING
+         * - 3level (User): only their branch's active leads
+         * - 5level (Branch User): only their branch's active leads
+         * - normal (Admin) / admin_level (Super Admin) / 4level (Superuser): show all
+         */
+        function filterTicketsByBranch() {
+            const userLevel = document.getElementById('currentUserLevel').value;
+            const userBranchId = document.getElementById('currentUserBranchId').value;
+            const ticketSelect = document.getElementById('ticketNumber');
+            const options = ticketSelect.querySelectorAll('option');
+
+            // These levels see only their own branch's leads
+            const branchRestrictedLevels = ['3level', '5level'];
+
+            options.forEach(function(option) {
+                if (!option.value) return; // skip placeholder option
+                if (branchRestrictedLevels.includes(userLevel)) {
+                    // Show only leads from the user's own branch
+                    const optBranch = option.getAttribute('data-branch') || '';
+                    option.hidden = (optBranch !== String(userBranchId));
+                } else {
+                    // Admin (normal) / Super Admin (admin_level) / Superuser (4level) → show all
+                    option.hidden = false;
+                }
+            });
+
+            // Reset selected value if the currently selected option is now hidden
+            const selectedOpt = ticketSelect.options[ticketSelect.selectedIndex];
+            if (selectedOpt && selectedOpt.hidden) {
+                ticketSelect.value = '';
+            }
+        }
+
+        // Toggle function for showing/hiding detailed items list
+        function toggleItemsList(followupId) {
+            const listElement = document.getElementById(`items-list-${followupId}`);
+            const button = event.target.closest('.details-toggle-btn');
+            
+            if (listElement.style.display === 'none' || listElement.style.display === '') {
+                listElement.style.display = 'block';
+                button.innerHTML = '<i class="fas fa-chevron-up"></i> Hide';
+            } else {
+                listElement.style.display = 'none';
+                button.innerHTML = '<i class="fas fa-chevron-down"></i> Show';
+            }
+        }
+
+        // Open create modal
+        openBtn.addEventListener('click', function() {
+            resetForm();
+            filterTicketsByBranch();
+            modalTitle.textContent = '📋 Create Follow-Up';
+            modalSubtitle.textContent = 'Track and manage customer interactions';
+            submitBtn.innerHTML = '💾 Save Follow-Up';
+            document.getElementById('followUpId').value = '';
+            document.getElementById('ticketNumber').disabled = false;
+            modal.classList.add('show');
+        });
+
+        closeBtn.addEventListener('click', function() {
+            modal.classList.remove('show');
+        });
+
+        // Click outside modal to close
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.classList.remove('show');
+            }
+        });
+
+        // Delete Modal functions
+        function deleteFollowUp(followUpId, ticketNumber) {
+            currentDeleteId = followUpId;
+            document.getElementById('deleteTicketNumber').textContent = ticketNumber;
+            deleteModal.classList.add('show');
+        }
+
+        function closeDeleteModal() {
+            deleteModal.classList.remove('show');
+            currentDeleteId = null;
+        }
+
+        function confirmDelete() {
+            if (!currentDeleteId) return;
+            
+            fetch('{% url "app5:delete_followup" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({ follow_up_id: currentDeleteId })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    closeDeleteModal();
+                    showSuccessMessage('✓ Follow-up deleted successfully!');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    alert('❌ Error: ' + (result.message || 'Failed to delete'));
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error:', error);
+                alert('❌ Failed to delete follow-up. Please try again.');
+            });
+        }
+
+        // Click outside delete modal to close
+        deleteModal.addEventListener('click', function(e) {
+            if (e.target === deleteModal) {
+                closeDeleteModal();
+            }
+        });
+
+        // Edit function
+        function editFollowUp(followUpId) {
+            // Fetch follow-up details
+            fetch(`{% url "app5:get_followup" %}?id=${followUpId}`, {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    populateEditForm(data.followup);
+                    filterTicketsByBranch();
+                    modalTitle.textContent = '✏️ Edit Follow-Up';
+                    modalSubtitle.textContent = 'Update follow-up details';
+                    submitBtn.innerHTML = '✏️ Update Follow-Up';
+                    modal.classList.add('show');
+                } else {
+                    alert('❌ Error: ' + (data.message || 'Failed to load follow-up'));
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error:', error);
+                alert('❌ Failed to load follow-up details.');
+            });
+        }
+
+        // Populate form with follow-up data for editing
+        function populateEditForm(followup) {
+            // Set follow-up ID
+            document.getElementById('followUpId').value = followup.id;
+            
+            // Set ticket selection
+            const ticketSelect = document.getElementById('ticketNumber');
+            ticketSelect.value = followup.ticket_number;
+            ticketSelect.disabled = true; // Disable ticket change in edit mode
+            
+            // Trigger change event to load requirements
+            const event = new Event('change', { bubbles: true });
+            ticketSelect.dispatchEvent(event);
+            
+            // Set form fields
+            document.getElementById('date').value = followup.follow_up_date;
+            document.getElementById('contactMethod').value = followup.contact_method || '';
+            document.getElementById('status').value = followup.status || '';
+            document.getElementById('reply').value = followup.reply || '';
+            document.getElementById('notes').value = followup.notes || '';
+            
+            // Set conditional fields
+            if (followup.assigned_to) {
+                document.getElementById('assignedTo').value = followup.assigned_to;
+            }
+            if (followup.next_action) {
+                document.getElementById('nextAction').value = followup.next_action;
+            }
+            
+            // Set next follow-up date
+            const nextDateField = document.getElementById('conditionalFollowUpDate');
+            if (followup.next_follow_up_date) {
+                nextDateField.value = followup.next_follow_up_date;
+            }
+            
+            // Update character counters
+            document.getElementById('replyCount').textContent = (followup.reply || '').length;
+            document.getElementById('notesCount').textContent = (followup.notes || '').length;
+            
+            // Toggle conditional fields based on status
+            toggleConditionalFields();
+            
+            // If there are selected requirement items, check them
+            setTimeout(() => {
+                if (followup.selected_items && followup.selected_items.length > 0) {
+                    const checkboxes = document.querySelectorAll('.req-checkbox');
+                    checkboxes.forEach(cb => {
+                        const itemName = cb.dataset.itemName;
+                        if (followup.selected_items.includes(itemName)) {
+                            cb.checked = true;
+                        }
+                    });
+                    updateSelectedCount();
+                }
+            }, 500);
+        }
+
+        // Reset form to initial state
+        function resetForm() {
+            document.getElementById('followUpForm').reset();
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('date').value = today;
+            document.getElementById('replyCount').textContent = '0';
+            document.getElementById('notesCount').textContent = '0';
+            document.getElementById('selectedCountBadge').innerHTML = '0 selected (₹0.00)';
+            document.getElementById('selectedRequirementItems').value = '';
+            document.getElementById('selectedLeadId').value = '';
+            document.getElementById('ownerName').value = '';
+            document.getElementById('phoneNumber').value = '';
+            document.getElementById('followUpId').value = '';
+            document.getElementById('ticketNumber').disabled = false;
+            document.getElementById('checkboxGrid').innerHTML = '<div class="empty-state" style="color: #6f8f9a; padding: 0.8rem; text-align: center; font-style: italic;">← Select a ticket to load requirement items from the lead form</div>';
+            toggleConditionalFields();
+        }
+
+        // Show success message
+        function showSuccessMessage(message) {
+            const successMsg = document.getElementById('successMessage');
+            successMsg.innerHTML = message;
+            successMsg.classList.add('show');
+            setTimeout(() => {
+                successMsg.classList.remove('show');
+            }, 2000);
+        }
+
+        // Reply Modal functions
+        function showReplyModal(customerName, ticketNumber, followUpDate, status, reply, notes, contactMethod, createdBy, assignedTo, nextAction, nextFollowUpDate, selectedItems) {
+            const metaDiv = document.getElementById('replyMeta');
+            const replyDiv = document.getElementById('fullReply');
+            const notesDiv = document.getElementById('fullNotes');
+            const notesSection = document.getElementById('notesSection');
+            const nextActionSection = document.getElementById('nextActionSection');
+            const nextActionDetails = document.getElementById('nextActionDetails');
+            const selectedItemsSection = document.getElementById('selectedItemsSection');
+            const selectedItemsList = document.getElementById('selectedItemsList');
+            
+            // Format dates
+            let formattedDate = 'N/A';
+            if (followUpDate && followUpDate !== 'None' && followUpDate !== '') {
+                try {
+                    const date = new Date(followUpDate);
+                    if (!isNaN(date.getTime())) {
+                        formattedDate = date.toLocaleDateString('en-US', { 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                        });
+                    }
+                } catch (e) {
+                    console.log('Date parsing error:', e);
+                }
+            }
+            
+            let formattedNextDate = 'N/A';
+            if (nextFollowUpDate && nextFollowUpDate !== 'None' && nextFollowUpDate !== '') {
+                try {
+                    const date = new Date(nextFollowUpDate);
+                    if (!isNaN(date.getTime())) {
+                        formattedNextDate = date.toLocaleDateString('en-US', { 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                        });
+                    }
+                } catch (e) {
+                    console.log('Next date parsing error:', e);
+                }
+            }
+            
+            // Build meta HTML
+            metaDiv.innerHTML = `
+                <div class="meta-item">
+                    <div class="meta-label">Customer</div>
+                    <div class="meta-value">${customerName || 'N/A'}</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Ticket</div>
+                    <div class="meta-value">${ticketNumber || 'N/A'}</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Follow-up Date</div>
+                    <div class="meta-value">${formattedDate}</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Status</div>
+                    <div class="meta-value">${status || 'N/A'}</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Contact</div>
+                    <div class="meta-value">${contactMethod || 'N/A'}</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Created By</div>
+                    <div class="meta-value">${createdBy || 'System'}</div>
+                </div>
+            `;
+            
+            // Set reply content
+            replyDiv.innerHTML = reply ? reply.replace(/\n/g, '<br>') : '<span class="no-data">No reply provided</span>';
+            
+            // Set notes content if exists
+            if (notes && notes.trim() !== '' && notes !== 'None') {
+                notesDiv.innerHTML = notes.replace(/\n/g, '<br>');
+                notesSection.style.display = 'block';
+            } else {
+                notesSection.style.display = 'none';
+            }
+            
+            // Set selected items if exists
+            if (selectedItems && selectedItems.length > 0) {
+                let itemsHtml = '<ul style="margin: 0; padding-left: 20px; list-style-type: none;">';
+                selectedItems.forEach(item => {
+                    itemsHtml += `<li style="margin-bottom: 6px; display: flex; align-items: center;">
+                        <span style="background: #10b981; color: white; border-radius: 50%; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; margin-right: 8px; font-size: 0.6em;">✓</span>
+                        <span>${item}</span>
+                    </li>`;
+                });
+                itemsHtml += '</ul>';
+                selectedItemsList.innerHTML = itemsHtml;
+                selectedItemsSection.style.display = 'block';
+            } else {
+                selectedItemsSection.style.display = 'none';
+            }
+            
+            // Set next action details if exists
+            if ((nextAction && nextAction !== 'None' && nextAction !== '') || 
+                (assignedTo && assignedTo !== 'None' && assignedTo !== '') || 
+                (nextFollowUpDate && nextFollowUpDate !== 'None' && nextFollowUpDate !== '')) {
+                
+                let nextActionHtml = '<div style="display: flex; flex-direction: column; gap: 8px;">';
+                
+                if (nextAction && nextAction !== 'None' && nextAction !== '') {
+                    nextActionHtml += `<div style="display: flex; align-items: baseline; padding: 6px 0; border-bottom: 1px dashed #cbd5e0;">
+                        <span style="font-weight: 600; min-width: 100px; color: #2c3e50;">Next Action:</span>
+                        <span style="color: #2c3e50;">${nextAction}</span>
+                    </div>`;
+                }
+                
+                if (assignedTo && assignedTo !== 'None' && assignedTo !== '') {
+                    nextActionHtml += `<div style="display: flex; align-items: baseline; padding: 6px 0; border-bottom: 1px dashed #cbd5e0;">
+                        <span style="font-weight: 600; min-width: 100px; color: #2c3e50;">Assigned To:</span>
+                        <span style="color: #2c3e50;">${assignedTo}</span>
+                    </div>`;
+                }
+                
+                if (nextFollowUpDate && nextFollowUpDate !== 'None' && nextFollowUpDate !== '') {
+                    nextActionHtml += `<div style="display: flex; align-items: baseline; padding: 6px 0;">
+                        <span style="font-weight: 600; min-width: 100px; color: #2c3e50;">Next Follow-up:</span>
+                        <span style="color: #2c3e50; font-weight: 600;">${formattedNextDate}</span>
+                    </div>`;
+                }
+                
+                nextActionHtml += '</div>';
+                nextActionDetails.innerHTML = nextActionHtml;
+                nextActionSection.style.display = 'block';
+            } else {
+                nextActionSection.style.display = 'none';
+            }
+            
+            // Show modal
+            replyModal.classList.add('show');
+        }
+
+        function closeReplyModal() {
+            replyModal.classList.remove('show');
+        }
+
+        // Click outside reply modal to close
+        replyModal.addEventListener('click', function(e) {
+            if (e.target === replyModal) {
+                closeReplyModal();
+            }
+        });
+
+        // Close with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (replyModal.classList.contains('show')) {
+                    closeReplyModal();
+                }
+                if (modal.classList.contains('show')) {
+                    modal.classList.remove('show');
+                }
+                if (deleteModal.classList.contains('show')) {
+                    closeDeleteModal();
+                }
+            }
+        });
+
+        /**
+         * RENDER REQUIREMENT CHECKBOXES - UPDATED VERSION
+         */
+        function renderRequirementCheckboxes(itemsArray) {
+            const container = document.getElementById('checkboxGrid');
+            
+            if (!itemsArray || itemsArray.length === 0) {
+                container.innerHTML = '<div class="empty-state" style="color: #6f8f9a; padding: 0.8rem; text-align: center; font-style: italic;">📦 No requirement items found for this ticket.</div>';
+                return;
+            }
+            
+            let html = '';
+            
+            itemsArray.forEach((item, index) => {
+                const itemId = item.id || item.item_id || '';
+                const itemDisplay = item.item_name || item.name || 'Unknown Item';
+                
+                let qtyDisplay = 1;
+                if (item.quantity !== undefined && item.quantity !== null) {
+                    qtyDisplay = parseFloat(item.quantity);
+                } else if (item.qty !== undefined && item.qty !== null) {
+                    qtyDisplay = parseFloat(item.qty);
+                }
+                
+                let price = 0;
+                if (item.price !== undefined && item.price !== null) {
+                    price = parseFloat(item.price);
+                }
+                
+                let total = 0;
+                if (item.total !== undefined && item.total !== null) {
+                    total = parseFloat(item.total);
+                } else {
+                    total = qtyDisplay * price;
+                }
+                
+                const unitDisplay = item.unit || 'pcs';
+                const section = item.section || 'GENERAL';
+                
+                const statusDisplay = item.status || 'pending';
+                let badgeClass = 'badge-pending';
+                let statusIcon = '';
+                
+                if (statusDisplay.toLowerCase().includes('follow') || statusDisplay.toLowerCase() === 'pending') {
+                    badgeClass = 'badge-followup';
+                    statusIcon = '🔄';
+                } else if (statusDisplay.toLowerCase().includes('accept')) {
+                    badgeClass = 'badge-accepted';
+                    statusIcon = '✅';
+                } else if (statusDisplay.toLowerCase().includes('proposal')) {
+                    badgeClass = 'badge-proposal';
+                    statusIcon = '📄';
+                } else if (statusDisplay.toLowerCase().includes('hold')) {
+                    badgeClass = 'badge-hold';
+                    statusIcon = '⏸️';
+                } else if (statusDisplay.toLowerCase().includes('reject')) {
+                    badgeClass = 'badge-rejected';
+                    statusIcon = '🚫';
+                } else {
+                    statusIcon = '📌';
+                }
+                
+                const priceFormatted = price > 0 ? `₹${price.toFixed(2)}` : '₹0.00';
+                const totalFormatted = total > 0 ? `₹${total.toFixed(2)}` : '₹0.00';
+                
+                const isFollowUp = statusDisplay.toLowerCase().includes('follow') || 
+                                  statusDisplay.toLowerCase() === 'pending' ||
+                                  statusDisplay.toLowerCase().includes('proposal');
+                const checkedAttr = isFollowUp ? 'checked' : '';
+                
+                const checkboxId = `req_item_${index}_${Date.now()}`;
+                
+                html += `
+                    <div class="checkbox-item" data-item-id="${itemId}" data-section="${section}">
+                        <input type="checkbox" 
+                               id="${checkboxId}" 
+                               class="req-checkbox" 
+                               value="${itemDisplay}" 
+                               ${checkedAttr} 
+                               data-item-id="${itemId}"
+                               data-item-name="${itemDisplay}"
+                               data-qty="${qtyDisplay}"
+                               data-price="${price}"
+                               data-total="${total}"
+                               data-unit="${unitDisplay}"
+                               data-section="${section}"
+                               data-status="${statusDisplay}">
+                        <div class="checkbox-content">
+                            <span class="item-name" style="font-weight: 500;">${itemDisplay}</span>
+                            <span class="item-meta" style="font-size: 0.7rem; color: #64748b; display: block; margin-top: 4px;">
+                                <span><strong>Qty:</strong> ${qtyDisplay} ${unitDisplay}</span><br>
+                                <span><strong>Price:</strong> ${priceFormatted}</span><br>
+                                <span><strong>Total:</strong> <span style="color: #28a745; font-weight: 600;">${totalFormatted}</span></span>
+                                <span class="badge ${badgeClass}" style="display: inline-block; margin-left: 5px; padding: 2px 6px; border-radius: 12px; font-size: 0.65rem;">${statusIcon} ${statusDisplay}</span>
+                            </span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            updateSelectedCount();
+            
+            document.querySelectorAll('.req-checkbox').forEach(cb => {
+                cb.addEventListener('change', updateSelectedCount);
+            });
+            
+            console.log(`✅ Rendered ${itemsArray.length} requirement items.`);
+        }
+
+        /**
+         * UPDATE SELECTED COUNT BADGE
+         */
+        function updateSelectedCount() {
+            const checkboxes = document.querySelectorAll('.req-checkbox:checked');
+            const selected = checkboxes.length;
+            let selectedTotal = 0;
+            
+            checkboxes.forEach(cb => {
+                const qty = parseFloat(cb.dataset.qty || 1);
+                const price = parseFloat(cb.dataset.price || 0);
+                const total = parseFloat(cb.dataset.total || (qty * price));
+                selectedTotal += total;
+            });
+            
+            const badge = document.getElementById('selectedCountBadge');
+            badge.innerHTML = `${selected} selected ${selected > 0 ? `(₹${selectedTotal.toFixed(2)})` : ''}`;
+            
+            const selectedData = {
+                count: selected,
+                total: selectedTotal,
+                item_details: Array.from(checkboxes).map(cb => ({
+                    id: cb.dataset.itemId,
+                    name: cb.dataset.itemName || cb.value,
+                    quantity: parseFloat(cb.dataset.qty || 1),
+                    price: parseFloat(cb.dataset.price || 0),
+                    total: parseFloat(cb.dataset.total || 0),
+                    unit: cb.dataset.unit || 'pcs',
+                    section: cb.dataset.section || 'GENERAL'
+                }))
+            };
+            
+            document.getElementById('selectedRequirementItems').value = JSON.stringify(selectedData);
+        }
+
+        /**
+         * TICKET SELECTION HANDLER
+         */
+        document.getElementById('ticketNumber').addEventListener('change', function(e) {
+            const selectedOption = e.target.options[e.target.selectedIndex];
+            
+            if (!selectedOption || !selectedOption.value) {
+                clearLeadFields();
+                return;
+            }
+            
+            const leadId = selectedOption.dataset.leadId;
+            if (leadId) {
+                document.getElementById('selectedLeadId').value = leadId;
+            }
+            
+            document.getElementById('ownerName').value = selectedOption.dataset.owner || '';
+            document.getElementById('phoneNumber').value = selectedOption.dataset.phone || '';
+            
+            let items = [];
+            try {
+                const reqItemsData = selectedOption.dataset.reqItems || '[]';
+                items = JSON.parse(reqItemsData);
+                console.log(`✅ Parsed ${items.length} requirement items`);
+            } catch (e) {
+                console.error('❌ Failed to parse requirement items JSON:', e);
+                items = [];
+            }
+            
+            renderRequirementCheckboxes(items);
+        });
+
+        /**
+         * CLEAR LEAD FIELDS
+         */
+        function clearLeadFields() {
+            document.getElementById('ownerName').value = '';
+            document.getElementById('phoneNumber').value = '';
+            document.getElementById('selectedLeadId').value = '';
+            document.getElementById('checkboxGrid').innerHTML = '<div class="empty-state" style="color: #6f8f9a; padding: 0.8rem; text-align: center; font-style: italic;">← Select a ticket to load requirement items</div>';
+            document.getElementById('selectedCountBadge').innerHTML = '0 selected (₹0.00)';
+            document.getElementById('selectedRequirementItems').value = '';
+        }
+
+        /**
+         * TOGGLE CONDITIONAL FIELDS
+         */
+        window.toggleConditionalFields = function() {
+            const status = document.getElementById('status').value;
+            const cond = document.getElementById('conditionalFields');
+            const requires = ['Follow-up Required', 'Not Attended', 'On Hold', 'Proposal Sent'];
+            
+            if (requires.includes(status)) {
+                cond.style.display = 'block';
+                document.getElementById('assignedTo').required = true;
+                document.getElementById('conditionalFollowUpDate').required = true;
+                document.getElementById('nextAction').required = true;
+            } else {
+                cond.style.display = 'none';
+                document.getElementById('assignedTo').required = false;
+                document.getElementById('conditionalFollowUpDate').required = false;
+                document.getElementById('nextAction').required = false;
+            }
+        };
+
+        /**
+         * CHARACTER COUNTERS
+         */
+        function setupCounter(taId, countId) {
+            const ta = document.getElementById(taId);
+            const cnt = document.getElementById(countId);
+            if (ta && cnt) {
+                ta.addEventListener('input', function() { 
+                    cnt.textContent = this.value.length; 
+                });
+                cnt.textContent = ta.value.length;
+            }
+        }
+        
+        setupCounter('reply', 'replyCount');
+        setupCounter('notes', 'notesCount');
+
+        /**
+         * CLEAR FORM
+         */
+        window.clearForm = function() {
+            if (confirm('Are you sure you want to clear all fields?')) {
+                resetForm();
+            }
+        };
+
+        /**
+         * FORM SUBMIT - Handles both Create and Edit
+         */
+        document.getElementById('followUpForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const selected = document.querySelectorAll('.req-checkbox:checked').length;
+            if (selected === 0) {
+                alert('⚠️ Please select at least one requirement item that needs follow-up.');
+                return;
+            }
+
+            const formData = new FormData(this);
+            const data = {};
+            for (let [key, value] of formData.entries()) {
+                data[key] = value;
+            }
+
+            // Get lead_id properly
+            const selectedLeadId = document.getElementById('selectedLeadId').value;
+            const selectedTicket = document.getElementById('ticketNumber').value;
+            const followUpId = document.getElementById('followUpId').value;
+            
+            if (selectedLeadId) {
+                data.lead_id = selectedLeadId;
+                data.leadId = selectedLeadId;
+            }
+            
+            if (selectedTicket) {
+                data.ticket_number = selectedTicket;
+            }
+
+            if (followUpId) {
+                data.follow_up_id = followUpId;
+            }
+
+            // Get the selected option for additional data
+            const ticketSelect = document.getElementById('ticketNumber');
+            const selectedOption = ticketSelect.options[ticketSelect.selectedIndex];
+            
+            if (selectedOption) {
+                data.lead_owner = selectedOption.dataset.owner || '';
+                data.lead_phone = selectedOption.dataset.phone || '';
+            }
+
+            // Determine if this is create or update
+            const url = followUpId ? '{% url "app5:update_followup" %}' : '{% url "app5:save_followup" %}';
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    const message = followUpId ? '✓ Follow-up updated successfully!' : '✓ Follow-up saved successfully!';
+                    showSuccessMessage(message);
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    alert('❌ Error: ' + (result.message || result.error || 'Operation failed'));
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error:', error);
+                alert('❌ Failed to save follow-up. Please try again.');
+            });
+        });
+
+        /**
+         * FILTER FUNCTIONALITY - WITH BRANCH FILTER
+         */
+        const searchAll = document.getElementById('searchAll');
+        const startDate = document.getElementById('startDate');
+        const endDate = document.getElementById('endDate');
+        const filterFollowup = document.getElementById('filterFollowup');
+        const branchFilter = document.getElementById('branchFilter');
+        const clearFiltersBtn = document.getElementById('clearBtn');
+        const resultCount = document.getElementById('resultCount');
+        const tableRows = document.querySelectorAll('.table-container tbody tr');
+        const totalRecordsSpan = document.getElementById('totalRecords');
+
+        function filterTable() {
+            let visible = 0;
+            const query = searchAll.value.toLowerCase().trim();
+            const start = startDate.value;
+            const end = endDate.value;
+            const fup = filterFollowup.value;
+            const branchVal = branchFilter.value;
+            
+            // Reset filtered rows array
+            filteredRows = [];
+            
+            tableRows.forEach(row => {
+                // Skip empty state row (with colspan)
+                if (row.cells.length === 1) return;
+                
+                let show = true;
+                const ticketText   = row.cells[0]?.innerText.toLowerCase() || '';
+                const customerText = row.cells[1]?.innerText.toLowerCase() || '';
+                const statusText   = (row.dataset.status || row.cells[2]?.innerText || '').toLowerCase();
+                const replyText    = row.cells[3]?.innerText.toLowerCase() || '';
+                const followupDate = row.dataset.followup || row.dataset.created || '';
+                const rowBranch    = row.dataset.branch || '';
+                
+                // Apply all filters
+                if (query && !ticketText.includes(query) && !customerText.includes(query) && !replyText.includes(query)) show = false;
+                
+                if (start && followupDate && followupDate < start) show = false;
+                if (end && followupDate && followupDate > end) show = false;
+                
+                if (fup !== 'all' && !statusText.includes(fup.toLowerCase())) show = false;
+                
+                // Branch filter comparison - ensure both are strings
+                if (branchVal !== 'all') {
+                    const rowBranchStr = String(rowBranch).trim();
+                    const branchValStr = String(branchVal).trim();
+                    
+                    if (rowBranchStr !== branchValStr) {
+                        show = false;
+                    }
+                }
+                
+                if (show) {
+                    visible++;
+                    filteredRows.push(row);
+                }
+            });
+            
+            // Update count text
+            resultCount.innerHTML = `📋 <span id="totalRecords">${visible}</span> follow-up${visible !== 1 ? 's' : ''}`;
+            
+            // Reset to first page and apply pagination
+            currentPage = 1;
+            applyPagination();
+        }
+
+        /**
+         * PAGINATION FUNCTIONS
+         */
+        function applyPagination() {
+            const rowsPerPageSelect = document.getElementById('rowsPerPage');
+            rowsPerPage = rowsPerPageSelect.value === 'all' ? filteredRows.length : parseInt(rowsPerPageSelect.value);
+            
+            // Hide all rows first
+            tableRows.forEach(row => {
+                if (row.cells.length > 1) { // Skip empty state row
+                    row.style.display = 'none';
+                }
+            });
+            
+            if (rowsPerPageSelect.value === 'all') {
+                // Show all filtered rows
+                filteredRows.forEach(row => {
+                    row.style.display = '';
+                });
+                currentPage = 1;
+                document.getElementById('firstPage').disabled = true;
+                document.getElementById('prevPage').disabled = true;
+                document.getElementById('nextPage').disabled = true;
+                document.getElementById('lastPage').disabled = true;
+                document.getElementById('pageInfo').innerText = `Page 1 of 1`;
+            } else {
+                const totalPages = Math.ceil(filteredRows.length / rowsPerPage) || 1;
+                
+                // Ensure current page is valid
+                if (currentPage < 1) currentPage = 1;
+                if (currentPage > totalPages) currentPage = totalPages;
+                
+                // Calculate start and end indices
+                const start = (currentPage - 1) * rowsPerPage;
+                const end = Math.min(start + rowsPerPage, filteredRows.length);
+                
+                // Show only rows for current page
+                for (let i = start; i < end; i++) {
+                    if (filteredRows[i]) {
+                        filteredRows[i].style.display = '';
+                    }
+                }
+                
+                // Update pagination controls
+                document.getElementById('firstPage').disabled = currentPage === 1;
+                document.getElementById('prevPage').disabled = currentPage === 1;
+                document.getElementById('nextPage').disabled = currentPage === totalPages;
+                document.getElementById('lastPage').disabled = currentPage === totalPages;
+                document.getElementById('pageInfo').innerText = `Page ${currentPage} of ${totalPages}`;
+            }
+            
+            // Update the empty state visibility
+            const emptyRow = Array.from(tableRows).find(row => row.cells.length === 1);
+            if (emptyRow) {
+                emptyRow.style.display = filteredRows.length === 0 ? '' : 'none';
+            }
+        }
+
+        // Pagination event listeners
+        document.getElementById('firstPage').addEventListener('click', function() {
+            currentPage = 1;
+            applyPagination();
+        });
+
+        document.getElementById('prevPage').addEventListener('click', function() {
+            if (currentPage > 1) {
+                currentPage--;
+                applyPagination();
+            }
+        });
+
+        document.getElementById('nextPage').addEventListener('click', function() {
+            const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                applyPagination();
+            }
+        });
+
+        document.getElementById('lastPage').addEventListener('click', function() {
+            currentPage = Math.ceil(filteredRows.length / rowsPerPage);
+            applyPagination();
+        });
+
+        document.getElementById('rowsPerPage').addEventListener('change', function() {
+            currentPage = 1;
+            applyPagination();
+        });
+
+        // Add event listeners for all filters
+        searchAll.addEventListener('input', filterTable);
+        startDate.addEventListener('change', filterTable);
+        endDate.addEventListener('change', filterTable);
+        filterFollowup.addEventListener('change', filterTable);
+        branchFilter.addEventListener('change', filterTable);
+        
+        // Month start/end dates from Django context
+        const monthStart = '{{ month_start }}';
+        const monthEnd = '{{ month_end }}';
+
+        // Clear filters button
+        clearFiltersBtn.addEventListener('click', function() {
+            searchAll.value = '';
+            startDate.value = monthStart;
+            endDate.value = monthEnd;
+            filterFollowup.value = 'Follow-up Required';
+            branchFilter.value = 'all';
+            filterTable();
+        });
+
+        /**
+         * INITIALIZATION — apply default filters on load
+         */
+        (function init() {
+            toggleConditionalFields();
+            // Ensure date fields are set to month start/end
+            if (!startDate.value) startDate.value = monthStart;
+            if (!endDate.value)   endDate.value   = monthEnd;
+            // Ensure status defaults to Follow-up Required
+            if (filterFollowup.value === 'all') filterFollowup.value = 'Follow-up Required';
+            
+            // Initialize filtered rows array with all rows
+            filteredRows = [];
+            tableRows.forEach(row => {
+                if (row.cells.length > 1) { // Skip empty state row
+                    filteredRows.push(row);
+                }
+            });
+            
+            // Initial filter application
+            filterTable();
+            
+            console.log('🚀 Event List initialized - full screen fit with horizontal and vertical scroll');
+        })();
+    </script>
+</body>
+</html>
+{% endblock %}

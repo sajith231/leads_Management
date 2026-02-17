@@ -143,7 +143,14 @@ urlpatterns = [
 
 
 
-    path('event-form/', views.event_form, name='event_form'),
+    path('event-form/', views.event_form_view, name='event_form'),
+    path('api/leads/active/', views.get_active_leads, name='get_active_leads'),
+    path('api/followup/save/', views.save_followup, name='save_followup'),
+    path('events/', views.event_list, name='event_list'),
+    path('get_followup/', views.get_followup, name='get_followup'),
+    path('update_followup/', views.update_followup, name='update_followup'),
+    path('delete_followup/', views.delete_followup, name='delete_followup'),
+    path('followup/<int:pk>/edit/', views.event_edit, name='event_edit'),
     
 ]
 
