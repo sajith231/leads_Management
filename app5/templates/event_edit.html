@@ -196,40 +196,29 @@
 
         /* Requirement Checkboxes */
         .checkbox-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 12px;
+            display: block;
             margin-top: 12px;
-            padding: 14px;
             background: white;
             border-radius: 12px;
             border: 1px solid #e3ecf2;
+            overflow: hidden;
         }
 
-        .checkbox-item {
-            display: flex;
-            align-items: flex-start;
-            padding: 12px;
-            background: white;
-            border: 2px solid #e8eff4;
-            border-radius: 10px;
-            transition: all 0.2s ease;
-            cursor: pointer;
+        .checkbox-grid table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
         }
 
-        .checkbox-item:hover {
-            border-color: #667eea;
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.12);
+        .req-item-row:hover td {
+            background: #eff6ff !important;
         }
 
-        .checkbox-item input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            margin-right: 12px;
-            margin-top: 2px;
-            cursor: pointer;
+        .req-item-row input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
             accent-color: #667eea;
-            flex-shrink: 0;
+            cursor: pointer;
         }
 
         .checkbox-content {
@@ -608,39 +597,54 @@
                 const checkboxId = `req_item_${index}_${Date.now()}`;
                 
                 html += `
-                    <div class="checkbox-item" data-item-id="${itemId}" data-section="${section}">
-                        <input type="checkbox" 
-                               id="${checkboxId}" 
-                               class="req-checkbox" 
-                               value="${itemDisplay}" 
-                               ${isChecked ? 'checked' : ''}
-                               data-item-id="${itemId}"
-                               data-item-name="${itemDisplay}"
-                               data-qty="${qtyDisplay}"
-                               data-price="${price}"
-                               data-total="${total}"
-                               data-unit="${unitDisplay}"
-                               data-section="${section}"
-                               data-status="${statusDisplay}">
-                        <div class="checkbox-content">
-                            <span class="item-name">
-                                ${itemDisplay}
-                                <span style="font-size: 0.7em; background: #e9ecef; padding: 2px 6px; border-radius: 4px; margin-left: 6px; color: #495057;">
-                                    ${section}<br>
-                                </span>
-                            </span>
-                            <span class="item-meta">
-                                <span><strong> Qty:</strong> ${qtyDisplay} ${unitDisplay}</span><br>
-                                <span><strong> Price:</strong> ${priceFormatted}</span><br>
-                                <span><strong>Total:</strong> <span style="color: #28a745; font-weight: 600;">${totalFormatted}</span></span>
-                                <span class="badge ${badgeClass}">${statusIcon} ${statusDisplay}</span>
-                            </span>
-                        </div>
-                    </div>
+                    <tr class="req-item-row" data-item-id="${itemId}" data-section="${section}" style="${index % 2 === 1 ? 'background:#f8fafc;' : 'background:#ffffff;'}">
+                        <td style="padding:5px 8px; text-align:center; width:36px;">
+                            <input type="checkbox"
+                                   id="${checkboxId}"
+                                   class="req-checkbox"
+                                   value="${itemDisplay}"
+                                   ${isChecked ? 'checked' : ''}
+                                   data-item-id="${itemId}"
+                                   data-item-name="${itemDisplay}"
+                                   data-qty="${qtyDisplay}"
+                                   data-price="${price}"
+                                   data-total="${total}"
+                                   data-unit="${unitDisplay}"
+                                   data-section="${section}"
+                                   data-status="${statusDisplay}">
+                        </td>
+                        <td style="padding:5px 8px; font-weight:500; color:#0f172a;">${itemDisplay}</td>
+                        <td style="padding:5px 8px; text-align:center; color:#334155; width:60px; white-space:nowrap;">${qtyDisplay}</td>
+                        <td style="padding:5px 8px; text-align:center; color:#334155; width:60px; white-space:nowrap;">${unitDisplay}</td>
+                        <td style="padding:5px 8px; text-align:right; color:#334155; width:90px; white-space:nowrap;">${priceFormatted}</td>
+                        <td style="padding:5px 8px; text-align:right; color:#28a745; font-weight:600; width:90px; white-space:nowrap;">${totalFormatted}</td>
+                    </tr>
                 `;
             });
             
-            container.innerHTML = html;
+            const tableWrapper = `
+                <table style="width:100%; border-collapse:collapse; font-size:0.82rem; table-layout:fixed;">
+                    <colgroup>
+                        <col style="width:36px;">
+                        <col>
+                        <col style="width:60px;">
+                        <col style="width:60px;">
+                        <col style="width:90px;">
+                        <col style="width:90px;">
+                    </colgroup>
+                    <thead>
+                        <tr style="background:#667eea;">
+                            <th style="padding:6px 8px; text-align:center;"></th>
+                            <th style="padding:6px 8px; text-align:left; color:#fff; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.03em;">Item</th>
+                            <th style="padding:6px 8px; text-align:center; color:#fff; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.03em;">Qty</th>
+                            <th style="padding:6px 8px; text-align:center; color:#fff; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.03em;">Unit</th>
+                            <th style="padding:6px 8px; text-align:right; color:#fff; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.03em;">Price</th>
+                            <th style="padding:6px 8px; text-align:right; color:#fff; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.03em;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>${html}</tbody>
+                </table>`;
+            container.innerHTML = tableWrapper;
             updateSelectedCount();
             
             document.querySelectorAll('.req-checkbox').forEach(cb => {

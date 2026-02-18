@@ -704,11 +704,11 @@
                                     <th width="12%">Section</th>
                                     <th width="25%">Item Description</th>
                                     <th width="8%">Qty</th>
-                                    <th width="10%">Cost Price (₹)</th>
-                                    <th width="10%">Sales Price (₹)</th>
+                                    <th width="10%">Cost Price </th>
+                                    <th width="10%">Sales Price </th>
                                     <th width="8%">Discount (%)</th>
                                     <th width="8%">Tax (%)</th>
-                                    <th width="12%">Total (₹)</th>
+                                    <th width="12%">Total</th>
                                     <th width="7%">Action</th>
                                 </tr>
                             </thead>
@@ -726,19 +726,19 @@
                             <div class="totals-box">
                                 <div class="totals-row">
                                     <span>Subtotal:</span>
-                                    <span id="subtotal">₹0.00</span>
+                                    <span id="subtotal">0.00</span>
                                 </div>
                                 <div class="totals-row">
                                     <span>Total Discount:</span>
-                                    <span id="total-discount">₹0.00</span>
+                                    <span id="total-discount">0.00</span>
                                 </div>
                                 <div class="totals-row">
                                     <span>Total Tax:</span>
-                                    <span id="total-tax">₹0.00</span>
+                                    <span id="total-tax">0.00</span>
                                 </div>
                                 <div class="grand-total">
                                     <span>Grand Total:</span>
-                                    <span id="grand-total">₹0.00</span>
+                                    <span id="grand-total">0.00</span>
                                 </div>
                             </div>
                         </div>
@@ -1055,7 +1055,7 @@
                     <input type="number" class="tax" name="tax[]" value="0" min="0" max="100" step="0.01" onchange="calculateRow(this)" placeholder="0">
                 </td>
                 <td>
-                    <span class="row-total">₹0.00</span>
+                    <span class="row-total">0.00</span>
                     <input type="hidden" class="row-total-value" value="0">
                 </td>
                 <td>
@@ -1101,7 +1101,7 @@
             const totalBeforeTax = qty * discountedPrice;
             const totalAfterTax = totalBeforeTax * (1 + tax / 100);
             
-            row.find('.row-total').text('₹' + totalAfterTax.toFixed(2));
+            row.find('.row-total').text('' + totalAfterTax.toFixed(2));
             row.find('.row-total-value').val(totalAfterTax.toFixed(2));
             
             updateTotals();
@@ -1126,10 +1126,10 @@
                 totalTax += (rowTotal / (1 + tax / 100)) * (tax / 100);
             });
             
-            $('#subtotal').text('₹' + subtotal.toFixed(2));
-            $('#total-discount').text('₹' + totalDiscount.toFixed(2));
-            $('#total-tax').text('₹' + totalTax.toFixed(2));
-            $('#grand-total').text('₹' + (subtotal + totalTax).toFixed(2));
+            $('#subtotal').text('' + subtotal.toFixed(2));
+            $('#total-discount').text('' + totalDiscount.toFixed(2));
+            $('#total-tax').text('' + totalTax.toFixed(2));
+            $('#grand-total').text('' + (subtotal + totalTax).toFixed(2));
         }
         
         // Function to show notification
@@ -1217,10 +1217,10 @@
                 customer_phone: selectedLead.phone_number,
                 notes: document.getElementById('notes').value,
                 items: [],
-                subtotal: parseFloat($('#subtotal').text().replace('₹', '')) || 0,
-                total_discount: parseFloat($('#total-discount').text().replace('₹', '')) || 0,
-                total_tax: parseFloat($('#total-tax').text().replace('₹', '')) || 0,
-                grand_total: parseFloat($('#grand-total').text().replace('₹', '')) || 0,
+                subtotal: parseFloat($('#subtotal').text().replace('', '')) || 0,
+                total_discount: parseFloat($('#total-discount').text().replace('', '')) || 0,
+                total_tax: parseFloat($('#total-tax').text().replace('', '')) || 0,
+                grand_total: parseFloat($('#grand-total').text().replace('', '')) || 0,
                 valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 30 days from now
             };
             
@@ -1296,10 +1296,10 @@
             document.getElementById('items-body').innerHTML = '';
             
             // Reset totals
-            $('#subtotal').text('₹0.00');
-            $('#total-discount').text('₹0.00');
-            $('#total-tax').text('₹0.00');
-            $('#grand-total').text('₹0.00');
+            $('#subtotal').text('0.00');
+            $('#total-discount').text('0.00');
+            $('#total-tax').text('0.00');
+            $('#grand-total').text('0.00');
             
             showNotification('Form reset. You can create a new quotation.', 'info');
         }

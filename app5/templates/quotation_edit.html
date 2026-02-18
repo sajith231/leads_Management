@@ -550,11 +550,11 @@
                                     <th width="12%">Section</th>
                                     <th width="25%">Item Description</th>
                                     <th width="8%">Qty</th>
-                                    <th width="10%">Cost Price (₹)</th>
-                                    <th width="10%">Sales Price (₹)</th>
+                                    <th width="10%">Cost Price </th>
+                                    <th width="10%">Sales Price </th>
                                     <th width="8%">Discount (%)</th>
                                     <th width="8%">Tax (%)</th>
-                                    <th width="12%">Total (₹)</th>
+                                    <th width="12%">Total </th>
                                     <th width="7%">Action</th>
                                 </tr>
                             </thead>
@@ -605,7 +605,7 @@
                                             <input type="number" class="tax" name="tax[]" value="{{ qitem.tax_percentage }}" min="0" max="100" step="0.01" onchange="calculateRow(this)" placeholder="0">
                                         </td>
                                         <td>
-                                            <span class="row-total">₹{{ qitem.line_total|floatformat:2 }}</span>
+                                            <span class="row-total">{{ qitem.line_total|floatformat:2 }}</span>
                                             <input type="hidden" class="row-total-value" value="{{ qitem.line_total }}">
                                         </td>
                                         <td>
@@ -628,19 +628,19 @@
                             <div class="totals-box">
                                 <div class="totals-row">
                                     <span>Subtotal:</span>
-                                    <span id="subtotal">₹{{ quotation.subtotal|floatformat:2|default:"0.00" }}</span>
+                                    <span id="subtotal">{{ quotation.subtotal|floatformat:2|default:"0.00" }}</span>
                                 </div>
                                 <div class="totals-row">
                                     <span>Total Discount:</span>
-                                    <span id="total-discount">₹{{ quotation.total_discount|floatformat:2|default:"0.00" }}</span>
+                                    <span id="total-discount">{{ quotation.total_discount|floatformat:2|default:"0.00" }}</span>
                                 </div>
                                 <div class="totals-row">
                                     <span>Total Tax:</span>
-                                    <span id="total-tax">₹{{ quotation.total_tax|floatformat:2|default:"0.00" }}</span>
+                                    <span id="total-tax">{{ quotation.total_tax|floatformat:2|default:"0.00" }}</span>
                                 </div>
                                 <div class="grand-total">
                                     <span>Grand Total:</span>
-                                    <span id="grand-total">₹{{ quotation.grand_total|floatformat:2|default:"0.00" }}</span>
+                                    <span id="grand-total">{{ quotation.grand_total|floatformat:2|default:"0.00" }}</span>
                                 </div>
                             </div>
                         </div>
@@ -977,7 +977,7 @@
                     <input type="number" class="tax" name="tax[]" value="0" min="0" max="100" step="0.01" onchange="calculateRow(this)" placeholder="0">
                 </td>
                 <td>
-                    <span class="row-total">₹0.00</span>
+                    <span class="row-total">0.00</span>
                     <input type="hidden" class="row-total-value" value="0">
                 </td>
                 <td>
@@ -1020,7 +1020,7 @@
             const totalBeforeTax = qty * discountedPrice;
             const totalAfterTax = totalBeforeTax * (1 + tax / 100);
             
-            row.find('.row-total').text('₹' + totalAfterTax.toFixed(2));
+            row.find('.row-total').text('' + totalAfterTax.toFixed(2));
             row.find('.row-total-value').val(totalAfterTax.toFixed(2));
             
             updateTotals();
@@ -1045,10 +1045,10 @@
                 totalTax += (rowTotal / (1 + tax / 100)) * (tax / 100);
             });
             
-            $('#subtotal').text('₹' + subtotal.toFixed(2));
-            $('#total-discount').text('₹' + totalDiscount.toFixed(2));
-            $('#total-tax').text('₹' + totalTax.toFixed(2));
-            $('#grand-total').text('₹' + (subtotal + totalTax).toFixed(2));
+            $('#subtotal').text('' + subtotal.toFixed(2));
+            $('#total-discount').text('' + totalDiscount.toFixed(2));
+            $('#total-tax').text('' + totalTax.toFixed(2));
+            $('#grand-total').text('' + (subtotal + totalTax).toFixed(2));
         }
         
         // Function to show notification
@@ -1131,10 +1131,10 @@
                 id: quotationId,
                 notes: document.getElementById('notes').value,
                 items: [],
-                subtotal: parseFloat($('#subtotal').text().replace('₹', '')) || 0,
-                total_discount: parseFloat($('#total-discount').text().replace('₹', '')) || 0,
-                total_tax: parseFloat($('#total-tax').text().replace('₹', '')) || 0,
-                grand_total: parseFloat($('#grand-total').text().replace('₹', '')) || 0
+                subtotal: parseFloat($('#subtotal').text().replace('', '')) || 0,
+                total_discount: parseFloat($('#total-discount').text().replace('', '')) || 0,
+                total_tax: parseFloat($('#total-tax').text().replace('', '')) || 0,
+                grand_total: parseFloat($('#grand-total').text().replace('', '')) || 0
             };
             
             // Only add lead ticket data if selected (optional now)

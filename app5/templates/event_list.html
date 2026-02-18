@@ -263,11 +263,11 @@
         }
 
         th {
-            background-color: rgb(8, 8, 8);
+            background-color: #070707;
             text-align: left;
             padding: 0.8rem 0.8rem;
             font-weight: 600;
-            color: #fdfcfc;
+            color: #f3f2f2;
             font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 0.03em;
@@ -567,6 +567,10 @@
             position: relative;
         }
 
+        .modal-content.large {
+            max-width: 1000px;
+        }
+
         .close-modal-btn {
             position: absolute;
             top: 1.2rem;
@@ -600,7 +604,7 @@
         
         .reply-meta {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 1rem;
             background: #f8fafc;
             padding: 1.2rem;
@@ -609,18 +613,24 @@
             border: 1px solid #e2e8f0;
         }
         
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+        
         .meta-label {
             font-size: 0.65rem;
             color: #64748b;
             text-transform: uppercase;
             letter-spacing: 0.03em;
-            margin-bottom: 0.2rem;
         }
         
         .meta-value {
             font-weight: 600;
             color: #0f172a;
             font-size: 0.9rem;
+            word-break: break-word;
         }
         
         .section-label {
@@ -646,6 +656,63 @@
         
         .notes-content {
             border-left-color: #f59e0b;
+        }
+
+        /* Items table styling */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        
+        .items-table th {
+            background: #10b981;
+            color: white;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            padding: 12px 8px;
+            border: none;
+            white-space: nowrap;
+        }
+        
+        .items-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: middle;
+        }
+        
+        .items-table tbody tr:hover {
+            background-color: #f0fdf4;
+        }
+        
+        .items-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .items-table .text-center {
+            text-align: center;
+        }
+        
+        .items-table .text-right {
+            text-align: right;
+        }
+        
+        .items-table .total {
+            color: #059669;
+            font-weight: 600;
+        }
+        
+        .grand-total-row {
+            background: #dcfce7;
+        }
+        
+        .grand-total-row td {
+            font-weight: 700;
+            color: #065f46;
+            padding: 12px 8px;
+            border-top: 2px solid #86efac;
         }
 
         /* MODERN FORM STYLES */
@@ -744,38 +811,30 @@
         }
 
         .checkbox-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 0.6rem;
+            display: block;
             background: #f8fafc;
             padding: 0.8rem;
             border-radius: 10px;
             border: 1px solid #e2e8f0;
             max-height: 200px;
             overflow-y: auto;
+            overflow-x: auto;
         }
 
-        .checkbox-item {
-            display: flex;
-            align-items: flex-start;
-            padding: 0.6rem;
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            transition: all 0.2s;
+        .checkbox-grid table {
+            min-width: unset;
+            font-size: 0.82rem;
         }
 
-        .checkbox-item:hover {
-            border-color: #3b82f6;
-            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+        .req-item-row:hover td {
+            background: #eff6ff !important;
         }
 
-        .checkbox-item input[type="checkbox"] {
-            width: 16px;
-            height: 16px;
-            margin-right: 10px;
-            margin-top: 2px;
+        .req-item-row input[type="checkbox"] {
+            width: 15px;
+            height: 15px;
             accent-color: #3b82f6;
+            cursor: pointer;
         }
 
         .selected-count-badge {
@@ -925,7 +984,7 @@
                 <select class="filter-select" id="branchFilter">
                     <option value="all">All Branches</option>
                     {% for branch in branches %}
-                    <option value="{{ branch.id }}">{{ branch.name }}</option>
+                    <option value="{{ branch.name }}">{{ branch.name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -1009,7 +1068,8 @@
                                     '{{ followup.assigned_to|default:""|escapejs }}',
                                     '{{ followup.next_action|default:""|escapejs }}',
                                     '{{ followup.next_follow_up_date|date:"Y-m-d"|default:"" }}',
-                                    {{ followup.parsed_selected_items|default:"[]"|safe }}
+                                    {{ followup.parsed_selected_items|default:"[]"|safe }},
+                                    '{{ followup.selected_requirement_items|default:""|escapejs }}'
                                 )" title="View full reply">
                                     <i class="fas fa-eye"></i>
                                 </button>
@@ -1138,7 +1198,7 @@
         </div>
     </div>
 
-    <!-- Reply View Modal -->
+    <!-- Reply View Modal - UPDATED WITH IMPROVED ITEM DISPLAY -->
     <div class="modal-overlay" id="replyModal">
         <div class="modal-content large" id="replyModalContent">
             <button class="close-modal-btn" onclick="closeReplyModal()">×</button>
@@ -1160,13 +1220,15 @@
                 </div>
             </div>
             
-            <!-- Selected Items Section -->
+            <!-- Selected Items Section - IMPROVED FOR BETTER DISPLAY -->
             <div class="reply-section" id="selectedItemsSection" style="display: none;">
-                <div class="section-label">
+                <div class="section-label" style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: #334155; margin-bottom: 10px;">
                     <i class="fas fa-check-circle" style="color: #10b981;"></i> Selected Items
+                    <span id="itemsSummary" style="margin-left: auto; font-size: 0.8rem; background: #e2e8f0; padding: 4px 10px; border-radius: 20px; color: #475569;"></span>
                 </div>
-                <div class="reply-content" id="selectedItemsList" style="background: #f0f9f0; border-left-color: #10b981;">
-                    <!-- Will be filled by JavaScript -->
+                <div class="reply-content" id="selectedItemsList" style="background: #ffffff; border: 1px solid #d1fae5; border-radius: 12px; padding: 0; overflow: hidden;">
+                    <!-- Items will be displayed in a properly formatted table via JavaScript -->
+                    <div style="padding: 20px; text-align: center; color: #64748b;" id="itemsLoading">Loading items...</div>
                 </div>
             </div>
             
@@ -1627,8 +1689,8 @@
             }, 2000);
         }
 
-        // Reply Modal functions
-        function showReplyModal(customerName, ticketNumber, followUpDate, status, reply, notes, contactMethod, createdBy, assignedTo, nextAction, nextFollowUpDate, selectedItems) {
+        // Reply Modal functions - UPDATED WITH IMPROVED ITEM DISPLAY
+        function showReplyModal(customerName, ticketNumber, followUpDate, status, reply, notes, contactMethod, createdBy, assignedTo, nextAction, nextFollowUpDate, selectedItems, rawItemsJson) {
             const metaDiv = document.getElementById('replyMeta');
             const replyDiv = document.getElementById('fullReply');
             const notesDiv = document.getElementById('fullNotes');
@@ -1637,39 +1699,29 @@
             const nextActionDetails = document.getElementById('nextActionDetails');
             const selectedItemsSection = document.getElementById('selectedItemsSection');
             const selectedItemsList = document.getElementById('selectedItemsList');
+            const itemsSummary = document.getElementById('itemsSummary');
+            const itemsLoading = document.getElementById('itemsLoading');
+            
+            if (itemsLoading) itemsLoading.style.display = 'none';
             
             // Format dates
-            let formattedDate = 'N/A';
-            if (followUpDate && followUpDate !== 'None' && followUpDate !== '') {
+            const formatDate = (dateStr) => {
+                if (!dateStr || dateStr === 'None' || dateStr === '') return 'N/A';
                 try {
-                    const date = new Date(followUpDate);
+                    const date = new Date(dateStr);
                     if (!isNaN(date.getTime())) {
-                        formattedDate = date.toLocaleDateString('en-US', { 
+                        return date.toLocaleDateString('en-US', { 
                             year: 'numeric', 
                             month: 'long', 
                             day: 'numeric' 
                         });
                     }
-                } catch (e) {
-                    console.log('Date parsing error:', e);
-                }
-            }
+                } catch (e) {}
+                return 'N/A';
+            };
             
-            let formattedNextDate = 'N/A';
-            if (nextFollowUpDate && nextFollowUpDate !== 'None' && nextFollowUpDate !== '') {
-                try {
-                    const date = new Date(nextFollowUpDate);
-                    if (!isNaN(date.getTime())) {
-                        formattedNextDate = date.toLocaleDateString('en-US', { 
-                            year: 'numeric', 
-                            month: 'long', 
-                            day: 'numeric' 
-                        });
-                    }
-                } catch (e) {
-                    console.log('Next date parsing error:', e);
-                }
-            }
+            const formattedDate = formatDate(followUpDate);
+            const formattedNextDate = formatDate(nextFollowUpDate);
             
             // Build meta HTML
             metaDiv.innerHTML = `
@@ -1700,7 +1752,7 @@
             `;
             
             // Set reply content
-            replyDiv.innerHTML = reply ? reply.replace(/\n/g, '<br>') : '<span class="no-data">No reply provided</span>';
+            replyDiv.innerHTML = reply ? reply.replace(/\n/g, '<br>') : '<span style="color: #94a3b8; font-style: italic;">No reply provided</span>';
             
             // Set notes content if exists
             if (notes && notes.trim() !== '' && notes !== 'None') {
@@ -1710,17 +1762,86 @@
                 notesSection.style.display = 'none';
             }
             
-            // Set selected items if exists
-            if (selectedItems && selectedItems.length > 0) {
-                let itemsHtml = '<ul style="margin: 0; padding-left: 20px; list-style-type: none;">';
-                selectedItems.forEach(item => {
-                    itemsHtml += `<li style="margin-bottom: 6px; display: flex; align-items: center;">
-                        <span style="background: #10b981; color: white; border-radius: 50%; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; margin-right: 8px; font-size: 0.6em;">✓</span>
-                        <span>${item}</span>
-                    </li>`;
+            // Process and display selected items with improved formatting
+            let itemsArray = [];
+            let grandTotal = 0;
+            
+            // Parse items from raw JSON or selectedItems
+            try {
+                if (rawItemsJson && rawItemsJson !== '' && rawItemsJson !== 'null') {
+                    const parsed = JSON.parse(rawItemsJson);
+                    if (parsed && parsed.item_details && Array.isArray(parsed.item_details)) {
+                        itemsArray = parsed.item_details;
+                        grandTotal = parsed.total || 0;
+                    } else if (Array.isArray(parsed)) {
+                        itemsArray = parsed;
+                    }
+                } else if (selectedItems && selectedItems.length > 0) {
+                    itemsArray = selectedItems.map(i => ({
+                        name: typeof i === 'object' ? (i.name || i.item_name || String(i)) : String(i),
+                        quantity: typeof i === 'object' ? (i.quantity || i.qty || 1) : 1,
+                        unit: typeof i === 'object' ? (i.unit || 'pcs') : 'pcs',
+                        price: typeof i === 'object' ? i.price : null,
+                        total: typeof i === 'object' ? i.total : null
+                    }));
+                }
+            } catch(e) {
+                console.warn('Error parsing items:', e);
+            }
+            
+            if (itemsArray.length > 0) {
+                // Calculate grand total if not already set
+                if (grandTotal === 0) {
+                    itemsArray.forEach(item => {
+                        const qty = parseFloat(item.quantity || item.qty || 1);
+                        const price = parseFloat(item.price || 0);
+                        const total = parseFloat(item.total || (qty * price) || 0);
+                        grandTotal += total;
+                    });
+                }
+                
+                // Update summary badge
+                itemsSummary.textContent = `${itemsArray.length} item${itemsArray.length > 1 ? 's' : ''} · ₹${grandTotal.toFixed(2)}`;
+                
+                // Build items table
+                let tableHtml = `
+                    <table class="items-table">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left; padding-left: 15px;">Item Name</th>
+                                <th style="text-align: center;">Qty</th>
+                                <th style="text-align: center;">Unit</th>
+                                <th style="text-align: right;">Price (₹)</th>
+                                <th style="text-align: right; padding-right: 15px;">Total (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                itemsArray.forEach((item, index) => {
+                    const name = item.name || item.item_name || '-';
+                    const qty = parseFloat(item.quantity || item.qty || 1);
+                    const unit = item.unit || 'pcs';
+                    const price = parseFloat(item.price || 0);
+                    const total = parseFloat(item.total || (qty * price) || 0);
+                    
+                    const rowBg = index % 2 === 0 ? '#ffffff' : '#f8fafc';
+                    
+                    tableHtml += `
+                        <tr style="background: ${rowBg};">
+                            <td style="padding-left: 15px; font-weight: 500; color: #0f172a;">${name}</td>
+                            <td style="text-align: center; font-weight: 600;">${qty}</td>
+                            <td style="text-align: center; color: #64748b;">${unit}</td>
+                            <td style="text-align: right; font-family: monospace;">₹${price.toFixed(2)}</td>
+                            <td style="text-align: right; padding-right: 15px; font-family: monospace; color: #059669; font-weight: 600;">₹${total.toFixed(2)}</td>
+                        </tr>
+                    `;
                 });
-                itemsHtml += '</ul>';
-                selectedItemsList.innerHTML = itemsHtml;
+                
+                // Add grand total row
+                
+                
+                selectedItemsList.innerHTML = tableHtml;
                 selectedItemsSection.style.display = 'block';
             } else {
                 selectedItemsSection.style.display = 'none';
@@ -1731,27 +1852,33 @@
                 (assignedTo && assignedTo !== 'None' && assignedTo !== '') || 
                 (nextFollowUpDate && nextFollowUpDate !== 'None' && nextFollowUpDate !== '')) {
                 
-                let nextActionHtml = '<div style="display: flex; flex-direction: column; gap: 8px;">';
-                
-                if (nextAction && nextAction !== 'None' && nextAction !== '') {
-                    nextActionHtml += `<div style="display: flex; align-items: baseline; padding: 6px 0; border-bottom: 1px dashed #cbd5e0;">
-                        <span style="font-weight: 600; min-width: 100px; color: #2c3e50;">Next Action:</span>
-                        <span style="color: #2c3e50;">${nextAction}</span>
-                    </div>`;
-                }
+                let nextActionHtml = '<div style="display: flex; flex-direction: column; gap: 12px;">';
                 
                 if (assignedTo && assignedTo !== 'None' && assignedTo !== '') {
-                    nextActionHtml += `<div style="display: flex; align-items: baseline; padding: 6px 0; border-bottom: 1px dashed #cbd5e0;">
-                        <span style="font-weight: 600; min-width: 100px; color: #2c3e50;">Assigned To:</span>
-                        <span style="color: #2c3e50;">${assignedTo}</span>
-                    </div>`;
+                    nextActionHtml += `
+                        <div style="display: flex; align-items: baseline; padding: 8px 0; border-bottom: 1px dashed #cbd5e0;">
+                            <span style="font-weight: 600; min-width: 120px; color: #2c3e50;">Assigned To:</span>
+                            <span style="color: #2c3e50; font-weight: 500;">${assignedTo}</span>
+                        </div>
+                    `;
+                }
+                
+                if (nextAction && nextAction !== 'None' && nextAction !== '') {
+                    nextActionHtml += `
+                        <div style="display: flex; align-items: baseline; padding: 8px 0; border-bottom: 1px dashed #cbd5e0;">
+                            <span style="font-weight: 600; min-width: 120px; color: #2c3e50;">Next Action:</span>
+                            <span style="color: #2c3e50;">${nextAction}</span>
+                        </div>
+                    `;
                 }
                 
                 if (nextFollowUpDate && nextFollowUpDate !== 'None' && nextFollowUpDate !== '') {
-                    nextActionHtml += `<div style="display: flex; align-items: baseline; padding: 6px 0;">
-                        <span style="font-weight: 600; min-width: 100px; color: #2c3e50;">Next Follow-up:</span>
-                        <span style="color: #2c3e50; font-weight: 600;">${formattedNextDate}</span>
-                    </div>`;
+                    nextActionHtml += `
+                        <div style="display: flex; align-items: baseline; padding: 8px 0;">
+                            <span style="font-weight: 600; min-width: 120px; color: #2c3e50;">Next Follow-up:</span>
+                            <span style="color: #2563eb; font-weight: 600;">${formattedNextDate}</span>
+                        </div>
+                    `;
                 }
                 
                 nextActionHtml += '</div>';
@@ -1864,34 +1991,52 @@
                 const checkboxId = `req_item_${index}_${Date.now()}`;
                 
                 html += `
-                    <div class="checkbox-item" data-item-id="${itemId}" data-section="${section}">
-                        <input type="checkbox" 
-                               id="${checkboxId}" 
-                               class="req-checkbox" 
-                               value="${itemDisplay}" 
-                               ${checkedAttr} 
-                               data-item-id="${itemId}"
-                               data-item-name="${itemDisplay}"
-                               data-qty="${qtyDisplay}"
-                               data-price="${price}"
-                               data-total="${total}"
-                               data-unit="${unitDisplay}"
-                               data-section="${section}"
-                               data-status="${statusDisplay}">
-                        <div class="checkbox-content">
-                            <span class="item-name" style="font-weight: 500;">${itemDisplay}</span>
-                            <span class="item-meta" style="font-size: 0.7rem; color: #64748b; display: block; margin-top: 4px;">
-                                <span><strong>Qty:</strong> ${qtyDisplay} ${unitDisplay}</span><br>
-                                <span><strong>Price:</strong> ${priceFormatted}</span><br>
-                                <span><strong>Total:</strong> <span style="color: #28a745; font-weight: 600;">${totalFormatted}</span></span>
-                                <span class="badge ${badgeClass}" style="display: inline-block; margin-left: 5px; padding: 2px 6px; border-radius: 12px; font-size: 0.65rem;">${statusIcon} ${statusDisplay}</span>
-                            </span>
-                        </div>
-                    </div>
+                    <tr class="checkbox-item req-item-row" data-item-id="${itemId}" data-section="${section}" style="${index%2===1?'background:#f8fafc;':''}">
+                        <td style="padding: 6px 8px; text-align:center; width:36px;">
+                            <input type="checkbox" 
+                                   id="${checkboxId}" 
+                                   class="req-checkbox" 
+                                   value="${itemDisplay}" 
+                                   ${checkedAttr} 
+                                   data-item-id="${itemId}"
+                                   data-item-name="${itemDisplay}"
+                                   data-qty="${qtyDisplay}"
+                                   data-price="${price}"
+                                   data-total="${total}"
+                                   data-unit="${unitDisplay}"
+                                   data-section="${section}"
+                                   data-status="${statusDisplay}">
+                        </td>
+                        <td style="padding: 6px 8px; font-weight: 500; color:#0f172a;">${itemDisplay}</td>
+                        <td style="padding: 6px 8px; text-align:center; color:#334155;">${qtyDisplay}</td>
+                        <td style="padding: 6px 8px; text-align:center; color:#334155;">${unitDisplay}</td>
+                        <td style="padding: 6px 8px; text-align:right; color:#334155;">${priceFormatted}</td>
+                        <td style="padding: 6px 8px; text-align:right; color:#28a745; font-weight:600;">${totalFormatted}</td>
+                        <td style="padding: 6px 8px; text-align:center;">
+                           
+                        </td>
+                    </tr>
                 `;
             });
             
-            container.innerHTML = html;
+            const tableWrapper = `
+                <div style="overflow-x:auto;">
+                <table style="width:100%; border-collapse:collapse; font-size:0.82rem;">
+                    <thead>
+                        <tr style="background:#f1f5f9; border-bottom: 2px solid #e2e8f0;font-weight:bold;">
+                            <th style="padding:7px 8px; text-align:center; width:36px; color:#475569; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.03em;"></th>
+                            <th style="padding:7px 8px; text-align:left; color:white; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.03em;">Item</th>
+                            <th style="padding:7px 8px; text-align:center; color:white; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.03em;">Qty</th>
+                            <th style="padding:7px 8px; text-align:center; color:white; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.03em;">Unit</th>
+                            <th style="padding:7px 8px; text-align:right; color:white; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.03em;">Price</th>
+                            <th style="padding:7px 8px; text-align:right; color:white; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.03em;">Total</th>
+                            
+                        </tr>
+                    </thead>
+                    <tbody>${html}</tbody>
+                </table>
+                </div>`;
+            container.innerHTML = tableWrapper;
             updateSelectedCount();
             
             document.querySelectorAll('.req-checkbox').forEach(cb => {

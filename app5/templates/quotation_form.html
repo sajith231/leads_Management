@@ -18,15 +18,29 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
-        body {
+        html, body {
             background: #f0f2f5;
-            min-height: 100vh;
-            padding: 20px;
+            height: 100vh;
+            width: 100vw;
+            overflow-x: hidden;
+            padding: 0;
+            margin: 0;
+        }
+        
+        body {
+           
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
         }
         
         .container {
-            max-width: 1800px;
+            max-width: 100%;
+            width: 100%;
             margin: 0 auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
         
         /* Header Section */
@@ -109,7 +123,8 @@
             gap: 25px;
             align-items: stretch;
             width: 100%;
-            min-height: 80vh;
+            flex: 1;
+            min-height: 0;
         }
         
         /* Directory Column */
@@ -118,6 +133,7 @@
             width: 350px;
             display: flex;
             flex-direction: column;
+            height: 100%;
         }
         
         /* Quotations Column */
@@ -126,6 +142,7 @@
             min-width: 0;
             display: flex;
             flex-direction: column;
+            height: 100%;
         }
         
         /* ========================================
@@ -402,7 +419,7 @@
             overflow-y: auto;
             padding: 8px 0;
             display: none;
-            max-height: 600px;
+            max-height: none;
         }
         
         .lead-list.active, .employee-list.active {
@@ -769,31 +786,31 @@
         }
         
         .quotations-table th {
-           
-            color: rgb(3, 3, 3);
+            background-color: #030303;
+            color: rgb(250, 250, 250);
             padding: 18px 15px;
             text-align: left;
             font-weight: 600;
             font-size: 15px;
-            border:1px solid #efe9e9 ;
+            
             position: sticky;
             top: 0;
         }
         
         .quotations-table td {
             padding: 16px 15px;
-            border: 1px solid #efe9e9;
+           
             font-size: 14px;
             vertical-align: middle;
             transition: background-color 0.2s;
         }
         
         .quotations-table tr:nth-child(even) {
-            background-color: #f9f9f9;
+            background-color: #eeeded;
         }
         
         .quotations-table tr:hover {
-            background-color: #f0f8ff;
+            background-color: #dddedf;
             transform: translateY(-1px);
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
@@ -846,12 +863,13 @@
         }
         
         .client-email {
+            background-color: #afcbeb;
             font-size: 12px;
             color: #0a0a0a;
         }
         
         .amount {
-            font-weight: 700;
+            font-weight: 300;
             color: #030303;
             font-size: 15px;
         }
@@ -1243,6 +1261,12 @@
             display: flex;
             gap: 15px;
             flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .table-filters .header-actions {
+            margin-left: auto;
         }
         
         .filter-group {
@@ -1265,6 +1289,32 @@
             min-width: 150px;
         }
         
+        /* Items List in Table */
+        .items-list {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .item-name-tag {
+            display: inline-block;
+        
+            color: #0c0c0c;
+            
+            border-radius: 4px;
+            padding: 2px 7px;
+            font-size: 11.5px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 180px;
+        }
+
+        .text-muted {
+            color: #adb5bd;
+        }
+
         /* Empty State */
         .empty-state {
             text-align: center;
@@ -1811,29 +1861,7 @@
 
             <!-- Right Column - Quotations Table -->
             <div class="quotations-column">
-                <div class="header-section">
-                    <div>
-                        <h1>Saved Quotations</h1>
-                       
-                        <div style="margin-top: 10px; font-size: 14px; opacity: 0.9;">
-                            {% if quotations|length > 0 %}
-                            Showing <span id="headerQuotationCount">{{ quotations|length }}</span> quotations | Total: ₹<span id="headerTotalAmount">{{ total_amount|default:"0.00" }}</span>
-                            {% else %}
-                            No quotations found
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="header-actions">
-                        <button class="btn-refresh" onclick="window.location.href='{% url 'app5:lead_report' %}'">
-                            <i class="fas fa-sync-alt"></i>
-                            Back
-                        </button>
-                        <a href="{% url 'app5:quotation_list' %}" class="btn-add-new">
-                            <i class="fas fa-plus-circle"></i>
-                            Create New 
-                        </a>
-                    </div>
-                </div>
+                
                 
                 <!-- Table Filters -->
                 <div class="table-filters">
@@ -1846,17 +1874,22 @@
                             <option value="month">This Month</option>
                         </select>
                     </div>
+                    <div class="header-actions">
+                        <button class="btn-refresh" onclick="window.location.href='{% url 'app5:lead_report' %}'">
+                            <i class="fas fa-sync-alt"></i>
+                            Back
+                        </button>
+                        <a href="{% url 'app5:quotation_list' %}" class="btn-add-new">
+                            <i class="fas fa-plus-circle"></i>
+                            Create New 
+                        </a>
+                    </div>
+
                 </div>
                 
                 <!-- Quotations Table -->
                 <div class="table-container">
-                    <div class="table-header">
-                        <h2>All Quotations</h2>
-                        <div class="table-stats">
-                            <span id="quotationCount">{{ quotations|length }}</span> Quotations
-                            <span id="totalAmount" style="margin-left: 20px;">Total: ₹{{ total_amount|default:"0.00" }}</span>
-                        </div>
-                    </div>
+                  
                     
                     <div class="table-content">
                         <table class="quotations-table">
@@ -1865,7 +1898,7 @@
                                     <th width="80">Sl.No</th>
                                     <th width="120">Date</th>
                                     <th width="150">Client</th>
-                                    <th width="80">Items</th>
+                                    <th width="200">Items</th>
                                     <th width="120">Subtotal</th>
                                     <th width="120">Tax</th>
                                     <th width="120">Total</th>
@@ -1880,10 +1913,17 @@
                                         data-lead-ticket="{{ quotation.lead.ticket_number|default:'' }}"
                                         data-quotation-number="{{ quotation.quotation_number }}"
                                         data-client-name="{{ quotation.client_name|default:'Unknown Client' }}"
-                                        data-amount="₹{{ quotation.grand_total|floatformat:2 }}"
+                                        data-amount="{{ quotation.grand_total|floatformat:2 }}"
                                         data-branch-id="{{ quotation.department_id|default:quotation.lead.requirement|default:'' }}">
                                         <td>{{ forloop.counter }}</td>
-                                        <td>{{ quotation.created_at|date:"Y-m-d" }}</td>
+                                        <td>{{ quotation.created_at|date:"d-m-Y" }}<br>
+                                            {% if quotation.lead %}
+                                                    <span class="client-email">
+                                                       
+                                                        {{ quotation.lead.ticket_number|default:"No Ticket" }}
+                                                    </span>
+                                                {% endif %}
+                                        </td>
                                         <td>
                                             <div class="client-info">
                                                 <span class="client-name">
@@ -1892,25 +1932,29 @@
                                                 <span class="client-phone">
                                                     {{ quotation.client_phone|default:"No Phone" }}
                                                 </span>
-                                                {% if quotation.lead %}
+                                                <!-- {% if quotation.lead %}
                                                     <span class="client-email">
                                                         <i class="fas fa-ticket-alt"></i> 
                                                         {{ quotation.lead.ticket_number|default:"No Ticket" }}
                                                     </span>
-                                                {% endif %}
+                                                {% endif %} -->
                                             </div>
                                         </td>
                                         
                                         <td>
                                             {% if quotation.items.all %}
-                                                {{ quotation.items.all.count }}
+                                                <div class="items-list">
+                                                    {% for item in quotation.items.all %}
+                                                        <span class="item-name-tag">{{ item.item_name }}</span>
+                                                    {% endfor %}
+                                                </div>
                                             {% else %}
-                                                0
+                                                <span class="text-muted">—</span>
                                             {% endif %}
                                         </td>
-                                        <td class="amount">₹{{ quotation.subtotal|floatformat:2 }}</td>
-                                        <td class="amount">₹{{ quotation.total_tax|floatformat:2 }}</td>
-                                        <td class="amount">₹{{ quotation.grand_total|floatformat:2 }}</td>
+                                        <td class="amount">{{ quotation.subtotal|floatformat:2 }}</td>
+                                        <td class="amount">{{ quotation.total_tax|floatformat:2 }}</td>
+                                        <td class="amount">{{ quotation.grand_total|floatformat:2 }}</td>
                                         <td>
                                             <div class="action-cell">
                                                 <button class="btn-action btn-edit" onclick="editQuotation('{{ quotation.id }}')" title="Edit">
@@ -1919,7 +1963,7 @@
                                                 <button class="btn-action btn-download" onclick="showBranchSelection('{{ quotation.id }}', '{{ quotation.quotation_number }}')" title="Download PDF">
                                                     <i class="fas fa-download"></i>
                                                 </button>
-                                                <button class="btn-action btn-delete" onclick="showDeleteConfirmation('{{ quotation.id }}', '{{ quotation.client_name|default:"Unknown Client"|escapejs }}', '₹{{ quotation.grand_total|floatformat:2 }}')" title="Delete">
+                                                <button class="btn-action btn-delete" onclick="showDeleteConfirmation('{{ quotation.id }}', '{{ quotation.client_name|default:"Unknown Client"|escapejs }}', '{{ quotation.grand_total|floatformat:2 }}')" title="Delete">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
@@ -2362,7 +2406,7 @@ function filterQuotations() {
             // Extract amount for total calculation
             const amountCell = row.querySelector('td:nth-child(7)');
             if (amountCell) {
-                const amountText = amountCell.textContent.replace('₹', '').replace(/,/g, '').trim();
+                const amountText = amountCell.textContent.replace('', '').replace(/,/g, '').trim();
                 const amount = parseFloat(amountText) || 0;
                 totalAmount += amount;
             }
@@ -2427,7 +2471,7 @@ function resetFilters() {
     rows.forEach(row => {
         const amountCell = row.querySelector('td:nth-child(7)');
         if (amountCell) {
-            const amountText = amountCell.textContent.replace('₹', '').replace(/,/g, '').trim();
+            const amountText = amountCell.textContent.replace('', '').replace(/,/g, '').trim();
             totalAmount += parseFloat(amountText) || 0;
         }
     });
@@ -2440,7 +2484,7 @@ function resetFilters() {
 // Function to update counts after filtering
 function updateFilteredCounts(count, total) {
     document.getElementById('quotationCount').textContent = count;
-    document.getElementById('totalAmount').textContent = `Total: ₹${total.toFixed(2)}`;
+    document.getElementById('totalAmount').textContent = `Total: ${total.toFixed(2)}`;
     document.getElementById('headerQuotationCount').textContent = count;
     document.getElementById('headerTotalAmount').textContent = total.toFixed(2);
 }
@@ -2456,7 +2500,7 @@ document.addEventListener('DOMContentLoaded', function() {
         leadId: row.getAttribute('data-lead-id'),
         leadTicket: row.getAttribute('data-lead-ticket'),
         clientName: row.getAttribute('data-client-name'),
-        amount: parseFloat(row.getAttribute('data-amount').replace('₹', '').replace(',', '')) || 0
+        amount: parseFloat(row.getAttribute('data-amount').replace('', '').replace(',', '')) || 0
     }));
     
     // Set up lead selection
@@ -2694,7 +2738,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         function updateQuotationCounts(count, total) {
             document.getElementById('quotationCount').textContent = count;
-            document.getElementById('totalAmount').textContent = `Total: ₹${total.toFixed(2)}`;
+            document.getElementById('totalAmount').textContent = `Total: ${total.toFixed(2)}`;
             document.getElementById('headerQuotationCount').textContent = count;
             document.getElementById('headerTotalAmount').textContent = total.toFixed(2);
         }

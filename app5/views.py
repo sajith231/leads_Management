@@ -5308,7 +5308,7 @@ def lead_edit(request, lead_id):
             
             requirements_data.append(req_dict)
             
-            logger.debug(f"  Item: {req.item_name}, Unit: {item_unit}, Price: ₹{item_price}, Qty: {quantity_val}, Total: ₹{total_val}")
+            logger.debug(f"  Item: {req.item_name}, Unit: {item_unit}, Price: {item_price}, Qty: {quantity_val}, Total: {total_val}")
         
         # Convert to JSON
         requirements_json = json.dumps(requirements_data, cls=DjangoJSONEncoder)
@@ -8379,7 +8379,7 @@ def update_quotation(request, pk):
                     
                     grand_total = subtotal + total_tax
                     
-                    logger.info(f"💰 Recalculated totals - Subtotal: ₹{subtotal:.2f}, Tax: ₹{total_tax:.2f}, Grand Total: ₹{grand_total:.2f}")
+                    logger.info(f"💰 Recalculated totals - Subtotal: {subtotal:.2f}, Tax: {total_tax:.2f}, Grand Total: {grand_total:.2f}")
                 else:
                     subtotal = Decimal('0')
                     total_discount = Decimal('0')
