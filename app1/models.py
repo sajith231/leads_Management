@@ -775,7 +775,12 @@ class Project(models.Model):
         ('Inactive', 'Inactive'),
         
     ]
-
+     # NEW: Priority choices
+    PRIORITY_CHOICES = [
+        ('High', 'High'),
+        ('Medium', 'Medium'),
+        ('Low', 'Low'),
+    ]
     project_name = models.CharField(max_length=200)
     languages = models.CharField(max_length=200)
     technologies = models.CharField(max_length=200)
@@ -787,6 +792,7 @@ class Project(models.Model):
     assigned_person = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True)
     client = models.CharField(max_length=200, default='')  # Added client field
     project_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Active')  # Added project status field
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='Medium')
     project_type = models.CharField(max_length=50, choices=PROJECT_TYPES)
     project_duration = models.CharField(max_length=50)
     deadline = models.DateField(null=True, blank=True) 
