@@ -1,0 +1,1271 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Delete Purchase Order{% endblock %}
+
+{% block content %}
+  <title>Sales Orders · Zenith</title>
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #f3f6fc;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* full screen container */
+        .full-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem 2rem 2rem 2rem;
+            max-width: 100%;
+            width: 100%;
+        }
+
+        /* header with gradient accent */
+        .so-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.8rem;
+        }
+        .so-header-left {
+            display: flex;
+            flex-direction: column;
+        }
+        .so-title {
+            font-size: 2.2rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            color: #0b1e3a;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .so-title i {
+            color: #2a5c9e;
+            background: #e8f0fe;
+            padding: 10px;
+            border-radius: 20px;
+            font-size: 1.8rem;
+        }
+        .so-subtitle {
+            color: #4a5b7a;
+            font-size: 1rem;
+            margin-top: 4px;
+            margin-left: 56px;
+        }
+        .btn-create {
+            background: linear-gradient(145deg, #1d4ed8, #2563eb);
+            color: white;
+            padding: 0.9rem 2rem;
+            border-radius: 6px;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.05rem;
+            box-shadow: 0 8px 16px -5px #1e3c8a70;
+            transition: all 0.2s;
+            border: 1px solid #ffffff30;
+        }
+        .btn-create i {
+            font-size: 1.1rem;
+        }
+        .btn-create:hover {
+            background: linear-gradient(145deg, #1e3c8a, #1d4ed8);
+            transform: scale(1.02);
+            box-shadow: 0 12px 24px -8px #0f2b62;
+        }
+
+        /* filter bar - updated for single line */
+        .so-filter-bar {
+            background: #f8fafd;
+            border-radius: 28px;
+            padding: 1rem 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid #e2eaf6;
+            box-shadow: inset 0 1px 3px #ffffff, 0 4px 10px -8px #97a9c2;
+        }
+        
+        .so-filters-container {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .so-search-wrap {
+            position: relative;
+            flex: 2;
+            min-width: 200px;
+        }
+        .so-search-icon {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6f8fbc;
+            font-size: 1.1rem;
+            pointer-events: none;
+        }
+        .so-search-input {
+            width: 100%;
+            padding: 0.8rem 1rem 0.8rem 50px;
+            border: 1px solid #d4e0f0;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            background: white;
+            box-shadow: 0 2px 6px rgba(0,20,40,0.02);
+            transition: 0.15s;
+        }
+        .so-search-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 4px #bfdbfe;
+        }
+        
+        .so-filters-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.8rem;
+            flex: 3;
+        }
+        
+        .so-filter-item {
+            display: flex;
+            flex-direction: column;
+            min-width: 130px;
+        }
+        .so-filter-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            font-weight: 600;
+            color: #4f6f9f;
+            margin-bottom: 2px;
+        }
+        .so-filter-select {
+            background: white;
+            border: 1px solid #d9e2f0;
+            border-radius: 6px;
+            padding: 0.6rem 1.8rem 0.6rem 1rem;
+            font-size: 0.85rem;
+            color: #0b1e3a;
+            cursor: pointer;
+            transition: 0.1s;
+            appearance: none;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="%23333a4e" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right 0.8rem center;
+        }
+        .so-filter-select:hover {
+            border-color: #9bb5da;
+        }
+        input[type="date"].so-filter-select {
+            background-image: none;
+            padding-right: 1rem;
+            color-scheme: light;
+            min-width: 130px;
+        }
+        .so-clear-btn {
+            background: white;
+            border: 1px solid #d0ddeb;
+            border-radius: 6px;
+            padding: 0.6rem 1.2rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #4a5e7a;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: 0.15s;
+            white-space: nowrap;
+            margin-top: 18px; /* Align with inputs */
+        }
+        .so-clear-btn:hover {
+            background: #f2f6ff;
+            border-color: #9fb0d3;
+            color: #1d3a6d;
+        }
+
+        /* table card - takes full remaining width */
+        .so-table-card {
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #ecf2fa;
+            overflow: hidden;
+            box-shadow: 0 10px 25px -15px #8da0bb;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 400px;
+        }
+        .so-table-scroll {
+            overflow-x: auto;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #bdd1eb #f0f5fe;
+            flex: 1;
+        }
+        .so-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1200px;
+            table-layout: fixed; /* Fixed table layout for better column control */
+        }
+        
+        /* Define specific column widths */
+        .so-table th:nth-child(1) { width: 10%; }  /* SO Number */
+        .so-table th:nth-child(2) { width: 12%; }  /* SO Date (combined) */
+        .so-table th:nth-child(3) { width: 12%; }  /* Customer */
+        .so-table th:nth-child(4) { width: 13%; }  /* Department */
+        .so-table th:nth-child(5) { width: 7%; }   /* Items */
+        .so-table th:nth-child(6) { width: 8%; }   /* Grand Total */
+        .so-table th:nth-child(7) { width: 8%; }   /* Status */
+        .so-table th:nth-child(8) { width: 8%; }   /* Payment */
+        .so-table th:nth-child(9) { width: 7%; }   /* Actions */
+        
+        .so-table thead tr {
+            background: #f8fbfe;
+            border-bottom: 2px solid #dde6f5;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .so-table th {
+            text-align: left;
+            padding: 1.2rem 0.8rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+            background-color: black;
+            color: #fbfbfc;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+        }
+        .so-table td {
+            padding: 1.2rem 0.8rem;
+            border-bottom: 1px solid #eef3fc;
+            color: #162b4a;
+            vertical-align: middle;
+            word-wrap: break-word;
+        }
+        .so-table tbody tr:hover td {
+            background-color: #f6faff;
+            transition: 0.1s;
+        }
+        
+        /* Text alignment classes */
+        .col-center {
+            text-align: center !important;
+        }
+        .col-left {
+            text-align: left !important;
+        }
+        .col-right {
+            text-align: right !important;
+        }
+        
+        /* Apply alignments to specific columns */
+        .so-table td:nth-child(6) {  /* Grand Total */
+            text-align: right;
+            font-weight: 500;
+        }
+        .so-table td:nth-child(7),    /* Status */
+        .so-table td:nth-child(8),    /* Payment */
+        .so-table td:nth-child(9) {   /* Actions */
+            text-align: center;
+        }
+        
+        /* Ensure headers match content alignment */
+        .so-table th:nth-child(6) {   /* Grand Total header */
+            text-align: right;
+            padding-right: 1rem;
+        }
+        .so-table th:nth-child(7),    /* Status header */
+        .so-table th:nth-child(8),    /* Payment header */
+        .so-table th:nth-child(9) {   /* Actions header */
+            text-align: center;
+        }
+
+        /* customer info */
+        .cust-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            max-width: 100%;
+        }
+        .cust-info strong {
+            font-weight: 600;
+            color: #0b1e3a;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cust-loc {
+            font-size: 0.75rem;
+            color: #647b9e;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cust-loc::before {
+            content: "\f3c5";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 400;
+            font-size: 0.65rem;
+            opacity: 0.7;
+        }
+
+        /* so number & reference */
+        .so-link {
+            font-weight: 600;
+            color: #1d4ed8;
+            text-decoration: none;
+            border-bottom: 1px dashed #9ab3dd;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+            display: inline-block;
+        }
+        .so-link:hover {
+            color: #0f2f75;
+            border-bottom-style: solid;
+        }
+        .so-ref {
+            display: block;
+            font-size: 0.7rem;
+            color: #5b7293;
+            margin-top: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* badges */
+        .badge {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 0.75rem;
+            letter-spacing: 0.2px;
+            min-width: 70px;
+            max-width: 100%;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .badge.status-draft { background: #cee1fd; color: #475569; border: 1px solid #cbd5e1; }
+        .badge.status-confirmed { background: #dbeafe; color: #1e40af; border: 1px solid #a7c4fc; }
+        .badge.status-shipped { background: #dcfce7; color: #166534; border: 1px solid #86d9a4; }
+        .badge.status-delivered { background: #e0f2fe; color: #0369a1; border: 1px solid #7ab7e0; }
+        .badge.status-cancelled { background: #fee2e2; color: #991b1b; border: 1px solid #f7a3a3; }
+        .badge.payment-pending { background: #ffedd5; color: #9a3412; border: 1px solid #fdba74; }
+        .badge.payment-partial { background: #fef9c3; color: #854d0e; border: 1px solid #facc15; }
+        .badge.payment-paid { background: #dcfce7; color: #166534; border: 1px solid #86d9a4; }
+
+        /* action buttons */
+        .action-group {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+            flex-wrap: nowrap;
+        }
+        .act-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border: 1px solid #e1eaf3;
+            color: #3c5a87;
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: 0.1s;
+            flex-shrink: 0;
+        }
+        .act-btn:hover {
+            background: #1d4ed8;
+            border-color: #1d4ed8;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px -6px #2563eb;
+        }
+        .act-delete:hover {
+            background: #b91c1c;
+            border-color: #b91c1c;
+            color: white;
+        }
+
+        /* pagination */
+        .so-pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.2rem 2rem;
+            background: #fafdff;
+            border-top: 1px solid #dde6f5;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .so-page-info {
+            color: #435e83;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+        .so-pages {
+            display: flex;
+            gap: 8px;
+            list-style: none;
+        }
+        .so-pages li a, .so-pages li span {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 38px;
+            height: 38px;
+            padding: 0 6px;
+            border-radius: 14px;
+            background: white;
+            border: 1px solid #d2e0f2;
+            color: #1e3f70;
+            font-weight: 500;
+            text-decoration: none;
+        }
+        .so-pages li.active span {
+            background: #1d4ed8;
+            border-color: #1d4ed8;
+            color: white;
+        }
+        .so-pages li a:hover {
+            background: #e8f0fe;
+            border-color: #97b4df;
+        }
+        .disabled span {
+            opacity: 0.5;
+        }
+
+        /* empty state */
+        .so-empty {
+            padding: 5rem 2rem;
+            text-align: center;
+            color: #5f7ea0;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .so-empty i {
+            font-size: 4rem;
+            color: #c1d6f0;
+            margin-bottom: 1rem;
+        }
+        .so-empty p {
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* modal */
+        .so-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,20,40,0.6);
+            backdrop-filter: blur(3px);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .so-modal.active {
+            display: flex;
+        }
+        .so-modal-box {
+            background: white;
+            max-width: 400px;
+            width: 90%;
+            border-radius: 32px;
+            box-shadow: 0 30px 60px #0b1e3a40;
+            animation: modalPop 0.2s;
+        }
+        @keyframes modalPop {
+            from { opacity: 0.5; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .so-modal-head {
+            padding: 1.8rem 1.8rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #b91c1c;
+        }
+        .so-modal-head i {
+            font-size: 2rem;
+        }
+        .so-modal-head h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+        .so-modal-body {
+            padding: 0.5rem 1.8rem 1.5rem;
+            color: #334155;
+        }
+        .so-modal-warn {
+            background: #fff7e0;
+            border-radius: 16px;
+            padding: 0.8rem 1rem;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: #92400e;
+            display: flex;
+            align-items: center;
+        }
+        .so-modal-foot {
+            padding: 1rem 1.8rem 1.8rem;
+            display: flex;
+            justify-content: flex-end;
+            gap: 14px;
+        }
+        .btn-cancel, .btn-del {
+            padding: 0.7rem 1.6rem;
+            border-radius: 40px;
+            font-weight: 500;
+            border: none;
+            font-size: 0.95rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.15s;
+        }
+        .btn-cancel {
+            background: #f1f4f9;
+            color: #364e72;
+        }
+        .btn-cancel:hover {
+            background: #e2e9f3;
+        }
+        .btn-del {
+            background: #b91c1c;
+            color: white;
+        }
+        .btn-del:hover {
+            background: #991b1b;
+        }
+
+        /* responsive adjustments */
+        @media (max-width: 1400px) {
+            .so-table {
+                min-width: 1000px;
+            }
+        }
+        
+        @media (max-width: 1200px) {
+            .so-filters-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .so-filters-row {
+                justify-content: space-between;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .full-screen {
+                padding: 1rem;
+            }
+            .so-title {
+                font-size: 1.8rem;
+            }
+            .so-subtitle {
+                margin-left: 0;
+            }
+            .so-filter-bar {
+                padding: 1.2rem;
+            }
+            .so-filters-row {
+                gap: 0.8rem;
+            }
+            .so-filter-item {
+                min-width: 100%;
+            }
+            .so-clear-btn {
+                margin-top: 0;
+                width: 100%;
+                justify-content: center;
+            }
+        }
+        /* ── items view button ─────────────────────────── */
+        .act-items {
+            background: #eef2ff;
+            color: #4338ca;
+            border: 1px solid #c7d2fe;
+        }
+        .act-items:hover {
+            background: #c7d2fe;
+            color: #312e81;
+            border-color: #a5b4fc;
+        }
+
+        /* ── items modal overlay ───────────────────────── */
+        .items-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 15, 40, 0.50);
+            z-index: 1200;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        .items-overlay.active { display: flex; }
+
+        .items-modal {
+            background: #fff;
+            border-radius: 14px;
+            width: 92%;
+            max-width: 860px;
+            max-height: 82vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 30px 70px -10px rgba(5,15,60,0.38);
+            overflow: hidden;
+            animation: slideUp .2s ease;
+        }
+        @keyframes slideUp {
+            from { opacity:0; transform: translateY(24px); }
+            to   { opacity:1; transform: translateY(0); }
+        }
+
+        /* modal header */
+        .items-modal-hd {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.4rem;
+            background: linear-gradient(135deg, #1e40af, #2563eb);
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .items-modal-hd h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin: 0;
+        }
+        .items-modal-hd h3 i { font-size: 1rem; opacity:.85; }
+        .items-close-btn {
+            background: rgba(255,255,255,.15);
+            border: none;
+            color: #fff;
+            width: 30px;
+            height: 30px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: .9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background .15s;
+            flex-shrink: 0;
+        }
+        .items-close-btn:hover { background: rgba(255,255,255,.3); }
+
+        /* modal body / table */
+        .items-modal-bd {
+            overflow-y: auto;
+            flex: 1;
+            padding: 0;
+        }
+        .items-tbl {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .86rem;
+        }
+        .items-tbl thead tr {
+            background: #f0f5ff;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+        .items-tbl th {
+            padding: .75rem 1rem;
+            font-weight: 600;
+            color: #1e3a6e;
+            border-bottom: 2px solid #dde8f8;
+            font-size: .75rem;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            white-space: nowrap;
+        }
+        .items-tbl td {
+            padding: .75rem 1rem;
+            border-bottom: 1px solid #eef3fc;
+            color: #1a2e50;
+            vertical-align: middle;
+        }
+        .items-tbl tbody tr:last-child td { border-bottom: none; }
+        .items-tbl tbody tr:hover td { background: #f6faff; }
+        .items-tbl th:nth-child(1) { width: 5%;  text-align:center; }
+        .items-tbl td:nth-child(1) { text-align:center; color:#9ba8c0; font-size:.8rem; }
+        .items-tbl th:nth-child(3),
+        .items-tbl th:nth-child(4),
+        .items-tbl th:nth-child(5),
+        .items-tbl th:nth-child(6),
+        .items-tbl th:nth-child(7) { text-align:right; }
+        .items-tbl td:nth-child(3),
+        .items-tbl td:nth-child(4),
+        .items-tbl td:nth-child(5),
+        .items-tbl td:nth-child(6),
+        .items-tbl td:nth-child(7) { text-align:right; }
+        .items-tbl td:nth-child(7) { font-weight:600; color:#1d4ed8; }
+
+        .itm-name { font-weight:500; color:#0b1e3a; }
+        .itm-id   { font-size:.7rem; color:#7a8faf; margin-top:2px; }
+
+        /* empty state */
+        .items-empty {
+            text-align: center;
+            padding: 2.5rem 1rem;
+            color: #6b7280;
+        }
+        .items-empty i { font-size:2.2rem; opacity:.25; display:block; margin-bottom:10px; }
+
+        /* modal footer */
+        .items-modal-ft {
+            padding: .85rem 1.4rem;
+            border-top: 1px solid #e8eef8;
+            background: #f8fbfe;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            font-size: .82rem;
+            color: #4a5e7a;
+        }
+        .items-modal-ft .btn-close-items {
+            background: #f1f5f9;
+            color: #364e72;
+            border: 1px solid #d0dcea;
+            border-radius: 6px;
+            padding: .5rem 1.1rem;
+            font-size: .84rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: .15s;
+        }
+        .items-modal-ft .btn-close-items:hover {
+            background: #e2e9f3;
+            border-color: #9fb0d3;
+        }
+
+        /* Department column styling */
+        .dept-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 0.82rem;
+        }
+        .dept-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            line-height: 1.3;
+        }
+        .dept-label {
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: #4a5b7a;
+            min-width: 28px;
+        }
+        .dept-name {
+            color: #0b1e3a;
+            font-weight: 500;
+            white-space: normal;
+            word-break: break-word;
+        }
+        .dept-empty {
+            color: #b0bed4;
+            font-size: 0.8rem;
+            font-style: italic;
+        }
+
+        /* Date column styling */
+        .date-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .date-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9rem;
+        }
+        .date-item i {
+            color: #2a5c9e;
+            font-size: 0.8rem;
+            width: 16px;
+        }
+        .date-label {
+            font-weight: 600;
+            color: #4a5b7a;
+            min-width: 60px;
+        }
+        .date-value {
+            color: #0b1e3a;
+        }
+    </style>
+</head>
+<body>
+<div class="full-screen">
+    <!-- header -->
+    
+<div class="so-filter-bar">
+    <div class="so-filters-container" style="display: flex; flex-wrap: nowrap; align-items: center; gap: 10px;">
+        <div class="so-search-wrap" style="flex: 0 0 250px;">
+            <i class="fas fa-search so-search-icon"></i>
+            <input type="text" id="searchInput" placeholder="Search SO, customer, reference..." class="so-search-input" autocomplete="off" style="width: 100%;">
+        </div>
+        
+        <div class="so-filters-row" style="display: flex; flex-wrap: nowrap; align-items: center; gap: 10px; flex: 1;">
+            <div class="so-filter-item" style="min-width: 110px;">
+                <select id="statusFilter" class="so-filter-select" style="width: 100%;">
+                    <option value="">All Status</option>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="so-filter-item" style="min-width: 110px;">
+                <select id="paymentStatusFilter" class="so-filter-select" style="width: 100%;">
+                    <option value="">All Payments</option>
+                    <option value="PENDING" {% if payment_status_filter == "PENDING" %}selected{% endif %}>Pending</option>
+                    <option value="PARTIAL" {% if payment_status_filter == "PARTIAL" %}selected{% endif %}>Partial</option>
+                    <option value="PAID"    {% if payment_status_filter == "PAID"    %}selected{% endif %}>Paid</option>
+                </select>
+            </div>
+            
+            <div class="so-filter-item" style="min-width: 130px;">
+                <select id="customerFilter" class="so-filter-select" style="width: 100%;">
+                    <option value="">All Customers</option>
+                    {% for customer in customers %}
+                    <option value="{{ customer.id }}" {% if customer_filter == customer.id|stringformat:"s" %}selected{% endif %}>
+                        {{ customer.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="so-filter-item" style="min-width: 120px;">
+                <input type="date" id="startDate" class="so-filter-select" value="{{ start_date|default:'' }}" style="width: 100%;">
+            </div>
+            
+            <div class="so-filter-item" style="min-width: 120px;">
+                <input type="date" id="endDate" class="so-filter-select" value="{{ end_date|default:'' }}" style="width: 100%;">
+            </div>
+            
+            <button id="clearFiltersBtn" class="so-clear-btn" style="margin-top: 0; white-space: nowrap; padding: 0.6rem 1rem;">
+                <i class="fas fa-times"></i> Clear
+            </button>
+
+            <a href="{% url 'app5:sales_order_create' %}" class="btn-create" style="white-space: nowrap; padding: 0.6rem 1.5rem; margin-left: auto;">
+                <i class="fas fa-plus"></i> Create Sales Order
+            </a>
+        </div>
+    </div>
+</div>
+
+    <!-- table card - full height -->
+    <div class="so-table-card">
+        {% if sales_orders %}
+        <div class="so-table-scroll">
+            <table class="so-table" id="soTable">
+                <thead>
+                    <tr>
+                        <th>SO Number</th>
+                        <th>SO Date</th>
+                        <th>Customer Name</th>
+                        <th>Department</th>
+                        <th>Items</th>
+                        <th>Grand Total</th>
+                        <th>Status</th>
+                        <th>Payment</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for so in sales_orders %}
+                    <tr data-status="{{ so.status }}" data-payment-status="{{ so.payment_status }}" data-customer="{{ so.customer.id }}">
+                        <td>
+                            <a href="{% url 'app5:sales_order_detail' so.pk %}" class="so-link" title="{{ so.so_number }}">
+                                {{ so.so_number }}
+                            </a>
+                            {% if so.reference_number %}
+                            <span class="so-ref" title="{{ so.reference_number }}">Ref: {{ so.reference_number }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="date-stack">
+                                <div class="date-item">
+                                    
+                                    <span class="date-label">Created Date:</span>
+                                    <span class="date-value">{{ so.so_date|date:"d M, Y" }}</span>
+                                </div>
+                                <div class="date-item">
+                                    
+                                    <span class="date-label">Delivery Date:</span>
+                                    <span class="date-value">{{ so.delivery_date|date:"d M, Y" }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="cust-info">
+                                {% if so.customer %}
+                                    <strong title="{{ so.customer.name }}">
+                                        {% if so.customer.name %}
+                                            {{ so.customer.name }}
+                                        {% else %}
+                                            <span style="color:#9aa5b4;font-style:italic;">—</span>
+                                        {% endif %}
+                                    </strong>
+                                    {% if so.customer.city or so.customer.state %}
+                                    <span class="cust-loc" title="{% if so.customer.city %}{{ so.customer.city }}{% endif %}{% if so.customer.city and so.customer.state %}, {% endif %}{% if so.customer.state %}{{ so.customer.state }}{% endif %}">
+                                        {% if so.customer.city %}{{ so.customer.city }}{% endif %}{% if so.customer.city and so.customer.state %}, {% endif %}{% if so.customer.state %}{{ so.customer.state }}{% endif %}
+                                    </span>
+                                    {% endif %}
+                                {% else %}
+                                    <strong><span style="color:#9aa5b4;font-style:italic;">No Customer</span></strong>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="dept-info">
+                                {% if so.from_department %}
+                                <div class="dept-item">
+                                    <span class="dept-label">From:</span>
+                                    <span class="dept-name">{{ so.from_department.name }}</span>
+                                </div>
+                                {% endif %}
+                                {% if so.to_department %}
+                                <div class="dept-item">
+                                    <span class="dept-label">To:</span>
+                                    <span class="dept-name">{{ so.to_department.name }}</span>
+                                </div>
+                                {% endif %}
+                                {% if not so.from_department and not so.to_department %}
+                                <span class="dept-empty">—</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <button type="button"
+                                    class="act-btn act-items"
+                                    title="View Items"
+                                    onclick="openItemsModal(this)"
+                                    data-so="{{ so.so_number|escapejs }}"
+                                    data-items='[{% for oi in so.items.all %}{"name":"{{ oi.product_name|escapejs }}","qty":"{{ oi.quantity }}","unit_price":"{{ oi.unit_price }}","discount":"{{ oi.discount }}","tax":"{{ oi.tax }}","total":"{{ oi.total }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'>
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                        <td>₹{{ so.grand_total|floatformat:2 }}</td>
+                        <td>
+                            <span class="badge status-{{ so.status|lower }}" title="{{ so.get_status_display }}">{{ so.get_status_display }}</span>
+                        </td>
+                        <td>
+                            <span class="badge payment-{{ so.payment_status|lower }}" title="{{ so.get_payment_status_display }}">{{ so.get_payment_status_display }}</span>
+                        </td>
+                        
+                        <td>
+                            <div class="action-group">
+                                <a href="{% url 'app5:sales_order_detail' so.pk %}" class="act-btn act-view" title="View">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'app5:sales_order_update' so.pk %}" class="act-btn act-edit" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" class="act-btn act-delete" title="Delete"
+                                        onclick="confirmDelete('{{ so.pk }}', '{{ so.so_number|escapejs }}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- pagination -->
+        {% if sales_orders.has_other_pages %}
+        <div class="so-pagination">
+            <div class="so-page-info">
+                Showing {{ sales_orders.start_index }}–{{ sales_orders.end_index }} of {{ sales_orders.paginator.count }} orders
+            </div>
+            <ul class="so-pages">
+                {% if sales_orders.has_previous %}
+                <li><a href="?page={{ sales_orders.previous_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode|cut:'page='|cut:'&page=' }}{% endif %}">«</a></li>
+                {% else %}
+                <li class="disabled"><span>«</span></li>
+                {% endif %}
+
+                {% for num in sales_orders.paginator.page_range %}
+                    {% if sales_orders.number == num %}
+                        <li class="active"><span>{{ num }}</span></li>
+                    {% elif num > sales_orders.number|add:'-3' and num < sales_orders.number|add:'3' %}
+                        <li><a href="?page={{ num }}{% if request.GET.urlencode %}&{{ request.GET.urlencode|cut:'page='|cut:'&page=' }}{% endif %}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if sales_orders.has_next %}
+                <li><a href="?page={{ sales_orders.next_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode|cut:'page='|cut:'&page=' }}{% endif %}">»</a></li>
+                {% else %}
+                <li class="disabled"><span>»</span></li>
+                {% endif %}
+            </ul>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="so-empty">
+            <i class="fas fa-file-invoice"></i>
+            <p>No sales orders found</p>
+            <a href="{% url 'app5:sales_order_create' %}" class="btn-create" style="display:inline-flex;">
+                Create First Sales Order
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ══ ITEMS MODAL ══════════════════════════════════════════════════════════ -->
+<div id="itemsOverlay" class="items-overlay">
+    <div class="items-modal">
+
+        <div class="items-modal-hd">
+            <h3><i class="fas fa-eye"></i> <span id="itemsModalTitle">Order Items</span></h3>
+            <button class="items-close-btn" onclick="closeItemsModal()" title="Close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="items-modal-bd">
+            <table class="items-tbl" id="itemsTbl">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Product Name</th>
+                        <th>Qty</th>
+                        <th>Unit Price (₹)</th>
+                        <th>Discount (₹)</th>
+                        <th>Tax (%)</th>
+                        <th>Total (₹)</th>
+                    </tr>
+                </thead>
+                <tbody id="itemsTbody"></tbody>
+            </table>
+            <div id="itemsEmpty" class="items-empty" style="display:none;">
+                <i class="fas fa-box-open"></i>
+                No items found for this order.
+            </div>
+        </div>
+
+        <div class="items-modal-ft">
+            <span id="itemsCount"></span>
+            <button class="btn-close-items" onclick="closeItemsModal()">
+                <i class="fas fa-times"></i> Close
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<!-- delete modal -->
+<div id="deleteModal" class="so-modal">
+    <div class="so-modal-box">
+        <div class="so-modal-head">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h2>Confirm Delete</h2>
+        </div>
+        <div class="so-modal-body">
+            <p>Are you sure you want to delete Sales Order <strong id="soNumber"></strong>?</p>
+            <p class="so-modal-warn">
+                <i class="fas fa-exclamation-circle" style="margin-right:5px;"></i>
+                This action cannot be undone and will delete all associated items.
+            </p>
+        </div>
+        <div class="so-modal-foot">
+            <button type="button" class="btn-cancel" onclick="closeModal()">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+            <form id="deleteForm" method="POST" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn-del">
+                    <i class="fas fa-trash-alt"></i> Delete
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Live search (frontend filtering)
+    const searchInput = document.getElementById('searchInput');
+    const rows = document.querySelectorAll('#soTable tbody tr');
+
+    if (searchInput) {
+        searchInput.addEventListener('keyup', function () {
+            const val = this.value.toLowerCase();
+            rows.forEach(row => {
+                row.style.display = row.textContent.toLowerCase().includes(val) ? '' : 'none';
+            });
+        });
+    }
+
+    // Server‑side filter triggers
+    ['statusFilter', 'paymentStatusFilter', 'customerFilter'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', updateFilters);
+    });
+
+    ['startDate', 'endDate'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', updateFilters);
+    });
+
+    const clearBtn = document.getElementById('clearFiltersBtn');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function () {
+            window.location.href = window.location.origin + window.location.pathname;
+        });
+    }
+});
+
+function updateFilters() {
+    const url = new URL(window.location.href);
+    const map = {
+        status:         'statusFilter',
+        payment_status: 'paymentStatusFilter',
+        customer:       'customerFilter',
+        start_date:     'startDate',
+        end_date:       'endDate',
+    };
+    Object.entries(map).forEach(([param, id]) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.value ? url.searchParams.set(param, el.value) : url.searchParams.delete(param);
+    });
+    url.searchParams.delete('page');
+    window.location.href = url.toString();
+}
+
+/* ── Items Modal ─────────────────────────────────────────── */
+function fmt(val) {
+    var n = parseFloat(val) || 0;
+    return n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function openItemsModal(btn) {
+    var soNumber = btn.getAttribute('data-so');
+    var items    = [];
+    try { items = JSON.parse(btn.getAttribute('data-items') || '[]'); } catch(e) {}
+
+    document.getElementById('itemsModalTitle').textContent = soNumber + ' — Items';
+
+    var tbody  = document.getElementById('itemsTbody');
+    var empty  = document.getElementById('itemsEmpty');
+    var tbl    = document.getElementById('itemsTbl');
+    var count  = document.getElementById('itemsCount');
+
+    tbody.innerHTML = '';
+
+    if (!items.length) {
+        tbl.style.display   = 'none';
+        empty.style.display = 'block';
+        count.textContent   = '';
+    } else {
+        tbl.style.display   = '';
+        empty.style.display = 'none';
+        count.textContent   = items.length + ' item' + (items.length > 1 ? 's' : '');
+
+        items.forEach(function(it, i) {
+            var tr = document.createElement('tr');
+            tr.innerHTML =
+                '<td>' + (i + 1) + '</td>' +
+                '<td><div class="itm-name">' + (it.name || '—') + '</div></td>' +
+                '<td>' + (it.qty || 0) + '</td>' +
+                '<td>' + fmt(it.unit_price) + '</td>' +
+                '<td>' + fmt(it.discount)   + '</td>' +
+                '<td>' + (parseFloat(it.tax) || 0) + '%</td>' +
+                '<td>' + fmt(it.total)      + '</td>';
+            tbody.appendChild(tr);
+        });
+    }
+
+    document.getElementById('itemsOverlay').classList.add('active');
+}
+
+function closeItemsModal() {
+    document.getElementById('itemsOverlay').classList.remove('active');
+}
+
+/* close items overlay when clicking outside modal box */
+document.getElementById('itemsOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeItemsModal();
+});
+
+function confirmDelete(soId, soNumber) {
+    document.getElementById('soNumber').textContent = soNumber;
+    document.getElementById('deleteForm').action =
+        "{% url 'app5:sales_order_delete' 0 %}".replace('0', soId);
+    document.getElementById('deleteModal').classList.add('active');
+}
+
+function closeModal() {
+    document.getElementById('deleteModal').classList.remove('active');
+}
+
+window.addEventListener('click', function (e) {
+    const modal = document.getElementById('deleteModal');
+    if (e.target === modal) closeModal();
+});
+
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { closeItemsModal(); closeModal(); }
+});
+</script>
+{% endblock %}

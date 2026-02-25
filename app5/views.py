@@ -3382,13 +3382,6 @@ from django.db.models import Q
 from decimal import Decimal
 
 logger = logging.getLogger(__name__)
-
-
-@login_required
-
-
-
-
 @login_required
 def lead_form_view(request):
     """
@@ -3993,8 +3986,8 @@ def lead_form_view(request):
                             safe_kwargs['assigned_by_name'] = v
 
                 lead = Lead.objects.create(**safe_kwargs)
-                
-                # ✅ SET CREATED_BY - THIS IS THE KEY ADDITION
+
+                # ✅ SET CREATED_BY
                 if current_user:
                     lead.created_by = current_user
                     lead.save(update_fields=['created_by'])
@@ -4059,6 +4052,49 @@ def lead_form_view(request):
                 except Exception as e:
                     logger.error(f"Error creating requirement items: {e}", exc_info=True)
 
+            # ✅ SEND WHATSAPP NOTIFICATION — runs immediately after DB commit
+            try:
+                wa_api     = 'https://app.dxing.in/api/send/whatsapp'
+                wa_secret  = '4d8911f61a3eff1123ba4b11408f66697ab8bdf5'
+                wa_account = '1770354598812b4ba287f5ee0bc9d43bbf5bbe87fb698577a6220a8'
+
+                owner_name   = data.get('ownerName', 'N/A')
+                phone_no     = data.get('phoneNo', 'N/A')
+                email_val    = data.get('email', 'N/A') or 'N/A'
+                ticket_no    = getattr(lead, 'ticket_number', f'TKT-{getattr(lead, "id", "")}')
+                status_val   = data.get('status', 'Active') or 'Active'
+                priority_val = data.get('priority', 'Medium') or 'Medium'
+                details_val  = data.get('details', '') or ''
+
+                wa_message = (
+                    f"📋 *New Lead Created*\n"
+                    f"🎫 Ticket: {ticket_no}\n"
+                    f"👤 Owner: {owner_name}\n"
+                    f"📞 Phone: {phone_no}\n"
+                    f"📧 Email: {email_val}\n"
+                    f"🔖 Status: {status_val}\n"
+                    f"⚡ Priority: {priority_val}\n"
+                    f"📝 Details: {details_val[:200] if details_val else 'N/A'}"
+                )
+
+                notify_numbers = ['8157831029', '8590340907']
+                for number in notify_numbers:
+                    try:
+                        wa_payload = {
+                            'secret':    wa_secret,
+                            'account':   wa_account,
+                            'recipient': number,
+                            'type':      'text',
+                            'message':   wa_message,
+                        }
+                        wa_response = requests.post(wa_api, data=wa_payload, timeout=10)
+                        logger.info(f"WhatsApp sent to {number}. Status: {wa_response.status_code}, Response: {wa_response.text}")
+                    except Exception as wa_num_err:
+                        logger.warning(f"WhatsApp notification failed for {number} (non-critical): {wa_num_err}")
+
+            except Exception as wa_err:
+                logger.warning(f"WhatsApp notification block failed (non-critical): {wa_err}")
+
             assignment_msg = "self-assigned" if assignment_type == "self_assigned" else "submitted for assignment"
             ticket_info = getattr(lead, "ticket_number", getattr(lead, "id", ""))
 
@@ -4073,36 +4109,28 @@ def lead_form_view(request):
             messages.error(request, f"Error saving lead: {str(e)}")
             
             # On POST error, re-render with form data preserved
-            # Get context and render the form again
             context = get_lead_form_context(existing_firms, active_leads_data, active_users)
-            # ✅ ADD API DATA TO CONTEXT FOR RE-RENDER
             context['api_customer_data'] = api_customer_data
             context['api_data_count'] = len(api_customer_data)
             context['items_by_section'] = get_items_by_section()
-            context['campaigns'] = campaigns  # ✅ ADD CAMPAIGNS
+            context['campaigns'] = campaigns
             return render(request, "lead_form.html", context)
 
     # ============================
     # ✅ GET REQUEST - PREPARE CONTEXT
     # ============================
-    # Get context data
     context = get_lead_form_context(existing_firms, active_leads_data, active_users)
     
-    # ✅ ADD API CUSTOMER DATA TO CONTEXT
     context['api_customer_data'] = api_customer_data
     context['api_data_count'] = len(api_customer_data)
-    
-    # ✅ ADD CAMPAIGNS TO CONTEXT
     context['campaigns'] = campaigns
     
-    # ✅ ADD ITEMS BY SECTION
     try:
         context['items_by_section'] = get_items_by_section()
     except Exception as e:
         logger.error(f"Error getting items by section: {e}")
         context['items_by_section'] = {}
     
-    # ✅ ADD CURRENT USER INFO
     context['current_user'] = current_user
     context['current_user_name'] = current_user_name
     
@@ -7224,6 +7252,15 @@ def quotation_list_view(request):
         departments = Department.objects.filter(is_active=True).order_by('name')
     except Exception as e:
         logger.debug(f"No departments available: {e}")
+
+    # ✅ GET TAX MASTER RECORDS
+    taxes = []
+    try:
+        taxes = TaxMaster.objects.all().order_by('name')
+        logger.info(f"✅ Loaded {taxes.count()} taxes for quotation")
+    except Exception as e:
+        logger.error(f"❌ Error loading taxes: {e}")
+        taxes = []
     
     # Calculate counts
     leads_count = len(lead_tickets)
@@ -7242,6 +7279,7 @@ def quotation_list_view(request):
         'active_employees': active_employees,
         'items': items,
         'departments': departments,
+        'taxes': taxes,              # ✅ ADDED: Tax master list for dropdown
         'leads_count': leads_count,
         'employees_count': employees_count,
         'items_count': items_count,
@@ -7299,6 +7337,25 @@ def quotation_form_view(request):
         ).prefetch_related(
             'items'
         ).order_by('-created_at')
+
+        # ✅ FIX: Check if we have a lead_id parameter from URL
+        lead_id_from_url = request.GET.get('lead_id')
+        selected_lead = None
+        
+        if lead_id_from_url and lead_id_from_url.isdigit():
+            # Filter quotations by this specific lead
+            quotations = quotations.filter(lead_id=int(lead_id_from_url))
+            logger.info(f"🔍 Filtering quotations for lead ID: {lead_id_from_url}")
+            
+            # Also get the lead name for display
+            try:
+                selected_lead = Lead.objects.get(id=int(lead_id_from_url))
+                # Store in session for highlighting
+                request.session['selected_lead_id'] = int(lead_id_from_url)
+                request.session['selected_lead_name'] = selected_lead.ownerName
+                logger.info(f"✅ Selected lead: {selected_lead.ownerName}")
+            except Lead.DoesNotExist:
+                logger.warning(f"⚠️ Lead {lead_id_from_url} not found")
 
         # ✅ GET DEPARTMENTS FOR BRANCH SELECTION
         departments = Department.objects.filter(is_active=True).order_by('name')
@@ -7401,8 +7458,15 @@ def quotation_form_view(request):
                     logger.warning(f"⚠️ No user-matching fields found in Lead model. Available fields: {lead_fields}")
                     logger.warning(f"⚠️ User {current_user_name} will see NO leads. Please check your Lead model configuration.")
             
-            # Build the active leads list
+            # Build the active leads list - ADD is_selected flag for highlighting
             for lead in leads_qs:
+                # Check if this lead is the currently selected one
+                is_selected = False
+                if selected_lead and lead.id == selected_lead.id:
+                    is_selected = True
+                elif 'selected_lead_id' in request.session:
+                    is_selected = (lead.id == request.session.get('selected_lead_id'))
+                
                 active_leads.append({
                     'id': lead.id,
                     'ownerName': lead.ownerName or '',
@@ -7415,6 +7479,7 @@ def quotation_form_view(request):
                     'business': lead.business or '',
                     'customerType': lead.customerType or '',
                     'created_at': lead.created_at if hasattr(lead, 'created_at') else lead.date,
+                    'is_selected': is_selected,  # Flag for template highlighting
                 })
             
             logger.info(f"📋 Loaded {len(active_leads)} active leads for user {current_user_name} (Level: {user_level})")
@@ -7451,7 +7516,12 @@ def quotation_form_view(request):
         # Calculate statistics
         total_quotations = len(quotation_list)
         
-        # ✅ UPDATED CONTEXT - INCLUDES DEPARTMENTS
+        # Get selected lead name from session for display
+        selected_lead_name = request.session.get('selected_lead_name', '')
+        if selected_lead:
+            selected_lead_name = selected_lead.ownerName
+        
+        # ✅ UPDATED CONTEXT - INCLUDES DEPARTMENTS AND SELECTED LEAD INFO
         context = {
             'quotations': quotation_list,  # Pass the evaluated list
             'leads': active_leads,
@@ -7461,6 +7531,8 @@ def quotation_form_view(request):
             'leads_count': len(active_leads),
             'current_user_level': user_level,  # Add user level to context for debugging
             'current_user_name': current_user_name,  # Add user name to context
+            'selected_lead_id': lead_id_from_url if lead_id_from_url else request.session.get('selected_lead_id', ''),
+            'selected_lead_name': selected_lead_name,
         }
         
         logger.info(f"✅ Context prepared with {total_quotations} quotations, {len(active_leads)} leads, and {departments.count()} departments")
@@ -7480,6 +7552,7 @@ def quotation_form_view(request):
             'total_quotations': 0,
             'leads_count': 0,
             'error_message': str(e),
+            'selected_lead_id': request.GET.get('lead_id', ''),
         })
 
 
@@ -7505,7 +7578,10 @@ logger = logging.getLogger(__name__)
 def quotation_submit(request):
     """
     Handle quotation submission from quotation_list.html
-    Save quotation and items to database
+    Save quotation and items to database.
+    Supports:
+      - application/json  (no attachment)
+      - multipart/form-data (with proposal_attachment file)
     """
     if request.method != 'POST':
         logger.warning(f"❌ Invalid request method: {request.method}")
@@ -7513,76 +7589,119 @@ def quotation_submit(request):
             'success': False,
             'message': 'Invalid request method. Only POST requests are allowed.'
         }, status=405)
-    
+
     try:
-        # Parse JSON data
-        data = json.loads(request.body)
+        # ========== PARSE REQUEST (JSON or multipart) ==========
+        proposal_file = None
+        content_type = request.content_type or ''
+
+        if 'multipart/form-data' in content_type:
+            # --- multipart: quotation data arrives as form field 'data' ---
+            raw_data = request.POST.get('data', '{}')
+
+            # Decode bytes safely if needed
+            if isinstance(raw_data, bytes):
+                try:
+                    raw_data = raw_data.decode('utf-8')
+                except UnicodeDecodeError:
+                    raw_data = raw_data.decode('latin-1')
+
+            try:
+                data = json.loads(raw_data)
+            except json.JSONDecodeError as e:
+                logger.error(f"❌ Invalid JSON in multipart 'data' field: {e}")
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Invalid JSON in form data.',
+                    'error_detail': str(e)
+                }, status=400)
+
+            proposal_file = request.FILES.get('proposal_attachment')
+            if proposal_file:
+                logger.info(f"📎 Proposal attachment received: {proposal_file.name} "
+                            f"({proposal_file.size} bytes, {proposal_file.content_type})")
+
+        else:
+            # --- plain JSON body ---
+            raw_body = request.body
+
+            # Fix UTF-8 decode error (e.g. ₹ symbol or regional characters mangled in transit)
+            try:
+                body_str = raw_body.decode('utf-8')
+            except UnicodeDecodeError:
+                body_str = raw_body.decode('latin-1')
+
+            try:
+                data = json.loads(body_str)
+            except json.JSONDecodeError as e:
+                logger.error(f"❌ Invalid JSON data: {e}")
+                logger.debug(f"Request body (first 500): {body_str[:500]}...")
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Invalid JSON data. Please check your input.',
+                    'error_detail': str(e)
+                }, status=400)
+
         logger.info(f"📝 Received quotation submission request")
         logger.debug(f"Raw data keys: {list(data.keys())}")
-        
-        # Extract main quotation data
-        # NOTE: Frontend sends 'lead_ticket_id' but we need 'lead_id'
-        lead_id = data.get('lead_id') or data.get('lead_ticket_id')  # ✅ FIXED: Accept both field names
+
+        # ========== EXTRACT MAIN QUOTATION DATA ==========
+        # NOTE: Frontend sends 'lead_ticket_id' but we also accept 'lead_id'
+        lead_id = data.get('lead_id') or data.get('lead_ticket_id')
         notes = data.get('notes', '').strip()
         items_data = data.get('items', [])
-        
+
         # Financial totals
         try:
-            subtotal = Decimal(str(data.get('subtotal', 0)))
-            total_discount = Decimal(str(data.get('total_discount', 0)))
-            total_tax = Decimal(str(data.get('total_tax', 0)))
-            grand_total = Decimal(str(data.get('grand_total', 0)))
+            subtotal        = Decimal(str(data.get('subtotal',       0)))
+            total_discount  = Decimal(str(data.get('total_discount', 0)))
+            total_tax       = Decimal(str(data.get('total_tax',      0)))
+            grand_total     = Decimal(str(data.get('grand_total',    0)))
         except (InvalidOperation, ValueError) as e:
             logger.error(f"❌ Invalid decimal values in financial totals: {e}")
             return JsonResponse({
                 'success': False,
                 'message': f'Invalid financial values: {str(e)}'
             }, status=400)
-        
-        logger.debug(f"📊 Totals - Subtotal: {subtotal}, Discount: {total_discount}, Tax: {total_tax}, Grand Total: {grand_total}")
+
+        logger.debug(f"📊 Totals - Subtotal: {subtotal}, Discount: {total_discount}, "
+                     f"Tax: {total_tax}, Grand Total: {grand_total}")
         logger.debug(f"📦 Items count: {len(items_data)}")
-        
+
         # ========== VALIDATION ==========
         validation_errors = []
-        
-        # Validate lead
+
         if not lead_id:
             validation_errors.append('Please select a lead from the directory')
-        
-        # Validate items
-        if not items_data or len(items_data) == 0:
+
+        if not items_data:
             validation_errors.append('Please add at least one item to the quotation')
         else:
-            # Validate each item
             invalid_items = []
             for idx, item in enumerate(items_data):
-                item_id = item.get('item_id')
-                item_name = item.get('item_name')
-                
-                if not item_id or not item_name:
+                if not item.get('item_id') or not item.get('item_name'):
                     invalid_items.append(idx + 1)
-                
-                # Additional item validation
+
                 try:
-                    quantity = Decimal(str(item.get('quantity', 0)))
+                    quantity    = Decimal(str(item.get('quantity',    0)))
+                    sales_price = Decimal(str(item.get('sales_price', 0)))
+                    unit_price  = Decimal(str(item.get('unit_price',  0)))
+
                     if quantity <= 0:
                         validation_errors.append(f'Item {idx + 1}: Quantity must be greater than 0')
-                    
-                    sales_price = Decimal(str(item.get('sales_price', 0)))
-                    unit_price = Decimal(str(item.get('unit_price', 0)))
                     if sales_price < 0 or unit_price < 0:
                         validation_errors.append(f'Item {idx + 1}: Price cannot be negative')
                 except (InvalidOperation, ValueError) as e:
                     validation_errors.append(f'Item {idx + 1}: Invalid numeric value - {str(e)}')
-            
+
             if invalid_items:
-                validation_errors.append(f'Please select an item for rows: {", ".join(map(str, invalid_items))}')
-        
-        # Validate totals
+                validation_errors.append(
+                    f'Please select an item for rows: {", ".join(map(str, invalid_items))}'
+                )
+
         if grand_total <= 0:
             validation_errors.append('Grand total must be greater than 0')
-        
-        # Return validation errors if any
+
         if validation_errors:
             logger.warning(f"❌ Validation errors: {validation_errors}")
             return JsonResponse({
@@ -7590,7 +7709,7 @@ def quotation_submit(request):
                 'message': '\n'.join(validation_errors),
                 'validation_errors': validation_errors
             }, status=400)
-        
+
         # ========== LEAD PROCESSING ==========
         try:
             lead = Lead.objects.get(id=lead_id)
@@ -7602,24 +7721,21 @@ def quotation_submit(request):
                 'message': f'Lead not found (ID: {lead_id})',
                 'lead_id': lead_id
             }, status=404)
-        
-        # Get client information from lead
-        client_name = lead.ownerName or lead.display_name or "Unknown Client"
+
+        client_name  = lead.ownerName or getattr(lead, 'display_name', None) or "Unknown Client"
         client_phone = lead.phoneNo or "N/A"
         client_email = lead.email or None
-        
-        # Get company name from lead if business type
+
         company_name = None
         if lead.customerType == 'Business':
             company_name = lead.name or lead.business or lead.ownerName
-        
+
         logger.debug(f"👤 Client info - Name: {client_name}, Phone: {client_phone}, Email: {client_email}")
-        
+
         # ========== USER AUTHENTICATION ==========
         current_user = None
-        user_info = "Anonymous"
-        
-        # Try to get user from session first (most reliable for custom auth)
+        user_info    = "Anonymous"
+
         if request.session.get('custom_user_id'):
             try:
                 current_user = User.objects.get(id=request.session['custom_user_id'])
@@ -7627,233 +7743,222 @@ def quotation_submit(request):
                 logger.info(f"👤 User from session: {user_info}")
             except User.DoesNotExist:
                 logger.warning(f"⚠️ Session user {request.session.get('custom_user_id')} not found")
-        
-        # Fallback to Django authenticated user
+
         if not current_user and request.user and request.user.is_authenticated:
             try:
-                # Try to get user by userid or name from the authenticated user
                 authenticated_username = request.user.username
-                
-                # Since your custom User model doesn't have username, try name
-                current_user = User.objects.filter(name=authenticated_username).first()
-                
-                if not current_user:
-                    # Try to get by userid
-                    current_user = User.objects.filter(userid=authenticated_username).first()
-                
+                current_user = (
+                    User.objects.filter(name=authenticated_username).first()
+                    or User.objects.filter(userid=authenticated_username).first()
+                )
                 if current_user:
                     user_info = f"{current_user.name} (ID: {current_user.id})"
                     logger.info(f"👤 User from Django auth: {user_info}")
-                    
             except Exception as e:
                 logger.warning(f"⚠️ Could not get user from request.user: {e}")
-        
+
         if not current_user:
-            logger.info(f"👤 No authenticated user found, creating as anonymous")
-        
+            logger.info("👤 No authenticated user found, creating as anonymous")
+
         # ========== QUOTATION CREATION ==========
         quotation_date = timezone.now().date()
-        valid_until = quotation_date + timedelta(days=30)  # Valid for 30 days
-        
-        # Generate quotation number and save to database
+        valid_until    = quotation_date + timedelta(days=30)
+
         with transaction.atomic():
-            # Get last quotation number
             from django.db.models import Max
-            last_quote = Quotation.objects.aggregate(Max('id'))['id__max'] or 0
-            
-            # Generate sequential quotation number
+            last_quote       = Quotation.objects.aggregate(Max('id'))['id__max'] or 0
             quotation_number = f"QT-{quotation_date.strftime('%Y%m%d')}-{(last_quote + 1):04d}"
-            
             logger.info(f"🔢 Generated quotation number: {quotation_number}")
-            
-            # Create quotation
+
             quotation = Quotation.objects.create(
-                lead=lead,
-                client_name=client_name,
-                client_phone=client_phone,
-                client_email=client_email,
-                company_name=company_name,
-                quotation_date=quotation_date,
-                valid_until=valid_until,
-                quotation_number=quotation_number,
-                notes=notes if notes else None,
-                subtotal=subtotal,
-                total_discount=total_discount,
-                total_tax=total_tax,
-                grand_total=grand_total,
-                status='draft',
-                created_by=current_user
+                lead           = lead,
+                client_name    = client_name,
+                client_phone   = client_phone,
+                client_email   = client_email,
+                company_name   = company_name,
+                quotation_date = quotation_date,
+                valid_until    = valid_until,
+                quotation_number = quotation_number,
+                notes          = notes or None,
+                subtotal       = subtotal,
+                total_discount = total_discount,
+                total_tax      = total_tax,
+                grand_total    = grand_total,
+                status         = 'draft',
+                created_by     = current_user,
             )
-            
             logger.info(f"✅ Created quotation record: {quotation.id} - {quotation.quotation_number}")
-            
+
+            # ========== SAVE PROPOSAL ATTACHMENT ==========
+            if proposal_file:
+                try:
+                    # Validate file size server-side (10 MB limit)
+                    max_size = 10 * 1024 * 1024
+                    if proposal_file.size > max_size:
+                        raise ValueError(
+                            f"Attachment too large ({proposal_file.size} bytes). Maximum is 10 MB."
+                        )
+
+                    # Sanitise filename
+                    from django.utils.text import get_valid_filename
+                    safe_name = get_valid_filename(proposal_file.name)
+
+                    # Save to the model's FileField (adjust field name if different)
+                    quotation.proposal_attachment.save(safe_name, proposal_file, save=True)
+                    logger.info(f"📎 Saved proposal attachment: {safe_name}")
+
+                except Exception as e:
+                    logger.error(f"❌ Failed to save proposal attachment: {e}", exc_info=True)
+                    # Don't abort the whole transaction — just warn in the response
+                    # Set a flag to surface this in the API response
+                    proposal_file = None  # signals failure below
+
             # ========== QUOTATION ITEMS CREATION ==========
-            items_created = 0
+            items_created   = 0
             total_line_total = Decimal('0')
-            item_errors = []
-            
+
             for idx, item_data in enumerate(items_data):
                 try:
                     item_id = item_data.get('item_id')
-                    item = None
-                    
-                    # Try to get item from purchase order
+                    item    = None
+
                     if item_id:
                         try:
-                            # ✅ FIXED: Use purchase_order.models.Item
                             item = Item.objects.get(id=item_id)
                             logger.debug(f"  🛒 Found PO item: {item.name} (ID: {item.id})")
                         except Item.DoesNotExist:
-                            logger.warning(f"  ⚠️ Purchase order item {item_id} not found, using provided data")
-                    
-                    # Extract item data with proper error handling
+                            logger.warning(f"  ⚠️ PO item {item_id} not found, using provided data")
+
                     try:
-                        quantity = Decimal(str(item_data.get('quantity', 1)))
-                        sales_price = Decimal(str(item_data.get('sales_price', 0)))
-                        unit_price = Decimal(str(item_data.get('unit_price', 0)))
-                        discount_percentage = Decimal(str(item_data.get('discount', 0)))
-                        tax_percentage = Decimal(str(item_data.get('tax', 0)))
-                        line_total = Decimal(str(item_data.get('total', 0)))
-                        entry_rate = Decimal(str(item_data.get('entry_rate', 0)))
+                        quantity            = Decimal(str(item_data.get('quantity',   1)))
+                        sales_price         = Decimal(str(item_data.get('sales_price', 0)))
+                        unit_price          = Decimal(str(item_data.get('unit_price',  0)))
+                        discount_percentage = Decimal(str(item_data.get('discount',    0)))
+                        tax_percentage      = Decimal(str(item_data.get('tax',         0)))
+                        line_total          = Decimal(str(item_data.get('total',       0)))
+                        entry_rate          = Decimal(str(item_data.get('entry_rate',  0)))
                     except (InvalidOperation, ValueError) as e:
                         raise ValueError(f"Invalid numeric value in item data: {str(e)}")
-                    
-                    # Validate item data
+
                     if quantity <= 0:
                         raise ValueError(f"Invalid quantity: {quantity}")
-                    
+
                     if line_total <= 0:
-                        logger.warning(f"  ⚠️ Item {idx+1} has zero or negative line total: {line_total}")
-                    
-                    # Calculate derived values
-                    base_price = sales_price if sales_price > 0 else unit_price
-                    discount_amount = (base_price * quantity) * (discount_percentage / 100)
+                        logger.warning(f"  ⚠️ Item {idx+1} has zero/negative line total: {line_total}")
+
+                    base_price           = sales_price if sales_price > 0 else unit_price
+                    discount_amount      = (base_price * quantity) * (discount_percentage / 100)
                     amount_after_discount = (base_price * quantity) - discount_amount
-                    tax_amount = amount_after_discount * (tax_percentage / 100)
-                    
-                    # Get item details
-                    item_name = item_data.get('item_name', '')
-                    if not item_name and item:
-                        item_name = item.name
-                    if not item_name:
-                        item_name = 'Unknown Item'
-                    
-                    description = item_data.get('description', '')
-                    if not description and item and hasattr(item, 'description') and item.description:
-                        description = item.description
-                    
-                    unit = item_data.get('unit', 'pcs')
-                    if not unit and item and hasattr(item, 'unit_of_measure') and item.unit_of_measure:
-                        unit = item.unit_of_measure
-                    
-                    hsn_code = item_data.get('hsn_code', '')
-                    if not hsn_code and item and hasattr(item, 'hsn_code') and item.hsn_code:
-                        hsn_code = item.hsn_code
-                    
-                    section = item_data.get('section', '')
-                    
-                    # Create quotation item
-                    quotation_item = QuotationItem.objects.create(
-                        quotation=quotation,
-                        item=item,
-                        item_name=item_name,
-                        description=description or f"{item_name} - {section}" if section else item_name,
-                        quantity=quantity,
-                        unit=unit,
-                        entry_rate=entry_rate,
-                        sales_price=sales_price,
-                        unit_price=unit_price,
-                        discount_percentage=discount_percentage,
-                        discount_amount=discount_amount,
-                        tax_percentage=tax_percentage,
-                        tax_amount=tax_amount,
-                        line_total=line_total,
-                        hsn_code=hsn_code,
-                        order=idx
+                    tax_amount           = amount_after_discount * (tax_percentage / 100)
+
+                    item_name   = item_data.get('item_name', '') or (item.name if item else '') or 'Unknown Item'
+                    description = item_data.get('description', '') or (
+                        item.description if item and hasattr(item, 'description') and item.description else ''
                     )
-                    
-                    items_created += 1
+                    unit     = item_data.get('unit', 'pcs') or (
+                        item.unit_of_measure if item and hasattr(item, 'unit_of_measure') else 'pcs'
+                    )
+                    hsn_code = item_data.get('hsn_code', '') or (
+                        item.hsn_code if item and hasattr(item, 'hsn_code') else ''
+                    )
+                    section  = item_data.get('section', '')
+
+                    quotation_item = QuotationItem.objects.create(
+                        quotation           = quotation,
+                        item                = item,
+                        item_name           = item_name,
+                        description         = description or (f"{item_name} - {section}" if section else item_name),
+                        quantity            = quantity,
+                        unit                = unit,
+                        entry_rate          = entry_rate,
+                        sales_price         = sales_price,
+                        unit_price          = unit_price,
+                        discount_percentage = discount_percentage,
+                        discount_amount     = discount_amount,
+                        tax_percentage      = tax_percentage,
+                        tax_amount          = tax_amount,
+                        line_total          = line_total,
+                        hsn_code            = hsn_code,
+                        order               = idx,
+                    )
+
+                    items_created    += 1
                     total_line_total += line_total
-                    
+
                     logger.debug(f"  📦 Created item {idx+1}: {quotation_item.item_name} "
-                                f"(Qty: {quantity}, Price: ₹{base_price}, Total: ₹{line_total})")
-                    
+                                 f"(Qty: {quantity}, Price: ₹{base_price}, Total: ₹{line_total})")
+
                 except Exception as e:
                     logger.error(f"❌ Error creating item {idx+1}: {e}", exc_info=True)
-                    item_errors.append(f"Item {idx+1}: {str(e)}")
-                    raise  # Re-raise to trigger transaction rollback
-            
-            # Verify totals match (allow small rounding differences)
+                    raise  # Trigger transaction rollback
+
+            # Reconcile totals if there's a rounding discrepancy
             total_discrepancy = abs(total_line_total - grand_total)
-            if total_discrepancy > Decimal('0.10'):  # Allow 10 cents difference for rounding
-                logger.warning(f"⚠️ Line totals ({total_line_total}) don't match grand total ({grand_total}) "
-                              f"Difference: {total_discrepancy}")
-                
-                # Update quotation totals to match line totals
+            if total_discrepancy > Decimal('0.10'):
+                logger.warning(
+                    f"⚠️ Line totals ({total_line_total}) don't match grand total ({grand_total}). "
+                    f"Difference: {total_discrepancy} — correcting."
+                )
                 quotation.grand_total = total_line_total
-                quotation.subtotal = total_line_total - total_tax
+                quotation.subtotal    = total_line_total - total_tax
                 quotation.save()
-                
-                logger.info(f"🔄 Updated quotation totals to match line items")
-        
-        # ========== POST-CREATION UPDATES ==========
-        # Update lead with quotation info
+                logger.info("🔄 Updated quotation totals to match line items")
+
+        # ========== POST-CREATION: UPDATE LEAD ==========
         lead_updated = False
         try:
             if hasattr(lead, 'details'):
-                if lead.details:
-                    lead.details = f"Quotation created: {quotation_number} ({quotation_date})\n" + lead.details
-                else:
-                    lead.details = f"Quotation created: {quotation_number} ({quotation_date})"
+                prefix = f"Quotation created: {quotation_number} ({quotation_date})\n"
+                lead.details = prefix + (lead.details or '')
                 lead.save()
                 lead_updated = True
-                logger.debug(f"✅ Updated lead details with quotation info")
+                logger.debug("✅ Updated lead details with quotation info")
         except Exception as e:
             logger.warning(f"⚠️ Could not update lead details: {e}")
-        
+
         # ========== SUCCESS RESPONSE ==========
+        attachment_saved = (
+            bool(proposal_file) and
+            bool(getattr(quotation, 'proposal_attachment', None))
+        )
+
         response_data = {
             'success': True,
             'message': f'✅ Quotation {quotation.quotation_number} created successfully!',
             'quotation': {
-                'id': quotation.id,
+                'id':               quotation.id,
                 'quotation_number': quotation.quotation_number,
-                'date': quotation_date.strftime('%Y-%m-%d'),
-                'valid_until': valid_until.strftime('%Y-%m-%d'),
-                'status': 'draft',
-                'client_name': client_name,
-                'client_phone': client_phone,
-                'items_count': items_created,
-                'subtotal': float(subtotal),
-                'total_discount': float(total_discount),
-                'total_tax': float(total_tax),
-                'grand_total': float(grand_total),
-                'created_by': user_info,
+                'date':             quotation_date.strftime('%Y-%m-%d'),
+                'valid_until':      valid_until.strftime('%Y-%m-%d'),
+                'status':           'draft',
+                'client_name':      client_name,
+                'client_phone':     client_phone,
+                'items_count':      items_created,
+                'subtotal':         float(subtotal),
+                'total_discount':   float(total_discount),
+                'total_tax':        float(total_tax),
+                'grand_total':      float(grand_total),
+                'created_by':       user_info,
+                'has_attachment':   attachment_saved,
             },
-            'redirect_url': '/app5/quotation/',  # ✅ FIXED: Redirect to list page instead of form
+            'redirect_url': '/app5/quotation/',
             'metadata': {
-                'lead_updated': lead_updated,
-                'items_processed': items_created,
-                'user': user_info,
-                'timestamp': timezone.now().isoformat()
+                'lead_updated':      lead_updated,
+                'items_processed':   items_created,
+                'attachment_saved':  attachment_saved,
+                'user':              user_info,
+                'timestamp':         timezone.now().isoformat(),
             }
         }
-        
-        logger.info(f"🎉 Quotation {quotation.quotation_number} created successfully with {items_created} items")
-        logger.info(f"📊 Totals - Subtotal: ₹{subtotal}, Tax: ₹{total_tax}, Grand Total: ₹{grand_total}")
-        
+
+        logger.info(
+            f"🎉 Quotation {quotation.quotation_number} created with {items_created} items"
+            + (f" + attachment" if attachment_saved else "")
+        )
+        logger.info(f"📊 Totals — Subtotal: ₹{subtotal}, Tax: ₹{total_tax}, Grand Total: ₹{grand_total}")
+
         return JsonResponse(response_data)
-        
-    except json.JSONDecodeError as e:
-        logger.error(f"❌ Invalid JSON data: {e}")
-        logger.debug(f"Request body: {request.body[:500] if request.body else 'Empty'}...")
-        
-        return JsonResponse({
-            'success': False,
-            'message': 'Invalid JSON data. Please check your input.',
-            'error_detail': str(e)
-        }, status=400)
-    
+
     except Lead.DoesNotExist as e:
         logger.error(f"❌ Lead not found: {e}")
         return JsonResponse({
@@ -7861,7 +7966,7 @@ def quotation_submit(request):
             'message': 'Lead not found. Please select a valid lead.',
             'error_detail': str(e)
         }, status=404)
-    
+
     except Item.DoesNotExist as e:
         logger.error(f"❌ Item not found: {e}")
         return JsonResponse({
@@ -7869,7 +7974,7 @@ def quotation_submit(request):
             'message': 'One or more items not found in the system.',
             'error_detail': str(e)
         }, status=404)
-    
+
     except Exception as e:
         logger.error(f"❌ Unexpected error during quotation submission: {e}", exc_info=True)
         return JsonResponse({
@@ -8075,13 +8180,11 @@ def edit_quotation(request, quotation_id):
     try:
         quotation = Quotation.objects.get(id=quotation_id)
         quotation_items = QuotationItem.objects.filter(quotation=quotation)
-        items = Item.objects.all()  # From purchase order app
+        items = Item.objects.all()
         leads = Lead.objects.filter(status='Active')
-        
-        # Get unique sections from items
         sections = items.values_list('section', flat=True).distinct()
-        
-        # Create a safe JSON serializable version of items for JavaScript
+        taxes = TaxMaster.objects.all().order_by('name')  # ✅ ADDED
+
         items_json = []
         for item in items:
             items_json.append({
@@ -8096,47 +8199,73 @@ def edit_quotation(request, quotation_id):
                 'hsn_code': item.hsn_code or '',
                 'section': item.section or '',
                 'department': item.department.name if item.department else 'N/A',
-                'is_active': item.is_active
+                'is_active': item.is_active,
             })
-        
+
         context = {
             'quotation': quotation,
-            'quotation_items': quotation_items,  # Pass as separate variable
+            'quotation_items': quotation_items,
             'items': items,
             'active_leads': leads,
             'leads_count': leads.count(),
             'sections': sections,
-            'items_json': items_json,  # For JavaScript
+            'items_json': items_json,
+            'taxes': taxes,          # ✅ ADDED: Tax master list for dropdown
         }
         return render(request, 'quotation_edit.html', context)
+
     except Quotation.DoesNotExist:
         messages.error(request, 'Quotation not found')
         return redirect('app5:quotation_list')
-    
+
+
 def update_quotation(request, pk):
     """
-    Update quotation via AJAX - FIXED VERSION
-    Properly handles form data and saves all changes
+    Update quotation via AJAX.
+    Supports:
+      - application/json           (no attachment)
+      - multipart/form-data        (with optional proposal_attachment file)
     """
     if request.method != 'POST':
         return JsonResponse({
             'success': False,
             'message': 'Invalid request method. Use POST.'
         }, status=405)
-    
+
     try:
-        # ========== PARSE REQUEST DATA ==========
-        try:
-            data = json.loads(request.body)
-            logger.info(f"📝 Updating quotation {pk}")
-            logger.debug(f"Received data: {data}")
-        except json.JSONDecodeError as e:
-            logger.error(f"❌ JSON decode error: {e}")
-            return JsonResponse({
-                'success': False,
-                'message': 'Invalid JSON data'
-            }, status=400)
-        
+        # ========== PARSE REQUEST (JSON or multipart) ==========
+        proposal_file = None
+        content_type = request.content_type or ''
+
+        if 'multipart/form-data' in content_type:
+            # Data arrives as the 'data' form field (JSON string)
+            raw_data = request.POST.get('data', '{}')
+            if isinstance(raw_data, bytes):
+                try:
+                    raw_data = raw_data.decode('utf-8')
+                except UnicodeDecodeError:
+                    raw_data = raw_data.decode('latin-1')
+            try:
+                data = json.loads(raw_data)
+            except json.JSONDecodeError as e:
+                logger.error(f"❌ JSON decode error in multipart 'data' field: {e}")
+                return JsonResponse({'success': False, 'message': 'Invalid JSON data'}, status=400)
+
+            proposal_file = request.FILES.get('proposal_attachment')
+            if proposal_file:
+                logger.info(f"📎 Attachment received: {proposal_file.name} ({proposal_file.size} bytes)")
+
+        else:
+            # Plain JSON body
+            try:
+                data = json.loads(request.body)
+            except json.JSONDecodeError as e:
+                logger.error(f"❌ JSON decode error: {e}")
+                return JsonResponse({'success': False, 'message': 'Invalid JSON data'}, status=400)
+
+        logger.info(f"📝 Updating quotation {pk}")
+        logger.debug(f"Received data keys: {list(data.keys())}")
+
         # ========== GET QUOTATION ==========
         try:
             quotation = Quotation.objects.select_related('lead').get(id=pk)
@@ -8147,141 +8276,126 @@ def update_quotation(request, pk):
                 'success': False,
                 'message': f'Quotation with ID {pk} not found'
             }, status=404)
-        
-        # ========== START ATOMIC TRANSACTION ==========
+
+        # ========== ATOMIC TRANSACTION ==========
         with transaction.atomic():
+
             # ---------- UPDATE LEAD (if changed) ----------
-            lead_id = data.get('lead_id')
+            lead_id = data.get('lead_ticket_id')  # Changed from lead_id to match frontend
             if lead_id and str(lead_id) != str(quotation.lead.id if quotation.lead else None):
                 try:
                     new_lead = Lead.objects.get(id=lead_id)
                     old_lead_name = quotation.lead.ownerName if quotation.lead else "Unknown"
-                    
                     quotation.lead = new_lead
                     quotation.client_name = new_lead.ownerName or ''
                     quotation.client_phone = new_lead.phoneNo or ''
                     quotation.client_email = new_lead.email or ''
-                    
                     if new_lead.customerType == 'Business':
                         quotation.company_name = new_lead.business or new_lead.name or ''
-                    
                     logger.info(f"✅ Lead changed: {old_lead_name} → {new_lead.ownerName}")
                 except Lead.DoesNotExist:
-                    logger.warning(f"⚠️ Lead {lead_id} not found, keeping existing lead")
+                    logger.warning(f"⚠️ Lead {lead_id} not found")
                     return JsonResponse({
                         'success': False,
                         'message': f'Lead with ID {lead_id} not found'
                     }, status=404)
-            
+
             # ---------- UPDATE NOTES ----------
             if 'notes' in data:
                 quotation.notes = data.get('notes', '').strip()
-                logger.debug("✅ Updated notes")
-            
+
             # ---------- UPDATE STATUS ----------
             new_status = data.get('status')
             if new_status and new_status in ['draft', 'sent', 'accepted', 'expired']:
                 quotation.status = new_status
-                logger.info(f"✅ Status updated to: {new_status}")
-            
-            # ---------- HANDLE DELETED ITEMS ----------
-            deleted_items = data.get('deleted_items', [])
-            deleted_count = 0
-            
-            # Clean up deleted_items array
-            deleted_items = [str(item_id) for item_id in deleted_items if item_id not in [None, '', 'null', 'undefined']]
-            
-            for item_id in deleted_items:
+                logger.info(f"✅ Status → {new_status}")
+
+            # ---------- SAVE PROPOSAL ATTACHMENT ----------
+            attachment_saved = False
+            attachment_warning = None
+
+            if proposal_file:
                 try:
-                    item_id_int = int(item_id)
-                    quotation_item = QuotationItem.objects.get(
-                        id=item_id_int, 
-                        quotation=quotation
-                    )
-                    item_name = quotation_item.item_name
-                    quotation_item.delete()
-                    deleted_count += 1
-                    logger.info(f"🗑️ Deleted item: {item_name} (ID: {item_id})")
-                except (ValueError, TypeError):
-                    logger.warning(f"⚠️ Invalid item ID format: {item_id}")
-                    continue
-                except QuotationItem.DoesNotExist:
-                    logger.warning(f"⚠️ Item {item_id} not found for deletion")
-                    continue
-            
-            if deleted_count > 0:
-                logger.info(f"✅ Deleted {deleted_count} item(s)")
-            
+                    max_size = 10 * 1024 * 1024
+                    if proposal_file.size > max_size:
+                        raise ValueError(
+                            f"Attachment too large ({proposal_file.size} bytes). Max 10 MB."
+                        )
+                    from django.utils.text import get_valid_filename
+                    safe_name = get_valid_filename(proposal_file.name)
+
+                    # Delete old file from storage if replacing
+                    if quotation.proposal_attachment:
+                        try:
+                            quotation.proposal_attachment.delete(save=False)
+                            logger.info("🗑️ Deleted old proposal attachment from storage")
+                        except Exception as del_err:
+                            logger.warning(f"⚠️ Could not delete old attachment: {del_err}")
+
+                    quotation.proposal_attachment.save(safe_name, proposal_file, save=False)
+                    attachment_saved = True
+                    logger.info(f"📎 Saved proposal attachment: {safe_name}")
+
+                except Exception as e:
+                    logger.error(f"❌ Failed to save proposal attachment: {e}", exc_info=True)
+                    attachment_warning = str(e)
+
             # ---------- PROCESS ITEMS ----------
             items_data = data.get('items', [])
             logger.info(f"📦 Processing {len(items_data)} items")
-            
-            # Track processed items
+
+            # Get existing item IDs
             existing_item_ids = set(
-                QuotationItem.objects.filter(quotation=quotation)
-                .values_list('id', flat=True)
+                QuotationItem.objects.filter(quotation=quotation).values_list('id', flat=True)
             )
             updated_item_ids = set()
             created_count = 0
             updated_count = 0
-            
-            # Process each item
+
             for index, item_data in enumerate(items_data):
                 try:
                     quotation_item_id = item_data.get('id')
                     item_object_id = item_data.get('item_id')
-                    
-                    logger.debug(f"Item {index+1}: quotation_item_id={quotation_item_id}, item_object_id={item_object_id}")
-                    
-                    # ========== VALIDATION ==========
+
                     if not item_object_id:
-                        logger.warning(f"⚠️ Skipping item {index+1}: No item_object_id")
+                        logger.warning(f"⚠️ Skipping item {index+1}: no item_object_id")
                         continue
-                    
-                    # Get the Item object
+
                     try:
                         item = Item.objects.get(id=item_object_id)
                     except Item.DoesNotExist:
-                        logger.error(f"❌ Item {item_object_id} not found in purchase_order")
+                        logger.error(f"❌ Item {item_object_id} not found")
                         continue
-                    
-                    # ========== EXTRACT VALUES ==========
+
                     try:
                         quantity = Decimal(str(item_data.get('quantity', 1)))
-                        entry_rate = Decimal(str(item_data.get('entry_rate', 0)))
                         sales_price = Decimal(str(item_data.get('sales_price', 0)))
                         unit_price = Decimal(str(item_data.get('unit_price', 0)))
                         discount = Decimal(str(item_data.get('discount', 0)))
                         tax = Decimal(str(item_data.get('tax', 0)))
                         total = Decimal(str(item_data.get('total', 0)))
-                        
-                        # Validate values
-                        if quantity <= 0:
-                            logger.warning(f"⚠️ Invalid quantity for item {index+1}: {quantity}")
-                            continue
-                        
-                        if sales_price <= 0 and unit_price <= 0:
-                            logger.warning(f"⚠️ Both prices are 0 for item {index+1}, using MRP")
-                            sales_price = Decimal(str(item.mrp or 0))
-                        
                     except (ValueError, TypeError, InvalidOperation) as e:
-                        logger.error(f"❌ Error parsing numbers for item {index+1}: {e}")
+                        logger.error(f"❌ Number parse error for item {index+1}: {e}")
                         continue
-                    
-                    # ========== CALCULATE ADDITIONAL FIELDS ==========
+
+                    if quantity <= 0:
+                        logger.warning(f"⚠️ Invalid quantity for item {index+1}: {quantity}")
+                        continue
+
+                    if sales_price <= 0 and unit_price <= 0:
+                        sales_price = Decimal(str(item.mrp or 0))
+
                     base_price = sales_price if sales_price > 0 else unit_price
-                    discount_amount = (base_price * quantity) * (discount / 100) if discount > 0 else Decimal('0')
-                    amount_after_discount = (base_price * quantity) - discount_amount
-                    tax_amount = amount_after_discount * (tax / 100) if tax > 0 else Decimal('0')
-                    
-                    # Prepare item values
+                    discount_amount = (base_price * quantity) * (discount / 100) if discount else Decimal('0')
+                    after_discount = (base_price * quantity) - discount_amount
+                    tax_amount = after_discount * (tax / 100) if tax else Decimal('0')
+
                     item_values = {
                         'item': item,
                         'item_name': item.name,
                         'description': item.description or '',
                         'quantity': quantity,
                         'unit': item.unit_of_measure,
-                        'entry_rate': entry_rate,
                         'sales_price': sales_price,
                         'unit_price': unit_price,
                         'discount_percentage': discount,
@@ -8290,118 +8404,88 @@ def update_quotation(request, pk):
                         'discount_amount': discount_amount,
                         'tax_amount': tax_amount,
                         'hsn_code': item.hsn_code or '',
-                        'order': index
+                        'order': index,
                     }
-                    
-                    # ========== CREATE OR UPDATE ITEM ==========
+
                     if quotation_item_id and str(quotation_item_id).isdigit():
-                        # UPDATE EXISTING ITEM
                         try:
-                            quotation_item = QuotationItem.objects.get(
-                                id=int(quotation_item_id),
-                                quotation=quotation
+                            qi = QuotationItem.objects.get(
+                                id=int(quotation_item_id), quotation=quotation
                             )
-                            
-                            # Update all fields
-                            for key, value in item_values.items():
-                                setattr(quotation_item, key, value)
-                            
-                            quotation_item.save()
+                            for k, v in item_values.items():
+                                setattr(qi, k, v)
+                            qi.save()
                             updated_item_ids.add(int(quotation_item_id))
                             updated_count += 1
-                            
                             logger.debug(f"✅ Updated item {index+1}: {item.name}")
-                            
                         except QuotationItem.DoesNotExist:
-                            # Item was supposed to exist but doesn't - create new
-                            logger.warning(f"⚠️ QuotationItem {quotation_item_id} not found, creating new")
-                            quotation_item = QuotationItem.objects.create(
-                                quotation=quotation,
-                                **item_values
-                            )
-                            updated_item_ids.add(quotation_item.id)
+                            qi = QuotationItem.objects.create(quotation=quotation, **item_values)
+                            updated_item_ids.add(qi.id)
                             created_count += 1
-                            logger.info(f"✅ Created new item {index+1}: {item.name}")
                     else:
-                        # CREATE NEW ITEM
-                        quotation_item = QuotationItem.objects.create(
-                            quotation=quotation,
-                            **item_values
-                        )
-                        updated_item_ids.add(quotation_item.id)
+                        qi = QuotationItem.objects.create(quotation=quotation, **item_values)
+                        updated_item_ids.add(qi.id)
                         created_count += 1
-                        logger.info(f"✅ Created new item {index+1}: {item.name}")
-                
+                        logger.info(f"✅ Created item {index+1}: {item.name}")
+
                 except Exception as e:
                     logger.error(f"❌ Error processing item {index+1}: {e}", exc_info=True)
                     continue
-            
-            # ---------- DELETE ORPHANED ITEMS ----------
-            # Items that existed but aren't in the updated list
-            deleted_item_ids = set(int(x) for x in deleted_items if str(x).isdigit())
-            orphaned_items = existing_item_ids - updated_item_ids - deleted_item_ids
-            
-            if orphaned_items:
-                orphan_count = 0
-                for item_id in orphaned_items:
-                    try:
-                        orphan_item = QuotationItem.objects.get(id=item_id, quotation=quotation)
-                        orphan_name = orphan_item.item_name
-                        orphan_item.delete()
-                        orphan_count += 1
-                        logger.info(f"🗑️ Deleted orphaned item: {orphan_name} (ID: {item_id})")
-                    except QuotationItem.DoesNotExist:
-                        pass
-                
-                if orphan_count > 0:
-                    logger.info(f"✅ Deleted {orphan_count} orphaned item(s)")
-            
+
+            # ---------- DELETE ITEMS NOT IN THE UPDATED LIST ----------
+            items_to_delete = existing_item_ids - updated_item_ids
+            deleted_count = 0
+            for item_id in items_to_delete:
+                try:
+                    qi = QuotationItem.objects.get(id=item_id, quotation=quotation)
+                    item_name = qi.item_name
+                    qi.delete()
+                    deleted_count += 1
+                    logger.info(f"🗑️ Deleted item: {item_name} (ID: {item_id})")
+                except QuotationItem.DoesNotExist:
+                    pass
+
             # ---------- RECALCULATE TOTALS ----------
             subtotal = Decimal(str(data.get('subtotal', 0)))
             total_discount = Decimal(str(data.get('total_discount', 0)))
             total_tax = Decimal(str(data.get('total_tax', 0)))
             grand_total = Decimal(str(data.get('grand_total', 0)))
-            
-            # If totals are 0, recalculate from items
-            if grand_total <= 0:
-                quotation_items = QuotationItem.objects.filter(quotation=quotation)
+
+            # If totals are 0 or invalid, recalculate from items
+            if grand_total <= 0 or subtotal <= 0:
+                qs = QuotationItem.objects.filter(quotation=quotation)
+                subtotal = Decimal('0')
+                total_discount = Decimal('0')
+                total_tax = Decimal('0')
                 
-                if quotation_items.exists():
-                    subtotal = Decimal('0')
-                    total_discount = Decimal('0')
-                    total_tax = Decimal('0')
-                    
-                    for item in quotation_items:
-                        item_subtotal = item.line_total / (1 + item.tax_percentage/100) if item.tax_percentage else item.line_total
-                        subtotal += item_subtotal
-                        total_discount += item.discount_amount
-                        total_tax += item.tax_amount
-                    
+                if qs.exists():
+                    for qi in qs:
+                        item_sub = (
+                            qi.line_total / (1 + qi.tax_percentage / 100)
+                            if qi.tax_percentage else qi.line_total
+                        )
+                        subtotal += item_sub
+                        total_discount += qi.discount_amount
+                        total_tax += qi.tax_amount
                     grand_total = subtotal + total_tax
-                    
-                    logger.info(f"💰 Recalculated totals - Subtotal: {subtotal:.2f}, Tax: {total_tax:.2f}, Grand Total: {grand_total:.2f}")
+                    logger.info(f"💰 Recalculated — Subtotal: {subtotal:.2f}, "
+                                f"Tax: {total_tax:.2f}, Grand: {grand_total:.2f}")
                 else:
-                    subtotal = Decimal('0')
-                    total_discount = Decimal('0')
-                    total_tax = Decimal('0')
-                    grand_total = Decimal('0')
-                    logger.warning("⚠️ No items in quotation after update")
-            
-            # Update quotation totals
+                    logger.warning("⚠️ No items remaining after update")
+
             quotation.subtotal = subtotal
             quotation.total_discount = total_discount
             quotation.total_tax = total_tax
             quotation.grand_total = grand_total
-            
-            # Save quotation
             quotation.updated_at = timezone.now()
             quotation.save()
-            
-            logger.info(f"✅ Quotation {quotation.quotation_number} updated successfully")
-            logger.info(f"📊 Summary - Created: {created_count}, Updated: {updated_count}, Deleted: {deleted_count}")
-        
+
+            logger.info(f"✅ Quotation {quotation.quotation_number} saved. "
+                        f"Created: {created_count}, Updated: {updated_count}, "
+                        f"Deleted: {deleted_count}")
+
         # ========== SUCCESS RESPONSE ==========
-        return JsonResponse({
+        response_data = {
             'success': True,
             'message': '✅ Quotation updated successfully',
             'quotation': {
@@ -8413,21 +8497,33 @@ def update_quotation(request, pk):
                 'total_tax': float(quotation.total_tax),
                 'grand_total': float(quotation.grand_total),
                 'items_count': QuotationItem.objects.filter(quotation=quotation).count(),
-                'updated_at': quotation.updated_at.isoformat() if quotation.updated_at else timezone.now().isoformat()
+                'has_attachment': bool(quotation.proposal_attachment),
+                'updated_at': (
+                    quotation.updated_at.isoformat()
+                    if quotation.updated_at else timezone.now().isoformat()
+                ),
             },
             'summary': {
                 'items_created': created_count,
                 'items_updated': updated_count,
-                'items_deleted': deleted_count + len(orphaned_items) if 'orphaned_items' in locals() else deleted_count
-            }
-        })
-        
+                'items_deleted': deleted_count,
+                'attachment_saved': attachment_saved,
+            },
+        }
+
+        if attachment_warning:
+            response_data['attachment_warning'] = (
+                f'Quotation saved, but attachment could not be stored: {attachment_warning}'
+            )
+
+        return JsonResponse(response_data)
+
     except Exception as e:
         logger.error(f"❌ Error updating quotation {pk}: {e}", exc_info=True)
         return JsonResponse({
             'success': False,
             'message': f'Error updating quotation: {str(e)}',
-            'error_type': type(e).__name__
+            'error_type': type(e).__name__,
         }, status=500)
 
 
@@ -9021,6 +9117,26 @@ def generate_quotation_pdf(context):
     response = HttpResponse(buffer, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="quotation_{quotation_number}.pdf"'   # ✅ fixed
     return response
+
+
+
+
+def quotation_by_lead(request, lead_id):
+    """
+    Redirect to the latest quotation download page for a given lead.
+    Called when user clicks the Quotation button from the lead directory.
+    """
+    from .models import Quotation
+    from django.shortcuts import redirect
+
+    # Get the most recent quotation for this lead
+    quotation = Quotation.objects.filter(lead_id=lead_id).order_by('-created_at').first()
+
+    if quotation:
+        return redirect(f'/app5/quotation/download/{quotation.id}/')
+    else:
+        # No quotation exists yet — go to the create quotation form with lead pre-selected
+        return redirect(f'/app5/quotation/?lead_id={lead_id}')
 
     # app5/views.py
 # app5/views.py
@@ -9675,7 +9791,8 @@ def event_list(request):
 
     Role-based visibility:
       * '3level' (User)  -> only follow-ups they CREATED or are ASSIGNED to
-      * All other roles  -> all follow-ups including Rejected
+                            (excludes Accepted & Rejected)
+      * All other roles  -> all follow-ups EXCEPT Accepted & Rejected
         (normal=Admin, admin_level=Super Admin, 4level=Superuser, 5level=Branch User)
 
     Ticket dropdown (active leads):
@@ -9687,7 +9804,7 @@ def event_list(request):
     from django.utils import timezone
     from django.db.models import Q
     from app1.models import User
-    from purchase_order.models import Department  # Add this import
+    from purchase_order.models import Department
 
     # -- 1. Resolve the current custom user ----------------------------------
     user_level     = request.session.get('user_level', '')
@@ -9713,6 +9830,9 @@ def event_list(request):
     # request.user IS that Django user for the logged-in session.
     # assigned_to is a plain-text CharField (stores a name string).
     #
+    # Accepted & Rejected are loaded into the page but hidden by default via JS filtering.
+    # They only appear when explicitly selected in the status filter dropdown.
+
     if user_level == '3level':
         q_created  = Q(created_by=request.user) if request.user.is_authenticated else Q()
         q_assigned = Q(assigned_to__iexact=current_user_name) if current_user_name else Q()
@@ -9728,13 +9848,17 @@ def event_list(request):
         else:
             followups = FollowUp.objects.none()
     else:
-        # UPDATED: Removed .exclude(status='Rejected') to show all follow-ups including rejected
         followups = (
             FollowUp.objects
             .select_related('lead', 'created_by')
             .prefetch_related('lead__requirements')
             .order_by('-follow_up_date', '-created_at')
         )
+
+    # -- 3b. Filter by lead_id if passed from lead_form follow-up button -----
+    selected_lead_id = request.GET.get('lead_id', '').strip()
+    if selected_lead_id and selected_lead_id.isdigit():
+        followups = followups.filter(lead_id=int(selected_lead_id))
 
     # -- 3. Annotate each followup -------------------------------------------
     for followup in followups:
@@ -9789,7 +9913,7 @@ def event_list(request):
                 followup.custom_user_name = followup.created_by.username
         else:
             followup.custom_user_name = "System"
-            
+
         # ========== Branch information for row-level filtering ==========
         # Use lead.requirement directly as the branch name (same value as User.branch.name)
         followup.branch_id = ''
@@ -9888,7 +10012,7 @@ def event_list(request):
             active_users.append(SimpleUser(display_name, user.id))
     except Exception as e:
         print(f"Error fetching users: {e}")
-        
+
     # -- 6. Get all branches for filter dropdown ----------------------------
     branches = []
     try:
@@ -9899,10 +10023,10 @@ def event_list(request):
     # -- 7. Calculate month start and end dates ----------------------------
     from datetime import datetime, timedelta
     today = timezone.now().date()
-    
+
     # Month start (first day of current month)
     month_start = today.replace(day=1)
-    
+
     # Month end (last day of current month)
     if today.month == 12:
         month_end = today.replace(year=today.year + 1, month=1, day=1) - timedelta(days=1)
@@ -9929,6 +10053,7 @@ def event_list(request):
         # which matches lead.requirement stored on each lead.
         'current_user_level':     user_level,
         'current_user_branch_id': current_user_branch_id,
+        'selected_lead_id':       selected_lead_id,  # passed from lead_form follow-up button
     }
 
     return render(request, 'event_list.html', context)
@@ -10164,3 +10289,649 @@ def event_edit(request, pk):
     logger.info(f"🚀 Rendering edit page for followup {pk}")
     return render(request, 'event_edit.html', context)
 
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.utils import timezone
+from django.db.models import Q
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from decimal import Decimal, InvalidOperation
+
+from .models import SalesOrder, Customer, OrderItem, Item
+from purchase_order.models import Department
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  HELPERS
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _to_decimal(value, default=Decimal('0')):
+    """Convert various inputs to Decimal safely."""
+    try:
+        return Decimal(str(value))
+    except (InvalidOperation, TypeError, ValueError):
+        return default
+
+
+def _get_dept(dept_id_str):
+    """Safely resolve a Department PK string to an instance (or None)."""
+    val = (dept_id_str or '').strip()
+    if val and val.isdigit():
+        try:
+            return Department.objects.get(pk=int(val))
+        except Department.DoesNotExist:
+            pass
+    return None
+
+
+def _resolve_customer(client_details_value, post=None):
+    """
+    Resolve the submitted `client_details` hidden field to a Customer instance.
+
+    Priority order
+    ──────────────
+    1. Numeric string  →  look up existing Customer by PK  (local DB)
+    2. RRC code        →  sync/create Customer from RRC API data carried in POST
+       (triggered when `rrc_client_code` POST field is present and non-empty)
+    3. Plain text name →  get-or-create Customer by name  (manual new-client entry)
+
+    Extra POST fields consumed for RRC sync:
+        rrc_client_code, rrc_client_name, rrc_client_address,
+        rrc_client_mobile, rrc_client_branch
+    """
+    val = (client_details_value or '').strip()
+    if not val:
+        raise ValueError('No client selected.')
+
+    # ── 1. Numeric PK → local DB lookup ─────────────────────────────────────
+    if val.isdigit():
+        try:
+            return Customer.objects.get(pk=int(val))
+        except Customer.DoesNotExist:
+            raise ValueError(f'Customer with id {val} not found.')
+
+    # ── 2. RRC code → sync to Customer table ────────────────────────────────
+    rrc_code = ''
+    if post:
+        rrc_code = (post.get('rrc_client_code', '') or '').strip()
+
+    if rrc_code:
+        # FIX: Use the dedicated rrc_client_name field for the actual name.
+        # Fall back to val (the code) only if the name field is absent.
+        rrc_name    = (post.get('rrc_client_name', '') or '').strip() or val
+        rrc_address = (post.get('rrc_client_address', '') or '').strip()
+        rrc_mobile  = (post.get('rrc_client_mobile',  '') or '').strip()
+        rrc_branch  = (post.get('rrc_client_branch',  '') or '').strip()
+
+        return _sync_rrc_customer(
+            code    = rrc_code,
+            name    = rrc_name,
+            address = rrc_address,
+            mobile  = rrc_mobile,
+            branch  = rrc_branch,
+        )
+
+    # ── 3. Plain text → get-or-create ───────────────────────────────────────
+    customer, _ = Customer.objects.get_or_create(name=val)
+    return customer
+
+
+def _sync_rrc_customer(code, name, address='', mobile='', branch=''):
+    """
+    Create or update a Customer record from RRC API data.
+
+    • Matches on `rrc_code` field first (if the column exists on the model).
+    • Falls back to a case-insensitive name match.
+    • Only writes optional columns when they exist on the model schema
+      — so it is safe to run even before migrations add those fields.
+    • Existing non-blank values are NOT overwritten (preserves manual edits).
+    """
+    field_names = {f.name for f in Customer._meta.get_fields()}
+
+    # ── Find existing ────────────────────────────────────────────────────────
+    customer = None
+    if 'rrc_code' in field_names:
+        customer = Customer.objects.filter(rrc_code=code).first()
+
+    if customer is None:
+        customer = Customer.objects.filter(name__iexact=name).first()
+
+    # ── Create if not found ──────────────────────────────────────────────────
+    if customer is None:
+        kwargs = {'name': name}
+        if 'rrc_code' in field_names:             kwargs['rrc_code'] = code
+        if 'address'  in field_names and address: kwargs['address']  = address
+        if 'mobile'   in field_names and mobile:  kwargs['mobile']   = mobile
+        if 'phone'    in field_names and mobile:  kwargs['phone']    = mobile
+        if 'branch'   in field_names and branch:  kwargs['branch']   = branch
+        return Customer.objects.create(**kwargs)
+
+    # ── Update existing (fill-in-blanks only) ────────────────────────────────
+    changed = False
+
+    def _fill(attr, value):
+        nonlocal changed
+        if attr in field_names and value and not getattr(customer, attr, None):
+            setattr(customer, attr, value)
+            changed = True
+
+    # Always keep rrc_code in sync (idempotent, no data loss)
+    if 'rrc_code' in field_names and getattr(customer, 'rrc_code', None) != code:
+        customer.rrc_code = code
+        changed = True
+
+    # FIX: Also update name if it was previously stored as the bare code
+    if customer.name == code and name and name != code:
+        customer.name = name
+        changed = True
+
+    _fill('address', address)
+    _fill('mobile',  mobile)
+    _fill('phone',   mobile)
+    _fill('branch',  branch)
+
+    if changed:
+        customer.save()
+
+    return customer
+
+
+def _save_order_items(sales_order, post):
+    """
+    Delete existing line items and recreate from POST arrays:
+        item_id[], quantity[], entry_rate[], sales_price[],
+        unit_price[], item_cost[], margin[], discount[], tax_percent[]
+    Returns (subtotal, tax_total) as Decimal.
+    """
+    try:
+        sales_order.items.all().delete()
+    except AttributeError:
+        try:
+            sales_order.orderitem_set.all().delete()
+        except AttributeError:
+            pass
+
+    item_ids     = post.getlist('item_id[]')
+    quantities   = post.getlist('quantity[]')
+    entry_rates  = post.getlist('entry_rate[]')
+    sales_prices = post.getlist('sales_price[]')
+    unit_prices  = post.getlist('unit_price[]')
+    item_costs   = post.getlist('item_cost[]')
+    margins      = post.getlist('margin[]')
+    discounts    = post.getlist('discount[]')
+    tax_percents = post.getlist('tax_percent[]')
+
+    subtotal  = Decimal('0')
+    tax_total = Decimal('0')
+
+    for i, item_id in enumerate(item_ids):
+        if not item_id:
+            continue
+
+        qty        = _to_decimal(quantities[i]   if i < len(quantities)   else 0, Decimal('1'))
+        entry_rate = _to_decimal(entry_rates[i]  if i < len(entry_rates)  else 0)
+        sales_pr   = _to_decimal(sales_prices[i] if i < len(sales_prices) else 0)
+        unit_pr    = _to_decimal(unit_prices[i]  if i < len(unit_prices)  else 0)
+        item_cost  = _to_decimal(item_costs[i]   if i < len(item_costs)   else 0)
+        margin     = _to_decimal(margins[i]       if i < len(margins)      else 0)
+        discount   = _to_decimal(discounts[i]    if i < len(discounts)    else 0)
+        tax_pct    = _to_decimal(tax_percents[i] if i < len(tax_percents) else 0)
+
+        taxable    = (qty * unit_pr) - discount
+        tax_amt    = taxable * (tax_pct / Decimal('100'))
+        line_total = taxable + tax_amt
+
+        subtotal  += taxable
+        tax_total += tax_amt
+
+        item_obj = None
+        try:
+            item_obj = Item.objects.get(pk=int(item_id))
+        except (Item.DoesNotExist, ValueError):
+            pass
+
+        product_name = item_obj.name if item_obj else f'Item #{item_id}'
+
+        OrderItem.objects.create(
+            sales_order  = sales_order,
+            item         = item_obj,
+            product_name = product_name,
+            quantity     = qty,
+            entry_rate   = entry_rate,
+            sales_price  = sales_pr,
+            unit_price   = unit_pr,
+            item_cost    = item_cost,
+            margin       = margin,
+            discount     = discount,
+            tax          = tax_pct,
+            total        = line_total,
+        )
+
+    return subtotal, tax_total
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  VIEWS
+# ══════════════════════════════════════════════════════════════════════════════
+
+def sales_order_list(request):
+    """List sales orders with filtering and pagination."""
+    status_filter         = request.GET.get('status', '')
+    payment_status_filter = request.GET.get('payment_status', '')
+    customer_filter       = request.GET.get('customer', '')
+    start_date            = request.GET.get('start_date', '')
+    end_date              = request.GET.get('end_date', '')
+    search_query          = request.GET.get('search', '')
+
+    sales_orders = SalesOrder.objects.all().select_related('customer').order_by('-so_date', '-so_number')
+
+    if status_filter:
+        sales_orders = sales_orders.filter(status=status_filter)
+    if payment_status_filter:
+        sales_orders = sales_orders.filter(payment_status=payment_status_filter)
+    if customer_filter:
+        sales_orders = sales_orders.filter(customer_id=customer_filter)
+    if start_date:
+        sales_orders = sales_orders.filter(so_date__gte=start_date)
+    if end_date:
+        sales_orders = sales_orders.filter(so_date__lte=end_date)
+    if search_query:
+        sales_orders = sales_orders.filter(
+            Q(so_number__icontains=search_query) |
+            Q(customer__name__icontains=search_query) |
+            Q(reference_number__icontains=search_query)
+        )
+
+    paginator = Paginator(sales_orders, 20)
+    page      = request.GET.get('page', 1)
+    try:
+        sales_orders_paginated = paginator.page(page)
+    except PageNotAnInteger:
+        sales_orders_paginated = paginator.page(1)
+    except EmptyPage:
+        sales_orders_paginated = paginator.page(paginator.num_pages)
+
+    context = {
+        'sales_orders':           sales_orders_paginated,
+        'customers':              Customer.objects.all().order_by('name'),
+        'status_choices':         SalesOrder.STATUS_CHOICES,
+        'status_filter':          status_filter,
+        'payment_status_filter':  payment_status_filter,
+        'customer_filter':        customer_filter,
+        'start_date':             start_date,
+        'end_date':               end_date,
+        'search_query':           search_query,
+        'today':                  timezone.now().date(),
+    }
+    return render(request, 'sales_order_list.html', context)
+
+
+# ── Create ────────────────────────────────────────────────────────────────────
+
+def sales_order_create(request):
+    """Create a new Sales Order — handles raw POST from sales_order_form.html."""
+    if request.method == 'POST':
+        post = request.POST
+
+        # 1. Resolve customer (RRC code, local PK, or plain name)
+        try:
+            customer = _resolve_customer(post.get('client_details', ''), post=post)
+        except ValueError as e:
+            messages.error(request, str(e))
+            return _render_create_form(request, post)
+
+        # 2. Resolve departments
+        from_dept = _get_dept(post.get('from_department', ''))
+        to_dept   = _get_dept(post.get('to_department',   ''))
+
+        # 3. Create SalesOrder header
+        so = SalesOrder(
+            customer           = customer,
+            so_date            = post.get('so_date') or timezone.now().date(),
+            delivery_date      = post.get('delivery_date') or None,
+            reference_number   = post.get('reference_number', '').strip(),
+            from_department    = from_dept,
+            to_department      = to_dept,
+            payment_terms      = post.get('payment_terms',      'NET_30'),
+            calculation_method = post.get('calculation_method', 'STANDARD'),
+            status             = post.get('status',             'DRAFT'),
+            payment_status     = 'PENDING',
+            notes              = post.get('notes', '').strip(),
+            terms_conditions   = post.get('terms_conditions', '').strip(),
+            created_by         = request.user if request.user.is_authenticated else None,
+        )
+        so.save()  # generates so_number
+
+        # 4. Save line items
+        item_ids = post.getlist('item_id[]')
+        if not any(item_ids):
+            so.delete()
+            messages.error(request, 'Please add at least one item.')
+            return _render_create_form(request, post)
+
+        subtotal, tax_total = _save_order_items(so, post)
+
+        # 5. Update totals
+        so.subtotal    = subtotal
+        so.tax_amount  = tax_total
+        so.grand_total = subtotal + tax_total
+        so.save(update_fields=['subtotal', 'tax_amount', 'grand_total'])
+
+        messages.success(request, f'Sales Order {so.so_number} created successfully.')
+        return redirect('app5:sales_order_detail', pk=so.pk)
+
+    return _render_create_form(request)
+
+
+def _render_create_form(request, post=None):
+    """Render the create form, optionally re-populating from a failed POST."""
+    initial_data = {}
+    if post:
+        initial_data = {
+            'so_date':            post.get('so_date'),
+            'delivery_date':      post.get('delivery_date'),
+            'reference_number':   post.get('reference_number'),
+            'payment_terms':      post.get('payment_terms'),
+            'calculation_method': post.get('calculation_method'),
+            'status':             post.get('status'),
+            'notes':              post.get('notes'),
+            'terms_conditions':   post.get('terms_conditions'),
+            'client_details':     post.get('client_details'),
+        }
+
+    context = {
+        'form':                None,
+        'action':              'Create',
+        'title':               'Create Sales Order',
+        'today':               timezone.now().date(),
+        'customers':           Customer.objects.all().order_by('name'),
+        'departments':         Department.objects.filter(is_active=True).order_by('name'),
+        'items':               Item.objects.filter(is_active=True).order_by('name'),
+        'status_choices':      SalesOrder.STATUS_CHOICES,
+        'payment_terms':       SalesOrder.PAYMENT_TERMS,
+        'calculation_methods': SalesOrder.CALCULATION_METHODS,
+        'initial':             initial_data,
+    }
+    return render(request, 'sales_order_form.html', context)
+
+
+# ── Detail ────────────────────────────────────────────────────────────────────
+
+def sales_order_detail(request, pk):
+    """Display a single sales order."""
+    sales_order = get_object_or_404(
+        SalesOrder.objects.select_related(
+            'customer', 'created_by', 'from_department', 'to_department'
+        ),
+        pk=pk,
+    )
+    order_items = sales_order.items.select_related('item').all()
+
+    context = {
+        'sales_order': sales_order,
+        'order_items': order_items,
+    }
+    return render(request, 'sales_order_detail.html', context)
+
+
+# ── Update ────────────────────────────────────────────────────────────────────
+
+def sales_order_update(request, pk):
+    """Update an existing sales order."""
+    so = get_object_or_404(SalesOrder, pk=pk)
+
+    if request.method == 'POST':
+        post = request.POST
+
+        # 1. Resolve customer
+        try:
+            customer = _resolve_customer(post.get('client_details', ''), post=post)
+        except ValueError as e:
+            messages.error(request, str(e))
+            return _render_update_form(request, so, post)
+
+        # 2. Departments
+        from_dept = _get_dept(post.get('from_department', ''))
+        to_dept   = _get_dept(post.get('to_department',   ''))
+
+        # 3. Update header
+        so.customer           = customer
+        so.so_date            = post.get('so_date')            or so.so_date
+        so.delivery_date      = post.get('delivery_date')      or None
+        so.reference_number   = post.get('reference_number', '').strip()
+        so.from_department    = from_dept
+        so.to_department      = to_dept
+        so.payment_terms      = post.get('payment_terms',      so.payment_terms)
+        so.calculation_method = post.get('calculation_method', so.calculation_method)
+        so.status             = post.get('status',             so.status)
+        so.notes              = post.get('notes', '').strip()
+        so.terms_conditions   = post.get('terms_conditions', '').strip()
+        so.updated_by         = request.user if request.user.is_authenticated else None
+        so.updated_at         = timezone.now()
+        so.save()
+
+        # 4. Replace line items
+        item_ids = post.getlist('item_id[]')
+        if not any(item_ids):
+            messages.error(request, 'Please add at least one item.')
+            return _render_update_form(request, so, post)
+
+        subtotal, tax_total = _save_order_items(so, post)
+
+        so.subtotal    = subtotal
+        so.tax_amount  = tax_total
+        so.grand_total = subtotal + tax_total
+        so.save(update_fields=['subtotal', 'tax_amount', 'grand_total'])
+
+        messages.success(request, f'Sales Order {so.so_number} updated successfully.')
+        return redirect('app5:sales_order_detail', pk=so.pk)
+
+    return _render_update_form(request, so)
+
+
+def _render_update_form(request, so, post=None):
+    """Render the update form with existing data (or re-populate from a failed POST)."""
+    if post:
+        initial_data = {
+            'so_date':            post.get('so_date'),
+            'delivery_date':      post.get('delivery_date'),
+            'reference_number':   post.get('reference_number'),
+            'payment_terms':      post.get('payment_terms'),
+            'calculation_method': post.get('calculation_method'),
+            'status':             post.get('status'),
+            'notes':              post.get('notes'),
+            'terms_conditions':   post.get('terms_conditions'),
+            'client_details':     post.get('client_details'),
+            'from_department':    post.get('from_department'),
+            'to_department':      post.get('to_department'),
+        }
+    else:
+        initial_data = {
+            'so_date':            so.so_date.isoformat()       if so.so_date          else '',
+            'delivery_date':      so.delivery_date.isoformat() if so.delivery_date    else '',
+            'reference_number':   so.reference_number,
+            'payment_terms':      so.payment_terms,
+            'calculation_method': so.calculation_method,
+            'status':             so.status,
+            'notes':              so.notes,
+            'terms_conditions':   so.terms_conditions,
+            'client_details':     so.customer.id                if so.customer        else '',
+            'from_department':    so.from_department.id         if so.from_department else '',
+            'to_department':      so.to_department.id           if so.to_department   else '',
+        }
+
+    try:
+        order_items = so.items.all()
+    except AttributeError:
+        order_items = so.orderitem_set.all()
+
+    context = {
+        'form':                None,
+        'action':              'Update',
+        'title':               'Update Sales Order',
+        'sales_order':         so,
+        'order_items':         order_items,
+        'today':               timezone.now().date(),
+        'customers':           Customer.objects.all().order_by('name'),
+        'departments':         Department.objects.filter(is_active=True).order_by('name'),
+        'items':               Item.objects.filter(is_active=True).order_by('name'),
+        'status_choices':      SalesOrder.STATUS_CHOICES,
+        'payment_terms':       SalesOrder.PAYMENT_TERMS,
+        'calculation_methods': SalesOrder.CALCULATION_METHODS,
+        'initial':             initial_data,
+    }
+    return render(request, 'sales_order_form.html', context)
+
+
+# ── Delete ────────────────────────────────────────────────────────────────────
+
+def sales_order_delete(request, pk):
+    """Delete a sales order."""
+    sales_order = get_object_or_404(SalesOrder, pk=pk)
+
+    if request.method == 'POST':
+        so_number = sales_order.so_number
+        sales_order.delete()
+        messages.success(request, f'Sales Order {so_number} deleted successfully.')
+        return redirect('app5:sales_order_list')
+
+    context = {'sales_order': sales_order}
+    return render(request, 'sales_order_confirm_delete.html', context)
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import requests
+import logging
+
+logger = logging.getLogger(__name__)
+
+@csrf_exempt
+def api_rrc_clients(request):
+    """
+    Proxy endpoint to fetch RRC clients from external API
+    This bypasses CORS issues by making the request from the server
+    """
+    try:
+        api_url = "https://accmaster.imcbs.com/api/sync/rrc-clients/"
+        
+        # Add headers to mimic a browser request
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept': 'application/json',
+        }
+        
+        logger.info("Fetching RRC clients from API...")
+        response = requests.get(api_url, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            logger.info(f"Successfully fetched {len(data) if isinstance(data, list) else 'data'} clients")
+            return JsonResponse(data, safe=False)
+        else:
+            logger.error(f"API returned status {response.status_code}")
+            return JsonResponse({
+                'error': f'API returned status {response.status_code}',
+                'details': response.text[:200]
+            }, status=response.status_code)
+            
+    except requests.exceptions.Timeout:
+        logger.error("API request timeout")
+        return JsonResponse({'error': 'Request timeout'}, status=504)
+    except requests.exceptions.RequestException as e:
+        logger.error(f"API request failed: {e}")
+        return JsonResponse({'error': str(e)}, status=500)
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+
+
+        #tax master
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from .models import TaxMaster
+
+def tax_master_list(request):
+    taxes = TaxMaster.objects.all()
+    return render(request, 'tax_master_list.html', {'taxes': taxes})
+
+def tax_master_form(request, pk=None):
+    if pk:
+        tax = get_object_or_404(TaxMaster, pk=pk)
+    else:
+        tax = None
+
+    # Initialize context variables
+    context = {
+        'tax': tax,
+        'name': '',
+        'percentage': '',
+    }
+
+    if request.method == "POST":
+        name = request.POST.get('name', '').strip()
+        percentage = request.POST.get('percentage', '').strip()
+        
+        # Update context with POST data
+        context['name'] = name
+        context['percentage'] = percentage
+        
+        # Validate required fields
+        if not name:
+            messages.error(request, 'Tax name is required.')
+            return render(request, "tax_master_form.html", context)
+        
+        if not percentage:
+            messages.error(request, 'Percentage is required.')
+            return render(request, "tax_master_form.html", context)
+        
+        try:
+            percentage_value = float(percentage)
+        except ValueError:
+            messages.error(request, 'Percentage must be a valid number.')
+            return render(request, "tax_master_form.html", context)
+        
+        if pk:  # Update existing
+            # Check for duplicate name (excluding current record)
+            if TaxMaster.objects.filter(name=name).exclude(pk=pk).exists():
+                messages.error(request, f'Tax "{name}" already exists!')
+                return render(request, "tax_master_form.html", context)
+            
+            tax.name = name
+            tax.percentage = percentage_value
+            tax.save()
+            messages.success(request, 'Tax updated successfully!')
+            
+        else:  # Create new
+            # Check for duplicate name
+            if TaxMaster.objects.filter(name=name).exists():
+                messages.error(request, f'Tax "{name}" already exists!')
+                return render(request, "tax_master_form.html", context)
+            
+            try:
+                with transaction.atomic():
+                    TaxMaster.objects.create(
+                        name=name,
+                        percentage=percentage_value
+                    )
+                messages.success(request, 'Tax added successfully!')
+            except IntegrityError:
+                messages.error(request, f'Tax "{name}" already exists!')
+                return render(request, "tax_master_form.html", context)
+        
+        return redirect("app5:tax_master_list")
+
+    # For GET request, populate context with existing tax data if available
+    if tax:
+        context['name'] = tax.name
+        context['percentage'] = tax.percentage
+    
+    return render(request, "tax_master_form.html", context)
+
+from app5.models import TaxMaster  # verify this import works
+
+def tax_master_delete(request, pk):
+    tax = get_object_or_404(TaxMaster, pk=pk)
+    tax.delete()
+    messages.success(request, "Tax deleted successfully!")
+    return redirect('app5:tax_master_list')

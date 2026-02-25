@@ -835,6 +835,16 @@ class Quotation(models.Model):
     # Additional information
     notes = models.TextField(blank=True, null=True)
     terms_conditions = models.TextField(blank=True, null=True)
+
+    # Proposal document attachment
+    # FIX: Added missing FileField — the view calls quotation.proposal_attachment.save(...)
+    # but the field didn't exist, causing an AttributeError on every file upload.
+    proposal_attachment = models.FileField(
+        upload_to='quotation_proposals/',
+        blank=True,
+        null=True,
+        help_text="Optional proposal document (PDF, Word, etc.) attached to this quotation"
+    )
     
     # Metadata
     created_by = models.ForeignKey(
@@ -942,8 +952,25 @@ class QuotationItem(models.Model):
         return self.line_total
     
     def save(self, *args, **kwargs):
-        # Auto-calculate totals before saving
-        self.calculate_totals()
+        # FIX: The original code called calculate_totals() unconditionally, which
+        # overwrote the precise figures already computed by quotation_submit view
+        # before calling QuotationItem.objects.create(...).
+        #
+        # New behaviour:
+        #   - New record with line_total still at default 0  → auto-calculate
+        #     (covers direct admin / shell creation where no totals are supplied).
+        #   - New record where caller already set line_total  → trust the caller.
+        #   - Existing record being updated                   → recalculate so
+        #     edits to price/qty/discount/tax stay consistent.
+        if self.pk:
+            # Existing record: always recalculate to stay in sync with any
+            # field edits (e.g. via admin or an update view).
+            self.calculate_totals()
+        elif self.line_total == 0:
+            # New record with no externally provided total: auto-calculate.
+            self.calculate_totals()
+        # else: new record with a caller-supplied line_total — leave it alone.
+
         super().save(*args, **kwargs)
 
 
@@ -1019,11 +1046,206 @@ class FollowUp(models.Model):
     
 
     
-         
+from django.db import models
+from django.contrib.auth.models import User
+from django.utils import timezone
+
+class Customer(models.Model):
+    name = models.CharField(max_length=200)
+    email = models.EmailField(blank=True, null=True)
+    phone = models.CharField(max_length=20, blank=True)
+    address = models.TextField(blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    state = models.CharField(max_length=100, blank=True)
+    pincode = models.CharField(max_length=10, blank=True)
+    gst_number = models.CharField(max_length=15, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        ordering = ['name']
+
+
+class SalesOrder(models.Model):
+    # Add PAYMENT_TERMS choices
+    PAYMENT_TERMS = [
+        ('DUE_ON_RECEIPT', 'Due on Receipt'),
+        ('NET_15', 'Net 15 Days'),
+        ('NET_30', 'Net 30 Days'),
+        ('NET_45', 'Net 45 Days'),
+        ('NET_60', 'Net 60 Days'),
+    ]
+    
+    # Add CALCULATION_METHODS choices
+    CALCULATION_METHODS = [
+        ('STANDARD', 'Standard Calculation'),
+        ('TAX_INCLUSIVE', 'Tax Inclusive'),
+        ('TAX_EXCLUSIVE', 'Tax Exclusive'),
+        ('DISCOUNT_FIRST', 'Discount First'),
+        ('DISCOUNT_LAST', 'Discount Last'),
+        ('CUSTOM', 'Custom Calculation'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('DRAFT', 'Draft'),
+        ('PENDING', 'Pending'),
+        ('CONFIRMED', 'Confirmed'),
+        ('PROCESSING', 'Processing'),
+        ('SHIPPED', 'Shipped'),
+        ('DELIVERED', 'Delivered'),
+        ('COMPLETED', 'Completed'),
+        ('CANCELLED', 'Cancelled'),
+    ]
+    
+    PAYMENT_STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('PARTIAL', 'Partial'),
+        ('PAID', 'Paid'),
+    ]
+    
+    so_number = models.CharField(max_length=50, unique=True)
+    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name='sales_orders')
+    so_date = models.DateField(default=timezone.now)
+    delivery_date = models.DateField(null=True, blank=True)
+    reference_number = models.CharField(max_length=100, blank=True)
+    
+    # Add these two new fields for payment terms and calculation method
+    payment_terms = models.CharField(
+        max_length=20, 
+        choices=PAYMENT_TERMS, 
+        default='NET_30',
+        blank=True,
+        null=True
+    )
+    
+    calculation_method = models.CharField(
+        max_length=20, 
+        choices=CALCULATION_METHODS, 
+        default='STANDARD',
+        blank=True,
+        null=True
+    )
+    
+    # Add department fields (referenced in your views)
+    from_department = models.ForeignKey(
+        'purchase_order.Department', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='sales_orders_from'
+    )
+    
+    to_department = models.ForeignKey(
+        'purchase_order.Department', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='sales_orders_to'
+    )
+    
+    # Financial fields
+    subtotal = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    tax_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    discount_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    grand_total = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    
+    # Status fields
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='DRAFT')
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='PENDING')
+    
+    # Additional fields
+    notes = models.TextField(blank=True)
+    terms_conditions = models.TextField(blank=True)
+    
+    # Tracking fields
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_sales_orders')
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='updated_sales_orders')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return self.so_number
+    
+    class Meta:
+        ordering = ['-so_date', '-so_number']
+        indexes = [
+            models.Index(fields=['so_number']),
+            models.Index(fields=['status']),
+            models.Index(fields=['so_date']),
+        ]
+    
+    def save(self, *args, **kwargs):
+        if not self.so_number:
+            # Generate SO number (e.g., SO-2024-00001)
+            year = timezone.now().year
+            last_order = SalesOrder.objects.filter(
+                so_number__startswith=f'SO-{year}'
+            ).order_by('so_number').last()
+            
+            if last_order:
+                last_number = int(last_order.so_number.split('-')[-1])
+                new_number = last_number + 1
+            else:
+                new_number = 1
+            
+            self.so_number = f'SO-{year}-{new_number:05d}'
+        
+        super().save(*args, **kwargs)
+
+
+# In your models.py file, add or update the OrderItem model
+
+class OrderItem(models.Model):
+    # Foreign Keys
+    sales_order = models.ForeignKey(SalesOrder, on_delete=models.CASCADE, related_name='items')
+    item = models.ForeignKey(Item, on_delete=models.SET_NULL, null=True, blank=True, related_name='order_items')
+    
+    # Item details
+    product_name = models.CharField(max_length=255, blank=True)
+    
+    # Quantity and pricing fields
+    quantity = models.DecimalField(max_digits=15, decimal_places=2, default=1)
+    entry_rate = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    sales_price = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    unit_price = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    item_cost = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    margin = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    discount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    tax = models.DecimalField(max_digits=5, decimal_places=2, default=0)  # Tax percentage
+    total = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    
+    # Optional fields
+    description = models.TextField(blank=True)
+    
+    # Tracking
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.product_name} - {self.quantity} x {self.unit_price}"
+    
+    class Meta:
+        ordering = ['id']         
 
 
         
 
+from django.db import models
 
+class TaxMaster(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    percentage = models.DecimalField(max_digits=5, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-1
+    def __str__(self):
+        return f"{self.name} ({self.percentage}%)"
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Tax Master'
+        verbose_name_plural = 'Tax Masters'
+

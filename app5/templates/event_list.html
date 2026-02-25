@@ -323,24 +323,28 @@
         }
 
         .status-accepted { 
-            background: #e6f7e6; 
-            color: #0b5e0b; 
+            background: #d1fae5; 
+            color: #065f46; 
         }
         .status-followup { 
-            background: #fff7e5; 
-            color: #b45b0a; 
+            background: #fef3c7; 
+            color: #92400e; 
         }
         .status-proposal { 
-            background: #e5f0ff; 
-            color: #0047ab; 
+            background: #dbeafe; 
+            color: #1e40af; 
         }
         .status-hold { 
-            background: #fff0d9; 
-            color: #9e5f00; 
+            background: #f3e8ff; 
+            color: #6b21a8; 
         }
         .status-rejected { 
-            background: #ffe5e5; 
-            color: #b01b1b; 
+            background: #fee2e2; 
+            color: #991b1b; 
+        }
+        .status-notattended {
+            background: #fce7f3;
+            color: #9d174d;
         }
 
         /* MODERN REPLY CELL */
@@ -971,11 +975,12 @@
             <div class="filter-item">
                
                 <select class="filter-select" id="filterFollowup">
-                    <option value="all">All</option>
-                    <option value="Follow-up Required" selected>Follow-up Required</option>
-                    <option value="Accepted">Accepted</option>
-                    <option value="Proposal Sent">Proposal Sent</option>
+                    <option value="all" selected>All Active</option>
+                    <option value="Not Attended">Not Attended</option>
+                    <option value="Follow-up Required">Follow-up Required</option>
                     <option value="On Hold">On Hold</option>
+                    <option value="Proposal Sent">Proposal Sent</option>
+                    <option value="Accepted">Accepted</option>
                     <option value="Rejected">Rejected</option>
                 </select>
             </div>
@@ -993,6 +998,14 @@
                 <button class="create-btn" id="openModalBtn"><i class="fas fa-plus"></i> Create Follow-Up</button>
             </div>
         </div>
+
+        {% if selected_lead_id %}
+        <div id="leadFilterBanner" style="background:#ede9fe;border:1.5px solid #a095f6;border-radius:8px;padding:10px 18px;margin-bottom:10px;display:flex;align-items:center;gap:12px;font-size:14px;font-weight:600;color:#4c1d95;">
+            <i class="fas fa-filter" style="color:#7c3aed;"></i>
+            Showing follow-ups for this lead only.
+            <a href="{% url 'app5:event_list' %}" style="margin-left:auto;background:#7c3aed;color:white;padding:5px 14px;border-radius:6px;text-decoration:none;font-size:13px;"><i class="fas fa-times"></i> Show All Follow-ups</a>
+        </div>
+        {% endif %}
 
         <!-- Results Count -->
         <div class="result-count" id="resultCount">
@@ -1050,8 +1063,10 @@
                                 <span class="status-badge status-hold">⏸️ On Hold</span>
                             {% elif followup.status == 'Rejected' %}
                                 <span class="status-badge status-rejected">🚫 Rejected</span>
+                            {% elif followup.status == 'Not Attended' %}
+                                <span class="status-badge status-notattended">🚷 Not Attended</span>
                             {% else %}
-                                {{ followup.status }}
+                                <span class="status-badge" style="background:#f1f5f9;color:#475569;">{{ followup.status }}</span>
                             {% endif %}
                         </td>
                         <td class="reply-cell">
@@ -2288,7 +2303,19 @@
                 if (start && followupDate && followupDate < start) show = false;
                 if (end && followupDate && followupDate > end) show = false;
                 
-                if (fup !== 'all' && !statusText.includes(fup.toLowerCase())) show = false;
+                if (fup === 'all') {
+                    // Default "All Active" view — hide Accepted and Rejected
+                    if (statusText.includes('accepted') || statusText.includes('rejected')) show = false;
+                } else if (fup === 'Accepted') {
+                    // Show ONLY Accepted rows
+                    if (!statusText.includes('accepted')) show = false;
+                } else if (fup === 'Rejected') {
+                    // Show ONLY Rejected rows
+                    if (!statusText.includes('rejected')) show = false;
+                } else {
+                    // Any other specific status filter
+                    if (!statusText.includes(fup.toLowerCase())) show = false;
+                }
                 
                 // Branch filter comparison - ensure both are strings
                 if (branchVal !== 'all') {
@@ -2419,7 +2446,7 @@
             searchAll.value = '';
             startDate.value = monthStart;
             endDate.value = monthEnd;
-            filterFollowup.value = 'Follow-up Required';
+            filterFollowup.value = 'all';
             branchFilter.value = 'all';
             filterTable();
         });
@@ -2432,8 +2459,8 @@
             // Ensure date fields are set to month start/end
             if (!startDate.value) startDate.value = monthStart;
             if (!endDate.value)   endDate.value   = monthEnd;
-            // Ensure status defaults to Follow-up Required
-            if (filterFollowup.value === 'all') filterFollowup.value = 'Follow-up Required';
+            // Ensure status defaults to All (excluding Accepted and Rejected)
+            if (!filterFollowup.value || filterFollowup.value === '') filterFollowup.value = 'all';
             
             // Initialize filtered rows array with all rows
             filteredRows = [];
@@ -2443,6 +2470,14 @@
                 }
             });
             
+            // If page was opened from lead_form follow-up button, widen date range
+            // so all follow-ups for that lead are visible (not clipped to current month).
+            const selectedLeadId = '{{ selected_lead_id }}';
+            if (selectedLeadId) {
+                startDate.value = '2000-01-01';
+                endDate.value   = '2099-12-31';
+            }
+
             // Initial filter application
             filterTable();
             

@@ -275,6 +275,53 @@
             font-size: 13px;
         }
 
+        /* Ticket Number Container - Only showing ticket number, no quotation number */
+        .ticket-number-container {
+            text-align: left;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #2b2a2a;
+           
+            padding: 8px 15px;
+            border-radius: 5px;
+           
+            display: inline-block;
+        }
+
+        /* Owner + Ticket row: owner left, ticket right on same line */
+        .owner-ticket-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: nowrap;
+            margin-top: 8px;
+        }
+
+        .owner-ticket-row .owner-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: #2c3e50;
+            text-align: left;
+        }
+
+        .owner-ticket-row .ticket-number-container {
+            margin-top: 0;
+            margin-bottom: 0;
+            flex-shrink: 0;
+        }
+
+        .ticket-number-container i {
+            margin-right: 8px;
+            color: #e67e22;
+        }
+
+        .ticket-number-container span {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
         /* ====================================================
            PAGE 1 – COVER LETTER (IMC-style)
            ==================================================== */
@@ -290,6 +337,7 @@
             border-radius: 8px;
             margin: 15px 0;
             border-left: 4px solid #3498db;
+            position: relative;
         }
         
         .client-info-box p { 
@@ -359,6 +407,7 @@
             box-shadow: 0 1px 4px rgba(0,0,0,0.05);
             margin-bottom: 15px;
             border: 1px solid #e0e0e0;
+            position: relative;
         }
 
         .customer-info-box h3 {
@@ -374,9 +423,8 @@
 
         .customer-details-grid {
             display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            align-items: center;
+            flex-direction: column;
+            gap: 6px;
         }
 
         .customer-detail-item {
@@ -609,6 +657,7 @@
             margin-bottom: 15px;
             font-size: 13px;
             border: 1px solid #e0e0e0;
+            position: relative;
         }
 
         .terms-content {
@@ -733,6 +782,14 @@
             
             .page-header-content .website {
                 font-size: 10pt !important;
+            }
+
+            /* Ticket number print - only ticket number shown */
+            .ticket-number-container {
+                font-size: 9pt !important;
+                padding: 5px 10px !important;
+                margin-top: 5px !important;
+                margin-bottom: 5px !important;
             }
 
             /* Table styles for print */
@@ -952,9 +1009,17 @@
                     </div>
                 </div>
 
-                <!-- Client Info -->
+                <!-- Client Info with Ticket Number (only ticket number, no quotation number) -->
                 <div class="client-info-box">
-                    <p><strong>{{ client_name|default:"Valued Customer" }}</strong></p>
+                    <!-- Owner Name (left) + Ticket Number (right) on same line -->
+                    <div class="owner-ticket-row">
+                        <span class="owner-name"><strong>{{ client_name|default:"Valued Customer" }}</strong></span>
+                        {% if lead_data and lead_data.ticket_number %}
+                        <div class="ticket-number-container">
+                            Ticket No: <span>{{ lead_data.ticket_number }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
                     {% if lead_data.customerType == 'Business' %}
                         <p>{{ lead_data.place|default:"Address not provided" }}</p>
                     {% else %}
@@ -985,7 +1050,7 @@
                     </p>
 
                     <p>
-                        IMC Business Solutions is a comprehensive platform that supports overall Business
+                        {{ company_name }} is a comprehensive platform that supports overall Business
                         solutions like ERP Softwares, Web Solutions, Mobile Applications, Digital Marketing,
                         Branding, and Business Consultation.
                     </p>
@@ -1039,15 +1104,19 @@
                     </div>
                 </div>
 
-                <!-- Customer Info Box -->
+                <!-- Customer Info Box with Ticket Number (ONLY ticket number, no quotation number) -->
                 <div class="customer-info-box">
                     <h3><i class="fas fa-user-circle"></i> Customer Details</h3>
-                    <div class="customer-details-grid">
-                        <div class="customer-detail-item">
-                            <strong>Name:</strong>
-                            <span>{{ client_name|default:"Not Specified" }}</span>
+                    <!-- Owner Name (left) + Ticket Number (right) on same line -->
+                    <div class="owner-ticket-row" style="margin-bottom: 10px;">
+                        <span class="owner-name">{{ client_name|default:"Not Specified" }}</span>
+                        {% if lead_data and lead_data.ticket_number %}
+                        <div class="ticket-number-container">
+                            Ticket No: <span>{{ lead_data.ticket_number }}</span>
                         </div>
-
+                        {% endif %}
+                    </div>
+                    <div class="customer-details-grid">
                         <div class="customer-detail-item">
                             <strong>Address:</strong>
                             <span>
@@ -1065,8 +1134,6 @@
                             <span>{{ client_phone }}</span>
                         </div>
                         {% endif %}
-
-                        
                     </div>
                 </div>
 
@@ -1202,12 +1269,20 @@
                     </div>
                 </div>
 
-                <!-- Client Summary -->
+                <!-- Client Summary with Ticket Number (ONLY ticket number, no quotation number) -->
                 <div class="client-summary">
-                    <strong>Customer:</strong> {{ client_name|default:"Not Specified" }}
-                    {% if client_phone %} | <strong>Phone:</strong> {{ client_phone }}{% endif %}
+                    <!-- Owner Name (left) + Ticket Number (right) on same line -->
+                    <div class="owner-ticket-row" style="margin-top: 0; margin-bottom: 6px;">
+                        <span class="owner-name"><strong>{{ client_name|default:"Not Specified" }}</strong></span>
+                        {% if lead_data and lead_data.ticket_number %}
+                        <div class="ticket-number-container" style="margin-top: 0; margin-bottom: 0;">
+                             Ticket No: <span>{{ lead_data.ticket_number }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% if client_phone %}<strong>Phone:</strong> {{ client_phone }}{% endif %}<br>
                     {% if lead_data.customerType == 'Business' %}
-                        | <strong>Address:</strong> {{ lead_data.place|default:"Not provided" }}
+                    <strong>Address:</strong> {{ lead_data.place|default:"Not provided" }}
                     {% else %}
                         | <strong>Address:</strong> {{ lead_data.individualPlace|default:"Not provided" }}
                     {% endif %}

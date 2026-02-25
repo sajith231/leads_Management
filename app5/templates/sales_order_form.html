@@ -1,0 +1,1787 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ action|default:"Create" }} Sales Order{% endblock %}
+
+{% block content %}
+
+    <title>{{ action|default:"Create" }} Sales Order</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg:        #f0f2f7;
+            --surface:   #ffffff;
+            --card:      #f7f8fc;
+            --border:    #e2e6f0;
+            --border-hi: #c8cfe0;
+            --accent:    #3b7ef8;
+            --accent-dim:#dce9ff;
+            --accent-glow: rgba(59,126,248,0.15);
+            --green:     #16a34a;
+            --green-dim: #dcfce7;
+            --amber:     #d97706;
+            --red:       #dc2626;
+            --text-1:    #111827;
+            --text-2:    #4b5563;
+            --text-3:    #9ca3af;
+            --radius:    10px;
+            --radius-lg: 16px;
+            --font-head: 'Syne', sans-serif;
+            --font-body: 'DM Sans', sans-serif;
+            --shadow:    0 4px 24px rgba(0,0,0,0.08);
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body {
+            height: 100%;
+            background: var(--bg);
+            font-family: var(--font-body);
+            color: var(--text-1);
+            font-size: 13.5px;
+            line-height: 1.5;
+        }
+
+        .app-shell {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding: 0;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 28px;
+            height: 58px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .breadcrumb-icon {
+            width: 32px; height: 32px;
+            background: var(--accent-dim);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--accent);
+            font-size: 13px;
+        }
+
+        .page-title {
+            font-family: var(--font-head);
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-1);
+            letter-spacing: 0.01em;
+        }
+
+        .page-subtitle {
+            font-size: 12px;
+            color: var(--text-3);
+            margin-left: 4px;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn {
+            background-color: #000;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            height: 36px;
+            padding: 0 16px;
+            border-radius: var(--radius);
+            font-family: var(--font-body);
+            font-size: 12.5px;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            text-decoration: none;
+            white-space: nowrap;
+            line-height: 36px;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: black;
+            border: 1px solid var(--border);
+        }
+        .btn-ghost:hover {
+            background: var(--card);
+            color: var(--text-1);
+            border-color: var(--border-hi);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+        .btn-primary:hover {
+            background: #6aa3ff;
+            box-shadow: 0 0 28px rgba(79,142,247,0.35);
+        }
+
+        .btn-warning {
+            background: rgba(245,166,35,0.12);
+            color: var(--amber);
+            border: 1px solid rgba(245,166,35,0.25);
+        }
+        .btn-warning:hover { background: rgba(245,166,35,0.2); }
+
+        .btn-success {
+            background: var(--green-dim);
+            color: var(--green);
+            border: 1px solid rgba(45,217,122,0.25);
+        }
+        .btn-success:hover { background: rgba(45,217,122,0.2); }
+
+        .btn-danger {
+            background: transparent;
+            color: red;
+            border: none;
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-danger i {
+            font-size: 14px;
+        }
+        .btn-danger:hover { background: rgba(247,87,87,0.15); color: var(--red); }
+
+        .main-body {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 0;
+            height: calc(100vh - 58px);
+            overflow: hidden;
+        }
+
+        .left-panel {
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .left-panel::-webkit-scrollbar { width: 4px; }
+        .left-panel::-webkit-scrollbar-track { background: transparent; }
+        .left-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+        .panel-section {
+            background-color: #d0ddf5;
+            padding: 20px 22px;
+            border-bottom: 1px solid var(--border);
+        }
+        .panel-section:last-of-type { border-bottom: none; }
+
+        .section-label {
+            font-family: var(--font-head);
+            font-size: 10.5px;
+            font-weight: 700;
+            color: #1d66e1;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .field { margin-bottom: 13px; }
+        .field:last-child { margin-bottom: 0; }
+
+        .field-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        label {
+            display: block;
+            font-size: 11.5px;
+            font-weight: 500;
+            color: var(--text-2);
+            margin-bottom: 5px;
+            letter-spacing: 0.01em;
+        }
+
+        .required-dot {
+            display: inline-block;
+            width: 5px; height: 5px;
+            background: var(--accent);
+            border-radius: 50%;
+            margin-left: 4px;
+            vertical-align: middle;
+            margin-top: -2px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="date"],
+        select,
+        textarea {
+            width: 100%;
+            height: 38px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text-1);
+            font-family: var(--font-body);
+            font-size: 13px;
+            padding: 0 12px;
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+            appearance: none;
+            -webkit-appearance: none;
+            line-height: 38px;
+        }
+
+        textarea {
+            height: 80px;
+            padding: 8px 12px;
+            line-height: 1.5;
+            resize: vertical;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        input[readonly], input[disabled] {
+            color: var(--text-3);
+            cursor: not-allowed;
+            background: #f3f4f8;
+            border-color: var(--border);
+        }
+
+        select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a94ab' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 30px;
+        }
+
+        select option {
+            background: #ffffff;
+            color: var(--text-1);
+        }
+
+        .so-number-badge {
+            background: var(--accent-dim);
+            border: 1px solid rgba(79,142,247,0.3);
+            border-radius: var(--radius);
+            height: 38px;
+            padding: 0 12px;
+            font-family: var(--font-head);
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: 0.06em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+        }
+        .so-number-badge i { font-size: 11px; opacity: 0.7; }
+
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .toggle-pill {
+            display: flex;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2px;
+            gap: 2px;
+        }
+
+        .toggle-pill input[type="checkbox"] { display: none; }
+
+        .toggle-opt {
+            padding: 6px 16px;
+            border-radius: 16px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--text-3);
+            transition: all 0.2s;
+            user-select: none;
+            display: inline-block;
+            text-align: center;
+            min-width: 70px;
+        }
+
+        #clientModeToggle:checked ~ .toggle-pill .opt-exist,
+        .opt-exist.active {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            background: var(--bg);
+            overflow: hidden;
+        }
+
+        .items-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+            flex-shrink: 0;
+        }
+
+        .items-header-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .items-header h3 {
+            font-family: var(--font-head);
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .items-count {
+            background: var(--green-dim);
+            color: var(--green);
+            border-radius: 20px;
+            padding: 2px 9px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .items-header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .inline-field {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .inline-field label {
+            margin: 0;
+            white-space: nowrap;
+            font-size: 12px;
+        }
+        .inline-field select {
+            width: 140px;
+            height: 34px;
+            padding: 0 24px 0 10px;
+            font-size: 12px;
+            line-height: 34px;
+        }
+
+        .table-wrapper {
+            flex: 1;
+            overflow: auto;
+        }
+
+        .table-wrapper::-webkit-scrollbar { width: 5px; height: 5px; }
+        .table-wrapper::-webkit-scrollbar-track { background: var(--bg); }
+        .table-wrapper::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        .table-wrapper::-webkit-scrollbar-corner { background: var(--bg); }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 620px;
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        thead tr {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            padding: 10px 12px;
+            font-family: var(--font-head);
+            font-size: 12px;
+            font-weight: 700;
+            background: #000;
+            color: rgb(247, 243, 243);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        th:first-child { padding-left: 20px; }
+        th:last-child { padding-right: 14px; }
+        th.right { text-align: right; }
+        th.center { text-align: center; }
+
+        tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background 0.12s;
+        }
+        tbody tr:hover { background: rgba(79,142,247,0.04); }
+
+        td {
+            padding: 9px 8px;
+            vertical-align: middle;
+        }
+        td:first-child { padding-left: 16px; }
+        td:last-child { padding-right: 10px; }
+
+        .cell-item   { width: 200px; min-width: 200px; }
+        .cell-qty    { width: 80px; min-width: 80px; }
+        .cell-unit-price { width: 120px; min-width: 120px; }
+        .cell-disc   { width: 80px; min-width: 80px; }
+        .cell-tax    { width: 80px; min-width: 80px; }
+        .cell-total  { width: 130px; min-width: 130px; }
+        .cell-action { width: 50px; min-width: 50px; text-align: center; }
+
+        td input, td select {
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            height: 32px;
+            padding: 0 7px;
+            font-size: 12.5px;
+            color: var(--text-1);
+            width: 100%;
+            transition: border-color 0.15s, background 0.15s;
+            line-height: 32px;
+        }
+        td input:hover, td select:hover {
+            border-color: var(--border-hi);
+            background: #f0f4ff;
+        }
+        td input:focus, td select:focus {
+            border-color: var(--accent);
+            background: #f0f4ff;
+            box-shadow: 0 0 0 2px var(--accent-glow);
+            outline: none;
+        }
+        td input[readonly] {
+            color: var(--text-2);
+            cursor: default;
+        }
+        td input[readonly]:hover {
+            border-color: transparent;
+            background: transparent;
+        }
+
+        .total-cell {
+            font-family: var(--font-head);
+            font-size: 12.5px;
+            font-weight: 700;
+            color: var(--text-1);
+            text-align: right;
+        }
+
+        .margin-cell { color: var(--green) !important; }
+        .margin-cell.negative { color: var(--red) !important; }
+
+        .totals-container {
+            background: var(--surface);
+            border-top: 2px solid var(--border);
+            padding: 20px 24px;
+            flex-shrink: 0;
+        }
+
+        .totals-row {
+            display: flex;
+            justify-content: flex-end;
+            align-items: flex-start;
+        }
+
+        .totals-right {
+            width: 300px;
+        }
+
+        .total-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        .total-line:last-of-type {
+            border-bottom: none;
+        }
+
+        .total-label {
+           
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-2);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .total-amount {
+           
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .grand-total {
+            margin-top: 8px;
+            padding-top: 12px;
+            border-top: 2px solid var(--border);
+        }
+
+        .grand-total .total-label {
+            font-size: 16px;
+            color: var(--text-1);
+        }
+
+        .grand-total .total-amount {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        .panel-actions {
+            padding: 16px 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border-top: 1px solid var(--border);
+            margin-top: auto;
+        }
+
+        .panel-actions .btn { justify-content: center; width: 100%; }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            background: var(--green-dim);
+            color: var(--green);
+            border: 1px solid rgba(45,217,122,0.2);
+        }
+        .status-pill::before {
+            content: '';
+            width: 5px; height: 5px;
+            border-radius: 50%;
+            background: var(--green);
+        }
+
+        #loaderOverlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(13,15,20,0.8);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        #confirmationModal {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(13,15,20,0.75);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        .modal-card {
+            background: var(--card);
+            border: 1px solid var(--border-hi);
+            border-radius: var(--radius-lg);
+            padding: 28px 32px;
+            max-width: 380px;
+            width: 90%;
+            text-align: center;
+        }
+        .modal-icon {
+            width: 52px; height: 52px;
+            background: var(--accent-dim);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 16px;
+            color: var(--accent);
+            font-size: 20px;
+        }
+        .modal-title {
+            font-family: var(--font-head);
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .modal-body { color: var(--text-2); font-size: 13px; margin-bottom: 22px; }
+        .modal-actions { display: flex; gap: 10px; justify-content: center; }
+
+        .empty-row td {
+            padding: 48px 20px;
+            text-align: center;
+            color: var(--text-3);
+        }
+        .empty-row td i { font-size: 28px; display: block; margin-bottom: 10px; opacity: 0.4; }
+        .empty-row td span { font-size: 13px; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+        tbody tr { animation: fadeIn 0.2s ease both; }
+
+        #selectClientContainer select,
+        #manualClientContainer input {
+            height: 38px;
+            width: 100%;
+        }
+
+        @media (max-width: 900px) {
+            .main-body { grid-template-columns: 1fr; height: auto; overflow: visible; }
+            .left-panel { border-right: none; border-bottom: 1px solid var(--border); }
+            .right-panel { height: 60vh; }
+        }
+    </style>
+</head>
+<body>
+<div class="app-shell">
+
+    <header class="topbar">
+        <div class="topbar-left">
+            <div class="breadcrumb-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+            <div>
+                <div class="page-title">{{ action|default:"Create" }} Sales Order</div>
+            </div>
+        </div>
+        <div class="topbar-right">
+            <a href="{% url 'app5:sales_order_list' %}" class="btn btn-ghost">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </header>
+
+    <form method="POST" id="poForm">
+        {% csrf_token %}
+        <div class="main-body">
+
+            <aside class="left-panel">
+
+                <div class="panel-section">
+                    <div class="section-label"> Order Info</div>
+
+                    <div class="field">
+                        <label>SO Number</label>
+                        <div class="so-number-badge">
+                            <i class="fas fa-barcode"></i>
+                            <span id="soNumberDisplay">{{ sales_order.so_number|default:"Auto-generated" }}</span>
+                            <input type="hidden" name="so_number" value="{{ sales_order.so_number|default:'' }}">
+                        </div>
+                    </div>
+
+                    <div class="field-row">
+                        <div class="field">
+                            <label>SO Date <span class="required-dot"></span></label>
+                            <input type="date" name="so_date"
+                                   value="{% if sales_order.so_date %}{{ sales_order.so_date|date:'Y-m-d' }}{% else %}{{ today }}{% endif %}"
+                                   required>
+                        </div>
+                        <div class="field">
+                            <label>Delivery Date <span class="required-dot"></span></label>
+                            <input type="date" name="delivery_date"
+                                   value="{% if sales_order.delivery_date %}{{ sales_order.delivery_date|date:'Y-m-d' }}{% else %}{{ today }}{% endif %}"
+                                   required>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label>Reference</label>
+                        <input type="text" name="reference_number"
+                               value="{{ sales_order.reference_number|default:'' }}"
+                               placeholder="Optional reference number">
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <div class="section-label"><i class="fas fa-building"></i> Routing</div>
+
+                    <div class="field">
+                        <label>From Department <span class="required-dot"></span></label>
+                        <select name="from_department" required>
+                            <option value="">Select Department</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept.id }}" {% if sales_order.from_department.id == dept.id %}selected{% endif %}>{{ dept.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label>To Department <span class="required-dot"></span></label>
+                        <select name="to_department" required>
+                            <option value="">Select Department</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept.id }}" {% if sales_order.to_department.id == dept.id %}selected{% endif %}>{{ dept.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label>Payment Terms <span class="required-dot"></span></label>
+                        <select name="payment_terms" required>
+                            {% for value, label in payment_terms %}
+                            <option value="{{ value }}" {% if sales_order.payment_terms == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="panel-section" id="clientSection">
+                    <div class="section-label"><i class="fas fa-user-circle"></i> Client</div>
+
+                    <div class="field">
+                        <div class="toggle-row" style="margin-bottom:10px;">
+                            <label style="margin:0;font-size:11.5px;font-weight:600;color:var(--text-2);">Client Source</label>
+                            <div style="display:flex;gap:4px;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:3px;">
+                                <span class="toggle-opt" id="optExist" onclick="setClientMode(true)"
+                                      style="padding:4px 14px;border-radius:16px;font-size:11px;font-weight:600;cursor:pointer;transition:all .18s;color:var(--text-3);">
+                                    <i class="fas fa-database" style="margin-right:4px;font-size:10px;"></i>Existing
+                                </span>
+                                <span class="toggle-opt" id="optNew" onclick="setClientMode(false)"
+                                      style="padding:4px 14px;border-radius:16px;font-size:11px;font-weight:600;cursor:pointer;transition:all .18s;color:var(--text-3);">
+                                    <i class="fas fa-user-plus" style="margin-right:4px;font-size:10px;"></i>New
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="selectClientContainer">
+                        <div class="field">
+                            <label style="display:flex;align-items:center;justify-content:space-between;">
+                                <span>Select Client <span class="required-dot"></span></span>
+                                <span id="rrcStatus" style="font-size:10px;font-weight:600;color:var(--text-3);display:flex;align-items:center;gap:4px;">
+                                    <i class="fas fa-circle-notch fa-spin" id="rrcSpinIcon"></i>
+                                    <span id="rrcStatusText">Loading clients...</span>
+                                </span>
+                            </label>
+
+                            <div id="clientCombobox" style="position:relative;">
+                                <div style="position:relative;">
+                                    <i class="fas fa-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text-3);font-size:11px;pointer-events:none;z-index:1;"></i>
+                                    <input type="text" id="client_search_input"
+                                           placeholder="Search by first letter of client name..."
+                                           autocomplete="off"
+                                           style="padding-left:32px;padding-right:32px;"
+                                           oninput="filterClients(this.value)"
+                                           onfocus="openDropdown()"
+                                           onkeydown="handleComboKey(event)">
+                                    <span id="clientClearBtn" onclick="clearClientSelection()"
+                                          style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--text-3);font-size:12px;z-index:2;">
+                                        <i class="fas fa-times-circle"></i>
+                                    </span>
+                                </div>
+
+                                <select id="client_select" name="client" style="display:none;"></select>
+
+                                <div id="clientDropdown" style="
+                                    display:none;
+                                    position:absolute;
+                                    top:calc(100% + 4px);
+                                    left:0; right:0;
+                                    background:#fff;
+                                    border:1px solid var(--border-hi);
+                                    border-radius:var(--radius);
+                                    box-shadow:0 8px 32px rgba(0,0,0,0.14);
+                                    max-height:350px;
+                                    overflow-y:auto;
+                                    z-index:500;
+                                ">
+                                    <div id="clientDropdownList"></div>
+                                    <div id="clientDropdownEmpty" style="display:none;padding:20px;text-align:center;color:var(--text-3);font-size:13px;">
+                                        <i class="fas fa-search-minus" style="font-size:24px;margin-bottom:10px;opacity:0.5;"></i>
+                                        <div>No clients found</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Updated Client Card - Only Name, Address, Phone -->
+                        <div id="clientCard" style="display:none; border-radius:var(--radius); overflow:hidden; border:1px solid rgba(59,126,248,0.25); margin-top:4px;">
+                            <div id="cardHeader" style="background:var(--accent); padding:10px 14px; display:flex; align-items:center; gap:8px;">
+                                <div style="width:30px; height:30px; border-radius:50%; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                    <i class="fas fa-hospital-user" style="color:#fff; font-size:13px;"></i>
+                                </div>
+                                <div style="flex:1; min-width:0;">
+                                    <div id="cardName" style="font-family:var(--font-head); font-weight:700; font-size:13px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></div>
+                                    <div id="cardCode" style="font-size:10px; color:rgba(255,255,255,0.7); margin-top:1px;"></div>
+                                </div>
+                            </div>
+
+                            <div style="background:#f4f7ff; padding:11px 14px; display:flex; flex-direction:column; gap:8px;">
+                                <!-- Address Section -->
+                                <div style="display:flex; gap:9px; align-items:flex-start;">
+                                    <div style="width:24px; height:24px; background:#dce9ff; border-radius:6px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                        <i class="fas fa-map-marker-alt" style="color:var(--accent); font-size:10px;"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.09em; color:var(--text-3); margin-bottom:2px;">Address</div>
+                                        <div id="cardAddress" style="font-size:12px; color:var(--text-1); line-height:1.45; word-break:break-word;"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Phone Section -->
+                                <div style="display:flex; gap:9px; align-items:center;">
+                                    <div style="width:24px; height:24px; background:#dce9ff; border-radius:6px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                        <i class="fas fa-phone-alt" style="color:var(--accent); font-size:10px;"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.09em; color:var(--text-3); margin-bottom:2px;">Phone</div>
+                                        <div id="cardMobile" style="font-size:12px; font-weight:500; color:var(--text-1); letter-spacing:.02em;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <input type="hidden" id="rrc_client_code"    name="rrc_client_code">
+                        <input type="hidden" id="rrc_client_name"    name="rrc_client_name">
+                        <input type="hidden" id="rrc_client_address" name="rrc_client_address">
+                        <input type="hidden" id="rrc_client_mobile"  name="rrc_client_mobile">
+                        <input type="hidden" id="rrc_client_branch"  name="rrc_client_branch">
+                    </div>
+
+                    <div id="manualClientContainer" style="display:none;">
+                        <div class="field">
+                            <label>Client Name <span class="required-dot"></span></label>
+                            <input type="text" id="client_manual_input" name="client_name" placeholder="Enter client name">
+                        </div>
+                        <div class="field">
+                            <label>Address</label>
+                            <input type="text" name="client_address_manual" placeholder="Full address">
+                        </div>
+                        <div class="field">
+                            <label>Mobile</label>
+                            <input type="text" name="client_mobile_manual" placeholder="Phone number">
+                        </div>
+                    </div>
+
+                    <input type="hidden" id="client_details" name="client_details"
+                           value="{% if sales_order.customer.id %}{{ sales_order.customer.id }}{% endif %}">
+                </div>
+
+                <div class="panel-section">
+                    <div class="section-label"><i class="fas fa-sticky-note"></i> Notes</div>
+                    <div class="field">
+                        <input type="text" name="notes"
+                               value="{{ sales_order.notes|default:'' }}"
+                               placeholder="Additional notes or instructions…">
+                    </div>
+                </div>
+
+                <div class="panel-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i>
+                        {% if action == 'Create' %}Save Sales Order{% else %}Update Sales Order{% endif %}
+                    </button>
+                    <div style="display:flex;gap:8px;">
+                        <button type="button" class="btn btn-warning" id="resetFormBtn" style="flex:1;">
+                            <i class="fas fa-undo"></i> Reset
+                        </button>
+                        <a href="{% url 'app5:sales_order_list' %}" class="btn btn-ghost" style="flex:1;justify-content:center;">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </div>
+
+            </aside>
+
+            <section class="right-panel">
+
+                <div class="items-header">
+                    <div class="items-header-left">
+                        <h3>Order Items</h3>
+                        <span class="items-count" id="itemsCount">0 items</span>
+                    </div>
+                    <div class="items-header-right">
+                        <div class="inline-field">
+                            <label>Status</label>
+                            <select name="status" required>
+                                {% for value, label in status_choices %}
+                                <option value="{{ value }}" {% if sales_order.status == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="inline-field">
+                            <label>Calc Method</label>
+                            <select name="calculation_method" required onchange="handleCalculationMethodChange()">
+                                {% for value, label in calculation_methods %}
+                                <option value="{{ value }}" {% if sales_order.calculation_method == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="button" class="btn btn-success" onclick="addItemRow()">
+                            <i class="fas fa-plus"></i> Add Item
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-wrapper">
+                    <table id="itemsTable">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th class="center">Qty</th>
+                                <th class="right">Unit Price</th>
+                                <th class="right">Disc</th>
+                                <th class="right">Tax %</th>
+                                <th class="right">Total</th>
+                                <th class="center"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemsTableBody">
+                        {% if order_items %}
+                            {% for item in order_items %}
+                            <tr id="row_{{ forloop.counter }}">
+                                <td class="cell-item">
+                                    <select name="item_id[]" class="item-select" required
+                                            onchange="updateItemDetails(this, {{ forloop.counter }})"
+                                            style="min-width:150px;">
+                                        <option value="">Select Item</option>
+                                        {% for itm in items %}
+                                        <option value="{{ itm.id }}"
+                                                data-price="{{ itm.purchase_price }}"
+                                                data-tax="{{ itm.tax_percentage }}"
+                                                data-mrp="{{ itm.mrp }}"
+                                                {% if item.item.id == itm.id %}selected{% endif %}>{{ itm.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td class="cell-qty"><input type="number" name="quantity[]" class="quantity" value="{{ item.quantity }}" min="1" step="1" onchange="calculateRow({{ forloop.counter }})" style="text-align:right;"></td>
+                                <td class="cell-unit-price"><input type="number" name="unit_price[]" class="unit-price" value="{{ item.unit_price|default:'0' }}" step="0.01" readonly style="text-align:right;"></td>
+                                <td class="cell-disc"><input type="number" name="discount[]" class="discount" value="{{ item.discount|default:'0' }}" step="0.01" onchange="calculateRow({{ forloop.counter }})" style="text-align:right;"></td>
+                                <td class="cell-tax"><input type="number" name="tax_percent[]" class="tax-percent" value="{{ item.tax_percent|default:item.tax|default:'0' }}" step="0.01" readonly style="text-align:right;"></td>
+                                <td class="cell-total"><input type="text" class="line-total" value="{{ item.total|floatformat:2 }}" readonly style="text-align:right; font-weight:700; color:var(--text-1);"></td>
+                                <td class="cell-action">
+                                    <button type="button" class="btn-danger" onclick="removeRow({{ forloop.counter }})">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr class="empty-row" id="emptyRow">
+                                <td colspan="7">
+                                    <i class="fas fa-box-open"></i>
+                                    <span>No items added yet. Click <strong>Add Item</strong> to begin.</span>
+                                </td>
+                            </tr>
+                        {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="totals-container">
+                    <div class="totals-row">
+                        <div class="totals-right">
+                            <div class="total-line">
+                                <span class="total-label">Subtotal:</span>
+                                <span class="total-amount" id="subtotalDisplay">{{ sales_order.subtotal|default:'0.00'|floatformat:2 }}</span>
+                            </div>
+                            <div class="total-line">
+                                <span class="total-label">Tax:</span>
+                                <span class="total-amount" id="taxDisplay">{{ sales_order.tax_amount|default:'0.00'|floatformat:2 }}</span>
+                            </div>
+                            <div class="total-line grand-total">
+                                <span class="total-label">Grand Total:</span>
+                                <span class="total-amount" id="grandTotalDisplay">{{ sales_order.grand_total|default:'0.00'|floatformat:2 }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+        </div>
+    </form>
+
+    <div id="loaderOverlay" style="display:none; position:fixed; inset:0; background:rgba(240,242,247,0.85); z-index:10000; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
+        <div class="spinner"></div>
+    </div>
+
+    <div id="confirmationModal" style="display:none; position:fixed; inset:0; background:rgba(17,24,39,0.4); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
+        <div class="modal-card">
+            <div class="modal-icon"><i class="fas fa-paper-plane"></i></div>
+            <div class="modal-title">Submit Sales Order?</div>
+            <div class="modal-body">Please confirm all details are correct before submitting.</div>
+            <div class="modal-actions">
+                <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="doSubmit()"><i class="fas fa-check"></i> Confirm</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+let rowCounter = {% if order_items %}{{ order_items|length }}{% else %}0{% endif %};
+let clientModeExisting = true;
+let rrcData = [];
+let filteredClients = [];
+let highlightedIndex = -1;
+let dropdownOpen = false;
+
+document.addEventListener('DOMContentLoaded', function () {
+    console.log('🚀 Page loaded, initializing...');
+    
+    const today = new Date().toISOString().split('T')[0];
+    const soDate = document.querySelector('[name="so_date"]');
+    const delDate = document.querySelector('[name="delivery_date"]');
+    if (soDate && !soDate.value) soDate.value = today;
+    if (delDate && !delDate.value) delDate.value = today;
+
+    updateClientHidden();
+
+    const existingRows = document.querySelectorAll('#itemsTableBody tr:not(.empty-row)');
+    if (existingRows.length > 0) {
+        existingRows.forEach((row, i) => {
+            row.id = `row_${i + 1}`;
+            const sel = row.querySelector('.item-select');
+            if (sel) sel.setAttribute('onchange', `updateItemDetails(this, ${i + 1})`);
+            ['quantity','discount'].forEach(cls => {
+                const inp = row.querySelector(`.${cls}`);
+                if (inp) inp.setAttribute('onchange', `calculateRow(${i + 1})`);
+            });
+            const btn = row.querySelector('.btn-danger');
+            if (btn) btn.setAttribute('onclick', `removeRow(${i + 1})`);
+            calculateRow(i + 1);
+        });
+        updateTotals();
+        updateItemCount();
+    }
+
+    {% if action == 'Create' %}
+    const tbody = document.getElementById('itemsTableBody');
+    if (!tbody.querySelector('tr:not(.empty-row)')) {
+        addItemRow();
+    }
+    {% endif %}
+    
+    setClientMode(true);
+    loadRrcClients();
+    
+    const searchInput = document.getElementById('client_search_input');
+    if (searchInput) {
+        searchInput.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (rrcData.length > 0) {
+                filteredClients = [...rrcData];
+                renderDropdown();
+                openDropdown();
+            }
+        });
+        
+        searchInput.addEventListener('focus', function() {
+            if (rrcData.length > 0 && !dropdownOpen) {
+                filteredClients = [...rrcData];
+                renderDropdown();
+                openDropdown();
+            }
+        });
+    }
+});
+
+document.addEventListener('click', function(e) {
+    if (!document.getElementById('clientCombobox')?.contains(e.target)) {
+        closeDropdown();
+    }
+});
+
+const RRC_API = 'https://accmaster.imcbs.com/api/sync/rrc-clients/';
+
+async function loadRrcClients() {
+    const searchInput = document.getElementById('client_search_input');
+    const spinIcon = document.getElementById('rrcSpinIcon');
+    const statusTx = document.getElementById('rrcStatusText');
+
+    spinIcon.style.display = 'inline-block';
+    spinIcon.className = 'fas fa-circle-notch fa-spin';
+    statusTx.textContent = 'Loading clients...';
+
+    try {
+        console.log('🔍 Fetching from:', RRC_API);
+        
+        const response = await fetch(RRC_API, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            }
+        });
+
+        console.log('📡 Response status:', response.status);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('✅ API Response received');
+        console.log('📊 Data type:', typeof data);
+        console.log('📊 Sample:', Array.isArray(data) ? data.slice(0, 2) : data);
+
+        let clientsArray = [];
+        if (Array.isArray(data)) {
+            clientsArray = data;
+        } else if (data && typeof data === 'object') {
+            if (data.data && Array.isArray(data.data)) {
+                clientsArray = data.data;
+            } else if (data.results && Array.isArray(data.results)) {
+                clientsArray = data.results;
+            } else {
+                clientsArray = Object.values(data).filter(item => item && typeof item === 'object');
+            }
+        }
+
+        console.log(`📊 Processing ${clientsArray.length} clients`);
+
+        if (clientsArray.length === 0) {
+            throw new Error('No clients in response');
+        }
+
+        rrcData = clientsArray.map(client => ({
+            code: client.code || client.id || '',
+            name: client.name || client.client_name || 'Unnamed Client',
+            address: client.address || '',
+            address3: client.address3 || '',
+            branch: client.branch || '',
+            district: client.district || '',
+            state: client.state || '',
+            mobile: client.mobile || client.phone || client.phone_number || '',
+            software: client.software || '',
+            nature: client.nature || '',
+            rout: client.rout || '',
+            amc_label: client.amc_label || (client.amc === 'F' ? 'Free' : client.amc === 'A' ? 'SUC' : ''),
+            lictype_label: client.lictype_label || (client.lictype === 'P' ? 'Professional' : client.lictype === 'E' ? 'Enterprise' : ''),
+            directdealing_label: client.directdealing_label || (client.directdealing === 'Y' ? 'Yes' : 'No'),
+            fullAddress: [
+                client.address,
+                client.address3,
+                client.district,
+                client.state
+            ].filter(Boolean).join(', ')
+        }));
+
+        console.log('✅ Sample processed client:', rrcData[0]);
+
+        searchInput.disabled = false;
+        searchInput.placeholder = 'Search by first letter of client name...';
+        spinIcon.className = 'fas fa-check-circle';
+        spinIcon.style.color = 'var(--green)';
+        statusTx.textContent = `${rrcData.length} clients loaded`;
+
+        filteredClients = [...rrcData];
+        
+        if (rrcData.length > 0) {
+            renderDropdown();
+        }
+
+    } catch (error) {
+        console.error('❌ API Error:', error);
+        
+        spinIcon.className = 'fas fa-exclamation-triangle';
+        spinIcon.style.color = 'var(--red)';
+        statusTx.textContent = 'Failed to load';
+        
+        // Try alternative approach - fetch from your backend
+        try {
+            console.log('🔍 Attempting to fetch via Django backend...');
+            const backendResponse = await fetch('/app5/api/rrc-clients/', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                }
+            });
+            
+            if (backendResponse.ok) {
+                const data = await backendResponse.json();
+                console.log('✅ Loaded via Django backend');
+                processApiData(data);
+                return;
+            }
+        } catch (backendError) {
+            console.warn('⚠️ Backend fallback failed:', backendError);
+        }
+        
+        // Final fallback to local customers
+        useLocalCustomerFallback();
+    }
+}
+
+function processApiData(data) {
+    let clientsArray = [];
+    if (Array.isArray(data)) {
+        clientsArray = data;
+    } else if (data && typeof data === 'object') {
+        if (data.data && Array.isArray(data.data)) {
+            clientsArray = data.data;
+        } else if (data.results && Array.isArray(data.results)) {
+            clientsArray = data.results;
+        } else {
+            clientsArray = Object.values(data).filter(item => item && typeof item === 'object');
+        }
+    }
+
+    console.log(`📊 Processing ${clientsArray.length} clients`);
+
+    rrcData = clientsArray.map(client => ({
+        code: client.code || client.id || '',
+        name: client.name || client.client_name || 'Unnamed Client',
+        address: client.address || '',
+        address3: client.address3 || '',
+        branch: client.branch || '',
+        district: client.district || '',
+        state: client.state || '',
+        mobile: client.mobile || client.phone || client.phone_number || '',
+        software: client.software || '',
+        nature: client.nature || '',
+        rout: client.rout || '',
+        amc_label: client.amc_label || (client.amc === 'F' ? 'Free' : client.amc === 'A' ? 'SUC' : ''),
+        lictype_label: client.lictype_label || (client.lictype === 'P' ? 'Professional' : client.lictype === 'E' ? 'Enterprise' : ''),
+        directdealing_label: client.directdealing_label || (client.directdealing === 'Y' ? 'Yes' : 'No'),
+        fullAddress: [
+            client.address,
+            client.address3,
+            client.district,
+            client.state
+        ].filter(Boolean).join(', ')
+    }));
+
+    const searchInput = document.getElementById('client_search_input');
+    const spinIcon = document.getElementById('rrcSpinIcon');
+    const statusTx = document.getElementById('rrcStatusText');
+    
+    searchInput.disabled = false;
+    searchInput.placeholder = 'Search by first letter of client name...';
+    spinIcon.className = 'fas fa-check-circle';
+    spinIcon.style.color = 'var(--green)';
+    statusTx.textContent = `${rrcData.length} clients loaded`;
+
+    filteredClients = [...rrcData];
+    
+    if (rrcData.length > 0) {
+        renderDropdown();
+    }
+}
+
+function useLocalCustomerFallback() {
+    console.log('📋 Using local customers from database');
+    
+    const searchInput = document.getElementById('client_search_input');
+    const spinIcon = document.getElementById('rrcSpinIcon');
+    const statusTx = document.getElementById('rrcStatusText');
+    
+    rrcData = [];
+    
+    {% for customer in customers %}
+    rrcData.push({ 
+        code: '{{ customer.id }}', 
+        name: '{{ customer.name|escapejs }}', 
+        mobile: '{{ customer.phone|default:""|escapejs }}', 
+        address: '{{ customer.address|default:""|escapejs }}', 
+        district: '', 
+        state: '', 
+        branch: '', 
+        rout: '', 
+        nature: '', 
+        software: null, 
+        amc_label: null, 
+        lictype_label: null, 
+        directdealing_label: null,
+        fullAddress: '{{ customer.address|default:""|escapejs }}'
+    });
+    {% endfor %}
+    
+    console.log(`📊 Loaded ${rrcData.length} local customers`);
+    
+    spinIcon.className = 'fas fa-database';
+    spinIcon.style.color = 'var(--amber)';
+    statusTx.textContent = `${rrcData.length} local clients`;
+    
+    searchInput.placeholder = `Search ${rrcData.length} local clients by first letter...`;
+    searchInput.disabled = false;
+    
+    filteredClients = [...rrcData];
+    if (rrcData.length > 0) {
+        renderDropdown();
+    }
+}
+
+function setClientMode(existing) {
+    clientModeExisting = existing;
+
+    document.getElementById('selectClientContainer').style.display = existing ? 'block' : 'none';
+    document.getElementById('manualClientContainer').style.display  = existing ? 'none'  : 'block';
+
+    const eEl = document.getElementById('optExist');
+    const nEl = document.getElementById('optNew');
+
+    eEl.style.background = existing ? 'var(--accent)' : '';
+    eEl.style.color      = existing ? '#fff'          : '';
+    nEl.style.background = existing ? ''              : 'var(--accent)';
+    nEl.style.color      = existing ? ''              : '#fff';
+
+    updateClientHidden();
+}
+
+function updateClientHidden() {
+    const hid = document.getElementById('client_details');
+    if (clientModeExisting) {
+        hid.value = document.getElementById('client_select')?.value || '';
+    } else {
+        hid.value = document.getElementById('client_manual_input')?.value || '';
+    }
+}
+
+document.getElementById('client_manual_input')?.addEventListener('input', updateClientHidden);
+
+function filterClients(query) {
+    const q = query.trim().toLowerCase();
+    
+    if (!q) {
+        // If query is empty, show all clients
+        filteredClients = [...rrcData];
+    } else {
+        // First letter search - only check if the client name starts with the query
+        // This ensures searching by first letter works
+        filteredClients = rrcData.filter(c => {
+            const name = (c.name || '').toLowerCase();
+            // Check if the name starts with the query (for first letter search)
+            // or if the query is just one character, check if name starts with that letter
+            return name.startsWith(q);
+        });
+    }
+    
+    highlightedIndex = -1;
+    renderDropdown();
+    openDropdown();
+    if (!query) clearClientSelection(false);
+}
+
+function renderDropdown() {
+    const list = document.getElementById('clientDropdownList');
+    const empty = document.getElementById('clientDropdownEmpty');
+    
+    list.innerHTML = '';
+
+    if (!filteredClients || filteredClients.length === 0) {
+        list.style.display = 'none';
+        empty.style.display = 'block';
+        return;
+    }
+    
+    empty.style.display = 'none';
+    list.style.display = 'block';
+
+    filteredClients.forEach((client, idx) => {
+        if (!client) return;
+        
+        const displayName = client.name || 'Unnamed Client';
+        const displayMobile = client.mobile || '';
+        const displayAddress = client.fullAddress || client.address || '';
+
+        const item = document.createElement('div');
+        item.style.cssText = `
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+        `;
+
+        item.innerHTML = `
+            <div style="width: 40px; height: 40px; border-radius: 8px; 
+                        background: var(--accent-dim); flex-shrink: 0;
+                        display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-building" style="color: var(--accent); font-size: 16px;"></i>
+            </div>
+            <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <div style="font-weight: 700; font-size: 14px; color: var(--text-1);">
+                        ${escapeHtml(displayName)}
+                    </div>
+                    ${client.code ? `
+                    <div style="font-size: 10px; font-weight: 600; background: var(--accent-dim); 
+                                color: var(--accent); border-radius: 4px; padding: 2px 6px;">
+                        ${escapeHtml(client.code)}
+                    </div>` : ''}
+                </div>
+                
+                ${client.mobile ? `
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                    <i class="fas fa-phone-alt" style="font-size: 10px; color: var(--accent);"></i>
+                    <span style="font-size: 12px; color: var(--accent); font-weight: 500;">
+                        ${escapeHtml(client.mobile)}
+                    </span>
+                </div>` : ''}
+                
+                ${displayAddress ? `
+                <div style="display: flex; align-items: flex-start; gap: 6px;">
+                    <i class="fas fa-map-marker-alt" style="font-size: 10px; color: var(--text-3); margin-top: 2px;"></i>
+                    <span style="font-size: 11px; color: var(--text-2);">
+                        ${escapeHtml(displayAddress.substring(0, 60))}${displayAddress.length > 60 ? '…' : ''}
+                    </span>
+                </div>` : ''}
+            </div>
+        `;
+
+        item.addEventListener('mouseenter', () => {
+            item.style.backgroundColor = 'var(--accent-dim)';
+        });
+        item.addEventListener('mouseleave', () => {
+            item.style.backgroundColor = '';
+        });
+
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            selectClient(client);
+        });
+
+        list.appendChild(item);
+    });
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function openDropdown() {
+    if (!rrcData.length) return;
+    document.getElementById('clientDropdown').style.display = 'block';
+    dropdownOpen = true;
+}
+
+function closeDropdown() {
+    document.getElementById('clientDropdown').style.display = 'none';
+    dropdownOpen = false;
+}
+
+function handleComboKey(e) {
+    const items = document.querySelectorAll('#clientDropdownList > div');
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (!dropdownOpen) openDropdown();
+        highlightedIndex = Math.min(highlightedIndex + 1, filteredClients.length - 1);
+        if (items[highlightedIndex]) {
+            items[highlightedIndex].scrollIntoView({ block: 'nearest' });
+        }
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        highlightedIndex = Math.max(highlightedIndex - 1, 0);
+        if (items[highlightedIndex]) {
+            items[highlightedIndex].scrollIntoView({ block: 'nearest' });
+        }
+    } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (highlightedIndex >= 0 && filteredClients[highlightedIndex]) {
+            selectClient(filteredClients[highlightedIndex]);
+        }
+    } else if (e.key === 'Escape') {
+        closeDropdown();
+    }
+}
+
+function selectClient(client) {
+    closeDropdown();
+
+    const searchInput = document.getElementById('client_search_input');
+    if (searchInput) {
+        const displayText = client.name + 
+            (client.mobile ? '  ·  ' + client.mobile : '') +
+            (client.district ? '  ·  ' + client.district : '');
+        searchInput.value = displayText;
+    }
+
+    const clearBtn = document.getElementById('clientClearBtn');
+    if (clearBtn) clearBtn.style.display = 'inline';
+
+    const hiddenSelect = document.getElementById('client_select');
+    if (hiddenSelect) {
+        hiddenSelect.innerHTML = `<option value="${client.code || client.name}" selected>${client.name}</option>`;
+    }
+
+    const clientDetails = document.getElementById('client_details');
+    if (clientDetails) {
+        clientDetails.value = client.code || client.name || '';
+    }
+
+    const addressParts = [];
+    if (client.address) addressParts.push(client.address);
+    if (client.address3) addressParts.push(client.address3);
+    if (client.district) addressParts.push(client.district);
+    if (client.state) addressParts.push(client.state);
+    
+    // Only set rrc_client_code for actual RRC clients (non-numeric codes).
+    // Local DB customers use a numeric PK as their code — passing that as
+    // rrc_client_code causes _resolve_customer to enter the RRC-sync path
+    // and overwrite the customer name with the raw ID string.
+    const isLocalDbCustomer = /^\d+$/.test(client.code || '');
+    document.getElementById('rrc_client_code').value    = isLocalDbCustomer ? '' : (client.code || '');
+    document.getElementById('rrc_client_name').value    = isLocalDbCustomer ? '' : (client.name || '');
+    document.getElementById('rrc_client_address').value = addressParts.join(', ');
+    document.getElementById('rrc_client_mobile').value  = client.mobile || '';
+    document.getElementById('rrc_client_branch').value  = client.branch || '';
+
+    populateClientCard(client);
+}
+
+// Updated populateClientCard function - only name, code, address, mobile
+function populateClientCard(client) {
+    const card = document.getElementById('clientCard');
+
+    document.getElementById('cardName').textContent = client.name || '—';
+    document.getElementById('cardCode').textContent = client.code || '—';
+    document.getElementById('cardMobile').textContent = client.mobile || '—';
+
+    const addressParts = [];
+    if (client.address) addressParts.push(client.address);
+    if (client.address3) addressParts.push(client.address3);
+    if (client.district) addressParts.push(client.district);
+    if (client.state) addressParts.push(client.state);
+    document.getElementById('cardAddress').textContent = addressParts.join(', ') || '—';
+
+    card.style.display = 'block';
+}
+
+function clearClientSelection(resetFilter = true) {
+    if (resetFilter) {
+        document.getElementById('client_search_input').value = '';
+        filteredClients = [...rrcData];
+        highlightedIndex = -1;
+    }
+    document.getElementById('client_select').innerHTML = '';
+    document.getElementById('client_details').value = '';
+    document.getElementById('clientClearBtn').style.display = 'none';
+    document.getElementById('clientCard').style.display = 'none';
+    
+    ['rrc_client_code','rrc_client_name','rrc_client_address','rrc_client_mobile','rrc_client_branch'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+}
+
+function addItemRow() {
+    const emptyRow = document.getElementById('emptyRow');
+    if (emptyRow) emptyRow.remove();
+
+    rowCounter++;
+    const tbody = document.getElementById('itemsTableBody');
+    const row = document.createElement('tr');
+    row.id = `row_${rowCounter}`;
+
+    let itemsOptions = '<option value="">Select Item</option>';
+    {% for item in items %}
+    itemsOptions += `<option value="{{ item.id }}" data-price="{{ item.purchase_price }}" data-tax="{{ item.tax_percentage }}" data-mrp="{{ item.mrp }}">{{ item.name }}</option>`;
+    {% endfor %}
+
+    row.innerHTML = `
+        <td class="cell-item">
+            <select name="item_id[]" class="item-select" required
+                    onchange="updateItemDetails(this, ${rowCounter})" style="min-width:150px;">
+                ${itemsOptions}
+            </select>
+        </td>
+        <td class="cell-qty"><input type="number" name="quantity[]" class="quantity" value="1" min="1" step="1" onchange="calculateRow(${rowCounter})" style="text-align:right;"></td>
+        <td class="cell-unit-price"><input type="number" name="unit_price[]" class="unit-price" value="0.00" step="0.01" readonly style="text-align:right;"></td>
+        <td class="cell-disc"><input type="number" name="discount[]" class="discount" value="0.00" step="0.01" onchange="calculateRow(${rowCounter})" style="text-align:right;"></td>
+        <td class="cell-tax"><input type="number" name="tax_percent[]" class="tax-percent" value="18.00" step="0.01" readonly style="text-align:right;"></td>
+        <td class="cell-total"><input type="text" class="line-total" value="0.00" readonly style="text-align:right; font-weight:700; color:var(--text-1);"></td>
+        <td class="cell-action">
+            <button type="button" class="btn-danger" onclick="removeRow(${rowCounter})">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+        </td>
+    `;
+    tbody.appendChild(row);
+    updateItemCount();
+    calculateRow(rowCounter);
+}
+
+function removeRow(rowId) {
+    const row = document.getElementById(`row_${rowId}`);
+    if (row) row.remove();
+    const tbody = document.getElementById('itemsTableBody');
+    if (!tbody.querySelector('tr')) {
+        const empty = document.createElement('tr');
+        empty.id = 'emptyRow';
+        empty.className = 'empty-row';
+        empty.innerHTML = `<td colspan="7"><i class="fas fa-box-open"></i><span>No items added yet. Click <strong>Add Item</strong> to begin.</span></td>`;
+        tbody.appendChild(empty);
+    }
+    updateItemCount();
+    updateTotals();
+}
+
+function updateItemCount() {
+    const count = document.querySelectorAll('#itemsTableBody tr:not(.empty-row)').length;
+    document.getElementById('itemsCount').textContent = count + (count === 1 ? ' item' : ' items');
+}
+
+function updateItemDetails(select, rowId) {
+    const opt = select.options[select.selectedIndex];
+    if (!opt.value) return;
+    const row = document.getElementById(`row_${rowId}`);
+    const purchasePrice = parseFloat(opt.dataset.price || 0);
+    const tax = parseFloat(opt.dataset.tax || 18);
+    
+    row.querySelector('.unit-price').value = purchasePrice.toFixed(2);
+    row.querySelector('.tax-percent').value = tax.toFixed(2);
+    calculateRow(rowId);
+}
+
+function calculateRow(rowId) {
+    const row = document.getElementById(`row_${rowId}`);
+    if (!row) return;
+
+    const qty = parseFloat(row.querySelector('.quantity')?.value) || 0;
+    const unitPrice = parseFloat(row.querySelector('.unit-price')?.value) || 0;
+    const taxPct = parseFloat(row.querySelector('.tax-percent')?.value) || 0;
+    const discount = parseFloat(row.querySelector('.discount')?.value) || 0;
+
+    const taxable = (qty * unitPrice) - discount;
+    const taxAmt = taxable * (taxPct / 100);
+    const total = taxable + taxAmt;
+
+    row.querySelector('.line-total').value = `${total.toFixed(2)}`;
+
+    updateTotals();
+}
+
+function updateTotals() {
+    let subtotal = 0, totalTax = 0;
+
+    document.querySelectorAll('#itemsTableBody tr:not(.empty-row)').forEach(row => {
+        const qty = parseFloat(row.querySelector('.quantity')?.value) || 0;
+        const unitPrice = parseFloat(row.querySelector('.unit-price')?.value) || 0;
+        const discount = parseFloat(row.querySelector('.discount')?.value) || 0;
+        const taxPct = parseFloat(row.querySelector('.tax-percent')?.value) || 0;
+
+        const taxable = (qty * unitPrice) - discount;
+        subtotal += taxable;
+        totalTax += taxable * (taxPct / 100);
+    });
+
+    const grand = subtotal + totalTax;
+    document.getElementById('subtotalDisplay').textContent = `${subtotal.toFixed(2)}`;
+    document.getElementById('taxDisplay').textContent = `${totalTax.toFixed(2)}`;
+    document.getElementById('grandTotalDisplay').textContent = `${grand.toFixed(2)}`;
+}
+
+function handleCalculationMethodChange() {
+    // This function can be updated based on your calculation method logic
+    document.querySelectorAll('#itemsTableBody tr:not(.empty-row)').forEach((row, i) => calculateRow(i + 1));
+}
+
+function showModal() {
+    document.getElementById('confirmationModal').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('confirmationModal').style.display = 'none';
+}
+
+function doSubmit() {
+    closeModal();
+    document.getElementById('loaderOverlay').style.display = 'flex';
+    document.getElementById('poForm').submit();
+}
+
+document.getElementById('poForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    updateClientHidden();
+
+    const rows = document.querySelectorAll('#itemsTableBody tr:not(.empty-row)');
+    if (rows.length === 0) { 
+        alert('Please add at least one item!'); 
+        return; 
+    }
+
+    let allSelected = true;
+    rows.forEach(row => { 
+        if (!row.querySelector('.item-select')?.value) allSelected = false; 
+    });
+    if (!allSelected) { 
+        alert('Please select an item for all rows!'); 
+        return; 
+    }
+
+    const cd = document.getElementById('client_details').value;
+    if (!cd) { 
+        alert('Please select or enter a client!'); 
+        return; 
+    }
+
+    showModal();
+});
+
+document.getElementById('resetFormBtn')?.addEventListener('click', function () {
+    if (confirm('Reset form? All entered data will be lost.')) window.location.reload();
+});
+</script>
+{% endblock %}

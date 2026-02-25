@@ -282,6 +282,52 @@
             transform: none;
             box-shadow: none;
         }
+
+        /* QUOTATION BUTTON STYLES */
+        .quotation-btn {
+            background: linear-gradient(135deg, #f8a200, #e07b00);
+            color: white;
+        }
+
+        .quotation-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(248, 162, 0, 0.45);
+        }
+
+        .quotation-btn:disabled {
+            background: linear-gradient(135deg, #cccccc, #aaaaaa);
+            color: #666666;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .quotation-btn:disabled:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* FOLLOW UP BUTTON STYLES */
+        .followup-btn {
+            background: linear-gradient(135deg, #2575fc, #1a5edb);
+            color: white;
+        }
+
+        .followup-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(37, 117, 252, 0.45);
+        }
+
+        .followup-btn:disabled {
+            background: linear-gradient(135deg, #cccccc, #aaaaaa);
+            color: #666666;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .followup-btn:disabled:hover {
+            transform: none;
+            box-shadow: none;
+        }
         
         .single-line-sections {
             display: flex;
@@ -652,16 +698,15 @@
         /* UPDATED SEARCH AND FILTER CONTAINER - Left/Right Layout */
         .directory-controls {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
             padding: 10px 15px;
             background: #f8f9fa;
             border-bottom: 1px solid #e9ecef;
-            gap: 10px;
+            gap: 8px;
         }
         
         .directory-search-container {
-            flex: 1;
+            width: 100%;
             min-width: 0;
         }
         
@@ -692,7 +737,7 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            flex-shrink: 0;
+            width: 100%;
         }
         
         .filter-label {
@@ -709,7 +754,32 @@
             font-size: 13px;
             background: white;
             cursor: pointer;
-            min-width: 120px;
+            flex: 1;
+        }
+
+        .clear-filters-btn {
+            padding: 6px 10px;
+            border: 1px solid #e0756a;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #fff5f4;
+            color: #d9534f;
+            cursor: pointer;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .clear-filters-btn:hover {
+            background: #d9534f;
+            color: white;
+            border-color: #d9534f;
+            transform: none;
+            box-shadow: none;
         }
         
        .employee-list, .lead-list {
@@ -2131,14 +2201,8 @@
                     <!-- Directory Tabs -->
                     
                     
-                    <!-- UPDATED SEARCH AND FILTER - Combined in one row -->
+                    <!-- UPDATED SEARCH AND FILTER - Priority first, Search below -->
                     <div class="directory-controls">
-                        <div class="directory-search-container">
-                            <div class="search-box">
-                                <i class="fas fa-search search-icon"></i>
-                                <input type="text" id="directorySearch" placeholder="Search leads...">
-                            </div>
-                        </div>
                         <div class="directory-filter-container">
                             <span class="filter-label">Priority:</span>
                             <select id="priorityFilter" class="filter-select">
@@ -2147,6 +2211,15 @@
                                 <option value="Medium">🟡 Medium</option>
                                 <option value="Low">🟢 Low</option>
                             </select>
+                            <button id="clearFiltersBtn" class="clear-filters-btn" title="Clear all filters">
+                                <i class="fas fa-times"></i> Clear
+                            </button>
+                        </div>
+                        <div class="directory-search-container">
+                            <div class="search-box">
+                                <i class="fas fa-search search-icon"></i>
+                                <input type="text" id="directorySearch" placeholder="Search leads...">
+                            </div>
                         </div>
                     </div>
                     
@@ -2678,6 +2751,18 @@
                                     <i class="fas fa-edit"></i>
                                     &nbsp; Edit Lead
                                 </button>
+
+                                <!-- QUOTATION BUTTON - Enabled only when a lead is selected -->
+                                <button type="button" class="quotation-btn" id="quotationBtn" disabled title="Generate quotation for the selected lead">
+                                    <i class="fas fa-file-invoice-dollar"></i>
+                                    &nbsp; Quotation
+                                </button>
+
+                                <!-- FOLLOW UP BUTTON - Enabled only when a lead is selected -->
+                                <button type="button" class="followup-btn" id="followUpBtn" disabled title="Add follow-up for the selected lead">
+                                    <i class="fas fa-phone-alt"></i>
+                                    &nbsp; Follow Up
+                                </button>
                                 <button type="submit" class="submit-btn" title="Create a new lead with current form data">
                                     <i class="fas fa-paper-plane"></i>
                                     &nbsp; Save
@@ -2747,6 +2832,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Edit button element
     const editFormBtn = document.getElementById('editFormBtn');
+    const quotationBtn = document.getElementById('quotationBtn');
+    const followUpBtn = document.getElementById('followUpBtn');
     
     // Requirements elements
     const addItemBtn = document.getElementById('add-item-btn');
@@ -4480,6 +4567,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function showEditButton(leadId) {
         editFormBtn.disabled = false;
         editFormBtn.dataset.leadId = leadId;
+
+        // Enable Quotation and Follow Up buttons
+        quotationBtn.disabled = false;
+        quotationBtn.dataset.leadId = leadId;
+        followUpBtn.disabled = false;
+        followUpBtn.dataset.leadId = leadId;
         
         // When lead is selected, disable Submit button
         const submitBtn = document.querySelector('.submit-btn');
@@ -4497,6 +4590,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function hideEditButton() {
         editFormBtn.disabled = true;
         delete editFormBtn.dataset.leadId;
+
+        // Disable Quotation and Follow Up buttons
+        quotationBtn.disabled = true;
+        delete quotationBtn.dataset.leadId;
+        followUpBtn.disabled = true;
+        delete followUpBtn.dataset.leadId;
         
         // When lead is deselected, enable Submit button
         const submitBtn = document.querySelector('.submit-btn');
@@ -4529,6 +4628,30 @@ document.addEventListener('DOMContentLoaded', function() {
                     window.location.href = `/app5/lead/edit/${leadId}/`;
                 } else {
                     showNotification('No lead selected for editing', 'error');
+                }
+            }
+        });
+
+        // Quotation button click handler
+        quotationBtn.addEventListener('click', function() {
+            if (!this.disabled) {
+                const leadId = this.dataset.leadId;
+                if (leadId) {
+                    window.location.href = `/app5/quotation-form/?lead_id=${leadId}`;
+                } else {
+                    showNotification('No lead selected for quotation', 'error');
+                }
+            }
+        });
+
+        // Follow Up button click handler
+        followUpBtn.addEventListener('click', function() {
+            if (!this.disabled) {
+                const leadId = this.dataset.leadId;
+                if (leadId) {
+                    window.location.href = `/app5/event-list/?lead_id=${leadId}`;
+                } else {
+                    showNotification('No lead selected for follow-up', 'error');
                 }
             }
         });
@@ -4935,20 +5058,60 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('📁 Directory tabs initialized');
     }
     
-    function setupDirectorySearch() {
-        // Your existing directory search code
+    // Combined filter function: applies both search term and priority together
+    function applyLeadFilters() {
         const searchInput = document.getElementById('directorySearch');
+        const filterSelect = document.getElementById('priorityFilter');
+        const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+        const selectedPriority = filterSelect ? filterSelect.value : 'all';
+
+        const leadItems = document.querySelectorAll('.lead-item');
+        let visibleCount = 0;
+
+        leadItems.forEach(item => {
+            const text = item.textContent.toLowerCase();
+            const priority = item.getAttribute('data-priority') || '';
+
+            const matchesSearch = !searchTerm || text.includes(searchTerm);
+            const matchesPriority = selectedPriority === 'all' || priority === selectedPriority;
+
+            if (matchesSearch && matchesPriority) {
+                item.style.display = 'flex';
+                visibleCount++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+
+        // Update lead count if the counter element exists
+        const countEl = document.querySelector('.lead-count, #leadCount, .directory-count');
+        if (countEl) {
+            countEl.textContent = visibleCount;
+        }
+
+        console.log(`🔍 Filters applied — search: "${searchTerm}", priority: "${selectedPriority}", visible: ${visibleCount}`);
+    }
+
+    function setupDirectorySearch() {
+        const searchInput = document.getElementById('directorySearch');
+        if (!searchInput) {
+            console.warn('⚠️ directorySearch input not found');
+            return;
+        }
         searchInput.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
-            const items = activeTab === 'employees' ? 
-                document.querySelectorAll('.employee-item') : 
-                document.querySelectorAll('.lead-item');
-            
-            items.forEach(item => {
-                const text = item.textContent.toLowerCase();
-                item.style.display = text.includes(searchTerm) ? 'flex' : 'none';
-            });
+            const activeTabEl = document.querySelector('.directory-tab.active');
+            const activeTab = activeTabEl ? activeTabEl.getAttribute('data-tab') : 'leads';
+
+            if (activeTab === 'employees') {
+                // Employee tab: simple text search
+                const searchTerm = this.value.toLowerCase();
+                document.querySelectorAll('.employee-item').forEach(item => {
+                    item.style.display = item.textContent.toLowerCase().includes(searchTerm) ? 'flex' : 'none';
+                });
+            } else {
+                // Lead tab: use combined filter
+                applyLeadFilters();
+            }
         });
         
         console.log('🔍 Directory search initialized');
@@ -4958,17 +5121,24 @@ document.addEventListener('DOMContentLoaded', function() {
         // Your existing priority filter code
         const filterSelect = document.getElementById('priorityFilter');
         filterSelect.addEventListener('change', function() {
-            const selectedPriority = this.value;
-            const leadItems = document.querySelectorAll('.lead-item');
-            
-            leadItems.forEach(item => {
-                const priority = item.getAttribute('data-priority');
-                if (selectedPriority === 'all' || priority === selectedPriority) {
-                    item.style.display = 'flex';
-                } else {
-                    item.style.display = 'none';
-                }
+            // Use combined filter so search term is also respected
+            applyLeadFilters();
+        });
+
+        // Clear All Filters button
+        const clearBtn = document.getElementById('clearFiltersBtn');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', function() {
+                filterSelect.value = 'all';
+                const searchInput = document.getElementById('directorySearch');
+                if (searchInput) searchInput.value = '';
+                applyLeadFilters();
+                console.log('🧹 All filters cleared');
             });
+        }
+
+        const leadItems = document.querySelectorAll('.lead-item');
+        leadItems.forEach(item => {
         });
         
         console.log('🎯 Priority filter initialized');

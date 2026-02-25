@@ -460,6 +460,221 @@
             margin-right: 5px;
         }
         
+        /* Proposal Attachment Button */
+        .btn-attach {
+            background: linear-gradient(135deg, #7b5ea7, #9b59b6);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(123, 94, 167, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .btn-attach:hover {
+            background: linear-gradient(135deg, #6a4f95, #8e44ad);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(123, 94, 167, 0.4);
+        }
+
+        .btn-attach i { font-size: 14px; }
+
+        .btn-attach.has-file {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            box-shadow: 0 4px 8px rgba(39, 174, 96, 0.3);
+        }
+
+        .btn-attach.has-file:hover {
+            background: linear-gradient(135deg, #219a52, #27ae60);
+            box-shadow: 0 6px 12px rgba(39, 174, 96, 0.4);
+        }
+
+        /* Attachment preview badge */
+        .attachment-badge {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            background: #f0fff4;
+            border: 1px solid #a8e6c0;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 13px;
+            color: #27ae60;
+            font-weight: 500;
+            margin-top: 8px;
+        }
+
+        .attachment-badge.visible { display: flex; }
+
+        .attachment-badge .remove-attachment {
+            background: none;
+            border: none;
+            color: #e74c3c;
+            cursor: pointer;
+            padding: 0 2px;
+            font-size: 14px;
+            line-height: 1;
+        }
+
+        .attachment-badge .remove-attachment:hover { color: #c0392b; }
+
+        /* Attachment modal */
+        .attachment-modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .attachment-modal-overlay.open { display: flex; }
+
+        .attachment-modal {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+            width: 90%;
+            max-width: 480px;
+            position: relative;
+        }
+
+        .attachment-modal h3 {
+            color: #2c3e50;
+            font-size: 20px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .attachment-modal h3 i { color: #7b5ea7; }
+
+        .attachment-modal p.subtitle {
+            color: #888;
+            font-size: 13px;
+            margin-bottom: 24px;
+        }
+
+        .attachment-drop-zone {
+            border: 2px dashed #c8b8e8;
+            border-radius: 10px;
+            padding: 35px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #faf8ff;
+        }
+
+        .attachment-drop-zone:hover,
+        .attachment-drop-zone.dragover {
+            border-color: #7b5ea7;
+            background: #f3eeff;
+        }
+
+        .attachment-drop-zone i {
+            font-size: 40px;
+            color: #c8b8e8;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .attachment-drop-zone p {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .attachment-drop-zone span {
+            font-size: 12px;
+            color: #bbb;
+        }
+
+        .attachment-drop-zone input[type="file"] {
+            display: none;
+        }
+
+        .attachment-selected-preview {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            background: #f0fff4;
+            border: 1px solid #a8e6c0;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-top: 16px;
+        }
+
+        .attachment-selected-preview.visible { display: flex; }
+
+        .attachment-selected-preview i { color: #27ae60; font-size: 22px; }
+
+        .attachment-selected-preview .file-info { flex: 1; overflow: hidden; }
+
+        .attachment-selected-preview .file-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .attachment-selected-preview .file-size {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .attachment-modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 24px;
+        }
+
+        .btn-modal-cancel {
+            background: #f0f0f0;
+            color: #555;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .btn-modal-cancel:hover { background: #e0e0e0; }
+
+        .btn-modal-confirm {
+            background: linear-gradient(135deg, #7b5ea7, #9b59b6);
+            color: white;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .btn-modal-confirm:hover {
+            background: linear-gradient(135deg, #6a4f95, #8e44ad);
+        }
+
+        .btn-modal-confirm:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         /* Form Section Styles */
         .client-info-section, .quotation-details {
             background: #f8f9ff;
@@ -747,12 +962,24 @@
                             <button type="button" class="btn-add" onclick="addNewItem()">
                                 <i class="fas fa-plus-circle"></i> Add Item
                             </button>
+                            <button type="button" class="btn-attach" id="btn-attach-proposal" onclick="openAttachmentModal()">
+                                <i class="fas fa-paperclip"></i> Attach Proposal
+                            </button>
                             <button type="button" class="btn-submit" onclick="submitQuotation()">
                                 <i class="fas fa-paper-plane"></i> Submit Quotation
                             </button>
                             <button class="btn-refresh" onclick="window.location.href='{% url 'app5:lead_report' %}'">
                                 <i class="fas fa-sync-alt"></i>
                                 Back
+                            </button>
+                        </div>
+
+                        <!-- Attachment badge shown after file is selected -->
+                        <div class="attachment-badge" id="attachment-badge">
+                            <i class="fas fa-file-alt"></i>
+                            <span id="attachment-badge-name">proposal.pdf</span>
+                            <button class="remove-attachment" onclick="removeAttachment()" title="Remove attachment">
+                                <i class="fas fa-times-circle"></i>
                             </button>
                         </div>
                         
@@ -767,6 +994,38 @@
         </div>
     </div>
 
+    <!-- Proposal Attachment Modal -->
+    <div class="attachment-modal-overlay" id="attachment-modal-overlay">
+        <div class="attachment-modal">
+            <h3><i class="fas fa-paperclip"></i> Attach Proposal</h3>
+            <p class="subtitle">Upload a proposal document to include with this quotation</p>
+
+            <div class="attachment-drop-zone" id="drop-zone" onclick="document.getElementById('proposal-file-input').click()">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p>Click to browse or drag & drop your file here</p>
+                <span>Accepted: PDF, DOC, DOCX, XLS, XLSX, PNG, JPG &nbsp;|&nbsp; Max: 10 MB</span>
+                <input type="file" id="proposal-file-input"
+                       accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                       onchange="handleFileSelected(this.files[0])">
+            </div>
+
+            <div class="attachment-selected-preview" id="attachment-selected-preview">
+                <i class="fas fa-file-alt" id="preview-file-icon"></i>
+                <div class="file-info">
+                    <div class="file-name" id="preview-file-name"></div>
+                    <div class="file-size" id="preview-file-size"></div>
+                </div>
+            </div>
+
+            <div class="attachment-modal-actions">
+                <button class="btn-modal-cancel" onclick="closeAttachmentModal()">Cancel</button>
+                <button class="btn-modal-confirm" id="btn-confirm-attach" onclick="confirmAttachment()" disabled>
+                    <i class="fas fa-check"></i> Attach File
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Add jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
@@ -775,6 +1034,13 @@
         let purchaseOrderItems = [];
         let selectedLead = null;
         let itemsLoaded = false; // Flag to track if items are loaded
+
+        // ✅ Tax options from TaxMaster (fetched via Django context)
+        const taxOptions = [
+            {% for tax in taxes %}
+            { name: "{{ tax.name|escapejs }}", percentage: {{ tax.percentage }} }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
         
         // Function to handle ticket selection
         function handleTicketSelection(selectElement) {
@@ -1052,7 +1318,9 @@
                     <input type="number" class="discount" name="discount[]" value="0" min="0" max="100" step="0.01" onchange="calculateRow(this)" placeholder="0">
                 </td>
                 <td>
-                    <input type="number" class="tax" name="tax[]" value="0" min="0" max="100" step="0.01" onchange="calculateRow(this)" placeholder="0">
+                    <select class="tax" name="tax[]" onchange="calculateRow(this)">
+                        <option value="0">0% </option>
+                    </select>
                 </td>
                 <td>
                     <span class="row-total">0.00</span>
@@ -1066,6 +1334,15 @@
             `;
             
             tbody.appendChild(row);
+            
+            // Populate the tax dropdown from TaxMaster
+            const taxSelect = row.querySelector('.tax');
+            taxOptions.forEach(function(t) {
+                const opt = document.createElement('option');
+                opt.value = t.percentage;
+                opt.textContent = t.percentage + '%';
+                taxSelect.appendChild(opt);
+            });
             
             // Populate the section dropdown first
             updateSectionDropdown(row.querySelector('.item-section'));
@@ -1249,16 +1526,31 @@
             try {
                 // Get CSRF token
                 const csrftoken = getCookie('csrftoken');
-                
-                // Submit to your Django backend
-                const response = await fetch('{% url "app5:quotation_submit" %}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrftoken
-                    },
-                    body: JSON.stringify(quotationData)
-                });
+
+                let response;
+
+                if (proposalFile) {
+                    // Use FormData to include the file
+                    const formData = new FormData();
+                    formData.append('proposal_attachment', proposalFile);
+                    formData.append('data', JSON.stringify(quotationData));
+
+                    response = await fetch('{% url "app5:quotation_submit" %}', {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': csrftoken },
+                        body: formData
+                    });
+                } else {
+                    // No file — send JSON as before
+                    response = await fetch('{% url "app5:quotation_submit" %}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrftoken
+                        },
+                        body: JSON.stringify(quotationData)
+                    });
+                }
                 
                 const result = await response.json();
                 
@@ -1302,8 +1594,130 @@
             $('#grand-total').text('0.00');
             
             showNotification('Form reset. You can create a new quotation.', 'info');
+            
+            // Reset proposal attachment
+            removeAttachment();
         }
         
+        // =============================================
+        // PROPOSAL ATTACHMENT FUNCTIONALITY
+        // =============================================
+        let proposalFile = null;
+
+        function openAttachmentModal() {
+            document.getElementById('attachment-modal-overlay').classList.add('open');
+        }
+
+        function closeAttachmentModal() {
+            document.getElementById('attachment-modal-overlay').classList.remove('open');
+            // If no file confirmed yet, reset the modal preview
+            if (!proposalFile) {
+                resetModalPreview();
+            }
+        }
+
+        function handleFileSelected(file) {
+            if (!file) return;
+
+            const maxSize = 10 * 1024 * 1024; // 10 MB
+            if (file.size > maxSize) {
+                showNotification('File is too large. Maximum allowed size is 10 MB.', 'error');
+                document.getElementById('proposal-file-input').value = '';
+                return;
+            }
+
+            // Choose icon based on file type
+            const ext = file.name.split('.').pop().toLowerCase();
+            const iconMap = {
+                pdf: 'fa-file-pdf',
+                doc: 'fa-file-word', docx: 'fa-file-word',
+                xls: 'fa-file-excel', xlsx: 'fa-file-excel',
+                png: 'fa-file-image', jpg: 'fa-file-image', jpeg: 'fa-file-image'
+            };
+            const iconClass = iconMap[ext] || 'fa-file-alt';
+
+            document.getElementById('preview-file-icon').className = `fas ${iconClass}`;
+            document.getElementById('preview-file-name').textContent = file.name;
+            document.getElementById('preview-file-size').textContent = formatFileSize(file.size);
+            document.getElementById('attachment-selected-preview').classList.add('visible');
+            document.getElementById('btn-confirm-attach').disabled = false;
+
+            // Store temporarily
+            proposalFile = file;
+        }
+
+        function confirmAttachment() {
+            if (!proposalFile) return;
+
+            // Update the badge in the form
+            document.getElementById('attachment-badge-name').textContent = proposalFile.name;
+            document.getElementById('attachment-badge').classList.add('visible');
+
+            // Change button to green "has-file" state
+            const btn = document.getElementById('btn-attach-proposal');
+            btn.classList.add('has-file');
+            btn.innerHTML = `<i class="fas fa-check-circle"></i> Proposal Attached`;
+
+            closeAttachmentModal();
+            showNotification(`"${proposalFile.name}" attached successfully!`, 'success');
+        }
+
+        function removeAttachment() {
+            proposalFile = null;
+            document.getElementById('attachment-badge').classList.remove('visible');
+            document.getElementById('proposal-file-input').value = '';
+
+            const btn = document.getElementById('btn-attach-proposal');
+            btn.classList.remove('has-file');
+            btn.innerHTML = `<i class="fas fa-paperclip"></i> Attach Proposal`;
+
+            resetModalPreview();
+            showNotification('Attachment removed.', 'info');
+        }
+
+        function resetModalPreview() {
+            document.getElementById('attachment-selected-preview').classList.remove('visible');
+            document.getElementById('btn-confirm-attach').disabled = true;
+            document.getElementById('proposal-file-input').value = '';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        // Drag-and-drop support
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropZone = document.getElementById('drop-zone');
+            if (!dropZone) return;
+
+            dropZone.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+
+            dropZone.addEventListener('dragleave', function() {
+                dropZone.classList.remove('dragover');
+            });
+
+            dropZone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                const file = e.dataTransfer.files[0];
+                if (file) handleFileSelected(file);
+            });
+
+            // Close modal on overlay click
+            document.getElementById('attachment-modal-overlay').addEventListener('click', function(e) {
+                if (e.target === this) closeAttachmentModal();
+            });
+        });
+
+        // =============================================
+        // END PROPOSAL ATTACHMENT FUNCTIONALITY
+        // =============================================
+
         // Initialize when page loads
         $(document).ready(function() {
             console.log('Initializing quotation form with Purchase Order items...');

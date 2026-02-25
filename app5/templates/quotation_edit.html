@@ -486,6 +486,247 @@
                 grid-column: span 2;
             }
         }
+
+        /* ── Proposal: View button (has existing file) ── */
+        .btn-view-proposal {
+            background: linear-gradient(135deg, #7b5ea7, #9b59b6);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(123, 94, 167, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        .btn-view-proposal:hover {
+            background: linear-gradient(135deg, #6a4f95, #8e44ad);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(123, 94, 167, 0.4);
+        }
+
+        /* ── Proposal: Attach button (no existing file) ── */
+        .btn-attach-proposal {
+            background: linear-gradient(135deg, #e67e22, #d35400);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(230, 126, 34, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        .btn-attach-proposal:hover {
+            background: linear-gradient(135deg, #d35400, #ba4a00);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(230, 126, 34, 0.4);
+        }
+        .btn-attach-proposal.has-new-file {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            box-shadow: 0 4px 8px rgba(39,174,96,0.3);
+        }
+        .btn-attach-proposal.has-new-file:hover {
+            background: linear-gradient(135deg, #219a52, #27ae60);
+        }
+
+        /* ── Shared modal overlay ── */
+        .proposal-modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.65);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        .proposal-modal-overlay.open { display: flex; }
+
+        /* ── PDF VIEWER modal ── */
+        .pdf-viewer-modal {
+            background: #1e1e2e;
+            border-radius: 12px;
+            box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+            width: 92vw;
+            max-width: 960px;
+            height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .pdf-viewer-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            background: #2d2d44;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            flex-shrink: 0;
+        }
+        .pdf-viewer-header .pdf-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #e0d9ff;
+            font-weight: 600;
+            font-size: 15px;
+        }
+        .pdf-viewer-header .pdf-title i { color: #a095f6; font-size: 18px; }
+        .pdf-viewer-actions { display: flex; gap: 8px; }
+        .pdf-viewer-actions a,
+        .pdf-viewer-actions button {
+            background: rgba(255,255,255,0.1);
+            color: #e0d9ff;
+            border: 1px solid rgba(255,255,255,0.15);
+            padding: 7px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.2s;
+        }
+        .pdf-viewer-actions a:hover,
+        .pdf-viewer-actions button:hover { background: rgba(255,255,255,0.2); }
+        .pdf-viewer-actions .btn-close-pdf {
+            background: rgba(231,76,60,0.25);
+            border-color: rgba(231,76,60,0.4);
+            color: #ff8a80;
+        }
+        .pdf-viewer-actions .btn-close-pdf:hover { background: rgba(231,76,60,0.4); }
+        .pdf-viewer-body {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+        .pdf-viewer-body iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+        .pdf-loading-msg {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #888;
+            font-size: 15px;
+            gap: 12px;
+            background: #1e1e2e;
+        }
+        .pdf-loading-msg i { font-size: 36px; color: #a095f6; }
+
+        /* Sub-bar: replace link shown under "View Proposal" button */
+        .attachment-subbar {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            margin-top: 8px;
+            font-size: 13px;
+        }
+        .attachment-subbar.visible { display: flex; }
+        .attachment-subbar .file-label {
+            color: #27ae60;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .attachment-subbar .link-replace {
+            color: #e67e22;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: underline;
+            background: none;
+            border: none;
+            font-size: 13px;
+            padding: 0;
+        }
+        .attachment-subbar .link-replace:hover { color: #d35400; }
+
+        /* ── UPLOAD modal ── */
+        .upload-modal {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+            width: 90%;
+            max-width: 480px;
+        }
+        .upload-modal h3 {
+            color: #2c3e50;
+            font-size: 20px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .upload-modal h3 i { color: #e67e22; }
+        .upload-modal p.subtitle { color: #888; font-size: 13px; margin-bottom: 22px; }
+        .upload-drop-zone {
+            border: 2px dashed #f0c090;
+            border-radius: 10px;
+            padding: 34px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #fffaf4;
+        }
+        .upload-drop-zone:hover,
+        .upload-drop-zone.dragover { border-color: #e67e22; background: #fff3e0; }
+        .upload-drop-zone i { font-size: 38px; color: #f0c090; margin-bottom: 10px; display: block; }
+        .upload-drop-zone p { color: #888; font-size: 14px; margin-bottom: 4px; }
+        .upload-drop-zone span { font-size: 12px; color: #bbb; }
+        .upload-drop-zone input[type="file"] { display: none; }
+        .upload-selected-preview {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            background: #f0fff4;
+            border: 1px solid #a8e6c0;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-top: 14px;
+        }
+        .upload-selected-preview.visible { display: flex; }
+        .upload-selected-preview i { color: #27ae60; font-size: 22px; }
+        .upload-selected-preview .file-info { flex: 1; overflow: hidden; }
+        .upload-selected-preview .file-name {
+            font-weight: 600; color: #2c3e50; font-size: 14px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .upload-selected-preview .file-size { font-size: 12px; color: #888; }
+        .upload-modal-actions {
+            display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px;
+        }
+        .btn-upload-cancel {
+            background: #f0f0f0; color: #555; border: none;
+            padding: 10px 22px; border-radius: 6px; cursor: pointer;
+            font-weight: 600; font-size: 14px; transition: background 0.2s;
+        }
+        .btn-upload-cancel:hover { background: #e0e0e0; }
+        .btn-upload-confirm {
+            background: linear-gradient(135deg, #e67e22, #d35400);
+            color: white; border: none; padding: 10px 22px;
+            border-radius: 6px; cursor: pointer; font-weight: 600;
+            font-size: 14px; transition: all 0.3s;
+        }
+        .btn-upload-confirm:hover { background: linear-gradient(135deg, #d35400, #ba4a00); }
+        .btn-upload-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -562,7 +803,7 @@
                                 <!-- Items will be loaded from existing quotation -->
                                 {% if quotation_items %}
                                     {% for qitem in quotation_items %}
-                                    <tr>
+                                    <tr data-item-id="{{ qitem.id }}">
                                         <td>
                                             <select class="item-section" name="section[]" onchange="updateItemOptions(this)">
                                                 <option value="">Select Section</option>
@@ -602,7 +843,14 @@
                                             <input type="number" class="discount" name="discount[]" value="{{ qitem.discount_percentage }}" min="0" max="100" step="0.01" onchange="calculateRow(this)" placeholder="0">
                                         </td>
                                         <td>
-                                            <input type="number" class="tax" name="tax[]" value="{{ qitem.tax_percentage }}" min="0" max="100" step="0.01" onchange="calculateRow(this)" placeholder="0">
+                                            <select class="tax" name="tax[]" onchange="calculateRow(this)">
+                                                <option value="0" {% if qitem.tax_percentage == 0 %}selected{% endif %}>0% </option>
+                                                {% for tax in taxes %}
+                                                <option value="{{ tax.percentage }}" {% if qitem.tax_percentage == tax.percentage %}selected{% endif %}>
+                                                    {{ tax.percentage|floatformat:0 }}%
+                                                </option>
+                                                {% endfor %}
+                                            </select>
                                         </td>
                                         <td>
                                             <span class="row-total">{{ qitem.line_total|floatformat:2 }}</span>
@@ -649,6 +897,19 @@
                             <button type="button" class="btn-add" onclick="addNewItem()">
                                 <i class="fas fa-plus-circle"></i> Add Item
                             </button>
+
+                            {% if quotation.proposal_attachment %}
+                            <!-- Existing attachment: show View button -->
+                            <button type="button" class="btn-view-proposal" onclick="openPdfViewer()">
+                                <i class="fas fa-file-pdf"></i> View Proposal
+                            </button>
+                            {% else %}
+                            <!-- No attachment: show Attach button -->
+                            <button type="button" class="btn-attach-proposal" id="btn-attach-proposal" onclick="openUploadModal()">
+                                <i class="fas fa-paperclip"></i> Attach Proposal
+                            </button>
+                            {% endif %}
+
                             <button type="button" class="btn-submit" onclick="updateQuotation()">
                                 <i class="fas fa-save"></i> Update Quotation
                             </button>
@@ -656,6 +917,25 @@
                                 <i class="fas fa-arrow-left"></i>
                                 Back to Quotation Form
                             </button>
+                        </div>
+
+                        <!-- Attachment sub-bar: shown after new file staged or to replace existing -->
+                        <div class="attachment-subbar" id="attachment-subbar">
+                            {% if quotation.proposal_attachment %}
+                            <span class="file-label">
+                                <i class="fas fa-file-alt"></i>
+                                <span id="attachment-subbar-name">{{ quotation.proposal_attachment.name|default:"proposal" }}</span>
+                            </span>
+                            <button class="link-replace" onclick="openUploadModal()">Replace file</button>
+                            {% else %}
+                            <span class="file-label" id="new-file-label" style="display:none">
+                                <i class="fas fa-check-circle"></i>
+                                <span id="attachment-subbar-name"></span>
+                            </span>
+                            <button class="link-replace" id="link-remove-new" style="display:none" onclick="removeNewAttachment()">
+                                <i class="fas fa-times"></i> Remove
+                            </button>
+                            {% endif %}
                         </div>
                         
                         <!-- Footer -->
@@ -669,6 +949,98 @@
         </div>
     </div>
 
+    <!-- ═══════════════════════════════════════════════
+         PDF VIEWER MODAL (existing attachment)
+    ═══════════════════════════════════════════════ -->
+    <div class="proposal-modal-overlay" id="pdf-viewer-overlay">
+        <div class="pdf-viewer-modal">
+            <div class="pdf-viewer-header">
+                <div class="pdf-title">
+                    <i class="fas fa-file-pdf"></i>
+                    <span id="pdf-viewer-filename">{% if quotation.proposal_attachment %}{{ quotation.proposal_attachment.name }}{% endif %}</span>
+                </div>
+                <div class="pdf-viewer-actions">
+                    {% if quotation.proposal_attachment %}
+                    <a href="{{ quotation.proposal_attachment.url }}" download id="pdf-download-link" title="Download">
+                        <i class="fas fa-download"></i> Download
+                    </a>
+                    <a href="{{ quotation.proposal_attachment.url }}" target="_blank" title="Open in new tab">
+                        <i class="fas fa-external-link-alt"></i> Open
+                    </a>
+                    {% endif %}
+                    <button class="link-replace" onclick="openUploadModal()" title="Replace file" style="color:#f0c090; text-decoration:none; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); padding:7px 14px; border-radius:6px; font-size:13px; display:flex; align-items:center; gap:6px;">
+                        <i class="fas fa-sync-alt"></i> Replace
+                    </button>
+                    <button class="btn-close-pdf" onclick="closePdfViewer()">
+                        <i class="fas fa-times"></i> Close
+                    </button>
+                </div>
+            </div>
+            <div class="pdf-viewer-body">
+                <div class="pdf-loading-msg" id="pdf-loading-msg">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>Loading document…</span>
+                </div>
+                {% if quotation.proposal_attachment %}
+                <iframe
+                    id="pdf-iframe"
+                    src="{{ quotation.proposal_attachment.url }}"
+                    title="Proposal Attachment"
+                    onload="document.getElementById('pdf-loading-msg').style.display='none'">
+                </iframe>
+                {% else %}
+                <iframe id="pdf-iframe" style="display:none"></iframe>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         UPLOAD / REPLACE MODAL
+    ═══════════════════════════════════════════════ -->
+    <div class="proposal-modal-overlay" id="upload-modal-overlay">
+        <div class="upload-modal">
+            <h3>
+                <i class="fas fa-paperclip"></i>
+                {% if quotation.proposal_attachment %}Replace Proposal{% else %}Attach Proposal{% endif %}
+            </h3>
+            <p class="subtitle">
+                {% if quotation.proposal_attachment %}
+                    Upload a new file to replace the existing proposal attachment.
+                {% else %}
+                    Upload a proposal document to include with this quotation.
+                {% endif %}
+            </p>
+
+            <div class="upload-drop-zone" id="upload-drop-zone"
+                 onclick="document.getElementById('proposal-file-input').click()">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p>Click to browse or drag &amp; drop your file here</p>
+                <span>Accepted: PDF, DOC, DOCX, XLS, XLSX, PNG, JPG &nbsp;|&nbsp; Max: 10 MB</span>
+                <input type="file" id="proposal-file-input"
+                       accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                       onchange="handleUploadFileSelected(this.files[0])">
+            </div>
+
+            <div class="upload-selected-preview" id="upload-selected-preview">
+                <i class="fas fa-file-alt" id="upload-preview-icon"></i>
+                <div class="file-info">
+                    <div class="file-name" id="upload-preview-name"></div>
+                    <div class="file-size" id="upload-preview-size"></div>
+                </div>
+            </div>
+
+            <div class="upload-modal-actions">
+                <button class="btn-upload-cancel" onclick="closeUploadModal()">Cancel</button>
+                <button class="btn-upload-confirm" id="btn-upload-confirm"
+                        onclick="confirmUpload()" disabled>
+                    <i class="fas fa-check"></i>
+                    {% if quotation.proposal_attachment %}Replace File{% else %}Attach File{% endif %}
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Add jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
@@ -676,6 +1048,13 @@
         // Global variable to store items from Purchase Order app
         let purchaseOrderItems = [];
         let selectedLead = null;
+
+        // ✅ Tax options from TaxMaster (fetched via Django context)
+        const taxOptions = [
+            {% for tax in taxes %}
+            { name: "{{ tax.name|escapejs }}", percentage: {{ tax.percentage }} }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
         let itemsLoaded = false;
         
         // Initialize when page loads
@@ -974,7 +1353,9 @@
                     <input type="number" class="discount" name="discount[]" value="0" min="0" max="100" step="0.01" onchange="calculateRow(this)" placeholder="0">
                 </td>
                 <td>
-                    <input type="number" class="tax" name="tax[]" value="0" min="0" max="100" step="0.01" onchange="calculateRow(this)" placeholder="0">
+                    <select class="tax" name="tax[]" onchange="calculateRow(this)">
+                        <option value="0">0% (No Tax)</option>
+                    </select>
                 </td>
                 <td>
                     <span class="row-total">0.00</span>
@@ -988,6 +1369,15 @@
             `;
             
             tbody.appendChild(row);
+            
+            // Populate the tax dropdown from TaxMaster
+            const taxSelect = row.querySelector('.tax');
+            taxOptions.forEach(function(t) {
+                const opt = document.createElement('option');
+                opt.value = t.percentage;
+                opt.textContent = t.percentage + '%';
+                taxSelect.appendChild(opt);
+            });
             
             // Populate the section dropdown first
             updateSectionDropdown(row.querySelector('.item-section'));
@@ -1148,6 +1538,7 @@
             // Collect item data
             $('#items-body tr').each(function() {
                 const item = {
+                    id: $(this).data('item-id') || null,   // existing QuotationItem PK — null for new rows
                     item_id: $(this).find('.item-desc').val(),
                     item_name: $(this).find('.item-desc option:selected').text(),
                     section: $(this).find('.item-section').val() || '',
@@ -1170,16 +1561,30 @@
             try {
                 // Get CSRF token
                 const csrftoken = getCookie('csrftoken');
-                
-                // Submit to your Django backend
-                const response = await fetch('{% url "app5:quotation_update" quotation.id %}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrftoken
-                    },
-                    body: JSON.stringify(quotationData)
-                });
+
+                let response;
+
+                if (stagedProposalFile) {
+                    // ── multipart: send JSON data + file together ──
+                    const formData = new FormData();
+                    formData.append('proposal_attachment', stagedProposalFile);
+                    formData.append('data', JSON.stringify(quotationData));
+                    response = await fetch('{% url "app5:quotation_update" quotation.id %}', {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': csrftoken },
+                        body: formData
+                    });
+                } else {
+                    // ── plain JSON (no new file) ──
+                    response = await fetch('{% url "app5:quotation_update" quotation.id %}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrftoken
+                        },
+                        body: JSON.stringify(quotationData)
+                    });
+                }
                 
                 const result = await response.json();
                 
@@ -1202,6 +1607,151 @@
                 submitBtn.disabled = false;
             }
         }
+        // ═══════════════════════════════════════════════════
+        // PROPOSAL ATTACHMENT — PDF VIEWER & UPLOAD
+        // ═══════════════════════════════════════════════════
+        let stagedProposalFile = null;   // file chosen but not yet saved to server
+
+        // ── PDF VIEWER ──────────────────────────────────────
+        function openPdfViewer() {
+            document.getElementById('pdf-viewer-overlay').classList.add('open');
+            document.getElementById('pdf-loading-msg').style.display = 'flex';
+        }
+
+        function closePdfViewer() {
+            document.getElementById('pdf-viewer-overlay').classList.remove('open');
+        }
+
+        // ── UPLOAD MODAL ────────────────────────────────────
+        function openUploadModal() {
+            closePdfViewer();
+            document.getElementById('upload-modal-overlay').classList.add('open');
+        }
+
+        function closeUploadModal() {
+            document.getElementById('upload-modal-overlay').classList.remove('open');
+            if (!stagedProposalFile) resetUploadPreview();
+        }
+
+        function handleUploadFileSelected(file) {
+            if (!file) return;
+
+            const maxSize = 10 * 1024 * 1024;
+            if (file.size > maxSize) {
+                showNotification('File too large. Maximum size is 10 MB.', 'error');
+                document.getElementById('proposal-file-input').value = '';
+                return;
+            }
+
+            const ext  = file.name.split('.').pop().toLowerCase();
+            const iconMap = {
+                pdf: 'fa-file-pdf',
+                doc: 'fa-file-word', docx: 'fa-file-word',
+                xls: 'fa-file-excel', xlsx: 'fa-file-excel',
+                png: 'fa-file-image', jpg: 'fa-file-image', jpeg: 'fa-file-image'
+            };
+            document.getElementById('upload-preview-icon').className =
+                'fas ' + (iconMap[ext] || 'fa-file-alt');
+            document.getElementById('upload-preview-name').textContent = file.name;
+            document.getElementById('upload-preview-size').textContent = formatFileSize(file.size);
+            document.getElementById('upload-selected-preview').classList.add('visible');
+            document.getElementById('btn-upload-confirm').disabled = false;
+
+            stagedProposalFile = file;
+        }
+
+        function confirmUpload() {
+            if (!stagedProposalFile) return;
+
+            // Update sub-bar
+            const subbar = document.getElementById('attachment-subbar');
+            subbar.classList.add('visible');
+
+            // If there's a "new file label" span (no prior attachment), show it
+            const newLabel = document.getElementById('new-file-label');
+            if (newLabel) {
+                newLabel.style.display = 'flex';
+                document.getElementById('attachment-subbar-name').textContent = stagedProposalFile.name;
+                document.getElementById('link-remove-new').style.display = 'inline-flex';
+            } else {
+                // Replacing existing — update the name shown
+                const nameSpan = document.getElementById('attachment-subbar-name');
+                if (nameSpan) nameSpan.textContent = stagedProposalFile.name + ' (pending save)';
+            }
+
+            // Update the "Attach" button to green if it exists
+            const attachBtn = document.getElementById('btn-attach-proposal');
+            if (attachBtn) {
+                attachBtn.classList.add('has-new-file');
+                attachBtn.innerHTML = '<i class="fas fa-check-circle"></i> Proposal Staged';
+            }
+
+            closeUploadModal();
+            showNotification(
+                `"${stagedProposalFile.name}" staged — will be saved when you click Update Quotation.`,
+                'success'
+            );
+        }
+
+        function removeNewAttachment() {
+            stagedProposalFile = null;
+            document.getElementById('attachment-subbar').classList.remove('visible');
+            const newLabel = document.getElementById('new-file-label');
+            if (newLabel) newLabel.style.display = 'none';
+            const removeBtn = document.getElementById('link-remove-new');
+            if (removeBtn) removeBtn.style.display = 'none';
+
+            const attachBtn = document.getElementById('btn-attach-proposal');
+            if (attachBtn) {
+                attachBtn.classList.remove('has-new-file');
+                attachBtn.innerHTML = '<i class="fas fa-paperclip"></i> Attach Proposal';
+            }
+            resetUploadPreview();
+            showNotification('Staged attachment removed.', 'info');
+        }
+
+        function resetUploadPreview() {
+            document.getElementById('upload-selected-preview').classList.remove('visible');
+            document.getElementById('btn-upload-confirm').disabled = true;
+            document.getElementById('proposal-file-input').value = '';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        // Drag-and-drop for upload zone
+        document.addEventListener('DOMContentLoaded', function () {
+            // Show sub-bar immediately if existing attachment present
+            {% if quotation.proposal_attachment %}
+            document.getElementById('attachment-subbar').classList.add('visible');
+            {% endif %}
+
+            const dropZone = document.getElementById('upload-drop-zone');
+            if (dropZone) {
+                dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+                dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+                dropZone.addEventListener('drop', e => {
+                    e.preventDefault();
+                    dropZone.classList.remove('dragover');
+                    if (e.dataTransfer.files[0]) handleUploadFileSelected(e.dataTransfer.files[0]);
+                });
+            }
+
+            // Close modals on overlay click
+            document.getElementById('pdf-viewer-overlay').addEventListener('click', function(e) {
+                if (e.target === this) closePdfViewer();
+            });
+            document.getElementById('upload-modal-overlay').addEventListener('click', function(e) {
+                if (e.target === this) closeUploadModal();
+            });
+        });
+
+        // ═══════════════════════════════════════════════════
+        // END PROPOSAL ATTACHMENT
+        // ═══════════════════════════════════════════════════
     </script>
 </body>
 </html>

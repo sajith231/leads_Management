@@ -123,18 +123,19 @@ urlpatterns = [
     path('business-nature/delete/<int:pk>/', views.business_nature_delete, name='business_nature_delete'),
 
     # QUOTATION
-    path('quotation/', views.quotation_list_view, name='quotation_list'),   # List page
-    path('quotation/create/', views.quotation_form_view, name='quotation_form'),  # Add new quotation
-    path("get-quotation-items/", views.get_quotation_items_api, name="get_quotation_items"),
-    path('api/get-quotation-items/', views.get_quotation_items_api, name='get_quotation_items'),
-    path('submit-quotation/', views.quotation_submit, name='quotation_submit'),
-    path('quotation/<int:quotation_id>/delete/', views.quotation_delete, name='quotation_delete'),
-    path('quotation/<int:quotation_id>/edit/', views.edit_quotation, name='edit_quotation'),
-    path('quotation/edit/<int:quotation_id>/', views.edit_quotation, name='quotation_edit'),
-    path('quotation/<int:pk>/update/', views.update_quotation, name='quotation_update'),
-    path('quotation/download/<int:quotation_id>/', views.download_quotation, name='download_quotation'),
-    
-
+  path('quotation/', views.quotation_list_view, name='quotation_list'),              # Create new quotation
+path('quotation-form/', views.quotation_form_view, name='quotation_form_view'),    # ← THIS fixes the 404
+path('quotation/create/', views.quotation_form_view, name='quotation_form'),       # legacy alias
+path('quotation_form/', views.quotation_form_view, name='quotation_form_alt'),     # legacy alias
+path("get-quotation-items/", views.get_quotation_items_api, name="get_quotation_items"),
+path('api/get-quotation-items/', views.get_quotation_items_api, name='get_quotation_items_api'),
+path('submit-quotation/', views.quotation_submit, name='quotation_submit'),
+path('quotation/<int:quotation_id>/delete/', views.quotation_delete, name='quotation_delete'),
+path('quotation/<int:quotation_id>/edit/', views.edit_quotation, name='edit_quotation'),
+path('quotation/edit/<int:quotation_id>/', views.edit_quotation, name='quotation_edit'),
+path('quotation/<int:pk>/update/', views.update_quotation, name='quotation_update'),
+path('quotation/download/<int:quotation_id>/', views.download_quotation, name='download_quotation'),
+path('quotation/lead/<int:lead_id>/', views.quotation_by_lead, name='quotation_by_lead'),
     
     path('state/', views.state_list, name='state_master_list'),  # Changed to state_master_list
     path('state/create/', views.state_master_create, name='state_master_create'),
@@ -151,7 +152,23 @@ urlpatterns = [
     path('update_followup/', views.update_followup, name='update_followup'),
     path('delete_followup/', views.delete_followup, name='delete_followup'),
     path('followup/<int:pk>/edit/', views.event_edit, name='event_edit'),
-    
+    path('event-list/', views.event_list, name='event_list'),
+
+
+
+    path('sales-orders/', views.sales_order_list, name='sales_order_list'),
+    path('sales-orders/create/', views.sales_order_create, name='sales_order_create'),
+    path('sales-orders/<int:pk>/', views.sales_order_detail, name='sales_order_detail'),
+    path('sales-orders/<int:pk>/update/', views.sales_order_update, name='sales_order_update'),
+    path('sales-orders/<int:pk>/delete/', views.sales_order_delete, name='sales_order_delete'),
+    path('api/rrc-clients/', views.api_rrc_clients, name='api_rrc_clients'),
+
+
+
+    path("tax-master/", views.tax_master_list, name="tax_master_list"),
+    path("tax-master/add/", views.tax_master_form, name="tax_master_add"),
+    path("tax-master/edit/<int:pk>/", views.tax_master_form, name="tax_master_edit"),
+    path("tax-master/delete/<int:pk>/", views.tax_master_delete, name="tax_master_delete"),
+
+
 ]
-
-

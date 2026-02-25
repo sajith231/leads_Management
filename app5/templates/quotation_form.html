@@ -869,7 +869,7 @@
         }
         
         .amount {
-            font-weight: 300;
+            font-weight: 600;
             color: #030303;
             font-size: 15px;
         }
@@ -931,8 +931,169 @@
         .btn-delete:hover {
             background: linear-gradient(135deg, #D32F2F, #C62828);
         }
+
+        /* Proposal PDF column */
+        .proposal-cell {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .btn-view-pdf {
+            background: linear-gradient(135deg, #e53935, #b71c1c);
+        }
+
+        .btn-view-pdf:hover {
+            background: linear-gradient(135deg, #c62828, #8e0000);
+        }
+
+        .btn-download-pdf {
+            background: linear-gradient(135deg, #1565c0, #0d47a1);
+            text-decoration: none;
+        }
+
+        .btn-download-pdf:hover {
+            background: linear-gradient(135deg, #1976d2, #1565c0);
+        }
+
+        .no-proposal {
+            color: #aaa;
+            font-size: 18px;
+        }
+
+        /* PDF Viewer Modal */
+        .pdf-modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            z-index: 99999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pdf-modal-overlay.open {
+            display: flex;
+        }
+
+        .pdf-modal {
+            background: #1e1e1e;
+            border-radius: 12px;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.6);
+            width: 92vw;
+            max-width: 1050px;
+            height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .pdf-modal-header {
+            background: linear-gradient(135deg, #2c2c2c, #1a1a1a);
+            padding: 16px 22px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+            flex-shrink: 0;
+        }
+
+        .pdf-modal-title {
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pdf-modal-title i {
+            color: #ef5350;
+            font-size: 20px;
+        }
+
+        .pdf-modal-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .pdf-modal-btn-download {
+            background: linear-gradient(135deg, #1565c0, #0d47a1);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .pdf-modal-btn-download:hover {
+            background: linear-gradient(135deg, #1976d2, #1565c0);
+            transform: translateY(-1px);
+        }
+
+        .pdf-modal-btn-close {
+            background: #444;
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .pdf-modal-btn-close:hover {
+            background: #e53935;
+        }
+
+        .pdf-modal-body {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+            background: #525659;
+        }
+
+        .pdf-modal-body iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+
+        .pdf-loading {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #ccc;
+            gap: 14px;
+            font-size: 15px;
+            background: #525659;
+        }
+
+        .pdf-loading i {
+            font-size: 40px;
+            color: #ef5350;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         
-        /* Confirmation Modal */
+
         .confirmation-modal {
             display: none;
             position: fixed;
@@ -1292,15 +1453,13 @@
         /* Items List in Table */
         .items-list {
             display: flex;
-            flex-direction: column;
-            gap: 3px;
+            align-items: center;
+            gap: 8px;
         }
 
         .item-name-tag {
             display: inline-block;
-        
             color: #0c0c0c;
-            
             border-radius: 4px;
             padding: 2px 7px;
             font-size: 11.5px;
@@ -1309,6 +1468,23 @@
             overflow: hidden;
             text-overflow: ellipsis;
             max-width: 180px;
+        }
+
+        .btn-view-items {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #4a6fdc;
+            padding: 5px;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-view-items:hover {
+            color: #1976d2;
+            transform: scale(1.1);
         }
 
         .text-muted {
@@ -1382,6 +1558,147 @@
 
         .btn-show-all:hover {
             background: linear-gradient(135deg, #495057, #343a40);
+            transform: translateY(-2px);
+        }
+
+        /* Items Modal Styles */
+        .items-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10002;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .items-modal-content {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        .items-modal-header {
+            padding: 20px 25px;
+            background: linear-gradient(135deg, #4a6fdc, #3a5fcc);
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-radius: 12px 12px 0 0;
+            position: relative;
+        }
+
+        .items-modal-header h3 {
+            flex: 1;
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .items-modal-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .items-modal-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .items-modal-body {
+            padding: 25px;
+        }
+
+        .items-modal-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .items-modal-info p {
+            margin: 5px 0;
+            color: #495057;
+        }
+
+        .items-modal-info strong {
+            color: #333;
+        }
+
+        .items-detail-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .items-detail-table th {
+            background: #f8f9fa;
+            padding: 12px 10px;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .items-detail-table td {
+            padding: 10px;
+            border-bottom: 1px solid #e9ecef;
+            color: #333;
+        }
+
+        .items-detail-table tfoot tr {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .items-detail-table tfoot td {
+            padding: 12px 10px;
+            border-top: 2px solid #dee2e6;
+        }
+
+        .items-modal-footer {
+            padding: 20px 25px;
+            border-top: 1px solid #e9ecef;
+            text-align: right;
+        }
+
+        .items-modal-btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .items-modal-btn-close {
+            background: #6c757d;
+            color: white;
+        }
+
+        .items-modal-btn-close:hover {
+            background: #5a6268;
             transform: translateY(-2px);
         }
 
@@ -1702,167 +2019,75 @@
         </div>
     </div>
 
+    <!-- Items Details Modal -->
+    <div class="items-modal" id="itemsModal">
+        <div class="items-modal-content">
+            <div class="items-modal-header">
+                <i class="fas fa-shopping-cart"></i>
+                <h3>Quotation Items</h3>
+                <button class="items-modal-close" onclick="closeItemsModal()">&times;</button>
+            </div>
+            <div class="items-modal-body">
+                <div class="items-modal-info" id="itemsModalInfo">
+                    <p><strong>Quotation #:</strong> <span id="modalQuotationNumber"></span></p>
+                    <p><strong>Client:</strong> <span id="modalClientName"></span></p>
+                </div>
+                <table class="items-detail-table">
+                    <thead>
+                        <tr>
+                            <th>Item Name</th>
+                            <th>Quantity</th>
+                            <th>Price</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="itemsModalBody">
+                        <!-- Items will be dynamically added here -->
+                    </tbody>
+                    <tfoot id="itemsModalFooter">
+                        <!-- Summary will be added here -->
+                    </tfoot>
+                </table>
+            </div>
+            <div class="items-modal-footer">
+                <button class="items-modal-btn items-modal-btn-close" onclick="closeItemsModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <div class="main-content">
             <!-- Left Column - Enhanced Lead Directory -->
-            <div class="directory-column">
-                <div class="lead-directory-container">
-                    <!-- Directory Header -->
-                    <div class="directory-header">
-                        <div class="directory-left">
-                            <h2>Lead Management</h2>
-                            <div class="directory-date" id="currentDate">
-                                <i class="far fa-calendar-alt"></i>
-                                <span id="dateDisplay">Loading date...</span>
-                            </div>
-                        </div>
-                        <div class="directory-right">
-                            <div class="directory-count">Leads: <span id="activeTabCount">{{ leads|length }}</span></div>
-                            <div class="directory-time" id="todayDate">
-                                <i class="far fa-clock"></i>
-                                <span id="timeDisplay">Loading time...</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Directory Tabs -->
-                    <div class="directory-tabs">
-                        <button class="directory-tab active" data-tab="leads">Active Leads</button>
-                    </div>
-                    
-                    <!-- Search and Filter -->
-                    <div class="directory-controls">
-                        <div class="directory-search-container">
-                            <div class="search-box">
-                                <i class="fas fa-search search-icon"></i>
-                                <input type="text" id="directorySearch" placeholder="Search leads...">
-                            </div>
-                        </div>
-                        <div class="directory-filter-container">
-                            <span class="filter-label">Priority:</span>
-                            <select id="priorityFilter" class="filter-select">
-                                <option value="all">All</option>
-                                <option value="High">🔴 High</option>
-                                <option value="Medium">🟡 Medium</option>
-                                <option value="Low">🟢 Low</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Lead List (shown by default) -->
-                    <div class="lead-list active" id="leadList">
-                        {% if leads %}
-                            {% for lead in leads %}
-                            <div class="lead-item" data-id="{{ lead.id }}"
-                                 data-name="{{ lead.ownerName|default:'' }}"
-                                 data-phone="{{ lead.phoneNo|default:'' }}"
-                                 data-email="{{ lead.email|default:'' }}"
-                                 data-priority="{{ lead.priority|default:'Medium' }}"
-                                 data-place="{{ lead.place|default:'' }}"
-                                 data-business="{{ lead.business|default:'' }}"
-                                 data-created="{{ lead.created_at|date:'c'|default:'' }}">
-                                <!-- Edit indicator -->
-                                <div class="edit-lead-indicator" title="Click to view quotations">
-                                    <i class="fas fa-file-invoice" style="font-size: 10px;"></i>
-                                </div>
-                                
-                                <div class="lead-avatar">
-                                    {{ lead.ownerName|default:"L"|slice:":2"|upper }}
-                                </div>
-
-                                <div class="lead-details">
-                                    <!-- TOP LINE: Owner Name (left) and Created Date (right) -->
-                                    <div class="lead-top-line">
-                                        <div class="lead-name-container">
-                                            <span class="lead-priority-indicator">
-                                                {% if lead.priority == "High" %}🔴
-                                                {% elif lead.priority == "Medium" %}🟡
-                                                {% elif lead.priority == "Low" %}🟢
-                                                {% else %}⚪{% endif %}
-                                            </span>
-                                            <span class="lead-name">
-                                                {{ lead.ownerName|default:"Unknown" }}
-                                            </span>
-                                        </div>
-                                        
-                                        <!-- Created date (right side) -->
-                                        {% if lead.created_at %}
-                                        <div class="lead-date-compact">
-                                            <i class="far fa-calendar-alt"></i>
-                                            {{ lead.created_at|date:"d M" }}
-                                        </div>
-                                        {% endif %}
-                                    </div>
-
-                                    <!-- BOTTOM LINE: Phone Number (left) and Time Elapsed/Priority (right) -->
-                                    <div class="lead-bottom-line">
-                                        <div class="lead-phone">
-                                            <i class="fas fa-phone"></i>
-                                            {{ lead.phoneNo|default:"No Phone" }}
-                                        </div>
-                                        
-                                        <!-- RIGHT SIDE: Time elapsed (TOP) and Priority (BOTTOM) badges -->
-                                        <div class="lead-right-badges">
-                                            <!-- Time elapsed badge - TOP -->
-                                            <div class="time-elapsed-badge {% if lead.created_at %}time-recent{% endif %}" 
-                                                 id="timeElapsed-{{ lead.id }}"
-                                                 title="Created: {{ lead.created_at|date:'l, d F Y' }}">
-                                                <i class="far fa-clock"></i>
-                                                {% if lead.created_at %}
-                                                    {{ lead.created_at|timesince }}
-                                                {% else %}
-                                                    N/A
-                                                {% endif %}
-                                            </div>
-                                            
-                                            <!-- Priority badge - BELOW time elapsed -->
-                                            {% if lead.priority %}
-                                            <span class="lead-priority-badge {{ lead.priority|default:'Medium'|lower }}">
-                                                {{ lead.priority|default:"Medium" }}
-                                            </span>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        {% else %}
-                            <div class="no-results">
-                                <i class="fas fa-users"></i>
-                                <div>No active leads found</div>
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Pagination -->
-                    <div class="directory-pagination" id="directoryPagination">
-                        <div class="pagination-buttons">
-                            <button class="pagination-btn" id="prevPage" disabled>
-                                <i class="fas fa-chevron-left"></i> Prev
-                            </button>
-                        </div>
-                        
-                        <div class="pagination-numbers" id="paginationNumbers">
-                            <!-- Page numbers will be generated here -->
-                        </div>
-                        
-                        <div class="pagination-info" id="paginationInfo">
-                            Page 1 of 1
-                        </div>
-                        
-                        <div class="pagination-buttons">
-                            <button class="pagination-btn" id="nextPage" disabled>
-                                Next <i class="fas fa-chevron-right"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            
 
             <!-- Right Column - Quotations Table -->
             <div class="quotations-column">
-                
-                
+
+                <!-- Selected Lead Info Banner -->
+                {% if selected_lead_id %}
+                <div id="selectedLeadInfo" style="
+                    
+                    border-radius: 10px;
+                    padding: 12px 18px;
+                    margin-bottom: 14px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    flex-wrap: wrap;
+                    gap: 10px;
+                    box-shadow: 0 2px 8px rgba(248,162,0,0.15);
+                ">
+                    
+                    <a href="{% url 'app5:lead_report' %}" style="
+                        background:#6c757d; color:white; border:none; border-radius:6px;
+                        padding:7px 14px; font-size:13px; font-weight:600; cursor:pointer;
+                        text-decoration:none; display:flex; align-items:center; gap:6px;
+                    ">
+                        <i class="fas fa-arrow-left"></i> Back to Leads
+                    </a>
+                </div>
+                {% endif %}
+
                 <!-- Table Filters -->
                 <div class="table-filters">
                     <div class="filter-group">
@@ -1875,13 +2100,15 @@
                         </select>
                     </div>
                     <div class="header-actions">
+                        {% if not selected_lead_id %}
                         <button class="btn-refresh" onclick="window.location.href='{% url 'app5:lead_report' %}'">
                             <i class="fas fa-sync-alt"></i>
                             Back
                         </button>
-                        <a href="{% url 'app5:quotation_list' %}" class="btn-add-new">
+                        {% endif %}
+                        <a href="{% url 'app5:quotation_list' %}{% if selected_lead_id %}?lead_id={{ selected_lead_id }}{% endif %}" class="btn-add-new">
                             <i class="fas fa-plus-circle"></i>
-                            Create New 
+                            {% if selected_lead_id %}New Quotation for {{ selected_lead_name }}{% else %}Create New{% endif %}
                         </a>
                     </div>
 
@@ -1902,6 +2129,7 @@
                                     <th width="120">Subtotal</th>
                                     <th width="120">Tax</th>
                                     <th width="120">Total</th>
+                                    <th width="130">Proposal</th>
                                     <th width="150">Actions</th>
                                 </tr>
                             </thead>
@@ -1914,7 +2142,17 @@
                                         data-quotation-number="{{ quotation.quotation_number }}"
                                         data-client-name="{{ quotation.client_name|default:'Unknown Client' }}"
                                         data-amount="{{ quotation.grand_total|floatformat:2 }}"
-                                        data-branch-id="{{ quotation.department_id|default:quotation.lead.requirement|default:'' }}">
+                                        data-branch-id="{{ quotation.department_id|default:quotation.lead.requirement|default:'' }}"
+                                        data-proposal-url="{% if quotation.proposal_attachment %}{{ quotation.proposal_attachment.url }}{% endif %}"
+                                        data-items='[
+                                            {% for item in quotation.items.all %}
+                                                {
+                                                    "name": "{{ item.item_name|escapejs }}",
+                                                    "quantity": {{ item.quantity|default:1 }},
+                                                    "price": {{ item.sales_price|default:0 }}
+                                                }{% if not forloop.last %},{% endif %}
+                                            {% endfor %}
+                                        ]'>
                                         <td>{{ forloop.counter }}</td>
                                         <td>{{ quotation.created_at|date:"d-m-Y" }}<br>
                                             {% if quotation.lead %}
@@ -1943,18 +2181,32 @@
                                         
                                         <td>
                                             {% if quotation.items.all %}
-                                                <div class="items-list">
-                                                    {% for item in quotation.items.all %}
-                                                        <span class="item-name-tag">{{ item.item_name }}</span>
-                                                    {% endfor %}
+                                                <div class="items-list" style="display: flex; align-items: center; gap: 8px;">
+                                                    
+                                                    <button class="btn-view-items" onclick="showItemDetails('{{ quotation.id }}')" title="View all items">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
                                                 </div>
                                             {% else %}
                                                 <span class="text-muted">—</span>
                                             {% endif %}
                                         </td>
-                                        <td class="amount">{{ quotation.subtotal|floatformat:2 }}</td>
-                                        <td class="amount">{{ quotation.total_tax|floatformat:2 }}</td>
-                                        <td class="amount">{{ quotation.grand_total|floatformat:2 }}</td>
+                                        <td class="amount">₹{{ quotation.subtotal|floatformat:2 }}</td>
+                                        <td class="amount">₹{{ quotation.total_tax|floatformat:2 }}</td>
+                                        <td class="amount">₹{{ quotation.grand_total|floatformat:2 }}</td>
+                                        <td class="proposal-cell">
+                                            {% if quotation.proposal_attachment %}
+                                               
+                                                <a href="{{ quotation.proposal_attachment.url }}" 
+                                                   download 
+                                                   class="btn-action btn-download-pdf" 
+                                                   title="Download Proposal">
+                                                    <i class="fas fa-download"></i>
+                                                </a>
+                                            {% else %}
+                                                <span class="no-proposal">—</span>
+                                            {% endif %}
+                                        </td>
                                         <td>
                                             <div class="action-cell">
                                                 <button class="btn-action btn-edit" onclick="editQuotation('{{ quotation.id }}')" title="Edit">
@@ -1975,12 +2227,21 @@
                                         <td colspan="10">
                                             <div class="empty-state">
                                                 <i class="fas fa-file-invoice"></i>
-                                                <h3>No Quotations Found</h3>
-                                                <p>You haven't created any quotations yet. Start by creating your first quotation.</p>
-                                                <a href="{% url 'app5:quotation_list' %}" class="btn-add-new">
-                                                    <i class="fas fa-plus-circle"></i>
-                                                    Create First Quotation
-                                                </a>
+                                                {% if selected_lead_name %}
+                                                    <h3>No Quotations for {{ selected_lead_name }}</h3>
+                                                    <p>This lead doesn't have any quotations yet. Create the first one now.</p>
+                                                    <a href="{% url 'app5:quotation_list' %}?lead_id={{ selected_lead_id }}" class="btn-add-new">
+                                                        <i class="fas fa-plus-circle"></i>
+                                                        Create First Quotation for {{ selected_lead_name }}
+                                                    </a>
+                                                {% else %}
+                                                    <h3>No Quotations Found</h3>
+                                                    <p>You haven't created any quotations yet. Start by creating your first quotation.</p>
+                                                    <a href="{% url 'app5:quotation_list' %}" class="btn-add-new">
+                                                        <i class="fas fa-plus-circle"></i>
+                                                        Create First Quotation
+                                                    </a>
+                                                {% endif %}
                                             </div>
                                         </td>
                                     </tr>
@@ -2371,30 +2632,39 @@ function filterQuotations() {
     rows.forEach(row => {
         let showRow = true;
         
-        // Get row data
-        const rowDate = row.querySelector('td:nth-child(2)')?.textContent.trim();
+        // Get row data - extract date from the second column
+        const dateCell = row.querySelector('td:nth-child(2)');
+        const rowDateText = dateCell?.textContent.trim().split('\n')[0] || '';
         
         // Apply date filter
-        if (dateFilter !== 'all' && rowDate) {
-            const quotationDate = new Date(rowDate);
-            quotationDate.setHours(0, 0, 0, 0);
-            
-            switch(dateFilter) {
-                case 'today':
-                    showRow = quotationDate.getTime() === today.getTime();
-                    break;
-                    
-                case 'week':
-                    const weekAgo = new Date(today);
-                    weekAgo.setDate(today.getDate() - 7);
-                    showRow = quotationDate >= weekAgo;
-                    break;
-                    
-                case 'month':
-                    const monthAgo = new Date(today);
-                    monthAgo.setMonth(today.getMonth() - 1);
-                    showRow = quotationDate >= monthAgo;
-                    break;
+        if (dateFilter !== 'all' && rowDateText) {
+            // Parse date in dd-mm-yyyy format
+            const dateParts = rowDateText.split('-');
+            if (dateParts.length === 3) {
+                const quotationDate = new Date(
+                    parseInt(dateParts[2]), // year
+                    parseInt(dateParts[1]) - 1, // month (0-based)
+                    parseInt(dateParts[0]) // day
+                );
+                quotationDate.setHours(0, 0, 0, 0);
+                
+                switch(dateFilter) {
+                    case 'today':
+                        showRow = quotationDate.getTime() === today.getTime();
+                        break;
+                        
+                    case 'week':
+                        const weekAgo = new Date(today);
+                        weekAgo.setDate(today.getDate() - 7);
+                        showRow = quotationDate >= weekAgo;
+                        break;
+                        
+                    case 'month':
+                        const monthAgo = new Date(today);
+                        monthAgo.setMonth(today.getMonth() - 1);
+                        showRow = quotationDate >= monthAgo;
+                        break;
+                }
             }
         }
         
@@ -2406,7 +2676,7 @@ function filterQuotations() {
             // Extract amount for total calculation
             const amountCell = row.querySelector('td:nth-child(7)');
             if (amountCell) {
-                const amountText = amountCell.textContent.replace('', '').replace(/,/g, '').trim();
+                const amountText = amountCell.textContent.replace('₹', '').replace(/,/g, '').trim();
                 const amount = parseFloat(amountText) || 0;
                 totalAmount += amount;
             }
@@ -2471,7 +2741,7 @@ function resetFilters() {
     rows.forEach(row => {
         const amountCell = row.querySelector('td:nth-child(7)');
         if (amountCell) {
-            const amountText = amountCell.textContent.replace('', '').replace(/,/g, '').trim();
+            const amountText = amountCell.textContent.replace('₹', '').replace(/,/g, '').trim();
             totalAmount += parseFloat(amountText) || 0;
         }
     });
@@ -2483,10 +2753,8 @@ function resetFilters() {
 
 // Function to update counts after filtering
 function updateFilteredCounts(count, total) {
-    document.getElementById('quotationCount').textContent = count;
-    document.getElementById('totalAmount').textContent = `Total: ${total.toFixed(2)}`;
-    document.getElementById('headerQuotationCount').textContent = count;
-    document.getElementById('headerTotalAmount').textContent = total.toFixed(2);
+    // You can add elements to display these counts if needed
+    console.log(`Filtered: ${count} quotations, Total: ₹${total.toFixed(2)}`);
 }
 
 // Update the initialization in DOMContentLoaded
@@ -2506,14 +2774,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Set up lead selection
     setupLeadSelection();
     
-    // Try to restore selected lead from storage
-    const restoredLead = restoreSelectedLeadFromStorage();
-    
-    // If URL has lead_id parameter, use that instead
+    // If URL has lead_id parameter, use that (skip localStorage restore to avoid conflicts)
     const urlParams = new URLSearchParams(window.location.search);
     const leadIdFromUrl = urlParams.get('lead_id');
     
     if (leadIdFromUrl) {
+        // Server has already filtered quotations by this lead — just highlight in directory if present
         setTimeout(() => {
             const leadItem = document.querySelector(`.lead-item[data-id="${leadIdFromUrl}"]`);
             if (leadItem) {
@@ -2521,9 +2787,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 leadItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         }, 300);
-    } else if (restoredLead) {
-        // Lead restored from storage
-        console.log('✅ Lead restored from storage:', restoredLead.name);
+    } else {
+        // No URL filter — try to restore selected lead from storage
+        const restoredLead = restoreSelectedLeadFromStorage();
+        if (restoredLead) {
+            console.log('✅ Lead restored from storage:', restoredLead.name);
+        }
     }
     
     // Initialize date display
@@ -2542,12 +2811,20 @@ document.addEventListener('DOMContentLoaded', function() {
             closeBranchModal();
         }
     });
+
+    // Set up items modal listeners
+    document.getElementById('itemsModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeItemsModal();
+        }
+    });
     
     // Close modals with Escape key
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             closeModal();
             closeBranchModal();
+            closeItemsModal();
         }
     });
     
@@ -2681,7 +2958,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <i class="fas fa-file-invoice"></i>
                         <h3>No Quotations Found for ${leadName}</h3>
                         <p>This lead doesn't have any quotations yet.</p>
-                        <a href="{% url 'app5:quotation_list' %}?lead_id=${leadId}" class="btn-add-new">
+                        <a href="/app5/quotation-list/?lead_id=${leadId}" class="btn-add-new">
                             <i class="fas fa-plus-circle"></i>
                             Create First Quotation for ${leadName}
                         </a>
@@ -2737,10 +3014,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         function updateQuotationCounts(count, total) {
-            document.getElementById('quotationCount').textContent = count;
-            document.getElementById('totalAmount').textContent = `Total: ${total.toFixed(2)}`;
-            document.getElementById('headerQuotationCount').textContent = count;
-            document.getElementById('headerTotalAmount').textContent = total.toFixed(2);
+            // You can add elements to display these counts if needed
+            console.log(`Lead filtered: ${count} quotations, Total: ₹${total.toFixed(2)}`);
         }
 
         // ========== DELETE FUNCTIONALITY ==========
@@ -2752,7 +3027,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Update modal content
             document.getElementById('modalQuotationId').textContent = quotationId;
             document.getElementById('modalClientName').textContent = clientName;
-            document.getElementById('modalAmount').textContent = amount;
+            document.getElementById('modalAmount').textContent = '₹' + amount;
             
             // Show modal
             document.getElementById('confirmationModal').style.display = 'flex';
@@ -2999,6 +3274,205 @@ document.addEventListener('DOMContentLoaded', function() {
             showNotification(`Opening quotation ${quotationId} for editing...`, 'info');
             window.location.href = `/app5/quotation/edit/${quotationId}/`;
         }
+
+        // ========== ITEM DETAILS MODAL FUNCTIONALITY ==========
+        function showItemDetails(quotationId) {
+            // Find the quotation row
+            const quotationRow = document.querySelector(`tr[data-quotation-id="${quotationId}"]`);
+            
+            if (!quotationRow) {
+                showNotification('Quotation not found', 'error');
+                return;
+            }
+            
+            // Get quotation data
+            const quotationNumber = quotationRow.getAttribute('data-quotation-number') || 'N/A';
+            const clientName = quotationRow.getAttribute('data-client-name') || 'Unknown Client';
+            
+            // Update modal header
+            document.getElementById('modalQuotationNumber').textContent = quotationNumber;
+            document.getElementById('modalClientName').textContent = clientName;
+            
+            // Get items for this quotation
+            const items = getQuotationItems(quotationId);
+            
+            // Populate items table
+            const itemsBody = document.getElementById('itemsModalBody');
+            const itemsFooter = document.getElementById('itemsModalFooter');
+            
+            itemsBody.innerHTML = '';
+            
+            if (items && items.length > 0) {
+                let subtotal = 0;
+                let totalQty = 0;
+                
+                items.forEach((item, index) => {
+                    const row = document.createElement('tr');
+                    const quantity = parseFloat(item.quantity) || 1;
+                    const price = parseFloat(item.price) || 0;
+                    const itemTotal = quantity * price;
+                    subtotal += itemTotal;
+                    totalQty += quantity;
+                    
+                    row.innerHTML = `
+                        <td>${item.name}</td>
+                        <td>${quantity}</td>
+                        <td>${formatCurrency(price)}</td>
+                        <td>${formatCurrency(itemTotal)}</td>
+                    `;
+                    itemsBody.appendChild(row);
+                });
+                
+                // Add footer with totals
+                itemsFooter.innerHTML = `
+                    <tr>
+                        <td colspan="3" style="text-align: right;"><strong>Subtotal:</strong></td>
+                        <td><strong>${formatCurrency(subtotal)}</strong></td>
+                    </tr>
+                `;
+            } else {
+                itemsBody.innerHTML = `
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 40px;">
+                            <i class="fas fa-box-open" style="font-size: 48px; color: #ddd; margin-bottom: 15px; display: block;"></i>
+                            <p>No items found in this quotation</p>
+                        </td>
+                    </tr>
+                `;
+                itemsFooter.innerHTML = '';
+            }
+            
+            // Show modal
+            document.getElementById('itemsModal').style.display = 'flex';
+        }
+
+        function closeItemsModal() {
+            document.getElementById('itemsModal').style.display = 'none';
+        }
+
+        // Helper function to get items for a quotation
+        function getQuotationItems(quotationId) {
+            const quotationRow = document.querySelector(`tr[data-quotation-id="${quotationId}"]`);
+            
+            if (quotationRow) {
+                const itemsData = quotationRow.getAttribute('data-items');
+                if (itemsData) {
+                    try {
+                        return JSON.parse(itemsData);
+                    } catch (e) {
+                        console.error('Error parsing items data:', e);
+                    }
+                }
+            }
+            
+            return [];
+        }
+
+        function formatCurrency(amount) {
+            // Handle invalid or undefined amounts
+            if (amount === undefined || amount === null || isNaN(amount)) {
+                amount = 0;
+            }
+            
+            // Convert to number if it's a string
+            if (typeof amount === 'string') {
+                amount = parseFloat(amount) || 0;
+            }
+            
+            // Format with ₹ symbol and 2 decimal places
+            return '₹' + amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+    </script>
+
+    <!-- ===== PDF VIEWER MODAL ===== -->
+    <div class="pdf-modal-overlay" id="pdf-modal-overlay">
+        <div class="pdf-modal">
+            <div class="pdf-modal-header">
+                <div class="pdf-modal-title">
+                    <i class="fas fa-file-pdf"></i>
+                    <span id="pdf-modal-title-text">Proposal Document</span>
+                </div>
+                <div class="pdf-modal-actions">
+                    <a id="pdf-modal-download-btn" href="#" download class="pdf-modal-btn-download">
+                        <i class="fas fa-download"></i> Download
+                    </a>
+                    <button class="pdf-modal-btn-close" onclick="closePDFModal()" title="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="pdf-modal-body">
+                <div class="pdf-loading" id="pdf-loading">
+                    <i class="fas fa-spinner"></i>
+                    <span>Loading document...</span>
+                </div>
+                <iframe id="pdf-viewer-iframe" src="" title="Proposal PDF" onload="onPDFLoaded()"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== PDF VIEWER FUNCTIONS =====
+        function viewProposalPDF(url, clientName) {
+            if (!url) {
+                alert('No proposal attachment found.');
+                return;
+            }
+
+            const overlay = document.getElementById('pdf-modal-overlay');
+            const iframe = document.getElementById('pdf-viewer-iframe');
+            const loading = document.getElementById('pdf-loading');
+            const titleEl = document.getElementById('pdf-modal-title-text');
+            const downloadBtn = document.getElementById('pdf-modal-download-btn');
+
+            // Set title and download link
+            titleEl.textContent = clientName ? `Proposal — ${clientName}` : 'Proposal Document';
+            downloadBtn.href = url;
+
+            // Show loading state
+            loading.style.display = 'flex';
+            iframe.style.visibility = 'hidden';
+            iframe.src = '';
+
+            // Open modal
+            overlay.classList.add('open');
+            document.body.style.overflow = 'hidden';
+
+            // Load PDF — append #toolbar=1&navpanes=1 for built-in browser viewer controls
+            setTimeout(() => {
+                iframe.src = url + '#toolbar=1&navpanes=1&scrollbar=1';
+            }, 100);
+        }
+
+        function onPDFLoaded() {
+            document.getElementById('pdf-loading').style.display = 'none';
+            const iframe = document.getElementById('pdf-viewer-iframe');
+            iframe.style.visibility = 'visible';
+        }
+
+        function closePDFModal() {
+            const overlay = document.getElementById('pdf-modal-overlay');
+            overlay.classList.remove('open');
+            document.body.style.overflow = '';
+            // Clear iframe to stop loading
+            document.getElementById('pdf-viewer-iframe').src = '';
+            document.getElementById('pdf-loading').style.display = 'flex';
+        }
+
+        // Close modal on overlay click
+        document.getElementById('pdf-modal-overlay').addEventListener('click', function(e) {
+            if (e.target === this) closePDFModal();
+        });
+
+        // Close on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (document.getElementById('pdf-modal-overlay').classList.contains('open')) {
+                    closePDFModal();
+                }
+            }
+        });
+        // ===== END PDF VIEWER =====
     </script>
 </body>
 </html>
