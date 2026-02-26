@@ -1062,11 +1062,9 @@
             console.log('Initializing edit quotation form...');
             
             // Initialize purchase items from Django template
-            {% if items_json %}
-                purchaseOrderItems = {{ items_json|safe }};
-                itemsLoaded = true;
-                console.log(`Loaded ${purchaseOrderItems.length} purchase items`);
-            {% endif %}
+            purchaseOrderItems = {{ items_json|safe }};
+            itemsLoaded = purchaseOrderItems.length > 0;
+            console.log(`Loaded ${purchaseOrderItems.length} purchase items`);
             
             // Set up event listener for ticket selection
             $('#lead-ticket-select').on('change', function() {
@@ -1138,11 +1136,13 @@
         function getAvailableSections() {
             const sections = new Set();
             purchaseOrderItems.forEach(item => {
-                if (item.section) {
-                    sections.add(item.section);
-                }
+                // Normalize: treat null/undefined/empty as 'GENERAL'
+                const sec = (item.section || 'GENERAL').trim();
+                if (sec) sections.add(sec);
             });
-            return Array.from(sections).sort();
+            const result = Array.from(sections).sort();
+            console.log('Sections found:', result, '| Items loaded:', purchaseOrderItems.length);
+            return result;
         }
         
         // Function to update section dropdown options
@@ -1194,38 +1194,26 @@
                 return;
             }
             
-            // Filter items by selected section
-            const filteredItems = purchaseOrderItems.filter(item => item.section === selectedSection);
+            // Filter items by selected section (normalize null sections to 'GENERAL')
+            const filteredItems = purchaseOrderItems.filter(item => 
+                (item.section || 'GENERAL').trim() === selectedSection
+            );
             
             if (filteredItems.length === 0) {
-                // No items in this section
                 itemSelect.prop('disabled', false);
                 return;
             }
             
-            // Add filtered items to dropdown
+            // Add filtered items using native DOM (avoids jQuery .data() loss)
             filteredItems.forEach(item => {
-                const option = $('<option>', {
-                    value: item.id,
-                    text: item.name
-                });
-                
-                // Add data attributes
-                option.data('item-data', {
-                    id: item.id,
-                    name: item.name,
-                    description: item.description,
-                    unit: item.unit_of_measure,
-                    mrp: item.mrp,
-                    purchase_price: item.purchase_price,
-                    cost: item.cost,
-                    tax: item.tax_percentage,
-                    hsn_code: item.hsn_code,
-                    section: item.section,
-                    department: item.department
-                });
-                
-                itemSelect.append(option);
+                const option = document.createElement('option');
+                option.value = item.id;
+                option.textContent = item.name;
+                option.setAttribute('data-mrp', item.mrp || 0);
+                option.setAttribute('data-cost', item.cost || 0);
+                option.setAttribute('data-tax', item.tax_percentage || 0);
+                option.setAttribute('data-unit', item.unit_of_measure || '');
+                itemSelect[0].appendChild(option);
             });
             
             // Restore previous selection if still available
@@ -1244,37 +1232,43 @@
             
             if (!selectedItemId) return;
             
-            // Find item in purchaseOrderItems
+            // Always read from purchaseOrderItems (reliable source of truth)
             const itemData = purchaseOrderItems.find(item => item.id == selectedItemId);
             
             if (itemData) {
                 const row = $select.closest('tr');
+                const itemSection = (itemData.section || 'GENERAL').trim();
                 
-                // Update section dropdown to match item's section
+                // Sync section dropdown to match item's section
                 const sectionSelect = row.find('.item-section');
-                if (itemData.section && sectionSelect.val() !== itemData.section) {
-                    sectionSelect.val(itemData.section);
+                if (sectionSelect.val() !== itemSection) {
+                    sectionSelect.val(itemSection);
+                    // Re-populate items for that section, then re-select this item
+                    updateItemOptions(sectionSelect[0]);
+                    $select.val(selectedItemId);
                 }
                 
-                // Only update if values are not already set or are zero
+                // Populate price fields (only if currently zero/empty)
                 const currentSalesPrice = parseFloat(row.find('.sales-price').val()) || 0;
-                const currentUnitPrice = parseFloat(row.find('.unit-price').val()) || 0;
-                const currentTax = parseFloat(row.find('.tax').val()) || 0;
+                const currentUnitPrice  = parseFloat(row.find('.unit-price').val())  || 0;
+                const currentTax        = parseFloat(row.find('.tax').val())          || 0;
                 
                 if (currentSalesPrice === 0) {
-                    row.find('.sales-price').val(itemData.mrp.toFixed(2));
+                    row.find('.sales-price').val(parseFloat(itemData.mrp || 0).toFixed(2));
                 }
                 if (currentUnitPrice === 0) {
-                    row.find('.unit-price').val(itemData.cost.toFixed(2));
+                    row.find('.unit-price').val(parseFloat(itemData.cost || 0).toFixed(2));
                 }
-                if (currentTax === 0) {
+                if (currentTax === 0 && itemData.tax_percentage) {
                     row.find('.tax').val(itemData.tax_percentage);
                 }
                 
-                // Set quantity placeholder with unit
-                row.find('.item-qty').attr('placeholder', `Qty in ${itemData.unit_of_measure}`);
+                // Set quantity placeholder
+                if (itemData.unit_of_measure) {
+                    row.find('.item-qty').attr('placeholder', `Qty in ${itemData.unit_of_measure}`);
+                }
                 
-                // Calculate row total
+                // Recalculate row total
                 calculateRow($select[0]);
             }
         }
@@ -1316,11 +1310,6 @@
         
         // Function to add new item row
         async function addNewItem() {
-            if (!itemsLoaded) {
-                showNotification('Items not loaded yet. Please wait...', 'warning');
-                return;
-            }
-            
             const tbody = document.getElementById('items-body');
             const row = document.createElement('tr');
             

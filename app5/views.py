@@ -8209,7 +8209,7 @@ def edit_quotation(request, quotation_id):
             'active_leads': leads,
             'leads_count': leads.count(),
             'sections': sections,
-            'items_json': items_json,
+            'items_json': json.dumps(items_json),
             'taxes': taxes,          # ✅ ADDED: Tax master list for dropdown
         }
         return render(request, 'quotation_edit.html', context)
