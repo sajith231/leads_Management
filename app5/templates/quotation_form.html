@@ -2076,29 +2076,7 @@
     </div>
 
     <!-- Branch Selection Modal -->
-    <div class="branch-modal" id="branchModal">
-        <div class="branch-modal-content">
-            <div class="branch-modal-header">
-                <i class="fas fa-building"></i>
-                <h3 id="branchModalTitle">Select Branch</h3>
-            </div>
-            <div class="branch-modal-body">
-                <p>Please select the branch for which you want to download the quotation:</p>
-                
-                <div class="branch-grid" id="branchGrid">
-                    <!-- Branch cards will be dynamically added here -->
-                </div>
-                
-                <div class="branch-modal-footer">
-                    <button class="branch-modal-btn branch-modal-btn-cancel" onclick="closeBranchModal()">Cancel</button>
-                    <button class="branch-modal-btn branch-modal-btn-download" id="branchDownloadBtn" onclick="downloadWithSelectedBranch()" disabled>
-                        <i class="fas fa-download"></i>
-                        Download PDF
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+    
 
     <!-- Items Details Modal -->
     <div class="items-modal" id="itemsModal">
@@ -2234,7 +2212,19 @@
                         </span>
                         <span>
                             <i class="fas fa-rupee-sign"></i> 
-                            Total: <span id="totalAmountDisplay">₹0.00</span>
+                            Total: <span id="totalAmountDisplay">₹
+                                {% if quotations %}
+                                    {% with total=0 %}
+                                        {% for quotation in quotations %}
+                                            {% with total=total|add:quotation.grand_total %}
+                                            {% endwith %}
+                                        {% endfor %}
+                                        {{ total|floatformat:2 }}
+                                    {% endwith %}
+                                {% else %}
+                                    0.00
+                                {% endif %}
+                            </span>
                         </span>
                     </div>
                 </div>
@@ -2267,8 +2257,8 @@
                                         data-quotation-number="{{ quotation.quotation_number }}"
                                         data-client-name="{{ quotation.client_name|default:'Unknown Client' }}"
                                         data-amount="{{ quotation.grand_total|floatformat:2 }}"
-                                        data-branch-id="{{ quotation.department.id|default:'' }}"
-                                        data-lead-branch="{{ quotation.lead.requirement|default:''|escapejs }}"
+                                        data-branch-id="{{ quotation.department_id|default:quotation.lead.requirement|default:'' }}"
+                                        data-branch-name="{{ quotation.department.name|default:quotation.lead.requirement|default:'' }}"
                                         data-proposal-url="{% if quotation.proposal_attachment %}{{ quotation.proposal_attachment.url }}{% endif %}"
                                         data-items='[
                                             {% for item in quotation.items.all %}
@@ -2580,6 +2570,7 @@
         // ========== LEAD SELECTION AND QUOTATION FILTERING ==========
         let selectedLead = null;
         let allQuotations = [];
+        let filteredQuotations = [];
 
         // Save lead to localStorage
         function saveLeadToStorage(leadData) {
@@ -2748,28 +2739,19 @@ function updateTimeElapsedBadges() {
 
 // ========== ENHANCED FILTER FUNCTIONS WITH BRANCH AND DATE RANGE ==========
 
-// Build a lookup map: department name (lowercase) -> department id
-// This lets us match quotation rows whose branch comes from lead.requirement (name-based)
-const departmentNameToId = {};
-{% for dept in departments %}
-departmentNameToId["{{ dept.name|lower|escapejs }}"] = "{{ dept.id }}";
-{% endfor %}
-
 // Function to apply all filters
 function filterQuotations() {
-    console.log('Filter function called');
-    
     // Get filter values
     const branchFilter = document.getElementById('branchFilter').value;
     const dateFrom = document.getElementById('dateFrom').value;
     const dateTo = document.getElementById('dateTo').value;
     
-    console.log('Branch filter:', branchFilter);
-    
     // Update active filters
     activeFilters.branch = branchFilter;
     activeFilters.dateFrom = dateFrom;
     activeFilters.dateTo = dateTo;
+    
+    console.log('Filtering quotations:', activeFilters);
     
     let visibleCount = 0;
     let totalAmount = 0;
@@ -2782,28 +2764,25 @@ function filterQuotations() {
     
     // Get all quotation rows
     const rows = document.querySelectorAll('#quotations-body tr[data-quotation-id]');
-    console.log('Total rows:', rows.length);
     
     rows.forEach(row => {
         let showRow = true;
         
-        // ── BRANCH FILTER ──────────────────────────────────────────────────────
+        // Filter by Branch — match against dept ID or dept name (fallback for leads with requirement as name)
         if (branchFilter !== 'all') {
-            // Primary: quotation.department.id stored directly on the row
-            const directBranchId = (row.getAttribute('data-branch-id') || '').trim();
-            
-            // Fallback: lead.requirement is a branch/department name string
-            const leadBranchName = (row.getAttribute('data-lead-branch') || '').toLowerCase().trim();
-            const resolvedBranchId = directBranchId || departmentNameToId[leadBranchName] || '';
-            
-            console.log('Row branch id:', directBranchId, '| lead branch name:', leadBranchName, '| resolved:', resolvedBranchId, '| filter:', branchFilter);
-            
-            if (String(resolvedBranchId) !== String(branchFilter)) {
+            const rowBranchId = row.getAttribute('data-branch-id');
+            const rowBranchName = row.getAttribute('data-branch-name');
+            const branchSelect = document.getElementById('branchFilter');
+            const selectedOptionText = branchSelect.options[branchSelect.selectedIndex]?.text || '';
+            const matchById = String(rowBranchId) === String(branchFilter);
+            const matchByName = rowBranchName && selectedOptionText &&
+                                rowBranchName.trim().toLowerCase() === selectedOptionText.trim().toLowerCase();
+            if (!matchById && !matchByName) {
                 showRow = false;
             }
         }
         
-        // ── DATE RANGE FILTER ──────────────────────────────────────────────────
+        // Filter by Date Range
         if (showRow && (dateFrom || dateTo)) {
             const dateCell = row.querySelector('td:nth-child(2)');
             const rowDateText = dateCell?.textContent.trim().split('\n')[0] || '';
@@ -2813,50 +2792,57 @@ function filterQuotations() {
                 const dateParts = rowDateText.split('-');
                 if (dateParts.length === 3) {
                     const quotationDate = new Date(
-                        parseInt(dateParts[2]),
-                        parseInt(dateParts[1]) - 1,
-                        parseInt(dateParts[0])
+                        parseInt(dateParts[2]), // year
+                        parseInt(dateParts[1]) - 1, // month (0-based)
+                        parseInt(dateParts[0]) // day
                     );
                     quotationDate.setHours(0, 0, 0, 0);
                     
-                    if (dateFrom) {
+                    // Check From date
+                    if (dateFrom && showRow) {
                         const fromDate = new Date(dateFrom);
                         fromDate.setHours(0, 0, 0, 0);
-                        if (quotationDate < fromDate) showRow = false;
+                        if (quotationDate < fromDate) {
+                            showRow = false;
+                        }
                     }
                     
+                    // Check To date
                     if (dateTo && showRow) {
                         const toDate = new Date(dateTo);
                         toDate.setHours(23, 59, 59, 999);
-                        if (quotationDate > toDate) showRow = false;
+                        if (quotationDate > toDate) {
+                            showRow = false;
+                        }
                     }
                 }
             }
         }
         
-        // ── SHOW / HIDE ────────────────────────────────────────────────────────
+        // Show/hide row
         if (showRow) {
             row.style.display = '';
             visibleCount++;
             
+            // Extract amount for total calculation
             const amountCell = row.querySelector('td:nth-child(7)');
             if (amountCell) {
                 const amountText = amountCell.textContent.replace('₹', '').replace(/,/g, '').trim();
-                totalAmount += parseFloat(amountText) || 0;
+                const amount = parseFloat(amountText) || 0;
+                totalAmount += amount;
             }
         } else {
             row.style.display = 'none';
         }
     });
     
-    console.log('Visible rows:', visibleCount);
-    
-    // Handle empty state
+    // Handle empty state for filters
     handleFilterEmptyState(visibleCount);
     
     // Update filter stats
     updateFilterStats(activeFilterCount, visibleCount, totalAmount);
     
+    // Show notification
     if (activeFilterCount > 0) {
         showNotification(`Showing ${visibleCount} quotation${visibleCount !== 1 ? 's' : ''} with ${activeFilterCount} filter${activeFilterCount !== 1 ? 's' : ''}`, 'info');
     }
@@ -3023,6 +3009,148 @@ function applyDateRange(range) {
     filterQuotations();
 }
 
+// ========== FILTER FUNCTIONS ==========
+function filterQuotationsOld() {
+    const dateFilter = document.getElementById('dateFilter').value;
+    
+    console.log('Filtering quotations by date:', dateFilter);
+    
+    let visibleCount = 0;
+    let totalAmount = 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Get all quotation rows
+    const rows = document.querySelectorAll('#quotations-body tr[data-quotation-id]');
+    
+    rows.forEach(row => {
+        let showRow = true;
+        
+        // Get row data - extract date from the second column
+        const dateCell = row.querySelector('td:nth-child(2)');
+        const rowDateText = dateCell?.textContent.trim().split('\n')[0] || '';
+        
+        // Apply date filter
+        if (dateFilter !== 'all' && rowDateText) {
+            // Parse date in dd-mm-yyyy format
+            const dateParts = rowDateText.split('-');
+            if (dateParts.length === 3) {
+                const quotationDate = new Date(
+                    parseInt(dateParts[2]), // year
+                    parseInt(dateParts[1]) - 1, // month (0-based)
+                    parseInt(dateParts[0]) // day
+                );
+                quotationDate.setHours(0, 0, 0, 0);
+                
+                switch(dateFilter) {
+                    case 'today':
+                        showRow = quotationDate.getTime() === today.getTime();
+                        break;
+                        
+                    case 'week':
+                        const weekAgo = new Date(today);
+                        weekAgo.setDate(today.getDate() - 7);
+                        showRow = quotationDate >= weekAgo;
+                        break;
+                        
+                    case 'month':
+                        const monthAgo = new Date(today);
+                        monthAgo.setMonth(today.getMonth() - 1);
+                        showRow = quotationDate >= monthAgo;
+                        break;
+                }
+            }
+        }
+        
+        // Show/hide row
+        if (showRow) {
+            row.style.display = '';
+            visibleCount++;
+            
+            // Extract amount for total calculation
+            const amountCell = row.querySelector('td:nth-child(7)');
+            if (amountCell) {
+                const amountText = amountCell.textContent.replace('₹', '').replace(/,/g, '').trim();
+                const amount = parseFloat(amountText) || 0;
+                totalAmount += amount;
+            }
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    // Handle empty state
+    const tbody = document.getElementById('quotations-body');
+    const existingEmptyMessage = tbody.querySelector('.no-filter-results');
+    
+    if (visibleCount === 0) {
+        if (!existingEmptyMessage) {
+            const emptyMessage = document.createElement('tr');
+            emptyMessage.className = 'no-filter-results';
+            emptyMessage.innerHTML = `
+                <td colspan="10">
+                    <div class="empty-state">
+                        <i class="fas fa-filter"></i>
+                        <h3>No quotations match your filter</h3>
+                        <p>Try adjusting your date range to see more results.</p>
+                        <button class="btn-refresh" onclick="resetFilters()" style="background: #4a6fdc; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin-top: 10px;">
+                            <i class="fas fa-undo"></i> Reset Filter
+                        </button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(emptyMessage);
+        }
+    } else {
+        if (existingEmptyMessage) {
+            existingEmptyMessage.remove();
+        }
+    }
+    
+    // Update counts
+    updateFilteredCounts(visibleCount, totalAmount);
+    
+    // Show notification
+    showNotification(`Showing ${visibleCount} quotation${visibleCount !== 1 ? 's' : ''}`, 'info');
+}
+
+// Function to reset filters
+function resetFilters() {
+    document.getElementById('dateFilter').value = 'all';
+    
+    // Show all rows
+    const rows = document.querySelectorAll('#quotations-body tr[data-quotation-id]');
+    rows.forEach(row => {
+        row.style.display = '';
+    });
+    
+    // Remove empty state message
+    const emptyMessage = document.querySelector('.no-filter-results');
+    if (emptyMessage) {
+        emptyMessage.remove();
+    }
+    
+    // Update counts to show all quotations
+    let totalAmount = 0;
+    rows.forEach(row => {
+        const amountCell = row.querySelector('td:nth-child(7)');
+        if (amountCell) {
+            const amountText = amountCell.textContent.replace('₹', '').replace(/,/g, '').trim();
+            totalAmount += parseFloat(amountText) || 0;
+        }
+    });
+    
+    updateFilteredCounts(rows.length, totalAmount);
+    
+    showNotification('Filter reset', 'success');
+}
+
+// Function to update counts after filtering
+function updateFilteredCounts(count, total) {
+    // You can add elements to display these counts if needed
+    console.log(`Filtered: ${count} quotations, Total: ₹${total.toFixed(2)}`);
+}
+
 // Update the initialization in DOMContentLoaded
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Quotations page loaded');
@@ -3034,7 +3162,7 @@ document.addEventListener('DOMContentLoaded', function() {
         leadId: row.getAttribute('data-lead-id'),
         leadTicket: row.getAttribute('data-lead-ticket'),
         clientName: row.getAttribute('data-client-name'),
-        amount: parseFloat(row.getAttribute('data-amount') || 0)
+        amount: parseFloat(row.getAttribute('data-amount').replace('', '').replace(',', '')) || 0
     }));
     
     // Set up lead selection
