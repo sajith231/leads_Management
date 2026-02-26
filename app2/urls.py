@@ -1,5 +1,5 @@
 # urls.py
-from django.urls import path
+from django.urls import path, include
 from . import views
 from .views import InformationCenterListView, add_information_center,edit_information_center,delete_information_center
 from .views import get_next_position
@@ -140,17 +140,4 @@ path('get_project_details/', views.get_project_details, name='get_project_detail
    path('standby/return/<int:item_id>/', views.standby_return_item, name='standby_return_item'), 
    path('project-work/', views.project_work_list, name='project_work'),
    path('my-projects/', views.user_project_assignments, name='user_project_assignments'),
-
-
-
-
-
-    
-
-    
-
-    
-    
-
-    
 ]

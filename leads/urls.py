@@ -25,6 +25,12 @@ from app2 import views as app2_views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('app1.urls')),
+    
+    # ==========================================================================
+    # API ENDPOINTS FOR MOBILE APP
+    # ==========================================================================
+    path('api/', include('app2.api_urls')),  # Clean API URLs without app2/ prefix
+    
     path('app2/', include('app2.urls')),
     path('app3/', include('app3.urls')),
     path('app4/', include('app4.urls')),  # This includes api/clients/

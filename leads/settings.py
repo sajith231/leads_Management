@@ -60,7 +60,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
+    'django.contrib.postgres',
     # Third-party apps
     'ckeditor',
     'rest_framework',
@@ -171,8 +171,8 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'leading_management',
         'USER': 'postgres',
-        'PASSWORD':'info@imc',
-        'HOST': '88.222.212.14',
+        'PASSWORD':'12345',
+        'HOST': 'localhost',
         'PORT': '5432',
     }
 }

@@ -5951,3 +5951,166 @@ def user_project_assignments(request):
     except Employee.DoesNotExist:
         messages.error(request, 'Employee record not found for your account. Please contact administrator.')
         return redirect('home')  # Change 'home' to your actual home page URL name
+
+
+# ==============================================================================
+# API VIEWS FOR MOBILE APP - FEEDER MANAGEMENT
+# ==============================================================================
+# The following API endpoints are for mobile app integration only
+# They do not modify any existing web view functionality above
+# ==============================================================================
+
+from rest_framework import viewsets, status
+from rest_framework.decorators import api_view, action
+from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
+from .serializers import FeederSerializer
+
+
+class FeederViewSet(viewsets.ModelViewSet):
+    """
+    API ViewSet for Feeder CRUD operations (Mobile App)
+    
+    Endpoints:
+    - GET /api/feeders/ - List all feeders
+    - POST /api/feeders/ - Create a new feeder
+    - GET /api/feeders/{id}/ - Retrieve a specific feeder
+    - PUT /api/feeders/{id}/ - Update a feeder
+    - PATCH /api/feeders/{id}/ - Partial update a feeder
+    - DELETE /api/feeders/{id}/ - Delete a feeder
+    - GET /api/feeders/by_status/?status=pending - Filter by status
+    - GET /api/feeders/by_branch/?branch_id=1 - Filter by branch
+    """
+    queryset = Feeder.objects.all().select_related('branch').order_by('-id')
+    serializer_class = FeederSerializer
+    permission_classes = [AllowAny]  # Change this based on your authentication needs
+    
+    def get_queryset(self):
+        """
+        Optionally filter feeders by query parameters
+        """
+        queryset = super().get_queryset()
+        
+        # Filter by status
+        status_param = self.request.query_params.get('status', None)
+        if status_param:
+            queryset = queryset.filter(status=status_param)
+        
+        # Filter by branch
+        branch_id = self.request.query_params.get('branch_id', None)
+        if branch_id:
+            queryset = queryset.filter(branch_id=branch_id)
+        
+        # Filter by district
+        district = self.request.query_params.get('district', None)
+        if district:
+            queryset = queryset.filter(district__icontains=district)
+        
+        # Search by name or software
+        search = self.request.query_params.get('search', None)
+        if search:
+            queryset = queryset.filter(
+                Q(name__icontains=search) |
+                Q(software__icontains=search) |
+                Q(contact_person__icontains=search)
+            )
+        
+        return queryset
+    
+    @action(detail=True, methods=['patch'])
+    def update_status(self, request, pk=None):
+        """
+        Custom endpoint to update only the status of a feeder
+        PATCH /api/feeders/{id}/update_status/
+        Body: {"status": "accepted"}
+        """
+        feeder = self.get_object()
+        new_status = request.data.get('status')
+        
+        if new_status not in dict(Feeder.STATUS_CHOICES):
+            return Response(
+                {'error': 'Invalid status value'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        feeder.status = new_status
+        feeder.save()
+        
+        serializer = self.get_serializer(feeder)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def by_status(self, request):
+        """
+        Get feeders filtered by status
+        GET /api/feeders/by_status/?status=pending
+        """
+        status_param = request.query_params.get('status', None)
+        if not status_param:
+            return Response(
+                {'error': 'Status parameter is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        feeders = self.queryset.filter(status=status_param)
+        serializer = self.get_serializer(feeders, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def by_branch(self, request):
+        """
+        Get feeders filtered by branch
+        GET /api/feeders/by_branch/?branch_id=1
+        """
+        branch_id = request.query_params.get('branch_id', None)
+        if not branch_id:
+            return Response(
+                {'error': 'Branch ID parameter is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        feeders = self.queryset.filter(branch_id=branch_id)
+        serializer = self.get_serializer(feeders, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def statistics(self, request):
+        """
+        Get statistics about feeders
+        GET /api/feeders/statistics/
+        """
+        total = self.queryset.count()
+        pending = self.queryset.filter(status='pending').count()
+        accepted = self.queryset.filter(status='accepted').count()
+        rejected = self.queryset.filter(status='rejected').count()
+        key_uploaded = self.queryset.filter(status='key_uploaded').count()
+        under_process = self.queryset.filter(status='under_process').count()
+        
+        return Response({
+            'total': total,
+            'pending': pending,
+            'accepted': accepted,
+            'rejected': rejected,
+            'key_uploaded': key_uploaded,
+            'under_process': under_process
+        })
+
+
+@api_view(['GET'])
+def feeder_status_choices(request):
+    """
+    Get all available status choices for feeders
+    GET /api/feeder-status-choices/
+    """
+    choices = [{'value': value, 'label': label} for value, label in Feeder.STATUS_CHOICES]
+    return Response(choices)
+
+
+@api_view(['GET'])
+def feeder_business_nature_choices(request):
+    """
+    Get all available business nature choices for feeders
+    GET /api/feeder-business-nature-choices/
+    """
+    choices = [{'value': value, 'label': label} for value, label in Feeder.BUSINESS_NATURE_CHOICES if value]
+    return Response(choices)
