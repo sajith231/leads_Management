@@ -136,7 +136,7 @@ path('quotation/edit/<int:quotation_id>/', views.edit_quotation, name='quotation
 path('quotation/<int:pk>/update/', views.update_quotation, name='quotation_update'),
 path('quotation/download/<int:quotation_id>/', views.download_quotation, name='download_quotation'),
 path('quotation/lead/<int:lead_id>/', views.quotation_by_lead, name='quotation_by_lead'),
-    
+path('quotation/<int:quotation_id>/send-whatsapp/', views.send_quotation_whatsapp, name='send_quotation_whatsapp'),    
     path('state/', views.state_list, name='state_master_list'),  # Changed to state_master_list
     path('state/create/', views.state_master_create, name='state_master_create'),
     path('state/<int:id>/edit/', views.state_master_edit, name='state_master_edit'),

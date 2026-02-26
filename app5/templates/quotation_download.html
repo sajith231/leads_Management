@@ -6,6 +6,8 @@
     <title>Quotation – {{ quotation_number }}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Add html2pdf library for better PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         /* ====================================================
            RESET & BASE - Improved for cross-browser consistency
@@ -114,6 +116,17 @@
             background: linear-gradient(135deg,#7f8c8d,#718093); 
             transform: translateY(-2px); 
             box-shadow: 0 6px 15px rgba(149,165,166,.3); 
+        }
+
+        .btn-whatsapp {
+            background: linear-gradient(135deg,#25D366,#128C7E);
+            color: #fff;
+        }
+
+        .btn-whatsapp:hover {
+            background: linear-gradient(135deg,#128C7E,#075E54);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(37,211,102,.35);
         }
 
         /* ====================================================
@@ -283,10 +296,8 @@
             font-size: 14px;
             font-weight: 500;
             color: #2b2a2a;
-           
             padding: 8px 15px;
             border-radius: 5px;
-           
             display: inline-block;
         }
 
@@ -574,10 +585,8 @@
 
         .amount-in-words-box {
             flex: 1;
-            
             padding: 8px 12px;
             border-radius: 5px;
-            
         }
 
         .amount-in-words-label {
@@ -596,7 +605,6 @@
 
         .grand-total-number-box {
             text-align: right;
-            
             color: rgb(3, 3, 3);
             padding: 8px 15px;
             border-radius: 5px;
@@ -620,10 +628,8 @@
         }
 
         .notes-box {
-            
             padding: 10px 15px;
             border-radius: 5px;
-           
         }
 
         .notes-box h4 {
@@ -650,12 +656,17 @@
             flex-direction: column;
         }
 
+        /* Page 3 padding tighter to ensure T&C fits on one page */
+        .page.page-3 {
+            padding: 20px 30px;
+        }
+
         .client-summary {
             background: #f8f9fa;
-            padding: 12px 15px;
+            padding: 8px 12px;
             border-radius: 5px;
-            margin-bottom: 15px;
-            font-size: 13px;
+            margin-bottom: 10px;
+            font-size: 12px;
             border: 1px solid #e0e0e0;
             position: relative;
         }
@@ -667,54 +678,54 @@
         }
 
         .terms-content h2 {
-            font-size: 20px;
+            font-size: 17px;
             color: #2c3e50;
-            margin: 0 0 15px 0;
+            margin: 0 0 10px 0;
             text-align: center;
             text-transform: uppercase;
             border-bottom: 2px solid #3498db;
-            padding-bottom: 8px;
+            padding-bottom: 6px;
         }
 
         .terms-list {
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            margin-bottom: 15px;
+            gap: 7px;
+            margin-bottom: 10px;
             flex: 1;
         }
 
         .term-item {
-            margin-bottom: 3px;
+            margin-bottom: 0;
         }
 
         .term-item h3 {
-            font-size: 16px;
+            font-size: 13px;
             color: #e38c5f;
-            margin: 0 0 3px 20px;
+            margin: 0 0 2px 16px;
             font-weight: 600;
         }
 
         .term-item p {
             color: #555;
-            font-size: 13px;
-            margin: 0 0 0 35px;
+            font-size: 11.5px;
+            margin: 0 0 0 28px;
             text-align: justify;
-            line-height: 1.5;
-            padding-right: 15px;
+            line-height: 1.4;
+            padding-right: 10px;
         }
 
         .terms-footer {
-            margin-top: 15px;
-            padding-top: 12px;
+            margin-top: 10px;
+            padding-top: 8px;
             border-top: 1px solid #e0e0e0;
             text-align: center;
-            font-size: 12px;
+            font-size: 11px;
             color: #7f8c8d;
         }
 
         .terms-footer p {
-            margin-bottom: 3px;
+            margin-bottom: 2px;
         }
 
         /* ====================================================
@@ -846,26 +857,36 @@
             
             /* Terms page print */
             .terms-content h2 {
-                font-size: 14pt;
-                margin: 0 0 10px;
+                font-size: 13pt;
+                margin: 0 0 8px;
             }
             
             .term-item h3 {
-                font-size: 12pt;
+                font-size: 10pt;
                 margin-left: 10px;
             }
             
             .term-item p {
-                font-size: 9pt;
-                margin-left: 25px;
-                margin-right: 10px;
+                font-size: 8pt;
+                margin-left: 20px;
+                margin-right: 8px;
                 line-height: 1.3;
             }
             
             .terms-footer {
+                font-size: 7pt;
+                margin-top: 8px;
+                padding-top: 6px;
+            }
+            
+            .client-summary {
                 font-size: 8pt;
-                margin-top: 10px;
-                padding-top: 8px;
+                padding: 6px 10px;
+                margin-bottom: 8px;
+            }
+            
+            .terms-list {
+                gap: 5px;
             }
             
             /* Force all content to stay on respective pages */
@@ -970,6 +991,10 @@
                 <i class="fas fa-download"></i>
                 Save as PDF
             </button>
+            <button onclick="openWhatsAppShare()" class="btn btn-whatsapp">
+                <i class="fab fa-whatsapp"></i>
+                <span id="whatsappBtnText">Share via WhatsApp</span>
+            </button>
             <a href="{% url 'app5:quotation_form' %}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i>
                 Back to List
@@ -1068,9 +1093,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Dotted Page Separator -->
-        
 
         <!-- ================================================
              PAGE 2 – QUOTATION DETAILS (Single Page)
@@ -1235,9 +1257,6 @@
             </div>
         </div>
 
-        <!-- Dotted Page Separator -->
-       
-
         <!-- ================================================
              PAGE 3 – TERMS & CONDITIONS (Single Page)
              ================================================ -->
@@ -1335,8 +1354,11 @@
     </div><!-- /quotation-container -->
 </div><!-- /container -->
 
+<!-- Hidden iframe for WhatsApp Web -->
+<iframe id="whatsappIframe" style="display: none;"></iframe>
+
 <!-- ============================================================
-     JAVASCRIPT  –  Number to words conversion & Address split
+     JAVASCRIPT  –  Number to words conversion & WhatsApp Share
      ============================================================ -->
 <script>
 // Function to convert number to words (Indian Numbering System)
@@ -1454,6 +1476,201 @@ function splitAddressIntoLines() {
             });
         }
     });
+}
+
+// Main WhatsApp share function
+// Step 1: Generate PDF using html2pdf (same quality as Save button)
+// Step 2: Send base64 PDF to Django backend
+// Step 3: Backend saves file and sends via WhatsApp API
+function openWhatsAppShare() {
+    const btn = document.getElementById('whatsappBtnText');
+    const originalText = btn.innerHTML;
+    const quotationId = "{{ quotation.id }}";
+    const quotationNumber = "{{ quotation_number|default:'Quotation' }}";
+    const clientPhone = "{{ client_phone|default:'' }}";
+
+    if (!quotationId) {
+        alert('Quotation ID not found.');
+        return;
+    }
+    if (!clientPhone || clientPhone.trim() === '') {
+        alert('No phone number found for this client.');
+        return;
+    }
+
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating PDF...';
+
+    // Get the quotation container
+    const quotationContainer = document.querySelector('.quotation-container');
+    const cloneContainer = quotationContainer.cloneNode(true);
+
+    // Remove print controls from clone
+    const printControls = cloneContainer.querySelector('.print-controls');
+    if (printControls) printControls.remove();
+
+    // Remove page separators
+    cloneContainer.querySelectorAll('.page-separator').forEach(s => s.remove());
+    cloneContainer.querySelectorAll('.page-1, .page-2').forEach(p => {
+        p.style.marginBottom = '0';
+        p.style.paddingBottom = '20px';
+        p.style.borderBottom = 'none';
+        p.style.minHeight = 'unset';
+    });
+    const page3 = cloneContainer.querySelector('.page-3');
+    if (page3) {
+        page3.style.minHeight = 'unset';
+        page3.style.padding = '15px 25px';
+    }
+
+    // Make T&C compact to fit on single page for WhatsApp PDF
+    const termsList = cloneContainer.querySelector('.terms-list');
+    if (termsList) {
+        termsList.style.gap = '5px';
+        termsList.style.marginBottom = '8px';
+    }
+    cloneContainer.querySelectorAll('.term-item h3').forEach(el => {
+        el.style.fontSize = '11px';
+        el.style.marginBottom = '1px';
+    });
+    cloneContainer.querySelectorAll('.term-item p').forEach(el => {
+        el.style.fontSize = '10px';
+        el.style.lineHeight = '1.35';
+    });
+    const clientSummary = cloneContainer.querySelector('.client-summary');
+    if (clientSummary) {
+        clientSummary.style.padding = '6px 10px';
+        clientSummary.style.marginBottom = '8px';
+        clientSummary.style.fontSize = '11px';
+    }
+    const termsH2 = cloneContainer.querySelector('.terms-content h2');
+    if (termsH2) {
+        termsH2.style.fontSize = '14px';
+        termsH2.style.marginBottom = '8px';
+    }
+
+    const opt = {
+        margin: [0.3, 0.3, 0.3, 0.3],
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, letterRendering: true, useCORS: true, scrollY: 0 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['css', 'legacy'], before: '.page-2, .page-3', avoid: ['tr', '.page-header', '.terms-content', '.term-item'] }
+    };
+
+    // Generate PDF as blob then convert to base64
+    html2pdf().from(cloneContainer).set(opt).outputPdf('blob')
+        .then(pdfBlob => {
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+            // Convert blob to base64
+            const reader = new FileReader();
+            reader.onloadend = function () {
+                const base64data = reader.result.split(',')[1]; // strip data:...;base64,
+                const fileName = `Quotation_${quotationNumber.replace(/\s+/g, '_')}.pdf`;
+
+                fetch(`/app5/quotation/${quotationId}/send-whatsapp/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken'),
+                    },
+                    body: JSON.stringify({
+                        pdf_base64: base64data,
+                        pdf_filename: fileName,
+                        client_phone: clientPhone,
+                    }),
+                })
+                .then(res => res.text().then(text => {
+                    try { return JSON.parse(text); }
+                    catch(e) { throw new Error('Server error: ' + text.substring(0, 200)); }
+                }))
+                .then(data => {
+                    if (data.success) {
+                        btn.innerHTML = '<i class="fab fa-whatsapp"></i> Sent!';
+                        showToast('✅ Quotation sent to client WhatsApp!', 'success');
+                        setTimeout(() => { btn.innerHTML = originalText; }, 3000);
+                    } else {
+                        btn.innerHTML = originalText;
+                        alert('Failed: ' + (data.error || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    btn.innerHTML = originalText;
+                    alert('Error: ' + error.message);
+                });
+            };
+            reader.readAsDataURL(pdfBlob);
+        })
+        .catch(error => {
+            btn.innerHTML = originalText;
+            alert('PDF generation error: ' + error.message);
+        });
+}
+
+// Helper: get CSRF token from cookie
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        for (const cookie of document.cookie.split(';')) {
+            const c = cookie.trim();
+            if (c.startsWith(name + '=')) {
+                cookieValue = decodeURIComponent(c.slice(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Toast notification
+function showToast(message, type = 'info') {
+    // Remove existing toast
+    const existing = document.getElementById('share-toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'share-toast';
+    
+    const colors = {
+        success: '#25D366',
+        error: '#e74c3c',
+        info: '#3498db'
+    };
+    
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 9999;
+        background: ${colors[type]};
+        color: #fff;
+        padding: 16px 24px;
+        border-radius: 12px;
+        font-size: 15px;
+        font-weight: 600;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        font-family: 'Poppins', sans-serif;
+        max-width: 380px;
+        animation: slideInToast 0.3s ease;
+        cursor: pointer;
+    `;
+    toast.textContent = message;
+    toast.onclick = () => toast.remove();
+
+    // Add animation keyframes if not exists
+    if (!document.getElementById('toast-style')) {
+        const style = document.createElement('style');
+        style.id = 'toast-style';
+        style.textContent = `
+            @keyframes slideInToast {
+                from { transform: translateY(20px); opacity: 0; }
+                to   { transform: translateY(0);    opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 8000);
 }
 
 // Initialize on page load
