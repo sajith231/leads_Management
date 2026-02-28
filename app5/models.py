@@ -1105,6 +1105,14 @@ class SalesOrder(models.Model):
         ('PARTIAL', 'Partial'),
         ('PAID', 'Paid'),
     ]
+
+    # ── NEW ───────────────────────────────────────────────────────────────────
+    APPROVAL_STATUS_CHOICES = [
+        ('pending',  'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+    # ─────────────────────────────────────────────────────────────────────────
     
     so_number = models.CharField(max_length=50, unique=True)
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name='sales_orders')
@@ -1112,7 +1120,6 @@ class SalesOrder(models.Model):
     delivery_date = models.DateField(null=True, blank=True)
     reference_number = models.CharField(max_length=100, blank=True)
     
-    # Add these two new fields for payment terms and calculation method
     payment_terms = models.CharField(
         max_length=20, 
         choices=PAYMENT_TERMS, 
@@ -1129,7 +1136,6 @@ class SalesOrder(models.Model):
         null=True
     )
     
-    # Add department fields (referenced in your views)
     from_department = models.ForeignKey(
         'purchase_order.Department', 
         on_delete=models.SET_NULL, 
@@ -1155,6 +1161,14 @@ class SalesOrder(models.Model):
     # Status fields
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='DRAFT')
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='PENDING')
+
+    # ── NEW ───────────────────────────────────────────────────────────────────
+    approval_status = models.CharField(
+        max_length=20,
+        choices=APPROVAL_STATUS_CHOICES,
+        default='pending',
+    )
+    # ─────────────────────────────────────────────────────────────────────────
     
     # Additional fields
     notes = models.TextField(blank=True)
@@ -1179,7 +1193,6 @@ class SalesOrder(models.Model):
     
     def save(self, *args, **kwargs):
         if not self.so_number:
-            # Generate SO number (e.g., SO-2024-00001)
             year = timezone.now().year
             last_order = SalesOrder.objects.filter(
                 so_number__startswith=f'SO-{year}'

@@ -809,7 +809,12 @@
                                                 <option value="">Select Section</option>
                                                 {% for section in sections %}
                                                 <option value="{{ section }}" {% if qitem.item.section == section %}selected{% endif %}>
-                                                    {{ section }}
+                                                    {% if section == 'GENERAL' %}General
+                                                    {% elif section == 'HARDWARE' %}Hardware
+                                                    {% elif section == 'SOFTWARE' %}Softwares
+                                                    {% elif section == 'PAPER_ROLLS' %}Paper Rolls
+                                                    {% elif section == 'ASSETS' %}Assets
+                                                    {% else %}{{ section }}{% endif %}
                                                 </option>
                                                 {% endfor %}
                                             </select>
@@ -1065,6 +1070,12 @@
             purchaseOrderItems = {{ items_json|safe }};
             itemsLoaded = purchaseOrderItems.length > 0;
             console.log(`Loaded ${purchaseOrderItems.length} purchase items`);
+            if (!itemsLoaded) {
+                console.error('⚠️ purchaseOrderItems is EMPTY — sections will not populate! Check that items_json is passed correctly from your quotation_edit view.');
+            } else {
+                // Log a sample item so we can verify section field format
+                console.log('Sample item:', purchaseOrderItems[0]);
+            }
             
             // Set up event listener for ticket selection
             $('#lead-ticket-select').on('change', function() {
@@ -1132,12 +1143,21 @@
             $('#phone-number').val('');
         }
         
+        // ✅ FIX: Human-readable labels for raw section keys stored in DB
+        const SECTION_DISPLAY = {
+            'GENERAL':     'General',
+            'HARDWARE':    'Hardware',
+            'SOFTWARE':    'Softwares',
+            'PAPER_ROLLS': 'Paper Rolls',
+            'ASSETS':      'Assets',
+        };
+
         // Function to get unique sections from all items
         function getAvailableSections() {
             const sections = new Set();
             purchaseOrderItems.forEach(item => {
                 // Normalize: treat null/undefined/empty as 'GENERAL'
-                const sec = (item.section || 'GENERAL').trim();
+                const sec = (item.section || 'GENERAL').trim().toUpperCase();
                 if (sec) sections.add(sec);
             });
             const result = Array.from(sections).sort();
@@ -1149,6 +1169,9 @@
         function updateSectionDropdown(dropdown) {
             const $dropdown = $(dropdown);
             
+            // Remember current value before clearing
+            const currentVal = $dropdown.val();
+            
             // Clear existing options except the first one
             $dropdown.find('option:not(:first)').remove();
             
@@ -1156,7 +1179,7 @@
             const sections = getAvailableSections();
             
             if (sections.length === 0) {
-                // No sections available
+                console.warn('No sections found! purchaseOrderItems count:', purchaseOrderItems.length);
                 $dropdown.append($('<option>', {
                     value: '',
                     text: 'No sections available',
@@ -1165,13 +1188,18 @@
                 return;
             }
             
-            // Add all available sections
+            // ✅ FIX: Add sections with human-readable labels
             sections.forEach(section => {
                 $dropdown.append($('<option>', {
                     value: section,
-                    text: section
+                    text: SECTION_DISPLAY[section] || section
                 }));
             });
+
+            // ✅ FIX: Restore previously selected value after repopulating
+            if (currentVal) {
+                $dropdown.val(currentVal);
+            }
         }
         
         // Function to update item dropdown based on selected section
@@ -1194,9 +1222,9 @@
                 return;
             }
             
-            // Filter items by selected section (normalize null sections to 'GENERAL')
+            // Filter items by selected section (normalize to uppercase)
             const filteredItems = purchaseOrderItems.filter(item => 
-                (item.section || 'GENERAL').trim() === selectedSection
+                (item.section || 'GENERAL').trim().toUpperCase() === selectedSection.toUpperCase()
             );
             
             if (filteredItems.length === 0) {
@@ -1237,7 +1265,7 @@
             
             if (itemData) {
                 const row = $select.closest('tr');
-                const itemSection = (itemData.section || 'GENERAL').trim();
+                const itemSection = (itemData.section || 'GENERAL').trim().toUpperCase();
                 
                 // Sync section dropdown to match item's section
                 const sectionSelect = row.find('.item-section');
@@ -1283,22 +1311,34 @@
                 // Get the selected item ID
                 const selectedItemId = itemSelect.val();
                 
-                if (selectedItemId) {
-                    // Find item data from purchaseOrderItems
+                // ✅ FIX: Save current section value BEFORE updateSectionDropdown clears it
+                let savedSection = sectionSelect.val();
+
+                // If section not set but we have an item, infer it from purchaseOrderItems
+                if (!savedSection && selectedItemId) {
                     const itemData = purchaseOrderItems.find(item => item.id == selectedItemId);
-                    
                     if (itemData) {
-                        // Ensure section is properly set
-                        if (itemData.section && !sectionSelect.val()) {
-                            sectionSelect.val(itemData.section);
-                        }
-                        
-                        console.log(`Initialized row with item: ${itemData.name}, section: ${itemData.section}`);
+                        savedSection = (itemData.section || 'GENERAL').trim().toUpperCase();
                     }
                 }
                 
-                // Update section dropdown to ensure all options are available
-                updateSectionDropdown(sectionSelect);
+                // Repopulate section dropdown (this clears the current value)
+                updateSectionDropdown(sectionSelect[0]);
+
+                // ✅ FIX: Restore saved section after repopulating
+                if (savedSection) {
+                    sectionSelect.val(savedSection);
+                    console.log(`Restored section: ${savedSection}`);
+                }
+
+                // ✅ FIX: Re-filter item dropdown for the chosen section, then restore item
+                if (sectionSelect.val()) {
+                    updateItemOptions(sectionSelect[0]);
+                    if (selectedItemId) {
+                        itemSelect.val(selectedItemId);
+                        console.log(`Restored item: ${selectedItemId}`);
+                    }
+                }
                 
                 // Recalculate the row totals
                 calculateRow(row.find('.item-qty')[0]);

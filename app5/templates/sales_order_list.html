@@ -238,7 +238,8 @@
         .so-table th:nth-child(6) { width: 8%; }   /* Grand Total */
         .so-table th:nth-child(7) { width: 8%; }   /* Status */
         .so-table th:nth-child(8) { width: 8%; }   /* Payment */
-        .so-table th:nth-child(9) { width: 7%; }   /* Actions */
+        .so-table th:nth-child(9) { width: 9%; }   /* Approval */
+        .so-table th:nth-child(10) { width: 7%; }  /* Actions */
         
         .so-table thead tr {
             background: #f8fbfe;
@@ -288,7 +289,8 @@
         }
         .so-table td:nth-child(7),    /* Status */
         .so-table td:nth-child(8),    /* Payment */
-        .so-table td:nth-child(9) {   /* Actions */
+        .so-table td:nth-child(9),    /* Approval */
+        .so-table td:nth-child(10) {  /* Actions */
             text-align: center;
         }
         
@@ -299,7 +301,8 @@
         }
         .so-table th:nth-child(7),    /* Status header */
         .so-table th:nth-child(8),    /* Payment header */
-        .so-table th:nth-child(9) {   /* Actions header */
+        .so-table th:nth-child(9),    /* Approval header */
+        .so-table th:nth-child(10) {  /* Actions header */
             text-align: center;
         }
 
@@ -363,28 +366,98 @@
 
         /* badges */
         .badge {
-            display: inline-block;
-            padding: 0.3rem 0.8rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 0.3rem 0.85rem;
             border-radius: 40px;
-            font-weight: 500;
-            font-size: 0.75rem;
-            letter-spacing: 0.2px;
-            min-width: 70px;
+            font-weight: 600;
+            font-size: 0.74rem;
+            letter-spacing: 0.3px;
+            min-width: 80px;
             max-width: 100%;
             text-align: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        .badge.status-draft { background: #cee1fd; color: #475569; border: 1px solid #cbd5e1; }
-        .badge.status-confirmed { background: #dbeafe; color: #1e40af; border: 1px solid #a7c4fc; }
-        .badge.status-shipped { background: #dcfce7; color: #166534; border: 1px solid #86d9a4; }
-        .badge.status-delivered { background: #e0f2fe; color: #0369a1; border: 1px solid #7ab7e0; }
-        .badge.status-cancelled { background: #fee2e2; color: #991b1b; border: 1px solid #f7a3a3; }
-        .badge.payment-pending { background: #ffedd5; color: #9a3412; border: 1px solid #fdba74; }
-        .badge.payment-partial { background: #fef9c3; color: #854d0e; border: 1px solid #facc15; }
-        .badge.payment-paid { background: #dcfce7; color: #166534; border: 1px solid #86d9a4; }
+
+        /* ── Order Status ─────────────────────────────── */
+        .badge.status-draft {
+            background: #f1f5f9; color: #475569;
+            border: 1.5px solid #cbd5e1;
+            box-shadow: 0 1px 3px rgba(71,85,105,0.10);
+        }
+        .badge.status-pending {
+            background: #fff7ed; color: #c2410c;
+            border: 1.5px solid #fed7aa;
+            box-shadow: 0 1px 3px rgba(194,65,12,0.12);
+        }
+        .badge.status-confirmed {
+            background: #eff6ff; color: #1d4ed8;
+            border: 1.5px solid #bfdbfe;
+            box-shadow: 0 1px 3px rgba(29,78,216,0.12);
+        }
+        .badge.status-processing {
+            background: #faf5ff; color: #7c3aed;
+            border: 1.5px solid #ddd6fe;
+            box-shadow: 0 1px 3px rgba(124,58,237,0.12);
+        }
+        .badge.status-shipped {
+            background: #ecfdf5; color: #059669;
+            border: 1.5px solid #a7f3d0;
+            box-shadow: 0 1px 3px rgba(5,150,105,0.12);
+        }
+        .badge.status-delivered {
+            background: #f0fdf4; color: #166534;
+            border: 1.5px solid #86efac;
+            box-shadow: 0 1px 3px rgba(22,101,52,0.12);
+        }
+        .badge.status-completed {
+            background: #f0fdfa; color: #0f766e;
+            border: 1.5px solid #99f6e4;
+            box-shadow: 0 1px 3px rgba(15,118,110,0.12);
+        }
+        .badge.status-cancelled {
+            background: #fff1f2; color: #be123c;
+            border: 1.5px solid #fecdd3;
+            box-shadow: 0 1px 3px rgba(190,18,60,0.12);
+        }
+
+        /* ── Payment Status ───────────────────────────── */
+        .badge.payment-pending {
+            background: #fff7ed; color: #c2410c;
+            border: 1.5px solid #fed7aa;
+            box-shadow: 0 1px 3px rgba(194,65,12,0.12);
+        }
+        .badge.payment-partial {
+            background: #fefce8; color: #a16207;
+            border: 1.5px solid #fde047;
+            box-shadow: 0 1px 3px rgba(161,98,7,0.12);
+        }
+        .badge.payment-paid {
+            background: #f0fdf4; color: #166534;
+            border: 1.5px solid #86efac;
+            box-shadow: 0 1px 3px rgba(22,101,52,0.12);
+        }
+
+        /* ── Admin Approval ───────────────────────────── */
+        .badge.approval-pending {
+            background: #fefce8; color: #a16207;
+            border: 1.5px solid #fde047;
+            box-shadow: 0 1px 4px rgba(161,98,7,0.15);
+        }
+        .badge.approval-approved {
+            background: #f0fdf4; color: #166534;
+            border: 1.5px solid #86efac;
+            box-shadow: 0 1px 4px rgba(22,101,52,0.15);
+        }
+        .badge.approval-rejected {
+            background: #fff1f2; color: #be123c;
+            border: 1.5px solid #fecdd3;
+            box-shadow: 0 1px 4px rgba(190,18,60,0.15);
+        }
 
         /* action buttons */
         .action-group {
@@ -864,31 +937,17 @@
             <div class="so-filter-item" style="min-width: 110px;">
                 <select id="statusFilter" class="so-filter-select" style="width: 100%;">
                     <option value="">All Status</option>
-                    {% for value, label in status_choices %}
-                    <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
-                    {% endfor %}
+                    <option value="DRAFT"     {% if status_filter == "DRAFT"     %}selected{% endif %}>Draft</option>
+                    <option value="APPROVED"  {% if status_filter == "APPROVED"  %}selected{% endif %}>Approved</option>
+                    <option value="PENDING"   {% if status_filter == "PENDING"   %}selected{% endif %}>Pending</option>
+                    <option value="CANCELLED" {% if status_filter == "CANCELLED" %}selected{% endif %}>Cancelled</option>
+                    <option value="DELIVERED" {% if status_filter == "DELIVERED" %}selected{% endif %}>Delivered</option>
                 </select>
             </div>
             
-            <div class="so-filter-item" style="min-width: 110px;">
-                <select id="paymentStatusFilter" class="so-filter-select" style="width: 100%;">
-                    <option value="">All Payments</option>
-                    <option value="PENDING" {% if payment_status_filter == "PENDING" %}selected{% endif %}>Pending</option>
-                    <option value="PARTIAL" {% if payment_status_filter == "PARTIAL" %}selected{% endif %}>Partial</option>
-                    <option value="PAID"    {% if payment_status_filter == "PAID"    %}selected{% endif %}>Paid</option>
-                </select>
-            </div>
+           
             
-            <div class="so-filter-item" style="min-width: 130px;">
-                <select id="customerFilter" class="so-filter-select" style="width: 100%;">
-                    <option value="">All Customers</option>
-                    {% for customer in customers %}
-                    <option value="{{ customer.id }}" {% if customer_filter == customer.id|stringformat:"s" %}selected{% endif %}>
-                        {{ customer.name }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
+           
             
             <div class="so-filter-item" style="min-width: 120px;">
                 <input type="date" id="startDate" class="so-filter-select" value="{{ start_date|default:'' }}" style="width: 100%;">
@@ -923,7 +982,8 @@
                         <th>Items</th>
                         <th>Grand Total</th>
                         <th>Status</th>
-                        <th>Payment</th>
+                        
+                        <th>Admin Approval</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -1005,8 +1065,15 @@
                         <td>
                             <span class="badge status-{{ so.status|lower }}" title="{{ so.get_status_display }}">{{ so.get_status_display }}</span>
                         </td>
+                        
                         <td>
-                            <span class="badge payment-{{ so.payment_status|lower }}" title="{{ so.get_payment_status_display }}">{{ so.get_payment_status_display }}</span>
+                            {% if so.approval_status == 'approved' %}
+                                <span class="badge approval-approved"><i class="fas fa-check-circle" style="font-size:0.7rem;"></i> Approved</span>
+                            {% elif so.approval_status == 'rejected' %}
+                                <span class="badge approval-rejected"><i class="fas fa-times-circle" style="font-size:0.7rem;"></i> Rejected</span>
+                            {% else %}
+                                <span class="badge approval-pending"><i class="fas fa-clock" style="font-size:0.7rem;"></i> Pending</span>
+                            {% endif %}
                         </td>
                         
                         <td>

@@ -8176,47 +8176,55 @@ def quotation_update_status(request, quotation_id):
         }, status=500)
     
     # views.py
-def edit_quotation(request, quotation_id):
-    try:
-        quotation = Quotation.objects.get(id=quotation_id)
-        quotation_items = QuotationItem.objects.filter(quotation=quotation)
-        items = Item.objects.all()
-        leads = Lead.objects.filter(status='Active')
-        sections = items.values_list('section', flat=True).distinct()
-        taxes = TaxMaster.objects.all().order_by('name')  # ✅ ADDED
+# In your quotation app's views.py (app5/views.py or similar)
+import json
+from purchase_order.models import Item  # adjust app name as needed
 
-        items_json = []
-        for item in items:
-            items_json.append({
-                'id': item.id,
-                'name': item.name,
-                'description': item.description or '',
-                'unit_of_measure': item.unit_of_measure,
-                'mrp': float(item.mrp) if item.mrp else 0,
-                'purchase_price': float(item.purchase_price) if item.purchase_price else 0,
-                'cost': float(item.cost) if item.cost else 0,
-                'tax_percentage': float(item.tax_percentage) if item.tax_percentage else 0,
-                'hsn_code': item.hsn_code or '',
-                'section': item.section or '',
-                'department': item.department.name if item.department else 'N/A',
-                'is_active': item.is_active,
-            })
+def quotation_edit(request, pk):
+    quotation = get_object_or_404(Quotation, pk=pk)
+    quotation_items = quotation.items.select_related('item').all()
 
-        context = {
-            'quotation': quotation,
-            'quotation_items': quotation_items,
-            'items': items,
-            'active_leads': leads,
-            'leads_count': leads.count(),
-            'sections': sections,
-            'items_json': json.dumps(items_json),
-            'taxes': taxes,          # ✅ ADDED: Tax master list for dropdown
+    # ✅ FIX: Fetch ALL active items with proper section field (raw key, not display)
+    purchase_items = Item.objects.filter(is_active=True).order_by('name')
+
+    # ✅ FIX: Serialize items_json with section as the raw DB key value
+    items_json = json.dumps([
+        {
+            'id': item.id,
+            'name': item.name,
+            'section': item.section or 'GENERAL',       # raw key e.g. "HARDWARE"
+            'mrp': float(item.mrp or 0),
+            'cost': float(item.cost or 0),
+            'tax_percentage': float(item.tax_percentage or 0),
+            'unit_of_measure': item.unit_of_measure or '',
         }
-        return render(request, 'quotation_edit.html', context)
+        for item in purchase_items
+    ])
 
-    except Quotation.DoesNotExist:
-        messages.error(request, 'Quotation not found')
-        return redirect('app5:quotation_list')
+    # ✅ FIX: Build sections list from actual DB values (raw keys)
+    sections = list(
+        Item.objects.filter(is_active=True)
+        .values_list('section', flat=True)
+        .distinct()
+        .order_by('section')
+    )
+    # Normalize: replace None/empty with 'GENERAL'
+    sections = sorted(set(s or 'GENERAL' for s in sections))
+
+    # Also pass taxes, active_leads, etc.
+    taxes = TaxMaster.objects.filter(is_active=True)  # adjust model name
+    active_leads = Lead.objects.filter(status='active')  # adjust as needed
+
+    context = {
+        'quotation': quotation,
+        'quotation_items': quotation_items,
+        'items_json': items_json,       # ✅ used by JS purchaseOrderItems
+        'sections': sections,           # ✅ used by Django template section loop
+        'items': purchase_items,        # ✅ used by Django template item loop
+        'taxes': taxes,
+        'active_leads': active_leads,
+    }
+    return render(request, 'your_app/quotation_edit.html', context)
 
 
 def update_quotation(request, pk):
@@ -21884,6 +21892,46 @@ def sales_order_delete(request, pk):
 
     context = {'sales_order': sales_order}
     return render(request, 'sales_order_confirm_delete.html', context)
+
+
+
+    # ── Admin Approval ────────────────────────────────────────────────────────────
+
+
+def sales_order_approval(request, pk):
+    """Update the admin approval status of a sales order.
+    Restricted to Super Admin (user_level == 'admin_level') only.
+    """
+    # ── Permission check ──────────────────────────────────────────────────────
+    is_super_admin = (
+        request.session.get('user_level') == 'admin_level'
+        or request.user.is_superuser
+    )
+    if not is_super_admin:
+        messages.error(request, 'You do not have permission to change the approval status.')
+        return redirect('app5:sales_order_detail', pk=pk)
+    # ─────────────────────────────────────────────────────────────────────────
+
+    sales_order = get_object_or_404(SalesOrder, pk=pk)
+
+    if request.method == 'POST':
+        approval_status = request.POST.get('approval_status', 'pending')
+
+        valid_statuses = ['pending', 'approved', 'rejected']
+        if approval_status not in valid_statuses:
+            messages.error(request, 'Invalid approval status.')
+            return redirect('app5:sales_order_detail', pk=pk)
+
+        sales_order.approval_status = approval_status
+        sales_order.save()
+
+        status_display = approval_status.capitalize()
+        messages.success(request, f'Approval status updated to "{status_display}" for {sales_order.so_number}.')
+
+    return redirect('app5:sales_order_detail', pk=pk)
+
+
+
 
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt

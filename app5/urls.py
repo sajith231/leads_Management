@@ -124,19 +124,19 @@ urlpatterns = [
 
     # QUOTATION
   path('quotation/', views.quotation_list_view, name='quotation_list'),              # Create new quotation
-path('quotation-form/', views.quotation_form_view, name='quotation_form_view'),    # ← THIS fixes the 404
-path('quotation/create/', views.quotation_form_view, name='quotation_form'),       # legacy alias
-path('quotation_form/', views.quotation_form_view, name='quotation_form_alt'),     # legacy alias
-path("get-quotation-items/", views.get_quotation_items_api, name="get_quotation_items"),
-path('api/get-quotation-items/', views.get_quotation_items_api, name='get_quotation_items_api'),
-path('submit-quotation/', views.quotation_submit, name='quotation_submit'),
-path('quotation/<int:quotation_id>/delete/', views.quotation_delete, name='quotation_delete'),
-path('quotation/<int:quotation_id>/edit/', views.edit_quotation, name='edit_quotation'),
-path('quotation/edit/<int:quotation_id>/', views.edit_quotation, name='quotation_edit'),
-path('quotation/<int:pk>/update/', views.update_quotation, name='quotation_update'),
-path('quotation/download/<int:quotation_id>/', views.download_quotation, name='download_quotation'),
-path('quotation/lead/<int:lead_id>/', views.quotation_by_lead, name='quotation_by_lead'),
-path('quotation/<int:quotation_id>/send-whatsapp/', views.send_quotation_whatsapp, name='send_quotation_whatsapp'),    
+  path('quotation-form/', views.quotation_form_view, name='quotation_form_view'),    # ← THIS fixes the 404
+  path('quotation/create/', views.quotation_form_view, name='quotation_form'),       # legacy alias
+  path('quotation_form/', views.quotation_form_view, name='quotation_form_alt'),     # legacy alias
+  path("get-quotation-items/", views.get_quotation_items_api, name="get_quotation_items"),
+  path('api/get-quotation-items/', views.get_quotation_items_api, name='get_quotation_items_api'),
+  path('submit-quotation/', views.quotation_submit, name='quotation_submit'),
+  path('quotation/<int:quotation_id>/delete/', views.quotation_delete, name='quotation_delete'),
+  path('quotation/<int:quotation_id>/edit/', views.edit_quotation, name='edit_quotation'),
+  path('quotation/edit/<int:quotation_id>/', views.edit_quotation, name='quotation_edit'),
+  path('quotation/<int:pk>/update/', views.update_quotation, name='quotation_update'),
+  path('quotation/download/<int:quotation_id>/', views.download_quotation, name='download_quotation'),
+  path('quotation/lead/<int:lead_id>/', views.quotation_by_lead, name='quotation_by_lead'),
+  path('quotation/<int:quotation_id>/send-whatsapp/', views.send_quotation_whatsapp, name='send_quotation_whatsapp'),    
     path('state/', views.state_list, name='state_master_list'),  # Changed to state_master_list
     path('state/create/', views.state_master_create, name='state_master_create'),
     path('state/<int:id>/edit/', views.state_master_edit, name='state_master_edit'),
@@ -162,7 +162,7 @@ path('quotation/<int:quotation_id>/send-whatsapp/', views.send_quotation_whatsap
     path('sales-orders/<int:pk>/update/', views.sales_order_update, name='sales_order_update'),
     path('sales-orders/<int:pk>/delete/', views.sales_order_delete, name='sales_order_delete'),
     path('api/rrc-clients/', views.api_rrc_clients, name='api_rrc_clients'),
-
+    path('sales-orders/<int:pk>/approval/', views.sales_order_approval, name='sales_order_approval'),
 
 
     path("tax-master/", views.tax_master_list, name="tax_master_list"),

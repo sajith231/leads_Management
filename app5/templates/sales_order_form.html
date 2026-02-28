@@ -954,9 +954,11 @@
                         <div class="inline-field">
                             <label>Status</label>
                             <select name="status" required>
-                                {% for value, label in status_choices %}
-                                <option value="{{ value }}" {% if sales_order.status == value %}selected{% endif %}>{{ label }}</option>
-                                {% endfor %}
+                                <option value="DRAFT"     {% if sales_order.status == "DRAFT"     %}selected{% endif %}>Draft</option>
+                                <option value="APPROVED"  {% if sales_order.status == "APPROVED"  %}selected{% endif %}>Approved</option>
+                                <option value="PENDING"   {% if sales_order.status == "PENDING"   %}selected{% endif %}>Pending</option>
+                                <option value="CANCELLED" {% if sales_order.status == "CANCELLED" %}selected{% endif %}>Cancelled</option>
+                                <option value="DELIVERED" {% if sales_order.status == "DELIVERED" %}selected{% endif %}>Delivered</option>
                             </select>
                         </div>
                         <div class="inline-field">
@@ -1115,6 +1117,54 @@ document.addEventListener('DOMContentLoaded', function () {
     
     setClientMode(true);
     loadRrcClients();
+
+    {% if action == 'Edit' and sales_order.customer %}
+    // Pre-populate client card for edit mode
+    const existingClient = {
+        code: '{{ sales_order.customer.id }}',
+        name: '{{ sales_order.customer.name|escapejs }}',
+        mobile: '{{ sales_order.customer.phone|default:""|escapejs }}',
+        address: '{{ sales_order.customer.address|default:""|escapejs }}',
+        address3: '',
+        district: '',
+        state: '',
+        branch: '',
+        fullAddress: '{{ sales_order.customer.address|default:""|escapejs }}'
+    };
+
+    // Populate search input display
+    const searchInput = document.getElementById('client_search_input');
+    if (searchInput) {
+        searchInput.value = existingClient.name +
+            (existingClient.mobile ? '  ·  ' + existingClient.mobile : '');
+    }
+
+    // Show clear button
+    const clearBtn = document.getElementById('clientClearBtn');
+    if (clearBtn) clearBtn.style.display = 'inline';
+
+    // Set hidden select
+    const hiddenSelect = document.getElementById('client_select');
+    if (hiddenSelect) {
+        hiddenSelect.innerHTML = `<option value="${existingClient.code}" selected>${existingClient.name}</option>`;
+    }
+
+    // Set client_details hidden input
+    const clientDetails = document.getElementById('client_details');
+    if (clientDetails) {
+        clientDetails.value = existingClient.code || existingClient.name || '';
+    }
+
+    // Set RRC hidden fields
+    document.getElementById('rrc_client_code').value    = '';
+    document.getElementById('rrc_client_name').value    = '';
+    document.getElementById('rrc_client_address').value = existingClient.fullAddress;
+    document.getElementById('rrc_client_mobile').value  = existingClient.mobile;
+    document.getElementById('rrc_client_branch').value  = '';
+
+    // Show the client card
+    populateClientCard(existingClient);
+    {% endif %}
     
     const searchInput = document.getElementById('client_search_input');
     if (searchInput) {

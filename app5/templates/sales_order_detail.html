@@ -237,6 +237,31 @@
             {% endif %}
         </div>
 
+        <!-- Admin Approval Section -->
+        {% if request.session.user_level == 'admin_level' or request.user.is_superuser %}
+        <div class="admin-approval-section no-print">
+            <h3 class="section-title">
+                <i class="fas fa-shield-alt"></i> Admin Approval
+            </h3>
+            <form method="post" action="{% url 'app5:sales_order_approval' sales_order.pk %}">
+                {% csrf_token %}
+                <div class="approval-form">
+                    <label class="approval-label" for="approval_status">Approval Status:</label>
+                    <div class="approval-select-wrapper">
+                        <select name="approval_status" id="approval_status" class="approval-select approval-{{ sales_order.approval_status|default:'pending'|lower }}">
+                            <option value="pending" {% if sales_order.approval_status == 'pending' or not sales_order.approval_status %}selected{% endif %}>⏳ Pending</option>
+                            <option value="approved" {% if sales_order.approval_status == 'approved' %}selected{% endif %}>✅ Approved</option>
+                            <option value="rejected" {% if sales_order.approval_status == 'rejected' %}selected{% endif %}>❌ Rejected</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-approval">
+                        <i class="fas fa-check"></i> Update Approval Status
+                    </button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+
         <!-- Action Buttons -->
         <div class="detail-actions no-print">
             <a href="{% url 'app5:sales_order_list' %}" class="btn btn-secondary">
@@ -696,6 +721,102 @@
     font-size: 16px;
 }
 
+/* Admin Approval Section */
+.admin-approval-section {
+    background: #eaf4fb;
+    border: 1px solid #bee3f8;
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 30px;
+}
+
+.admin-approval-section .section-title i {
+    color: #2980b9;
+}
+
+.approval-form {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.approval-label {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 15px;
+    white-space: nowrap;
+}
+
+.approval-select-wrapper {
+    position: relative;
+}
+
+.approval-select {
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 10px 36px 10px 14px;
+    border-radius: 6px;
+    border: 2px solid #b2d8f7;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 16px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23555' d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+    transition: border-color 0.2s, background-color 0.2s;
+    min-width: 160px;
+}
+
+.approval-select.approval-approved {
+    background-color: #d4edda;
+    border-color: #28a745;
+    color: #155724;
+}
+
+.approval-select.approval-rejected {
+    background-color: #f8d7da;
+    border-color: #dc3545;
+    color: #721c24;
+}
+
+.approval-select.approval-pending {
+    background-color: #fff3cd;
+    border-color: #ffc107;
+    color: #856404;
+}
+
+.approval-select:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.25);
+}
+
+.btn-approval {
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    color: white;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s, transform 0.1s;
+}
+
+.btn-approval:hover {
+    background: linear-gradient(135deg, #219a52, #27ae60);
+    transform: translateY(-1px);
+}
+
+.btn-approval:active {
+    transform: translateY(0);
+}
+
 /* Print Styles */
 @media print {
     .no-print {
@@ -750,4 +871,3 @@
 }
 </style>
 {% endblock %}
-
