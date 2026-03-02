@@ -4307,7 +4307,7 @@ def create_leave_request(request):
                 end_date=end_date,
                 leave_type=data['leave_type'],
                 reason=data['reason'],   # keep Reason
-                note=note,               # NEW
+                note=note,               # NEWW
                 status='pending'
             )
 
