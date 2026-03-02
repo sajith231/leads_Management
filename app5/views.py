@@ -13227,7 +13227,7 @@ def lead_form_view(request):
                     f"📝 Details: {details_val[:200] if details_val else 'N/A'}"
                 )
 
-                notify_numbers = ['7593820007', '7593820005']
+                notify_numbers = ['8157831029', '8590340907']
                 for number in notify_numbers:
                     try:
                         wa_payload = {
