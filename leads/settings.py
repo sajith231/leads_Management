@@ -60,7 +60,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
+    'django.contrib.postgres',
     # Third-party apps
     'ckeditor',
     'rest_framework',
@@ -169,10 +169,10 @@ CKEDITOR_CONFIGS = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'imc1',
+        'NAME': 'leading_management',
         'USER': 'postgres',
-        'PASSWORD':'12345',
-        'HOST': 'localhost',
+        'PASSWORD':'info@imc',
+        'HOST': '88.222.212.14',
         'PORT': '5432',
     }
 }

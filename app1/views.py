@@ -5167,70 +5167,246 @@ def attendance_total_summary(request):
 
 
 
-from django.shortcuts import get_object_or_404
-
-from .models import Employee  # make sure Employee is imported
-from .models import Employee  # make sure Employee is imported
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.utils import timezone
+from datetime import timedelta  # ✅ CRITICAL FIX: Added missing import
+from .models import Project, Employee, ProjectWork
 
 def add_project(request):
-    # Get all employees
-    employees = Employee.objects.select_related('user').all()
-    project=Project.objects.all()
-
+    """
+    View to create a new project with optional ProjectWork assignment
+    """
+    # Get only active employees for assignment
+    employees = Employee.objects.filter(status='active').select_related('user')
+    
     if request.method == "POST":
         employee_id = request.POST.get('assigned_person')
         employee = get_object_or_404(Employee, id=employee_id) if employee_id else None
-
-        Project.objects.create(
+        deadline = request.POST.get('deadline') if request.POST.get('deadline') else None
+        
+        # Create the project
+        project = Project.objects.create(
             project_name=request.POST['project_name'],
             languages=request.POST['languages'],
-            technologies=request.POST['technologies'],
-            description=request.POST['description'],
+            notes=request.POST['notes'],
             database_name=request.POST['database_name'],
-            domain_name=request.POST['domain_name'],
             domain_platform=request.POST['domain_platform'],
-            github_link=request.POST['github_link'],
+            github_link=request.POST.get('github_link', ''),
             assigned_person=employee,
             client=request.POST['client'],
-            project_status=request.POST['project_status'],
+            # project_status=request.POST['project_status'],
             project_type=request.POST['project_type'],
             project_duration=request.POST['project_duration'],
+            deadline=deadline,
+            priority=request.POST.get('priority', 'Medium'),
         )
-        return redirect('project_management')
+        
+        # ========================================================================
+        # 🔍 DEBUGGING SECTION - REMOVE AFTER FIXING
+        # ========================================================================
+        print("\n" + "=" * 80)
+        print("🔍 PROJECT WORK ASSIGNMENT DEBUGGING")
+        print("=" * 80)
+        print(f"📋 Full POST data: {dict(request.POST)}")
+        print(f"🔑 All POST keys: {list(request.POST.keys())}")
+        print("-" * 80)
+        
+        # Try different ways to get work_members
+        work_members_no_brackets = request.POST.getlist('work_members')
+        work_members_with_brackets = request.POST.getlist('work_members[]')
+        
+        print(f"👥 work_members (no brackets): {work_members_no_brackets}")
+        print(f"👥 work_members (with brackets): {work_members_with_brackets}")
+        print(f"📊 Count (no brackets): {len(work_members_no_brackets)}")
+        print(f"📊 Count (with brackets): {len(work_members_with_brackets)}")
+        print("=" * 80 + "\n")
+        # ========================================================================
+        # END DEBUGGING
+        # ========================================================================
+        
+        # Handle optional Project Work Assignment
+        # 🔧 FIX: Try both methods to get work_members
+        work_members = request.POST.getlist('work_members[]') or request.POST.getlist('work_members')
+        
+        # Clean empty values
+        work_members = [m for m in work_members if m and m.strip()]
 
-    return render(request, "add_project.html", {"employees": employees})
+        # ✅ FALLBACK FIX:
+        # If no work_members selected, use assigned_person
+        if not work_members and employee:
+            work_members = [str(employee.id)]
+            print(f"⚙️ FALLBACK: Using assigned_person as work_member: {work_members}")
+
+        # Only create ProjectWork if at least one member is assigned
+        if work_members:
+            # Handle dates with defaults
+            raw_start_date = request.POST.get('work_start_date')
+            raw_deadline = request.POST.get('work_deadline')
+
+            # Set start_date - use provided date or today
+            if raw_start_date and raw_start_date.strip():
+                work_start_date = raw_start_date
+            else:
+                work_start_date = timezone.now().date()
+
+            # Set deadline - use provided date or default to 30 days from start
+            if raw_deadline and raw_deadline.strip():
+                work_deadline = raw_deadline
+            else:
+                if isinstance(work_start_date, str):
+                    from datetime import datetime
+                    start_date_obj = datetime.strptime(work_start_date, '%Y-%m-%d').date()
+                    work_deadline = start_date_obj + timedelta(days=30)
+                else:
+                    work_deadline = work_start_date + timedelta(days=30)
+
+            work_status = request.POST.get('work_status', 'not_started')
+
+            try:
+                print(f"\n🚀 ATTEMPTING TO CREATE ProjectWork...")
+                print(f"   Project: {project.project_name}")
+                print(f"   Start Date: {work_start_date}")
+                print(f"   Deadline: {work_deadline}")
+                print(f"   Client: {request.POST['client']}")
+                print(f"   Status: {work_status}")
+                print(f"   Member IDs to assign: {work_members}")
+                
+                # Create ProjectWork
+                project_work = ProjectWork.objects.create(
+                    project=project,
+                    start_date=work_start_date,
+                    deadline=work_deadline,
+                    client=request.POST['client'],
+                    status=work_status
+                )
+                
+                print(f"✅ ProjectWork created with ID: {project_work.id}")
+
+                # Assign members
+                selected_employees = Employee.objects.filter(
+                    id__in=work_members,
+                    status='active'
+                )
+                
+                print(f"👥 Found {selected_employees.count()} active employees from IDs: {work_members}")
+                
+                project_work.members.set(selected_employees)
+                
+                print(f"✅ Members assigned to ProjectWork ID {project_work.id}")
+
+                assigned_count = selected_employees.count()
+
+                if assigned_count > 0:
+                    messages.success(
+                        request,
+                        f"✅ Project created successfully! {assigned_count} team member(s) assigned to work."
+                    )
+                    print(
+                        f"✅ FINAL SUCCESS: ProjectWork ID={project_work.id}, "
+                        f"Project={project.project_name}, Members={assigned_count}"
+                    )
+                else:
+                    messages.warning(
+                        request,
+                        "Project created but no active employees were found for assignment."
+                    )
+                    print("⚠️ WARNING: No active employees found")
+
+            except Exception as e:
+                messages.error(
+                    request,
+                    f"Project created but work assignment failed: {str(e)}"
+                )
+                import traceback
+                print("=" * 80)
+                print("❌ ERROR CREATING PROJECT WORK")
+                print(f"Project: {project.project_name}")
+                print(f"Members: {work_members}")
+                print(f"Start Date: {work_start_date}")
+                print(f"Deadline: {work_deadline}")
+                print(traceback.format_exc())
+                print("=" * 80)
+
+        else:
+            print(f"ℹ️ No work members selected. Skipping ProjectWork creation.")
+            messages.success(
+                request,
+                "Project created successfully! You can assign team members later."
+            )
+
+        # Redirect to ProjectWork listing page
+        print(f"\n🔄 Redirecting to project_work page...\n")
+        return redirect('project_work')
+
+    # GET request - render the form
+    context = {
+        'employees': employees,
+    }
+    return render(request, 'add_project.html', context)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Project, Employee
 from django.contrib import messages
 
-def edit_project(request, project_id):
-    project = get_object_or_404(Project, id=project_id)
-    employees = Employee.objects.select_related('user').all()
+from django.shortcuts import get_object_or_404
+
+def edit_project(request, id):
+    project = get_object_or_404(Project, id=id)
 
     if request.method == "POST":
-        user_id = request.POST.get('assigned_person')
-        employee = get_object_or_404(Employee, user_id=user_id) if user_id else None
+        print("POST DATA:", request.POST)  # DEBUG
 
-        project.project_name = request.POST['project_name']
-        project.languages = request.POST['languages']
-        project.technologies = request.POST['technologies']
-        project.description = request.POST['description']
-        project.database_name = request.POST['database_name']
-        project.domain_name = request.POST['domain_name']
-        project.domain_platform = request.POST['domain_platform']
-        project.github_link = request.POST['github_link']
-        project.assigned_person = employee
-        project.client = request.POST['client']
-        project.project_status = request.POST['project_status']
-        project.project_type = request.POST['project_type']
-        project.project_duration = request.POST['project_duration']
+        project.project_name = request.POST.get('project_name')
+        project.languages = request.POST.get('languages')
+        project.technologies = request.POST.get('technologies')
+        project.notes = request.POST.get('notes')
+        project.database_name = request.POST.get('database_name')
+        project.domain_name = request.POST.get('domain_name')
+        project.domain_platform = request.POST.get('domain_platform')
+        project.github_link = request.POST.get('github_link')
+        project.assigned_person_id = request.POST.get('assigned_person')
+        project.client = request.POST.get('client')
+        project.project_status = request.POST.get('project_status')
+        project.priority = request.POST.get('priority')   # 🔥 MUST BE HERE
+        project.project_type = request.POST.get('project_type')
+        project.project_duration = request.POST.get('project_duration')
+        project.deadline = request.POST.get('deadline')
+
+        print("UPDATING PRIORITY:", project.priority)  # DEBUG
         project.save()
-        messages.success(request, "Project updated successfully!")
+
         return redirect('project_management')
 
-    return render(request, 'project_edit.html', {'project': project, 'employees': employees})
+    employees = Employee.objects.all()
+    return render(request, 'edit_project.html', {
+        'project': project,
+        'employees': employees
+    })
+
+
+
 
 
 def delete_project(request, project_id):
@@ -5258,7 +5434,8 @@ from django.shortcuts import render
 from .models import Project, Employee
 
 def project_management(request):
-    projects = Project.objects.all()
+    # 🔥 ADD THIS LINE - Order by -id to show latest first
+    projects = Project.objects.all().order_by('-id')
     employees = Employee.objects.select_related('user').all()
 
     # Get filter parameters from request
@@ -5271,6 +5448,7 @@ def project_management(request):
     assigned_person_filter = request.GET.get('assigned_person', '')
     client_filter = request.GET.get('client', '')
     project_type_filter = request.GET.get('project_type', '')
+    priority_filter = request.GET.get('priority', '')
 
     # Apply filters
     if search_query:
@@ -5291,6 +5469,8 @@ def project_management(request):
         projects = projects.filter(client__icontains=client_filter)
     if project_type_filter and project_type_filter != 'all':
         projects = projects.filter(project_type=project_type_filter)
+    if priority_filter and priority_filter != 'all':
+        projects = projects.filter(priority=priority_filter)
 
     # Set up pagination
     paginator = Paginator(projects, 15)  # Show 15 projects per page
@@ -5313,7 +5493,8 @@ def project_management(request):
         'domain_platform': domain_platform_filter,
         'assigned_person': assigned_person_filter,
         'client': client_filter,
-        'project_type': project_type_filter
+        'project_type': project_type_filter,
+        'priority': priority_filter
     }
 
     return render(request, 'project_management.html', {
@@ -5325,41 +5506,6 @@ def project_management(request):
 
 
 
-
-from django.shortcuts import get_object_or_404
-
-from .models import Employee  # make sure Employee is imported
-from .models import Employee  # make sure Employee is imported
-
-def add_project(request):
-    # Get all employees
-    employees = Employee.objects.select_related('user').all()
-    
-    if request.method == "POST":
-        employee_id = request.POST.get('assigned_person')
-        employee = get_object_or_404(Employee, id=employee_id) if employee_id else None
-        deadline = request.POST.get('deadline') if request.POST.get('deadline') else None
-        
-        Project.objects.create(
-            project_name=request.POST['project_name'],
-            languages=request.POST['languages'],
-            technologies=request.POST['technologies'],
-            notes=request.POST['notes'],  # Changed from description to notes
-            database_name=request.POST['database_name'],
-            domain_name=request.POST['domain_name'],
-            domain_platform=request.POST['domain_platform'],
-            github_link=request.POST['github_link'],
-            assigned_person=employee,
-            client=request.POST['client'],
-            project_status=request.POST['project_status'],
-            project_type=request.POST['project_type'],
-            project_duration=request.POST['project_duration'],
-            deadline=deadline,  # Add this line
-
-        )
-        return redirect('project_management')
-    
-    return render(request, "add_project.html", {"employees": employees})
 
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Project, Employee
@@ -5387,6 +5533,7 @@ def edit_project(request, project_id):
         project.project_type = request.POST['project_type']
         project.project_duration = request.POST['project_duration']
         project.deadline = request.POST.get('deadline') if request.POST.get('deadline') else None
+        project.priority = request.POST.get('priority', 'Medium')
         
         project.save()
         messages.success(request, "Project updated successfully!")

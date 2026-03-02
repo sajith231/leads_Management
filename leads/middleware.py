@@ -13,6 +13,10 @@ class LoginRequiredMiddleware:
         if request.path in EXCLUDED_PATHS:
             return self.get_response(request)
 
+        # ✅ Allow all API endpoints for mobile app (no login required)
+        if request.path.startswith('/api/'):
+            return self.get_response(request)
+
         # Allow requests starting with excluded app paths
         for app in EXCLUDED_APPS:
             if request.path.startswith(f'/{app}/'):

@@ -1,83 +1,379 @@
 {% extends 'base.html' %}
-{% load static %}
-
 {% block content %}
-<div class="container">
-    <h2 class="my-4">Add New Daily Task</h2>
-    <form method="post" action="{% url 'add_daily_task' %}">
-        {% csrf_token %}
-        <div class="mb-3">
-            <label for="project_assigned" class="form-label">Project (Assigned)</label>
-            <select class="form-select" id="project_assigned" name="project_assigned">
-                <option value="">Select Project</option>
-                {% for project in assigned_projects %}
-                <option value="{{ project }}">{{ project }}</option>
-                {% endfor %}
-            </select>
-            <div class="form-text">OR</div>
-        </div>
-        <div class="mb-3">
+<style>
+    .main-container {
+        display: flex;
+        gap: 48px;
+        max-width: 1400px;
+        width: 95%;
+        margin: 60px auto;
+        padding: 0 40px;
+    }
     
-    <button type="button" class="btn btn-secondary btn-sm" onclick="showProjectInput()"><label class="form-label">Project (Manual Entry)</label></button>
+    .task-form-container {
+        flex: 0 0 750px;
+        background: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    
+    .side-panel {
+        flex: 0 0 350px;
+        background: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        padding: 40px 32px;
+        height: fit-content;
+        position: sticky;
+        top: 60px;
+    }
+    
+    .form-header {
+        padding: 32px 40px;
+        border-bottom: 2px solid #f0f1f4;
+    }
+    
+    .form-header h2 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 600;
+        color: #172b4d;
+        letter-spacing: -0.5px;
+    }
+    
+    .side-panel h3 {
+        margin: 0 0 32px 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: #172b4d;
+        letter-spacing: -0.3px;
+    }
+    
+    .form-body {
+        padding: 40px;
+    }
+    
+    .mb-3 {
+        margin-bottom: 28px;
+    }
+    
+    .form-label {
+        display: block;
+        margin-bottom: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #5e6c84;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .form-select,
+    .form-control {
+        width: 100%;
+        padding: 12px 16px;
+        font-size: 15px;
+        color: #172b4d;
+        background-color: #fafbfc;
+        border: 2px solid #dfe1e6;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+    }
+    
+    .form-select:hover,
+    .form-control:hover {
+        background-color: #f4f5f7;
+        border-color: #c1c7d0;
+    }
+    
+    .form-select:focus,
+    .form-control:focus {
+        background-color: #ffffff;
+        border-color: #4c9aff;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(76, 154, 255, 0.1);
+    }
+    
+    .form-select:disabled,
+    .form-control:disabled {
+        background-color: #f4f5f7;
+        color: #a5adba;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+    
+    .form-control[type="text"],
+    .form-control[type="date"] {
+        height: auto;
+    }
+    
+    /* Read-only field styling */
+    .form-control[readonly] {
+        background-color: #f4f5f7;
+        color: #172b4d;
+        cursor: default;
+        font-weight: 500;
+    }
+    
+    textarea.form-control {
+        min-height: 120px;
+        resize: vertical;
+        line-height: 1.6;
+    }
+    
+    .btn {
+        padding: 12px 24px;
+        font-size: 15px;
+        font-weight: 600;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        letter-spacing: 0.3px;
+    }
+    
+    .btn-primary {
+        color: #ffffff;
+        background-color: #0052cc;
+        box-shadow: 0 2px 4px rgba(0, 82, 204, 0.2);
+    }
+    
+    .btn-primary:hover {
+        background-color: #0747a6;
+        box-shadow: 0 4px 8px rgba(0, 82, 204, 0.3);
+        transform: translateY(-1px);
+    }
+    
+    .btn-secondary {
+        color: #42526e;
+        background-color: #f4f5f7;
+        border: 2px solid #dfe1e6;
+    }
+    
+    .btn-secondary:hover {
+        background-color: #ebecf0;
+        border-color: #c1c7d0;
+    }
+    
+    .btn-sm {
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        padding: 32px 40px;
+        border-top: 2px solid #f0f1f4;
+        background-color: #fafbfc;
+        border-radius: 0 0 8px 8px;
+    }
+    
+    .container {
+        max-width: 100%;
+        padding: 0;
+    }
 
-    <!-- Hidden input field -->
-    <div id="projectInputDiv" style="display: none; margin-top: 10px;">
-        <input type="text" class="form-control" id="project" name="project" placeholder="Enter project name if not in assigned list">
+    /* Priority dropdown styles */
+    #priority {
+        font-weight: 600;
+        cursor: pointer;
+    }
+    
+    #priority option {
+        padding: 12px;
+        font-weight: 600;
+    }
+    
+    #priority option[value=""] {
+        color: #5e6c84;
+    }
+    
+    #priority option[value="high"] {
+        background-color: #ffebe6;
+        color: #de350b;
+    }
+    
+    #priority option[value="medium"] {
+        background-color: #fff4e6;
+        color: #ff991f;
+    }
+    
+    #priority option[value="low"] {
+        background-color: #e6f2ff;
+        color: #0065ff;
+    }
+    
+    /* Change dropdown background based on selection */
+    #priority.priority-high {
+        background-color: #ffebe6;
+        color: #de350b;
+        border-color: #de350b;
+    }
+    
+    #priority.priority-medium {
+        background-color: #fff4e6;
+        color: #ff991f;
+        border-color: #ff991f;
+    }
+    
+    #priority.priority-low {
+        background-color: #e6f2ff;
+        color: #0065ff;
+        border-color: #0065ff;
+    }
+
+    /* Disabled state for priority */
+    #priority:disabled {
+        cursor: not-allowed;
+        opacity: 0.7;
+    }
+
+    /* Separator line */
+    .separator {
+        height: 2px;
+        background: linear-gradient(to right, #e6e9f0, #f0f1f4, #e6e9f0);
+        margin: 32px 0;
+        border-radius: 2px;
+    }
+
+    /* Side panel specific spacing */
+    .side-panel .mb-3:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Loading state */
+    .loading-overlay {
+        position: relative;
+    }
+    
+    .loading-overlay::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.8);
+        display: none;
+    }
+    
+    .loading-overlay.loading::after {
+        display: block;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 1200px) {
+        .main-container {
+            flex-direction: column;
+            gap: 32px;
+        }
+        
+        .task-form-container,
+        .side-panel {
+            flex: 1 1 auto;
+            max-width: 100%;
+        }
+        
+        .side-panel {
+            position: static;
+        }
+    }
+</style>
+
+<div class="main-container">
+    <div class="task-form-container">
+        <div class="form-header">
+            <h2>Add New Daily Task</h2>
+        </div>
+        
+        <form method="post" action="{% url 'add_daily_task' %}" id="taskForm">
+            {% csrf_token %}
+            
+            <div class="form-body">
+                <div class="mb-3">
+                    <label for="project_assigned" class="form-label">Project</label>
+                    <select class="form-select" id="project_assigned" name="project_assigned" required>
+                        <option value="">Select Project</option>
+                        {% for project in assigned_projects %}
+                        <option value="{{ project }}">{{ project }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="task" class="form-label">Task</label>
+                    <input type="text" class="form-control" id="task" name="task" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="remark" class="form-label">Description (Optional)</label>
+                    <textarea class="form-control" id="remark" name="remark" rows="4" placeholder="Add any additional details about this task..."></textarea>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Save Task</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Right side panel for Priority and Due Date -->
+    <div class="side-panel" id="sidePanel">
+        <h3>Task Details</h3>
+        
+        <div class="mb-3">
+            <label for="assigned_by" class="form-label">Assigned By</label>
+            <input type="text" class="form-control" id="assigned_by" name="assigned_by" value="{{ request.user.get_full_name|default:request.user.username }}" readonly form="taskForm">
+        </div>
+        
+        <div class="separator"></div>
+        
+        <div class="mb-3">
+            <label for="priority" class="form-label">Priority</label>
+            <select class="form-select" id="priority" name="priority" form="taskForm">
+                <option value="">Select Priority</option>
+                <option value="high">🔴 High</option>
+                <option value="medium" selected>🟡 Medium</option>
+                <option value="low">🔵 Low</option>
+            </select>
+        </div>
+        
+        <div class="separator"></div>
+        
+        <div class="mb-3">
+            <label for="due_date" class="form-label">Due Date</label>
+            <input type="date" class="form-control" id="due_date" name="due_date" form="taskForm">
+        </div>
     </div>
 </div>
 
-<script>
-    function showProjectInput() {
-        document.getElementById("projectInputDiv").style.display = "block";
-    }
-</script>
-
-        <div class="mb-3">
-            <label for="task" class="form-label">Task</label>
-            <input type="text" class="form-control" id="task" name="task" required>
-        </div>
-        <div class="mb-3">
-            <label for="remark" class="form-label">Remark (Optional)</label>
-            <textarea class="form-control" id="remark" name="remark" rows="3"></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary">Save</button>
-    </form>
-</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const projectInput = document.getElementById('project');
-        const projectAssignedSelect = document.getElementById('project_assigned');
-        const form = document.querySelector('form');
+        const prioritySelect = document.getElementById('priority');
 
-        // Disable manual input when an assigned project is selected
-        projectAssignedSelect.addEventListener('change', function() {
-            if (this.value) {
-                projectInput.disabled = true;
-                projectInput.value = '';
-            } else {
-                projectInput.disabled = false;
+        // Change priority dropdown background color based on selection
+        prioritySelect.addEventListener('change', function() {
+            // Remove all priority classes
+            this.classList.remove('priority-high', 'priority-medium', 'priority-low');
+            
+            // Add the appropriate class based on selection
+            if (this.value === 'high') {
+                this.classList.add('priority-high');
+            } else if (this.value === 'medium') {
+                this.classList.add('priority-medium');
+            } else if (this.value === 'low') {
+                this.classList.add('priority-low');
             }
         });
-
-        // Disable assigned select when manual input has value
-        projectInput.addEventListener('input', function() {
-            if (this.value) {
-                projectAssignedSelect.disabled = true;
-                projectAssignedSelect.value = '';
-            } else {
-                projectAssignedSelect.disabled = false;
-            }
-        });
-
-        form.addEventListener('submit', function(event) {
-            if (!projectInput.value && !projectAssignedSelect.value) {
-                alert('Either "Project (Assigned)" or "Project (Manual Entry)" must be filled.');
-                event.preventDefault();
-            }
-        });
+        
+        // Set initial medium priority styling
+        prioritySelect.classList.add('priority-medium');
     });
 </script>
 {% endblock %}
