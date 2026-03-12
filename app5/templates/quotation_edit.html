@@ -11,7 +11,7 @@
     <title>Edit Quotation</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Your existing styles remain the same... */
+        /* Your existing styles remain exactly the same... */
         * {
             margin: 0;
             padding: 0;
@@ -417,7 +417,7 @@
         /* Grid layout for ticket information */
         .ticket-info-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 15px;
             align-items: end;
         }
@@ -464,6 +464,33 @@
             color: #0066cc;
             font-weight: 500;
         }
+
+        /* ── Status dropdown colour coding ── */
+        #quotation-status {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            background-color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: border-color 0.3s, background-color 0.3s, color 0.3s;
+        }
+
+        #quotation-status:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(74, 111, 220, 0.15);
+        }
+
+        #quotation-status.status-submitted   { border-color: #1976d2; background-color: #e3f2fd; color: #1976d2; }
+        #quotation-status.status-accepted    { border-color: #27ae60; background-color: #e8f5e9; color: #27ae60; }
+        #quotation-status.status-rejected    { border-color: #e53935; background-color: #ffebee; color: #e53935; }
+
+        #quotation-status option[value="submitted"] { color: #1976d2; }
+        #quotation-status option[value="accepted"]  { color: #27ae60; }
+        #quotation-status option[value="rejected"]  { color: #e53935; }
+        /* ─────────────────────────────────── */
         
         /* Responsive adjustments */
         @media (max-width: 768px) {
@@ -781,6 +808,17 @@
                                            value="{{ quotation.lead.phoneNo|default:quotation.client_phone|default:'' }}" 
                                            placeholder="Select ticket to see phone">
                                 </div>
+
+                                <!-- Quotation Status -->
+                                <div class="ticket-field">
+                                    <label for="quotation-status">Quotation Status *</label>
+                                    <select id="quotation-status">
+                                        <option value="">Select Status</option>
+                                        <option value="submitted" {% if quotation.status == 'submitted' %}selected{% endif %}>Submitted</option>
+                                        <option value="accepted"  {% if quotation.status == 'accepted'  %}selected{% endif %}>Accepted</option>
+                                        <option value="rejected"  {% if quotation.status == 'rejected'  %}selected{% endif %}>Rejected</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                         
@@ -803,7 +841,7 @@
                                 <!-- Items will be loaded from existing quotation -->
                                 {% if quotation_items %}
                                     {% for qitem in quotation_items %}
-                                    <tr data-item-id="{{ qitem.id }}">
+                                    <tr data-item-id="{{ qitem.id }}" data-description="{{ qitem.item.description|default:'' }}">
                                         <td>
                                             <select class="item-section" name="section[]" onchange="updateItemOptions(this)">
                                                 <option value="">Select Section</option>
@@ -1103,6 +1141,12 @@
             
             // Initialize all existing rows
             initializeExistingRows();
+
+            // Apply status color on page load
+            const statusSel = document.getElementById('quotation-status');
+            if (statusSel.value) {
+                statusSel.classList.add('status-' + statusSel.value);
+            }
             
             console.log('Edit quotation form initialized');
         });
@@ -1295,6 +1339,9 @@
                 if (itemData.unit_of_measure) {
                     row.find('.item-qty').attr('placeholder', `Qty in ${itemData.unit_of_measure}`);
                 }
+                
+                // Store item description on the row for submit
+                row.data('description', itemData.description || '');
                 
                 // Recalculate row total
                 calculateRow($select[0]);
@@ -1541,6 +1588,13 @@
                 showNotification('Please select an item for all rows', 'warning');
                 return;
             }
+
+            // Validate status is selected
+            const statusValue = document.getElementById('quotation-status').value;
+            if (!statusValue) {
+                showNotification('Please select a quotation status', 'warning');
+                return;
+            }
             
             // Get quotation ID
             const quotationId = document.getElementById('quotation-id').value;
@@ -1549,6 +1603,7 @@
             const quotationData = {
                 id: quotationId,
                 notes: document.getElementById('notes').value,
+                status: statusValue,  // Make sure this is included
                 items: [],
                 subtotal: parseFloat($('#subtotal').text().replace('', '')) || 0,
                 total_discount: parseFloat($('#total-discount').text().replace('', '')) || 0,
@@ -1570,6 +1625,7 @@
                     id: $(this).data('item-id') || null,   // existing QuotationItem PK — null for new rows
                     item_id: $(this).find('.item-desc').val(),
                     item_name: $(this).find('.item-desc option:selected').text(),
+                    description: $(this).data('description') || '',
                     section: $(this).find('.item-section').val() || '',
                     quantity: parseFloat($(this).find('.item-qty').val()) || 0,
                     sales_price: parseFloat($(this).find('.sales-price').val()) || 0,
@@ -1757,6 +1813,16 @@
             {% if quotation.proposal_attachment %}
             document.getElementById('attachment-subbar').classList.add('visible');
             {% endif %}
+
+            // ── Status dropdown: apply saved colour on page load & on change ──
+            const statusSel = document.getElementById('quotation-status');
+            if (statusSel.value) {
+                statusSel.classList.add('status-' + statusSel.value);
+            }
+            statusSel.addEventListener('change', function () {
+                this.className = '';
+                if (this.value) this.classList.add('status-' + this.value);
+            });
 
             const dropZone = document.getElementById('upload-drop-zone');
             if (dropZone) {

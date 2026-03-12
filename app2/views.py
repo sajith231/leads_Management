@@ -2010,10 +2010,18 @@ def feeder(request):
 
 
 # Updated feeder_list view with proper search functionality
+from datetime import date
+
 def feeder_list(request):
     query = request.GET.get('q', '').strip()
     selected_branch = request.GET.get('branch', '').strip()
     selected_status = request.GET.get('status', '').strip()
+    
+    today = date.today().strftime('%Y-%m-%d')  # ← define this first
+    
+    date_from = request.GET.get('date_from', '').strip()
+    date_to = request.GET.get('date_to', today).strip()  # ← defaults to today
+    per_page = request.GET.get('per_page', '10').strip()
 
     # Start with all feeders
     feeders_list = Feeder.objects.select_related('branch').all().order_by('-id')
@@ -2039,14 +2047,17 @@ def feeder_list(request):
     if selected_status:
         feeders_list = feeders_list.filter(status=selected_status)
 
+    # Apply date filter
+    if date_from:
+        feeders_list = feeders_list.filter(installation_date__gte=date_from)
+    if date_to:
+        feeders_list = feeders_list.filter(installation_date__lte=date_to)
+
     # Process each feeder for modules and prices
     for feeder in feeders_list:
-        # Handle more_modules list
         feeder.more_modules_list = [
             m.strip() for m in (feeder.more_modules or '').split(',') if m.strip()
         ]
-        
-        # Handle price dictionary
         try:
             if isinstance(feeder.module_prices, str):
                 feeder.price_dict = json.loads(feeder.module_prices)
@@ -2058,11 +2069,15 @@ def feeder_list(request):
             feeder.price_dict = {}
 
     # Pagination
-    paginator = Paginator(feeders_list, 10)
+    try:
+        per_page = int(per_page)
+    except (ValueError, TypeError):
+        per_page = 10
+
+    paginator = Paginator(feeders_list, per_page)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    # Get list of branches for dropdown
     branches = Branch.objects.all().order_by('name')
 
     context = {
@@ -2073,6 +2088,7 @@ def feeder_list(request):
         'selected_status': selected_status,
         'total_count': paginator.count,
         'allowed_menus': ['feeder_status'],
+        'today': today,  # ← now correctly defined above
     }
 
     return render(request, 'feeder_list.html', context)

@@ -801,6 +801,8 @@ class Quotation(models.Model):
         ('accepted', 'Accepted'),
         ('rejected', 'Rejected'),
         ('expired', 'Expired'),
+        ('submitted', 'Submitted'),
+        ('completed', 'Completed'),
     ]
     
     # Quotation identification
@@ -824,7 +826,13 @@ class Quotation(models.Model):
     # Quotation details
     quotation_date = models.DateField(default=timezone.now)
     valid_until = models.DateField()
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    status = models.CharField(
+        max_length=20, 
+        choices=STATUS_CHOICES, 
+        default='draft',
+        blank=False,  # Ensure status is required
+        null=False    # Ensure status is not null
+    )
     
     # Financial details
     subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=0)
@@ -837,8 +845,6 @@ class Quotation(models.Model):
     terms_conditions = models.TextField(blank=True, null=True)
 
     # Proposal document attachment
-    # FIX: Added missing FileField — the view calls quotation.proposal_attachment.save(...)
-    # but the field didn't exist, causing an AttributeError on every file upload.
     proposal_attachment = models.FileField(
         upload_to='quotation_proposals/',
         blank=True,
@@ -863,7 +869,7 @@ class Quotation(models.Model):
         verbose_name_plural = 'Quotations'
     
     def __str__(self):
-        return f"{self.quotation_number} - {self.client_name}"
+        return f"{self.quotation_number} - {self.client_name} [{self.get_status_display()}]"
     
     @property
     def is_expired(self):
@@ -871,11 +877,15 @@ class Quotation(models.Model):
         return timezone.now().date() > self.valid_until
     
     def save(self, *args, **kwargs):
-        # Auto-generate quotation number if not provided
         if not self.quotation_number:
             from django.db.models import Max
             last_quote = Quotation.objects.aggregate(Max('id'))['id__max'] or 0
             self.quotation_number = f"QT-{timezone.now().strftime('%Y%m%d')}-{(last_quote + 1):04d}"
+        
+        # Ensure status is set
+        if not self.status:
+            self.status = 'draft'
+            
         super().save(*args, **kwargs)
 
 
@@ -893,7 +903,7 @@ class QuotationItem(models.Model):
         null=True,
         blank=True
     )
-    item_name = models.CharField(max_length=200)  # Snapshot of item name
+    item_name = models.CharField(max_length=200)
     
     # Item details
     description = models.TextField(blank=True, null=True)
@@ -934,43 +944,18 @@ class QuotationItem(models.Model):
     
     def calculate_totals(self):
         """Calculate all totals for this item"""
-        # Use sales_price as base, fallback to unit_price
         base_price = self.sales_price if self.sales_price > 0 else self.unit_price
-        
-        # Calculate discount
         self.discount_amount = (base_price * self.quantity) * (self.discount_percentage / 100)
-        
-        # Calculate amount after discount
         amount_after_discount = (base_price * self.quantity) - self.discount_amount
-        
-        # Calculate tax
         self.tax_amount = amount_after_discount * (self.tax_percentage / 100)
-        
-        # Calculate line total
         self.line_total = amount_after_discount + self.tax_amount
-        
         return self.line_total
     
     def save(self, *args, **kwargs):
-        # FIX: The original code called calculate_totals() unconditionally, which
-        # overwrote the precise figures already computed by quotation_submit view
-        # before calling QuotationItem.objects.create(...).
-        #
-        # New behaviour:
-        #   - New record with line_total still at default 0  → auto-calculate
-        #     (covers direct admin / shell creation where no totals are supplied).
-        #   - New record where caller already set line_total  → trust the caller.
-        #   - Existing record being updated                   → recalculate so
-        #     edits to price/qty/discount/tax stay consistent.
         if self.pk:
-            # Existing record: always recalculate to stay in sync with any
-            # field edits (e.g. via admin or an update view).
             self.calculate_totals()
         elif self.line_total == 0:
-            # New record with no externally provided total: auto-calculate.
             self.calculate_totals()
-        # else: new record with a caller-supplied line_total — leave it alone.
-
         super().save(*args, **kwargs)
 
 
