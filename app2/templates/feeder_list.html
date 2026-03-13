@@ -17,8 +17,8 @@
   background: #fff;
   padding: 30px;
   border-radius: 10px;
-  max-width: 1400px;
-  margin: auto;
+  width: 100%;
+  box-sizing: border-box;
   box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 
@@ -402,7 +402,7 @@ select {
 <div class="container-fluid">
   <div class="header">
     <div>
-      <div class="breadcrumb">Home / Feeder / List</div>
+      
       <h2>Feeder List</h2>
     </div>
   </div>
@@ -473,6 +473,7 @@ select {
       <thead>
         <tr>
           <th>S.No</th>
+          <th>Created By</th>
           <th>Name</th>
           <th>Software</th>
           <th>Branch</th>
@@ -487,6 +488,7 @@ select {
         {% for feeder in page_obj %}
         <tr>
           <td>{{ forloop.counter0|add:page_obj.start_index }}</td>
+          <td>{{ feeder.created_by|default:"-" }}</td>
           <td style="text-transform: uppercase; font-weight: bold;">{{ feeder.name }}</td>
           <td>{{ feeder.software }}</td>
           <td>{{ feeder.branch }}</td>
