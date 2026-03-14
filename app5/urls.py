@@ -137,10 +137,11 @@ urlpatterns = [
   path('quotation/download/<int:quotation_id>/', views.download_quotation, name='download_quotation'),
   path('quotation/lead/<int:lead_id>/', views.quotation_by_lead, name='quotation_by_lead'),
   path('quotation/<int:quotation_id>/send-whatsapp/', views.send_quotation_whatsapp, name='send_quotation_whatsapp'),    
-    path('state/', views.state_list, name='state_master_list'),  # Changed to state_master_list
-    path('state/create/', views.state_master_create, name='state_master_create'),
-    path('state/<int:id>/edit/', views.state_master_edit, name='state_master_edit'),
-    path('state/<int:id>/delete/', views.state_master_delete, name='state_master_delete'),
+  path('state/', views.state_list, name='state_master_list'),  # Changed to state_master_list
+  path('state/create/', views.state_master_create, name='state_master_create'),
+  path('state/<int:id>/edit/', views.state_master_edit, name='state_master_edit'),
+  path('state/<int:id>/delete/', views.state_master_delete, name='state_master_delete'),
+  path('quotation-item-notes/<int:item_id>/update/', views.update_quotation_item_notes, name='quotation_item_notes_update'),
 
 
 

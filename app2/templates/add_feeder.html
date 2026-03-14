@@ -90,7 +90,7 @@ input[name="name"]{text-transform:uppercase}
 </style>
 
 <div class="container">
-  <div class="breadcrumb">Home / Feeder</div>
+  
   <h2>Add Feeder</h2>
 
   <a href="{% url 'feeder_list' %}" class="back-button">
@@ -226,7 +226,7 @@ input[name="name"]{text-transform:uppercase}
     <details class="module-category">
       <summary>Mobile Apps</summary>
       <div class="module-list-vertical">
-        {% for item in "Dine KOT,MagicPDA Full(MST),MagicPDA Super,Scanner,EWAY Task,MagNet Pay,DINE Reporter,TASK Pro"|split:"," %}
+        {% for item in "Dine KOT,MagicPDA Full(MST),MagicPDA Super,Scanner,EWAY Task,MagNet Pay,DINE Reporter,TASK Pro,Task MST,Task PMS,Tracker,Prime"|split:"," %}
         <div class="module-item-vertical">
           <input type="checkbox" name="more_modules" value="{{ item|trim }}" 
                  {% if item|trim in feeder.more_modules %}checked{% endif %}>

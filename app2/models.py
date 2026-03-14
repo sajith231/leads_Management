@@ -367,8 +367,6 @@ class AssignmentStatusHistory(models.Model):
 
 
 
-from django.db import models
-
 class Feeder(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
@@ -406,7 +404,6 @@ class Feeder(models.Model):
 
     software = models.CharField(max_length=100)
 
-    # ✅ Changed from ForeignKey to CharField with your custom dropdown
     nature = models.CharField(
         max_length=50,
         choices=BUSINESS_NATURE_CHOICES,
@@ -430,10 +427,11 @@ class Feeder(models.Model):
     more_modules = models.TextField(blank=True, null=True)
     modules = models.TextField(blank=True)
     module_prices = models.JSONField(default=dict, blank=True)
+    created_by = models.CharField(max_length=100, blank=True, null=True)  # NEW FIELD
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
 
-    def _str_(self):
+    def __str__(self):
         return self.name
 
     def get_status_display_class(self):

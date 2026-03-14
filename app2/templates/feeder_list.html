@@ -17,8 +17,8 @@
   background: #fff;
   padding: 30px;
   border-radius: 10px;
-  max-width: 1400px;
-  margin: auto;
+  width: 100%;
+  box-sizing: border-box;
   box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 
@@ -45,13 +45,15 @@ h2 {
 .add-btn {
   background-color: #4d6bf9;
   color: white;
-  padding: 10px 20px;
+  padding: 8px 14px;
   border: none;
   border-radius: 6px;
   cursor: pointer;
   text-decoration: none;
-  font-size: 14px;
+  font-size: 13px;
   display: inline-block;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .add-btn:hover {
@@ -60,14 +62,17 @@ h2 {
 
 .search-box {
   margin-bottom: 0;
+  flex: 1;
+  min-width: 160px;
 }
 
 .search-box input {
-  padding: 10px 12px;
+  padding: 8px 12px;
   border: 1px solid #ddd;
   border-radius: 6px;
-  width: 300px;
-  font-size: 14px;
+  width: 100%;
+  font-size: 13px;
+  box-sizing: border-box;
 }
 
 .total-count {
@@ -313,33 +318,60 @@ tbody tr:has(.status-dropdown .show) {
 
 .filter-form {
   display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
+  flex-wrap: nowrap;
+  gap: 8px;
   align-items: center;
+  overflow-x: auto;
+  padding-bottom: 2px;
 }
 
 select {
-  padding: 10px 12px;
+  padding: 8px 10px;
   border: 1px solid #ddd;
   border-radius: 6px;
   background: white;
-  font-size: 14px;
-  min-width: 150px;
+  font-size: 13px;
+  min-width: 120px;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .clear-btn {
-  padding: 10px 16px;
+  padding: 8px 14px;
   background: #6c757d;
   color: white;
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .clear-btn:hover {
   background: #5a6268;
+}
+
+.date-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.date-filter-group label {
+  font-size: 12px;
+  color: #555;
+  white-space: nowrap;
+}
+
+.date-filter-group input[type="date"] {
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 13px;
+  background: white;
+  cursor: pointer;
 }
 
 @media (max-width: 768px) {
@@ -370,7 +402,7 @@ select {
 <div class="container-fluid">
   <div class="header">
     <div>
-      <div class="breadcrumb">Home / Feeder / List</div>
+      
       <h2>Feeder List</h2>
     </div>
   </div>
@@ -405,6 +437,26 @@ select {
         <option value="under_process" {% if request.GET.status == 'under_process' %}selected{% endif %}>Under Process</option>
       </select>
 
+      <div class="date-filter-group">
+        <label for="date-from">From:</label>
+        <input type="date" name="date_from" id="date-from" value="{{ request.GET.date_from }}">
+      </div>
+
+      <div class="date-filter-group">
+        <label for="date-to">To:</label>
+        <input type="date" name="date_to" id="date-to" value="{{ request.GET.date_to }}">
+      </div>
+
+      <div class="date-filter-group">
+        <label for="per-page-select">Rows:</label>
+        <select name="per_page" id="per-page-select">
+          <option value="10" {% if request.GET.per_page == '10' or not request.GET.per_page %}selected{% endif %}>10</option>
+          <option value="25" {% if request.GET.per_page == '25' %}selected{% endif %}>25</option>
+          <option value="50" {% if request.GET.per_page == '50' %}selected{% endif %}>50</option>
+          <option value="100" {% if request.GET.per_page == '100' %}selected{% endif %}>100</option>
+        </select>
+      </div>
+
       <button type="button" id="clear-filters" class="clear-btn">
         Clear All
       </button>
@@ -421,6 +473,7 @@ select {
       <thead>
         <tr>
           <th>S.No</th>
+          <th>Created By</th>
           <th>Name</th>
           <th>Software</th>
           <th>Branch</th>
@@ -435,6 +488,7 @@ select {
         {% for feeder in page_obj %}
         <tr>
           <td>{{ forloop.counter0|add:page_obj.start_index }}</td>
+          <td>{{ feeder.created_by|default:"-" }}</td>
           <td style="text-transform: uppercase; font-weight: bold;">{{ feeder.name }}</td>
           <td>{{ feeder.software }}</td>
           <td>{{ feeder.branch }}</td>
@@ -502,8 +556,8 @@ select {
     <div class="pagination-wrapper">
       <ul class="pagination">
         {% if page_obj.has_previous %}
-          <li><a href="?page=1{% if query %}&q={{ query }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">&laquo;</a></li>
-          <li><a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">&lsaquo;</a></li>
+          <li><a href="?page=1{% if query %}&q={{ query }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}{% if request.GET.per_page %}&per_page={{ request.GET.per_page }}{% endif %}">&laquo;</a></li>
+          <li><a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}{% if request.GET.per_page %}&per_page={{ request.GET.per_page }}{% endif %}">&lsaquo;</a></li>
         {% else %}
           <li class="disabled"><a>&laquo;</a></li>
           <li class="disabled"><a>&lsaquo;</a></li>
@@ -513,17 +567,17 @@ select {
           {% if num == page_obj.number %}
             <li class="active"><span>{{ num }}</span></li>
           {% elif num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %}
-            <li><a href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">{{ num }}</a></li>
+            <li><a href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}{% if request.GET.per_page %}&per_page={{ request.GET.per_page }}{% endif %}">{{ num }}</a></li>
           {% elif num == 1 or num == page_obj.paginator.num_pages %}
-            <li><a href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">{{ num }}</a></li>
+            <li><a href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}{% if request.GET.per_page %}&per_page={{ request.GET.per_page }}{% endif %}">{{ num }}</a></li>
           {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
             <li><span>…</span></li>
           {% endif %}
         {% endfor %}
 
         {% if page_obj.has_next %}
-          <li><a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">&rsaquo;</a></li>
-          <li><a href="?page={{ page_obj.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">&raquo;</a></li>
+          <li><a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}{% if request.GET.per_page %}&per_page={{ request.GET.per_page }}{% endif %}">&rsaquo;</a></li>
+          <li><a href="?page={{ page_obj.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}{% if request.GET.per_page %}&per_page={{ request.GET.per_page }}{% endif %}">&raquo;</a></li>
         {% else %}
           <li class="disabled"><a>&rsaquo;</a></li>
           <li class="disabled"><a>&raquo;</a></li>
@@ -553,8 +607,6 @@ function getCookie(name) {
 
 // Toggle status dropdown
 function toggleStatusDropdown(feederId, event) {
-    console.log('toggleStatusDropdown called for feeder:', feederId);
-    
     if (event) {
         event.stopPropagation();
         event.preventDefault();
@@ -563,32 +615,19 @@ function toggleStatusDropdown(feederId, event) {
     const dropdown = document.querySelector(`#status-dropdown-${feederId}`);
     const dropdownContent = dropdown.querySelector('.status-dropdown-content');
     
-    if (!dropdownContent) {
-        console.error('Dropdown content not found for feeder:', feederId);
-        return;
-    }
+    if (!dropdownContent) return;
     
-    // Close all other dropdowns and reset their row z-index
     document.querySelectorAll('.status-dropdown-content').forEach(d => {
         if (d !== dropdownContent) {
             d.classList.remove('show');
             const parentRow = d.closest('tr');
-            if (parentRow) {
-                parentRow.style.zIndex = '1';
-            }
+            if (parentRow) parentRow.style.zIndex = '1';
         }
     });
     
-    // Toggle current dropdown
     const isShowing = dropdownContent.classList.toggle('show');
-    
-    // Set z-index on the parent row
     const parentRow = dropdown.closest('tr');
-    if (parentRow) {
-        parentRow.style.zIndex = isShowing ? '1001' : '1';
-    }
-    
-    console.log('Toggled dropdown, show class:', dropdownContent.classList.contains('show'));
+    if (parentRow) parentRow.style.zIndex = isShowing ? '1001' : '1';
 }
 
 // Close dropdown when clicking outside
@@ -597,69 +636,51 @@ document.addEventListener('click', function(event) {
         document.querySelectorAll('.status-dropdown-content').forEach(d => {
             d.classList.remove('show');
             const parentRow = d.closest('tr');
-            if (parentRow) {
-                parentRow.style.zIndex = '1';
-            }
+            if (parentRow) parentRow.style.zIndex = '1';
         });
-        console.log('Closed all dropdowns due to outside click');
     }
 });
 
 // Update status function
 function updateStatus(feederId, newStatus, event) {
-    console.log('updateStatus called:', feederId, newStatus);
-    
     if (event) {
         event.stopPropagation();
         event.preventDefault();
     }
     
-    // Close the dropdown immediately
     const dropdown = document.querySelector(`#status-dropdown-${feederId}`);
     const dropdownContent = dropdown.querySelector('.status-dropdown-content');
     if (dropdownContent) {
         dropdownContent.classList.remove('show');
         const parentRow = dropdown.closest('tr');
-        if (parentRow) {
-            parentRow.style.zIndex = '1';
-        }
+        if (parentRow) parentRow.style.zIndex = '1';
     }
     
     const csrftoken = getCookie('csrftoken');
     const statusBtn = document.getElementById(`status-btn-${feederId}`);
     
-    if (!statusBtn) {
-        console.error('Status button not found for feeder:', feederId);
-        return;
-    }
+    if (!statusBtn) return;
     
     const originalText = statusBtn.textContent;
     const originalClass = statusBtn.className;
 
-    // Show loading state
     statusBtn.textContent = 'Updating...';
     statusBtn.disabled = true;
     
-    // Make the AJAX request
     fetch(`/feeder/${feederId}/status-update/`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': csrftoken
         },
-        body: JSON.stringify({ 
-            status: newStatus 
-        })
+        body: JSON.stringify({ status: newStatus })
     })
     .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
+        if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         return response.json();
     })
     .then(data => {
         if (data.success) {
-            // Update button with new status
             statusBtn.textContent = data.new_status;
             statusBtn.className = `status-btn ${data.status_class}`;
             statusBtn.setAttribute('data-current-status', newStatus);
@@ -668,40 +689,43 @@ function updateStatus(feederId, newStatus, event) {
         }
     })
     .catch(error => {
-        console.error('Error updating status:', error);
-        
-        // Restore original state
         statusBtn.textContent = originalText;
         statusBtn.className = originalClass;
-        
-        // Show error message to user
         alert(`Error updating status: ${error.message}`);
     })
     .finally(() => {
-        // Re-enable button
         statusBtn.disabled = false;
     });
 }
 
 // Filter form functionality
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded - initializing feeder list functionality');
-    
     const searchInput = document.getElementById('search-input');
     const branchSelect = document.getElementById('branch-select');
     const statusSelect = document.getElementById('status-select');
+    const dateFrom = document.getElementById('date-from');
+    const dateTo = document.getElementById('date-to');
+    const perPageSelect = document.getElementById('per-page-select');
     const clearButton = document.getElementById('clear-filters');
     const filterForm = document.getElementById('filter-form');
-    
+
+    // Set today's date as default and max for both date inputs
+    const today = new Date().toISOString().split('T')[0];
+    if (dateFrom) {
+        dateFrom.max = today;
+        if (!dateFrom.value) dateFrom.value = today;
+    }
+    if (dateTo) {
+        dateTo.max = today;
+        if (!dateTo.value) dateTo.value = today;
+    }
+
     let searchTimeout;
     let lastSearchValue = searchInput ? searchInput.value : '';
 
-    // Auto-submit form with debounce for search input
     function debounceSearch() {
         clearTimeout(searchTimeout);
         const currentValue = searchInput.value;
-        
-        // Only trigger search if value has changed
         if (currentValue !== lastSearchValue) {
             searchTimeout = setTimeout(() => {
                 lastSearchValue = currentValue;
@@ -710,7 +734,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Event listeners
     if (searchInput) {
         searchInput.addEventListener('input', debounceSearch);
         searchInput.addEventListener('keyup', function(e) {
@@ -722,48 +745,30 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    if (branchSelect) {
-        branchSelect.addEventListener('change', () => filterForm.submit());
-    }
+    if (branchSelect) branchSelect.addEventListener('change', () => filterForm.submit());
+    if (statusSelect) statusSelect.addEventListener('change', () => filterForm.submit());
+    if (dateFrom) dateFrom.addEventListener('change', () => filterForm.submit());
+    if (dateTo) dateTo.addEventListener('change', () => filterForm.submit());
+    if (perPageSelect) perPageSelect.addEventListener('change', () => filterForm.submit());
 
-    if (statusSelect) {
-        statusSelect.addEventListener('change', () => filterForm.submit());
-    }
-
-    // Clear all filters
     if (clearButton) {
         clearButton.addEventListener('click', function() {
             searchInput.value = '';
             branchSelect.value = '';
             statusSelect.value = '';
-            
-            // Submit form to clear filters
+            if (dateFrom) dateFrom.value = '';
+            if (dateTo) dateTo.value = '';
+            if (perPageSelect) perPageSelect.value = '10';
             window.location.href = window.location.pathname;
         });
     }
 
-    // Show loading cursor during form submission
     filterForm.addEventListener('submit', function() {
         document.body.style.cursor = 'wait';
     });
-    
-    // Check CSRF token
+
     const csrfToken = getCookie('csrftoken');
-    if (!csrfToken) {
-        console.warn('CSRF token not found. Status updates may fail.');
-    }
-    
-    // Debug: Check if dropdown elements exist
-    const dropdowns = document.querySelectorAll('.status-dropdown');
-    console.log('Found status dropdowns:', dropdowns.length);
-    dropdowns.forEach((dropdown, index) => {
-        const content = dropdown.querySelector('.status-dropdown-content');
-        console.log(`Dropdown ${index}:`, {
-            id: dropdown.id,
-            hasContent: !!content,
-            contentVisible: content ? window.getComputedStyle(content).display : 'N/A'
-        });
-    });
+    if (!csrfToken) console.warn('CSRF token not found. Status updates may fail.');
 });
 </script>
 
