@@ -10,10 +10,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quotation Form</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Add Select2 CSS for better dropdowns -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
-        /* Your existing styles remain the same... */
         * {
             margin: 0;
             padding: 0;
@@ -178,7 +176,6 @@
             background-color: #e3f2fd;
         }
         
-        /* Base styles for all inputs and selects */
         .items-table input, .items-table select {
             width: 100%;
             padding: 8px 10px;
@@ -188,7 +185,6 @@
             transition: border-color 0.3s;
         }
         
-        /* Right alignment for numeric fields */
         .items-table input[type="number"],
         .items-table .item-qty,
         .items-table .sales-price,
@@ -198,7 +194,6 @@
             text-align: right;
         }
         
-        /* Left alignment for dropdowns (Section and Item Description) */
         .items-table select,
         .items-table .item-section,
         .items-table .item-desc {
@@ -210,6 +205,33 @@
             outline: none;
         }
         
+        .btn-view-notes {
+            background: none;
+            border: none;
+            color: #4a6fdc;
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-size: 13px;
+            vertical-align: middle;
+            margin-left: 4px;
+            transition: color 0.2s, background 0.2s;
+            display: inline-flex;
+            align-items: center;
+        }
+        .btn-view-notes:hover {
+            color: #fff;
+            background: #4a6fdc;
+        }
+        .item-desc-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .item-desc-wrapper select {
+            flex: 1;
+        }
+
         .btn-delete {
             background: linear-gradient(135deg, #e74c3c, #c0392b);
             color: white;
@@ -414,7 +436,6 @@
             color: #4CAF50;
         }
         
-        /* Add styles for Select2 integration */
         .select2-container--default .select2-selection--single {
             border: 1px solid #ddd;
             border-radius: 4px;
@@ -430,7 +451,6 @@
             border-radius: 4px;
         }
         
-        /* Improve item dropdown display */
         .item-option {
             padding: 8px 12px;
             border-bottom: 1px solid #f0f0f0;
@@ -453,14 +473,12 @@
         
         .item-section {
             display: inline-block;
-            
             padding: 2px 6px;
             border-radius: 3px;
             font-size: 11px;
             margin-right: 5px;
         }
         
-        /* Proposal Attachment Button */
         .btn-attach {
             background: linear-gradient(135deg, #7b5ea7, #9b59b6);
             color: white;
@@ -495,7 +513,6 @@
             box-shadow: 0 6px 12px rgba(39, 174, 96, 0.4);
         }
 
-        /* Attachment preview badge */
         .attachment-badge {
             display: none;
             align-items: center;
@@ -524,7 +541,6 @@
 
         .attachment-badge .remove-attachment:hover { color: #c0392b; }
 
-        /* Attachment modal */
         .attachment-modal-overlay {
             display: none;
             position: fixed;
@@ -675,7 +691,6 @@
             cursor: not-allowed;
         }
 
-        /* Form Section Styles */
         .client-info-section, .quotation-details {
             background: #f8f9ff;
             padding: 20px;
@@ -711,7 +726,6 @@
             border-left: 4px solid #e67e22;
         }
         
-        /* Section dropdown styles */
         .item-section.select2-container--default .select2-selection--single {
             border: 1px solid #ddd;
             border-radius: 4px;
@@ -758,7 +772,6 @@
             color: white;
         }
         
-        /* NEW: Properly aligned ticket information grid */
         .lead-selection-section {
             background: #f0f7ff;
             padding: 20px;
@@ -781,10 +794,9 @@
             color: #4a6fdc;
         }
         
-        /* Grid layout for ticket information */
         .ticket-info-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 15px;
             align-items: end;
         }
@@ -824,15 +836,54 @@
             cursor: not-allowed;
         }
         
-        /* Special styling for phone field */
         .ticket-field.phone-field input {
             background-color: #f0f9ff;
             border-color: #b3d9ff;
             color: #0066cc;
             font-weight: 500;
         }
+
+        /* ── Status dropdown colour coding ── */
+        #quotation-status {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            background-color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: border-color 0.3s, background-color 0.3s, color 0.3s;
+        }
+
+        #quotation-status:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(74, 111, 220, 0.15);
+        }
+
+        #quotation-status.status-accepted {
+            border-color: #27ae60;
+            background-color: #e8f5e9;
+            color: #27ae60;
+        }
+
+        #quotation-status.status-submitted {
+            border-color: #1976d2;
+            background-color: #e3f2fd;
+            color: #1976d2;
+        }
+
+        #quotation-status.status-rejected {
+            border-color: #e53935;
+            background-color: #ffebee;
+            color: #e53935;
+        }
+
+        #quotation-status option[value="accepted"]  { color: #27ae60; }
+        #quotation-status option[value="submitted"] { color: #1976d2; }
+        #quotation-status option[value="rejected"]  { color: #e53935; }
+        /* ─────────────────────────────────── */
         
-        /* Select2 styling for ticket dropdown */
         #lead-ticket-select.select2-container--default .select2-selection--single {
             background-color: #fff;
             border: 1px solid #ddd;
@@ -842,7 +893,6 @@
             border-color: #4a6fdc;
         }
         
-        /* Responsive adjustments */
         @media (max-width: 768px) {
             .main-content {
                 flex-direction: column;
@@ -858,17 +908,12 @@
             .ticket-info-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
-            
-            .ticket-info-grid .ticket-field:last-child {
-                grid-column: span 2;
-            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="main-content">
-            <!-- Single Column - Quotation Form Only -->
             <div class="form-column">
                 <div class="form-container">
                     <div class="form-header">
@@ -877,11 +922,12 @@
                     </div>
                     
                     <div class="form-body">
-                        <!-- Lead Ticket Selection Section - PROPERLY ALIGNED GRID -->
+                        <!-- Lead Ticket Selection Section -->
                         <div class="lead-selection-section">
                             <h3><i class="fas fa-ticket-alt"></i> Select Lead Ticket</h3>
                             <div class="ticket-info-grid">
-                                <!-- Ticket Number Selection -->
+
+                                <!-- Ticket Number -->
                                 <div class="ticket-field">
                                     <label for="lead-ticket-select">Ticket Number *</label>
                                     <select id="lead-ticket-select" class="form-control" style="width: 100%; padding: 10px; border-radius: 6px;">
@@ -897,30 +943,42 @@
                                         {% endif %}
                                     </select>
                                 </div>
-                                
-                                <!-- Owner Name Display -->
+
+                                <!-- Owner Name -->
                                 <div class="ticket-field">
                                     <label for="owner-name">Owner Name</label>
                                     <input type="text" id="owner-name" class="form-control" readonly placeholder="Select ticket to see name">
                                 </div>
-                                
-                                <!-- Phone Number Display (Separate Field) -->
+
+                                <!-- Phone Number -->
                                 <div class="ticket-field phone-field">
                                     <label for="phone-number">Phone Number</label>
                                     <input type="text" id="phone-number" class="form-control" readonly placeholder="Select ticket to see phone">
                                 </div>
+
+                                <!-- Quotation Status -->
+                                <div class="ticket-field">
+                                    <label for="quotation-status">Quotation Status *</label>
+                                    <select id="quotation-status">
+                                        <option value="">Select Status</option>
+                                        <option value="accepted">Accepted</option>
+                                        <option value="submitted">Submitted</option>
+                                        <option value="rejected">Rejected</option>
+                                    </select>
+                                </div>
+
                             </div>
                         </div>
                         
                         <!-- Items Table -->
-                       <table class="items-table">
+                        <table class="items-table">
                             <thead>
                                 <tr>
                                     <th width="12%">Section</th>
                                     <th width="25%">Item Description</th>
                                     <th width="8%">Qty</th>
-                                    <th width="10%">Cost Price </th>
-                                    <th width="10%">Sales Price </th>
+                                    <th width="10%">Cost Price</th>
+                                    <th width="10%">Sales Price</th>
                                     <th width="8%">Discount (%)</th>
                                     <th width="8%">Tax (%)</th>
                                     <th width="12%">Total</th>
@@ -928,7 +986,6 @@
                                 </tr>
                             </thead>
                             <tbody id="items-body">
-                                <!-- Items will be added here dynamically -->
                             </tbody>
                         </table>
                         
@@ -969,12 +1026,10 @@
                                 <i class="fas fa-paper-plane"></i> Submit Quotation
                             </button>
                             <button class="btn-refresh" onclick="window.location.href='{% url 'app5:lead_report' %}'">
-                                <i class="fas fa-sync-alt"></i>
-                                Back
+                                <i class="fas fa-sync-alt"></i> Back
                             </button>
                         </div>
 
-                        <!-- Attachment badge shown after file is selected -->
                         <div class="attachment-badge" id="attachment-badge">
                             <i class="fas fa-file-alt"></i>
                             <span id="attachment-badge-name">proposal.pdf</span>
@@ -983,7 +1038,6 @@
                             </button>
                         </div>
                         
-                        <!-- Footer -->
                         <div class="footer">
                             <p>Thank you for your business!</p>
                             <p>This quotation is valid until the date specified above.</p>
@@ -1026,42 +1080,45 @@
         </div>
     </div>
 
-    <!-- Add jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <script>
-        // Global variable to store items from Purchase Order app
         let purchaseOrderItems = [];
         let selectedLead = null;
-        let itemsLoaded = false; // Flag to track if items are loaded
+        let itemsLoaded = false;
 
-        // ✅ Tax options from TaxMaster (fetched via Django context)
         const taxOptions = [
             {% for tax in taxes %}
             { name: "{{ tax.name|escapejs }}", percentage: {{ tax.percentage }} }{% if not forloop.last %},{% endif %}
             {% endfor %}
         ];
         
-        // Function to handle ticket selection
+        // ── Status dropdown live colour feedback ──
+        document.addEventListener('DOMContentLoaded', function () {
+            const statusSelect = document.getElementById('quotation-status');
+            statusSelect.addEventListener('change', function () {
+                this.classList.remove('status-accepted', 'status-submitted', 'status-rejected');
+                if (this.value) {
+                    this.classList.add('status-' + this.value);
+                }
+            });
+        });
+
         function handleTicketSelection(selectElement) {
             const selectedOption = $(selectElement).find('option:selected');
             
             if (!selectedOption.val()) {
-                // No ticket selected, clear fields
                 clearTicketFields();
                 selectedLead = null;
                 return;
             }
             
-            // Get name and phone from selected option
             const name = selectedOption.data('name') || '';
             const phone = selectedOption.data('phone') || '';
             
-            // Update input fields
             document.getElementById('owner-name').value = name;
             document.getElementById('phone-number').value = phone;
             
-            // Store only necessary lead data
             selectedLead = {
                 id: selectedOption.val(),
                 ticket_number: selectedOption.text().split(' - ')[0],
@@ -1072,29 +1129,22 @@
             showNotification(`Ticket ${selectedLead.ticket_number} selected`, 'success');
         }
         
-        // Function to clear ticket fields
         function clearTicketFields() {
             document.getElementById('owner-name').value = '';
             document.getElementById('phone-number').value = '';
         }
         
-        // Function to load items from Purchase Order app
         async function loadItemsFromPurchaseOrderApp() {
             try {
-                console.log('Loading items from Purchase Order app...');
-                
-                // Method 1: Direct API call to your Purchase Order app
-                const response = await fetch('/po/api/get-items/'); // You need to create this endpoint
+                const response = await fetch('/app5/api/get-quotation-items/');
                 
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success && data.items) {
                         purchaseOrderItems = data.items;
-                        itemsLoaded = true; // Set flag to true
-                        console.log(`Loaded ${purchaseOrderItems.length} items from Purchase Order app`);
+                        itemsLoaded = true;
                     }
                 } else {
-                    // Fallback: Use items from context if passed from Django view
                     {% if items %}
                         purchaseOrderItems = [
                             {% for item in items %}
@@ -1110,124 +1160,80 @@
                                 hsn_code: "{{ item.hsn_code|default:''|escapejs }}",
                                 section: "{{ item.section|escapejs }}",
                                 department: "{{ item.department.name|default:'N/A'|escapejs }}",
+                                notes: "{{ item.notes|default:''|escapejs }}",
                                 is_active: {{ item.is_active|yesno:"true,false" }}
                             }{% if not forloop.last %},{% endif %}
                             {% endfor %}
                         ];
-                        itemsLoaded = true; // Set flag to true
-                        console.log(`Loaded ${purchaseOrderItems.length} items from Django context`);
+                        itemsLoaded = true;
                     {% else %}
-                        console.warn('No items found in Purchase Order app or Django context');
                         itemsLoaded = false;
                     {% endif %}
                 }
                 
                 return purchaseOrderItems;
             } catch (error) {
-                console.error('Error loading items from Purchase Order app:', error);
+                console.error('Error loading items:', error);
                 itemsLoaded = false;
                 return [];
             }
         }
         
-        // Function to get unique sections from all items
         function getAvailableSections() {
             const sections = new Set();
             purchaseOrderItems.forEach(item => {
-                if (item.section) {
-                    sections.add(item.section);
-                }
+                if (item.section) sections.add(item.section);
             });
             return Array.from(sections).sort();
         }
         
-        // Function to update section dropdown options
         function updateSectionDropdown(dropdown) {
             const $dropdown = $(dropdown);
-            
-            // Clear existing options
             $dropdown.empty();
+            $dropdown.append($('<option>', { value: '', text: 'Select Section', selected: true }));
             
-            // Add default option
-            $dropdown.append($('<option>', {
-                value: '',
-                text: 'Select Section',
-                selected: true
-            }));
-            
-            // Get sections from loaded items
             const sections = getAvailableSections();
             
             if (sections.length === 0) {
-                // No sections available
-                $dropdown.append($('<option>', {
-                    value: '',
-                    text: 'No sections available',
-                    disabled: true
-                }));
-                
+                $dropdown.append($('<option>', { value: '', text: 'No sections available', disabled: true }));
                 showNotification('No items/sections found. Please check Purchase Order app.', 'warning');
                 return;
             }
             
-            // Add all available sections
             sections.forEach(section => {
-                $dropdown.append($('<option>', {
-                    value: section,
-                    text: section
-                }));
+                $dropdown.append($('<option>', { value: section, text: section }));
             });
         }
         
-        // Function to update item dropdown based on selected section
         function updateItemOptions(sectionSelect) {
             const $sectionSelect = $(sectionSelect);
             const row = $sectionSelect.closest('tr');
             const itemSelect = row.find('.item-desc');
             const selectedSection = $sectionSelect.val();
             
-            // Clear existing options
             itemSelect.empty();
             
             if (!selectedSection) {
-                // If no section selected, add placeholder and disable
-                itemSelect.append($('<option>', {
-                    value: '',
-                    text: 'Select Item',
-                    selected: true
-                }));
+                itemSelect.append($('<option>', { value: '', text: 'Select Item', selected: true }));
                 itemSelect.prop('disabled', true);
                 return;
             }
             
-            // Filter items by selected section
             const filteredItems = purchaseOrderItems.filter(item => item.section === selectedSection);
-            
-            // Add default option
-            itemSelect.append($('<option>', {
-                value: '',
-                text: 'Select Item',
-                selected: true
-            }));
+            itemSelect.append($('<option>', { value: '', text: 'Select Item', selected: true }));
             
             if (filteredItems.length === 0) {
-                // No items in this section
                 itemSelect.prop('disabled', false);
                 return;
             }
             
-            // Add filtered items to dropdown
             filteredItems.forEach(item => {
-                const option = $('<option>', {
-                    value: item.id,
-                    text: item.name
-                });
-                
-                // Add data attributes
+                const option = $('<option>', { value: item.id, text: item.name });
                 option.data('item-data', {
                     id: item.id,
                     name: item.name,
                     description: item.description,
+                    notes: item.notes || '',
                     unit: item.unit_of_measure,
                     mrp: item.mrp,
                     purchase_price: item.purchase_price,
@@ -1237,15 +1243,12 @@
                     section: item.section,
                     department: item.department
                 });
-                
                 itemSelect.append(option);
             });
             
-            // Enable dropdown
             itemSelect.prop('disabled', false);
         }
         
-        // Function to load item details when selected
         function loadItemDetails(selectElement) {
             const $select = $(selectElement);
             const selectedOption = $select.find('option:selected');
@@ -1253,33 +1256,216 @@
             
             if (itemData) {
                 const row = $select.closest('tr');
-                
-                // Set default values
                 $(row).find('.sales-price').val(itemData.mrp.toFixed(2));
                 $(row).find('.unit-price').val(itemData.purchase_price.toFixed(2));
                 $(row).find('.tax').val(itemData.tax);
-                
-                // Set quantity placeholder with unit
                 $(row).find('.item-qty').attr('placeholder', `Qty in ${itemData.unit}`);
-                
-                // Calculate row total
                 calculateRow($select[0]);
             }
         }
-        
-        // Function to initialize empty item dropdown
-        function initializeItemDropdown(selectElement) {
-            const $select = $(selectElement);
-            $select.prop('disabled', true);
+
+        function closeNotesPopup() {
+            const p = document.getElementById('item-notes-popup');
+            const o = document.getElementById('item-notes-overlay');
+            if (p) p.remove();
+            if (o) o.remove();
+        }
+
+        function viewItemNotes(btn) {
+            const row = $(btn).closest('tr');
+            const select = row.find('.item-desc');
+            const selectedOption = select.find('option:selected');
+            const itemId = select.val();
+            const itemData = selectedOption.data('item-data');
+
+            if (!itemId) {
+                showNotification('Please select an item first to view its notes.', 'warning');
+                return;
+            }
+
+            const itemName = selectedOption.text();
+            const notes = (itemData && itemData.notes) ? itemData.notes : '';
+
+            let existing = document.getElementById('item-notes-popup');
+            if (existing) existing.remove();
+            let existingOv = document.getElementById('item-notes-overlay');
+            if (existingOv) existingOv.remove();
+
+            const popup = document.createElement('div');
+            popup.id = 'item-notes-popup';
+            popup.style.cssText = `
+                position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                background: #fff; border-radius: 10px; padding: 28px 32px; z-index: 9999;
+                min-width: 380px; max-width: 540px; width: 90%;
+                box-shadow: 0 8px 40px rgba(0,0,0,0.22);
+                border-top: 4px solid #4a6fdc;
+            `;
+            popup.innerHTML = `
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                    <h3 style="margin:0;color:#4a6fdc;font-size:16px;">
+                        <i class="fas fa-sticky-note" style="margin-right:8px;"></i>Item Notes
+                    </h3>
+                    <button id="notes-close-btn"
+                        style="background:none;border:none;font-size:20px;cursor:pointer;color:#888;line-height:1;">&times;</button>
+                </div>
+                <p id="notes-item-name" style="margin:0 0 12px;color:#555;font-size:13px;font-weight:600;"></p>
+
+                <!-- VIEW mode -->
+                <div id="notes-view-mode">
+                    <div id="notes-display-text"
+                        style="background:#f8f9fc;border-radius:6px;padding:14px 16px;min-height:60px;font-size:14px;color:#333;white-space:pre-wrap;line-height:1.6;border:1px solid #e0e4f0;">
+                    </div>
+                    <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end;">
+                        <button id="notes-edit-btn"
+                            style="display:inline-flex;align-items:center;gap:6px;background:#f0a500;color:#fff;padding:8px 16px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:600;">
+                            <i class="fas fa-edit"></i> Edit Notes
+                        </button>
+                    </div>
+                </div>
+
+                <!-- EDIT mode (hidden initially) -->
+                <div id="notes-edit-mode" style="display:none;">
+                    <textarea id="notes-edit-textarea"
+                        style="width:100%;min-height:120px;border:1px solid #c0cadf;border-radius:6px;padding:12px 14px;font-size:14px;color:#333;line-height:1.6;resize:vertical;box-sizing:border-box;outline:none;"
+                        placeholder="Enter notes for this item..."></textarea>
+                    <div id="notes-save-status" style="min-height:20px;margin-top:6px;font-size:12px;"></div>
+                    <div style="margin-top:12px;display:flex;gap:10px;justify-content:flex-end;">
+                        <button id="notes-cancel-btn"
+                            style="display:inline-flex;align-items:center;gap:6px;background:#e0e0e0;color:#555;padding:8px 16px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:600;">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button id="notes-save-btn"
+                            style="display:inline-flex;align-items:center;gap:6px;background:#27ae60;color:#fff;padding:8px 16px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:600;">
+                            <i class="fas fa-save"></i> Save to Item Master
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Set item name and notes safely via DOM (handles any special chars)
+            popup.querySelector('#notes-item-name').textContent = itemName;
+            const displayEl = popup.querySelector('#notes-display-text');
+            if (notes) {
+                displayEl.textContent = notes;
+            } else {
+                displayEl.innerHTML = '<span style="color:#aaa;font-style:italic;">No notes available for this item.</span>';
+            }
+
+            // Store state on popup element — safe for apostrophes, quotes, newlines, etc.
+            popup._currentNotes = notes;
+            popup._itemId = itemId;
+            popup._selectOption = selectedOption;
+
+            // Wire up all buttons with addEventListener (no fragile inline onclick)
+            popup.querySelector('#notes-close-btn').addEventListener('click', closeNotesPopup);
+            popup.querySelector('#notes-edit-btn').addEventListener('click', switchToEditMode);
+            popup.querySelector('#notes-cancel-btn').addEventListener('click', switchToViewMode);
+            popup.querySelector('#notes-save-btn').addEventListener('click', function () {
+                saveItemNotes(itemId, this);
+            });
+
+            const overlay = document.createElement('div');
+            overlay.id = 'item-notes-overlay';
+            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:9998;';
+            overlay.onclick = closeNotesPopup;
+
+            document.body.appendChild(overlay);
+            document.body.appendChild(popup);
+        }
+
+        function switchToEditMode() {
+            document.getElementById('notes-view-mode').style.display = 'none';
+            document.getElementById('notes-edit-mode').style.display = 'block';
+            const popup = document.getElementById('item-notes-popup');
+            const ta = document.getElementById('notes-edit-textarea');
+            // Read from popup state — safe for any characters
+            ta.value = (popup && popup._currentNotes) ? popup._currentNotes : '';
+            ta.focus();
+        }
+
+        function switchToViewMode() {
+            document.getElementById('notes-edit-mode').style.display = 'none';
+            document.getElementById('notes-view-mode').style.display = 'block';
+            document.getElementById('notes-save-status').textContent = '';
+        }
+
+        async function saveItemNotes(itemId, saveBtn) {
+            const newNotes = document.getElementById('notes-edit-textarea').value.trim();
+            const statusEl = document.getElementById('notes-save-status');
+            const csrftoken = getCookie('csrftoken');
+
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            statusEl.style.color = '#888';
+            statusEl.textContent = 'Saving to Item Master…';
+
+            try {
+                // This single endpoint updates purchase_order.Item.notes AND all QuotationItem rows
+                const response = await fetch(`/app5/quotation-item-notes/${itemId}/update/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify({ notes: newNotes })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    statusEl.style.color = '#27ae60';
+                    statusEl.textContent = '✓ Saved successfully!';
+
+                    // Update cached notes on the <option> and popup state
+                    const popup = document.getElementById('item-notes-popup');
+                    if (popup) {
+                        popup._currentNotes = newNotes;
+                        if (popup._selectOption) {
+                            const cached = popup._selectOption.data('item-data');
+                            if (cached) {
+                                cached.notes = newNotes;
+                                popup._selectOption.data('item-data', cached);
+                            }
+                        }
+                    }
+
+                    // Refresh the view-mode display safely
+                    const displayEl = document.getElementById('notes-display-text');
+                    if (displayEl) {
+                        if (newNotes) {
+                            displayEl.textContent = newNotes;
+                        } else {
+                            displayEl.innerHTML = '<span style="color:#aaa;font-style:italic;">No notes available for this item.</span>';
+                        }
+                    }
+
+                    showNotification('Item notes updated successfully!', 'success');
+
+                    setTimeout(() => {
+                        switchToViewMode();
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = '<i class="fas fa-save"></i> Save to Item Master';
+                    }, 900);
+
+                } else {
+                    throw new Error(result.error || `Server returned ${response.status}`);
+                }
+            } catch (err) {
+                statusEl.style.color = '#e74c3c';
+                statusEl.textContent = '✗ Save failed. Please try again.';
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fas fa-save"></i> Save to Item Master';
+                console.error('Notes save error:', err);
+            }
         }
         
-        // Function to add new item row
+        function initializeItemDropdown(selectElement) {
+            $(selectElement).prop('disabled', true);
+        }
+        
         async function addNewItem() {
-            // Check if items are loaded
             if (!itemsLoaded) {
                 showNotification('Loading items, please wait...', 'warning');
-                
-                // Try to load items first
                 await loadItemsFromPurchaseOrderApp();
                 
                 if (purchaseOrderItems.length === 0) {
@@ -1292,34 +1478,36 @@
             const row = document.createElement('tr');
             
             row.innerHTML = `
-                <!-- SECTION FIRST -->
                 <td>
                     <select class="item-section" name="section[]" onchange="updateItemOptions(this)">
                         <option value="">Select Section</option>
                     </select>
                 </td>
-                <!-- ITEM DESCRIPTION SECOND -->
                 <td>
-                    <select class="item-desc" name="item_id[]" onchange="loadItemDetails(this)" required disabled>
-                        <option value="">Select Item</option>
-                    </select>
+                    <div class="item-desc-wrapper">
+                        <select class="item-desc" name="item_id[]" onchange="loadItemDetails(this)" required disabled>
+                            <option value="">Select Item</option>
+                        </select>
+                        <button type="button" class="btn-view-notes" title="View item notes" onclick="viewItemNotes(this)">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
                 </td>
                 <td>
-                    <input type="number" class="item-qty" name="quantity[]" value="1"  onchange="calculateRow(this)" placeholder="Qty">
+                    <input type="number" class="item-qty" name="quantity[]" value="1" onchange="calculateRow(this)" placeholder="Qty">
                 </td>
-                 <td>
+                <td>
                     <input type="number" class="unit-price" name="unit_price[]" value="0.00" step="0.01" onchange="calculateRow(this)" placeholder="0.00">
                 </td>
                 <td>
                     <input type="number" class="sales-price" name="sales_price[]" value="0.00" step="0.01" onchange="calculateRow(this)" placeholder="0.00">
                 </td>
-               
                 <td>
                     <input type="number" class="discount" name="discount[]" value="0" min="0" max="100" step="0.01" onchange="calculateRow(this)" placeholder="0">
                 </td>
                 <td>
                     <select class="tax" name="tax[]" onchange="calculateRow(this)">
-                        <option value="0">0% </option>
+                        <option value="0">0%</option>
                     </select>
                 </td>
                 <td>
@@ -1335,7 +1523,6 @@
             
             tbody.appendChild(row);
             
-            // Populate the tax dropdown from TaxMaster
             const taxSelect = row.querySelector('.tax');
             taxOptions.forEach(function(t) {
                 const opt = document.createElement('option');
@@ -1344,27 +1531,19 @@
                 taxSelect.appendChild(opt);
             });
             
-            // Populate the section dropdown first
             updateSectionDropdown(row.querySelector('.item-section'));
-            
-            // Initialize item dropdown (will be disabled until section is selected)
             initializeItemDropdown(row.querySelector('.item-desc'));
-            
-            // Calculate initial row total
             calculateRow(row.querySelector('.item-qty'));
             updateTotals();
             
             showNotification('Item row added', 'success');
         }
         
-        // Function to delete row
         function deleteRow(button) {
-            const row = $(button).closest('tr');
-            row.remove();
+            $(button).closest('tr').remove();
             updateTotals();
         }
         
-        // Function to calculate row total
         function calculateRow(input) {
             const row = $(input).closest('tr');
             const qty = parseFloat(row.find('.item-qty').val()) || 0;
@@ -1378,13 +1557,12 @@
             const totalBeforeTax = qty * discountedPrice;
             const totalAfterTax = totalBeforeTax * (1 + tax / 100);
             
-            row.find('.row-total').text('' + totalAfterTax.toFixed(2));
+            row.find('.row-total').text(totalAfterTax.toFixed(2));
             row.find('.row-total-value').val(totalAfterTax.toFixed(2));
             
             updateTotals();
         }
         
-        // Function to update all totals
         function updateTotals() {
             let subtotal = 0;
             let totalDiscount = 0;
@@ -1393,8 +1571,8 @@
             $('#items-body tr').each(function() {
                 const rowTotal = parseFloat($(this).find('.row-total-value').val()) || 0;
                 const qty = parseFloat($(this).find('.item-qty').val()) || 0;
-                const basePrice = parseFloat($(this).find('.sales-price').val()) || 
-                                 parseFloat($(this).find('.unit-price').val()) || 0;
+                const basePrice = parseFloat($(this).find('.sales-price').val()) ||
+                                  parseFloat($(this).find('.unit-price').val()) || 0;
                 const discount = parseFloat($(this).find('.discount').val()) || 0;
                 const tax = parseFloat($(this).find('.tax').val()) || 0;
                 
@@ -1403,13 +1581,12 @@
                 totalTax += (rowTotal / (1 + tax / 100)) * (tax / 100);
             });
             
-            $('#subtotal').text('' + subtotal.toFixed(2));
-            $('#total-discount').text('' + totalDiscount.toFixed(2));
-            $('#total-tax').text('' + totalTax.toFixed(2));
-            $('#grand-total').text('' + (subtotal + totalTax).toFixed(2));
+            $('#subtotal').text(subtotal.toFixed(2));
+            $('#total-discount').text(totalDiscount.toFixed(2));
+            $('#total-tax').text(totalTax.toFixed(2));
+            $('#grand-total').text((subtotal + totalTax).toFixed(2));
         }
         
-        // Function to show notification
         function showNotification(message, type = 'info') {
             const notification = document.createElement('div');
             notification.style.cssText = `
@@ -1426,22 +1603,14 @@
                 transition: all 0.3s ease;
             `;
             notification.innerHTML = message;
-            
             document.body.appendChild(notification);
-            
-            // Remove after 3 seconds
             setTimeout(() => {
                 notification.style.opacity = '0';
                 notification.style.transform = 'translateX(100px)';
-                setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.parentNode.removeChild(notification);
-                    }
-                }, 300);
+                setTimeout(() => { if (notification.parentNode) notification.parentNode.removeChild(notification); }, 300);
             }, 3000);
         }
         
-        // Function to get CSRF token from cookie
         function getCookie(name) {
             let cookieValue = null;
             if (document.cookie && document.cookie !== '') {
@@ -1457,28 +1626,30 @@
             return cookieValue;
         }
         
-        // Function to submit quotation
         async function submitQuotation() {
-            // Check if lead ticket is selected
             if (!selectedLead) {
                 showNotification('Please select a lead ticket first', 'warning');
                 $('#lead-ticket-select').focus();
                 return;
             }
             
-            // Check if there are items
+            // ── Validate status ──
+            const quotationStatus = document.getElementById('quotation-status').value;
+            if (!quotationStatus) {
+                showNotification('Please select a quotation status', 'warning');
+                document.getElementById('quotation-status').focus();
+                return;
+            }
+
             const itemRows = document.querySelectorAll('#items-body tr');
             if (itemRows.length === 0) {
                 showNotification('Please add at least one item to the quotation', 'warning');
                 return;
             }
             
-            // Validate all items have descriptions
             let allValid = true;
             document.querySelectorAll('.item-desc').forEach(select => {
-                if (!select.value) {
-                    allValid = false;
-                }
+                if (!select.value) allValid = false;
             });
             
             if (!allValid) {
@@ -1486,24 +1657,23 @@
                 return;
             }
             
-            // Prepare quotation data
             const quotationData = {
                 lead_ticket_id: selectedLead.id,
                 lead_ticket_number: selectedLead.ticket_number,
                 customer_name: selectedLead.owner_name,
                 customer_phone: selectedLead.phone_number,
+                status: quotationStatus,
                 notes: document.getElementById('notes').value,
                 items: [],
-                subtotal: parseFloat($('#subtotal').text().replace('', '')) || 0,
-                total_discount: parseFloat($('#total-discount').text().replace('', '')) || 0,
-                total_tax: parseFloat($('#total-tax').text().replace('', '')) || 0,
-                grand_total: parseFloat($('#grand-total').text().replace('', '')) || 0,
-                valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 30 days from now
+                subtotal: parseFloat($('#subtotal').text()) || 0,
+                total_discount: parseFloat($('#total-discount').text()) || 0,
+                total_tax: parseFloat($('#total-tax').text()) || 0,
+                grand_total: parseFloat($('#grand-total').text()) || 0,
+                valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
             };
             
-            // Collect item data
             $('#items-body tr').each(function() {
-                const item = {
+                quotationData.items.push({
                     item_id: $(this).find('.item-desc').val(),
                     item_name: $(this).find('.item-desc option:selected').text(),
                     section: $(this).find('.item-section').val() || '',
@@ -1513,41 +1683,31 @@
                     discount: parseFloat($(this).find('.discount').val()) || 0,
                     tax: parseFloat($(this).find('.tax').val()) || 0,
                     total: parseFloat($(this).find('.row-total-value').val()) || 0
-                };
-                quotationData.items.push(item);
+                });
             });
             
-            // Show loading
             const submitBtn = document.querySelector('.btn-submit');
             const originalText = submitBtn.innerHTML;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
             submitBtn.disabled = true;
             
             try {
-                // Get CSRF token
                 const csrftoken = getCookie('csrftoken');
-
                 let response;
 
                 if (proposalFile) {
-                    // Use FormData to include the file
                     const formData = new FormData();
                     formData.append('proposal_attachment', proposalFile);
                     formData.append('data', JSON.stringify(quotationData));
-
                     response = await fetch('{% url "app5:quotation_submit" %}', {
                         method: 'POST',
                         headers: { 'X-CSRFToken': csrftoken },
                         body: formData
                     });
                 } else {
-                    // No file — send JSON as before
                     response = await fetch('{% url "app5:quotation_submit" %}', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': csrftoken
-                        },
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
                         body: JSON.stringify(quotationData)
                     });
                 }
@@ -1556,12 +1716,7 @@
                 
                 if (response.ok && result.success) {
                     showNotification('Quotation submitted successfully for ' + selectedLead.owner_name + '!', 'success');
-                    
-                    // Option 1: Redirect to quotation form page after a short delay
-                    setTimeout(() => {
-                        window.location.href = '{% url "app5:quotation_form" %}';
-                    }, 1500);
-                    
+                    setTimeout(() => { window.location.href = '{% url "app5:quotation_form" %}?lead_id=' + selectedLead.id; }, 1500);
                 } else {
                     showNotification(result.message || 'Error submitting quotation', 'error');
                 }
@@ -1574,34 +1729,24 @@
             }
         }
         
-        // Function to reset form after successful submission
         function resetForm() {
-            // Clear form fields
             document.getElementById('notes').value = '';
-            
-            // Clear lead selection
             $('#lead-ticket-select').val('');
             clearTicketFields();
             selectedLead = null;
-            
-            // Clear items table
             document.getElementById('items-body').innerHTML = '';
-            
-            // Reset totals
             $('#subtotal').text('0.00');
             $('#total-discount').text('0.00');
             $('#total-tax').text('0.00');
             $('#grand-total').text('0.00');
-            
-            showNotification('Form reset. You can create a new quotation.', 'info');
-            
-            // Reset proposal attachment
+            const statusSel = document.getElementById('quotation-status');
+            statusSel.value = '';
+            statusSel.className = '';
             removeAttachment();
+            showNotification('Form reset. You can create a new quotation.', 'info');
         }
         
-        // =============================================
-        // PROPOSAL ATTACHMENT FUNCTIONALITY
-        // =============================================
+        // ── Attachment functionality ──
         let proposalFile = null;
 
         function openAttachmentModal() {
@@ -1610,23 +1755,17 @@
 
         function closeAttachmentModal() {
             document.getElementById('attachment-modal-overlay').classList.remove('open');
-            // If no file confirmed yet, reset the modal preview
-            if (!proposalFile) {
-                resetModalPreview();
-            }
+            if (!proposalFile) resetModalPreview();
         }
 
         function handleFileSelected(file) {
             if (!file) return;
-
-            const maxSize = 10 * 1024 * 1024; // 10 MB
+            const maxSize = 10 * 1024 * 1024;
             if (file.size > maxSize) {
                 showNotification('File is too large. Maximum allowed size is 10 MB.', 'error');
                 document.getElementById('proposal-file-input').value = '';
                 return;
             }
-
-            // Choose icon based on file type
             const ext = file.name.split('.').pop().toLowerCase();
             const iconMap = {
                 pdf: 'fa-file-pdf',
@@ -1634,30 +1773,21 @@
                 xls: 'fa-file-excel', xlsx: 'fa-file-excel',
                 png: 'fa-file-image', jpg: 'fa-file-image', jpeg: 'fa-file-image'
             };
-            const iconClass = iconMap[ext] || 'fa-file-alt';
-
-            document.getElementById('preview-file-icon').className = `fas ${iconClass}`;
+            document.getElementById('preview-file-icon').className = `fas ${iconMap[ext] || 'fa-file-alt'}`;
             document.getElementById('preview-file-name').textContent = file.name;
             document.getElementById('preview-file-size').textContent = formatFileSize(file.size);
             document.getElementById('attachment-selected-preview').classList.add('visible');
             document.getElementById('btn-confirm-attach').disabled = false;
-
-            // Store temporarily
             proposalFile = file;
         }
 
         function confirmAttachment() {
             if (!proposalFile) return;
-
-            // Update the badge in the form
             document.getElementById('attachment-badge-name').textContent = proposalFile.name;
             document.getElementById('attachment-badge').classList.add('visible');
-
-            // Change button to green "has-file" state
             const btn = document.getElementById('btn-attach-proposal');
             btn.classList.add('has-file');
             btn.innerHTML = `<i class="fas fa-check-circle"></i> Proposal Attached`;
-
             closeAttachmentModal();
             showNotification(`"${proposalFile.name}" attached successfully!`, 'success');
         }
@@ -1666,11 +1796,9 @@
             proposalFile = null;
             document.getElementById('attachment-badge').classList.remove('visible');
             document.getElementById('proposal-file-input').value = '';
-
             const btn = document.getElementById('btn-attach-proposal');
             btn.classList.remove('has-file');
             btn.innerHTML = `<i class="fas fa-paperclip"></i> Attach Proposal`;
-
             resetModalPreview();
             showNotification('Attachment removed.', 'info');
         }
@@ -1687,65 +1815,48 @@
             return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
         }
 
-        // Drag-and-drop support
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const dropZone = document.getElementById('drop-zone');
-            if (!dropZone) return;
+            if (dropZone) {
+                dropZone.addEventListener('dragover', function(e) { e.preventDefault(); dropZone.classList.add('dragover'); });
+                dropZone.addEventListener('dragleave', function() { dropZone.classList.remove('dragover'); });
+                dropZone.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    dropZone.classList.remove('dragover');
+                    const file = e.dataTransfer.files[0];
+                    if (file) handleFileSelected(file);
+                });
+            }
 
-            dropZone.addEventListener('dragover', function(e) {
-                e.preventDefault();
-                dropZone.classList.add('dragover');
-            });
-
-            dropZone.addEventListener('dragleave', function() {
-                dropZone.classList.remove('dragover');
-            });
-
-            dropZone.addEventListener('drop', function(e) {
-                e.preventDefault();
-                dropZone.classList.remove('dragover');
-                const file = e.dataTransfer.files[0];
-                if (file) handleFileSelected(file);
-            });
-
-            // Close modal on overlay click
             document.getElementById('attachment-modal-overlay').addEventListener('click', function(e) {
                 if (e.target === this) closeAttachmentModal();
             });
+
+            // Status colour feedback
+            const statusSelect = document.getElementById('quotation-status');
+            statusSelect.addEventListener('change', function () {
+                this.classList.remove('status-accepted', 'status-submitted', 'status-rejected');
+                if (this.value) this.classList.add('status-' + this.value);
+            });
         });
 
-        // =============================================
-        // END PROPOSAL ATTACHMENT FUNCTIONALITY
-        // =============================================
-
-        // Initialize when page loads
         $(document).ready(function() {
-            console.log('Initializing quotation form with Purchase Order items...');
-            
-            // Set up event listener for ticket selection
             $('#lead-ticket-select').on('change', function() {
                 handleTicketSelection(this);
             });
             
-            // Load items from Purchase Order app
             loadItemsFromPurchaseOrderApp().then(() => {
-                // If items are loaded successfully, add one default row automatically
                 if (itemsLoaded && purchaseOrderItems.length > 0) {
-                    // Wait a bit for UI to settle
                     setTimeout(() => {
                         showNotification(`Loaded ${purchaseOrderItems.length} items from Purchase Order app. Add items to create quotation.`, 'info');
-                        // Auto-add one row for convenience
                         addNewItem();
                     }, 1000);
                 } else {
                     showNotification('Warning: No items available. Please check Purchase Order app.', 'warning');
-                    // Disable the "Add Item" button if no items
                     document.querySelector('.btn-add').disabled = true;
                     document.querySelector('.btn-add').innerHTML = '<i class="fas fa-exclamation-triangle"></i> No Items Available';
                 }
             });
-            
-            console.log('Quotation form initialized');
         });
     </script>
 </body>

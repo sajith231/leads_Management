@@ -5085,16 +5085,46 @@ def send_whatsapp_notification(name, installation_date, software_amount, created
 
 
 # Modified feeder view with created_by included in message
+from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.dateparse import parse_date
+from django.core.paginator import Paginator
+from django.db.models import Q
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from datetime import date
+import json
+import traceback
+import logging
+from .models import Feeder
+from app1.models import BusinessType, Branch
+
+logger = logging.getLogger(__name__)
+
+
+def get_display_name(user):
+    if user is None or not getattr(user, 'is_authenticated', False):
+        return "Unknown"
+    try:
+        from django.apps import apps
+        AppUser = apps.get_model('app1', 'User')
+        custom = AppUser.objects.filter(userid=user.username).only('name', 'userid').first()
+        if custom:
+            return (custom.name or custom.userid or '').strip() or user.username
+    except Exception:
+        pass
+    full = getattr(user, 'get_full_name', lambda: '')()
+    return full.strip() if full and full.strip() else (user.username or 'Unknown')
+
+
 @csrf_exempt
 def feeder(request):
-    # Ensure we resolve the correct custom user model (app1.User) even if "User" is shadowed elsewhere
     from django.apps import apps
     AppUser = apps.get_model('app1', 'User')
 
     business_types = BusinessType.objects.all()
     branches = Branch.objects.all()
 
-    # Get the logged-in user's branch - ALL users now see only their branch
     try:
         custom_user = AppUser.objects.get(userid=request.user.username)
         user_branch = custom_user.branch if custom_user.branch else None
@@ -5103,7 +5133,6 @@ def feeder(request):
         user_branch = None
         user_branch_id = None
 
-    # All users are now branch restricted (removed IMC/SYSMAC exception)
     is_branch_restricted = user_branch is not None
 
     if request.method == 'POST':
@@ -5120,10 +5149,7 @@ def feeder(request):
         reputed_person_number = request.POST.get('reputed_person_number', '')
         software = request.POST.get('software')
         nature = request.POST.get('nature')
-
-        # All users now use their own branch only
-        branch_id = user_branch_id  # Always use the user's branch
-
+        branch_id = user_branch_id
         no_of_system = request.POST.get('no_of_system')
         pincode = request.POST.get('pincode')
         country = request.POST.get('country')
@@ -5131,7 +5157,6 @@ def feeder(request):
         remarks = request.POST.get('remarks', '')
         software_amount = request.POST.get('software_amount') or 0
         module_charges = request.POST.get('total_cost') or 0
-
         modules = request.POST.getlist('modules')
         more_modules = request.POST.getlist('more_modules')
 
@@ -5145,13 +5170,15 @@ def feeder(request):
                 except ValueError:
                     pass
 
-        # Parse installation date
         parsed_installation_date = None
         if installation_date:
             try:
                 parsed_installation_date = parse_date(installation_date)
             except (ValueError, TypeError):
                 parsed_installation_date = None
+
+        # Resolve creator name BEFORE building the object
+        created_by_name = get_display_name(getattr(request, 'user', None))
 
         feeder_obj = Feeder(
             name=name,
@@ -5167,7 +5194,7 @@ def feeder(request):
             reputed_person_number=reputed_person_number,
             software=software,
             nature=nature,
-            branch_id=branch_id,  # Use the user's branch
+            branch_id=branch_id,
             no_of_system=no_of_system,
             pincode=pincode,
             country=country,
@@ -5177,16 +5204,13 @@ def feeder(request):
             module_charges=module_charges,
             modules=', '.join(modules),
             more_modules=', '.join(more_modules),
-            module_prices=module_prices
+            module_prices=module_prices,
+            created_by=created_by_name,  # SAVED HERE
         )
 
         try:
             feeder_obj.save()
 
-            # Determine creator display name
-            created_by_name = get_display_name(getattr(request, 'user', None))
-
-            # Send WhatsApp notification after successful save (includes creator)
             try:
                 send_whatsapp_notification(
                     name=name,
@@ -5196,14 +5220,12 @@ def feeder(request):
                 )
                 logger.info(f"WhatsApp notification attempted for feeder: {name} (created by {created_by_name})")
             except Exception as e:
-                # Log the error but don't fail the feeder creation
                 logger.error(f"WhatsApp notification failed for feeder {name}: {str(e)}")
 
             return redirect('feeder_list')
 
         except Exception as e:
             logger.error(f"Error creating feeder: {str(e)}")
-            # Handle the error appropriately
             return render(request, 'add_feeder.html', {
                 'business_types': business_types,
                 'branches': branches,
@@ -5224,18 +5246,19 @@ def feeder(request):
     })
 
 
-
-
-# Updated feeder_list view with proper search functionality
 def feeder_list(request):
     query = request.GET.get('q', '').strip()
     selected_branch = request.GET.get('branch', '').strip()
     selected_status = request.GET.get('status', '').strip()
 
-    # Start with all feeders
+    today = date.today().strftime('%Y-%m-%d')
+
+    date_from = request.GET.get('date_from', today).strip()
+    date_to = request.GET.get('date_to', today).strip()
+    per_page = request.GET.get('per_page', '10').strip()
+
     feeders_list = Feeder.objects.select_related('branch').all().order_by('-id')
 
-    # Apply search filter
     if query:
         feeders_list = feeders_list.filter(
             Q(name__icontains=query) |
@@ -5248,22 +5271,21 @@ def feeder_list(request):
             Q(district__icontains=query)
         )
 
-    # Apply branch filter
     if selected_branch:
         feeders_list = feeders_list.filter(branch__name=selected_branch)
 
-    # Apply status filter
     if selected_status:
         feeders_list = feeders_list.filter(status=selected_status)
 
-    # Process each feeder for modules and prices
+    if date_from:
+        feeders_list = feeders_list.filter(installation_date__gte=date_from)
+    if date_to:
+        feeders_list = feeders_list.filter(installation_date__lte=date_to)
+
     for feeder in feeders_list:
-        # Handle more_modules list
         feeder.more_modules_list = [
             m.strip() for m in (feeder.more_modules or '').split(',') if m.strip()
         ]
-        
-        # Handle price dictionary
         try:
             if isinstance(feeder.module_prices, str):
                 feeder.price_dict = json.loads(feeder.module_prices)
@@ -5274,12 +5296,15 @@ def feeder_list(request):
         except (ValueError, TypeError, json.JSONDecodeError):
             feeder.price_dict = {}
 
-    # Pagination
-    paginator = Paginator(feeders_list, 10)
+    try:
+        per_page = int(per_page)
+    except (ValueError, TypeError):
+        per_page = 10
+
+    paginator = Paginator(feeders_list, per_page)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    # Get list of branches for dropdown
     branches = Branch.objects.all().order_by('name')
 
     context = {
@@ -5290,19 +5315,18 @@ def feeder_list(request):
         'selected_status': selected_status,
         'total_count': paginator.count,
         'allowed_menus': ['feeder_status'],
+        'today': today,
     }
 
     return render(request, 'feeder_list.html', context)
 
+
 def feeder_edit(request, feeder_id):
     from django.apps import apps
-    AppUser = apps.get_model('app1', 'User')  # ensure we use app1.User (has `userid`, `branch`)
+    AppUser = apps.get_model('app1', 'User')
 
     feeder = get_object_or_404(Feeder, id=feeder_id)
 
-    # ------------------------------------------------------------------
-    # Get the logged-in user's branch (similar to clients view)
-    # ------------------------------------------------------------------
     try:
         custom_user = AppUser.objects.get(userid=request.user.username)
         user_branch = custom_user.branch if custom_user.branch else None
@@ -5311,7 +5335,6 @@ def feeder_edit(request, feeder_id):
         user_branch = None
         user_branch_id = None
 
-    # Check if user is branch restricted (not IMC/SYSMAC)
     is_branch_restricted = user_branch and user_branch.name not in ['IMC', 'SYSMAC']
 
     selected_modules = [m.strip() for m in (feeder.more_modules or '').split(',') if m.strip()]
@@ -5325,7 +5348,6 @@ def feeder_edit(request, feeder_id):
         price_dict = {}
 
     if request.method == 'POST':
-        # Update all simple fields
         feeder.name = request.POST.get('name')
         feeder.address = request.POST.get('address')
         feeder.location = request.POST.get('location')
@@ -5338,8 +5360,7 @@ def feeder_edit(request, feeder_id):
         feeder.reputed_person_name = request.POST.get('reputed_person_name', '')
         feeder.reputed_person_number = request.POST.get('reputed_person_number', '')
         feeder.software = request.POST.get('software')
-        
-        # Handle foreign key fields properly - convert to int and handle empty values
+
         nature_id = request.POST.get('nature')
         if nature_id and nature_id.strip():
             try:
@@ -5348,15 +5369,10 @@ def feeder_edit(request, feeder_id):
                 feeder.nature_id = None
         else:
             feeder.nature_id = None
-        
-        # ------------------------------------------------------------------
-        # Handle branch selection with restriction
-        # ------------------------------------------------------------------
+
         if is_branch_restricted:
-            # For restricted users, keep their original branch or use their user branch
             feeder.branch_id = user_branch_id
         else:
-            # For IMC/SYSMAC users, use the selected branch
             branch_id = request.POST.get('branch')
             if branch_id and branch_id.strip():
                 try:
@@ -5365,8 +5381,7 @@ def feeder_edit(request, feeder_id):
                     feeder.branch_id = None
             else:
                 feeder.branch_id = None
-        
-        # Handle numeric fields
+
         no_of_system = request.POST.get('no_of_system')
         if no_of_system and no_of_system.strip():
             try:
@@ -5375,7 +5390,7 @@ def feeder_edit(request, feeder_id):
                 feeder.no_of_system = None
         else:
             feeder.no_of_system = None
-            
+
         pincode = request.POST.get('pincode')
         if pincode and pincode.strip():
             try:
@@ -5384,41 +5399,37 @@ def feeder_edit(request, feeder_id):
                 feeder.pincode = None
         else:
             feeder.pincode = None
-        
+
         feeder.country = request.POST.get('country', 'India')
-        
-        # Handle date field (kept as-is; string assigned directly)
+
         installation_date = request.POST.get('installation_date')
         if installation_date and installation_date.strip():
             feeder.installation_date = installation_date
         else:
             feeder.installation_date = None
-            
+
         feeder.remarks = request.POST.get('remarks', '')
         feeder.software_amount = request.POST.get('software_amount', '') or 0
-        
-        # Handle total_cost field - FIXED: Use module_charges field
+
         total_cost = request.POST.get('total_cost')
         feeder.module_charges = total_cost or 0
-        
-        # Handle modules
+
         feeder.modules = ', '.join(request.POST.getlist('modules'))
         feeder.more_modules = ', '.join(request.POST.getlist('more_modules'))
 
-        # Re-save module prices
         new_prices = {
             m: request.POST.get(f'price_{m}', '0')
             for m in request.POST.getlist('more_modules')
         }
         feeder.module_prices = json.dumps(new_prices)
-        
+
+        # created_by is intentionally NOT updated on edit — preserves original creator
+
         try:
             feeder.save()
             return redirect('feeder_list')
         except Exception as e:
-            # Add error handling - you might want to show this error to the user
             print(f"Error saving feeder: {e}")
-            # messages.error(request, f"Error updating feeder: {e}")
 
     business_types = BusinessType.objects.all()
     branches = Branch.objects.all()
@@ -5435,8 +5446,6 @@ def feeder_edit(request, feeder_id):
     })
 
 
-
-# ----------  DELETE  ----------
 def feeder_delete(request, feeder_id):
     feeder = get_object_or_404(Feeder, id=feeder_id)
     if request.method == 'POST':
@@ -5444,42 +5453,28 @@ def feeder_delete(request, feeder_id):
     return redirect('feeder_list')
 
 
-# ----------  STATUS UPDATE (FIXED)  ----------
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
-from django.shortcuts import get_object_or_404
-from .models import Feeder
-import json
-import traceback
-
 @csrf_exempt
 @require_POST
 def feeder_status_update(request, feeder_id):
     try:
-        # Parse JSON data from request body
         data = json.loads(request.body)
         new_status = data.get('status')
 
         if not new_status:
             return JsonResponse({'success': False, 'error': 'Status not provided'}, status=400)
 
-        # Get the feeder object
         feeder = get_object_or_404(Feeder, id=feeder_id)
 
-        # Validate status
         valid_statuses = [choice[0] for choice in Feeder.STATUS_CHOICES]
         if new_status not in valid_statuses:
             return JsonResponse({
-                'success': False, 
+                'success': False,
                 'error': f'Invalid status. Valid options: {valid_statuses}'
             }, status=400)
 
-        # Update status
         feeder.status = new_status
         feeder.save()
 
-        # Return success response
         return JsonResponse({
             'success': True,
             'new_status': feeder.get_status_display(),
@@ -5491,7 +5486,6 @@ def feeder_status_update(request, feeder_id):
     except Feeder.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Feeder not found'}, status=404)
     except Exception as e:
-        # Log the full error for debugging
         print(f"Error in feeder_status_update: {str(e)}")
         traceback.print_exc()
         return JsonResponse({'success': False, 'error': f'Server error: {str(e)}'}, status=500)

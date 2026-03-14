@@ -4239,6 +4239,7 @@ def get_items_by_section():
                 "price": float(item.mrp or 0),
                 "hsn": item.hsn_code or "",
                 "description": item.description or "",
+                "notes": item.notes if hasattr(item, 'notes') and item.notes else "",
             })
         
         logger.info(f"✅ Items grouped into {len(items_by_section)} sections: {list(items_by_section.keys())}")
@@ -7855,6 +7856,12 @@ def quotation_submit(request):
                     description = item_data.get('description', '') or (
                         item.description if item and hasattr(item, 'description') and item.description else ''
                     )
+                    # Append item notes from purchase_order Item into description
+                    item_notes = item_data.get('notes', '') or (
+                        item.notes if item and hasattr(item, 'notes') and item.notes else ''
+                    )
+                    if item_notes and item_notes.strip():
+                        description = (description + '\n' + item_notes.strip()) if description and description.strip() else item_notes.strip()
                     unit     = item_data.get('unit', 'pcs') or (
                         item.unit_of_measure if item and hasattr(item, 'unit_of_measure') else 'pcs'
                     )
@@ -8005,6 +8012,7 @@ def get_quotation_items_api(request):
                 'tax_percentage': float(item.tax_percentage) if item.tax_percentage else 0,
                 'hsn_code': item.hsn_code or '',
                 'description': item.description or '',
+                'notes': item.notes if hasattr(item, 'notes') and item.notes else '',
                 'section': item.section,
                 'department': item.department.name if item.department else 'N/A'
             })
@@ -8398,10 +8406,14 @@ def update_quotation(request, pk):
                     after_discount = (base_price * quantity) - discount_amount
                     tax_amount = after_discount * (tax / 100) if tax else Decimal('0')
 
+                    _upd_desc = item.description or ''
+                    _upd_notes = item.notes if hasattr(item, 'notes') and item.notes else ''
+                    if _upd_notes and _upd_notes.strip():
+                        _upd_desc = (_upd_desc + '\n' + _upd_notes.strip()) if _upd_desc and _upd_desc.strip() else _upd_notes.strip()
                     item_values = {
                         'item': item,
                         'item_name': item.name,
-                        'description': item.description or '',
+                        'description': _upd_desc,
                         'quantity': quantity,
                         'unit': item.unit_of_measure,
                         'sales_price': sales_price,
@@ -13389,6 +13401,7 @@ def get_items_by_section():
                 "price": float(item.mrp or 0),
                 "hsn": item.hsn_code or "",
                 "description": item.description or "",
+                "notes": item.notes if hasattr(item, 'notes') and item.notes else "",
             })
         
         logger.info(f"✅ Items grouped into {len(items_by_section)} sections: {list(items_by_section.keys())}")
@@ -16292,7 +16305,8 @@ from django.db import transaction
 from django.contrib import messages
 from django.utils import timezone
 from django.core import serializers
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
+from datetime import datetime, timedelta
 import json
 import logging
 
@@ -16302,615 +16316,329 @@ from app1.models import User
 
 logger = logging.getLogger(__name__)
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Single source of truth for valid statuses.
+# Only 3 statuses are available in the UI (list + edit pages).
+# ─────────────────────────────────────────────────────────────────────────────
+QUOTATION_VALID_STATUSES = ['submitted', 'accepted', 'rejected']
+
 
 # ============================================================================
-# QUOTATION LIST VIEW - Display form to create quotations
+# QUOTATION LIST VIEW
 # ============================================================================
 def quotation_list_view(request):
-    """
-    Display quotation form with active leads, employees, and items
-    """
-    # ✅ GET ACTIVE LEADS (for quotation form)
-    lead_tickets = []  # Renamed from active_leads for template compatibility
+    lead_tickets = []
     try:
         leads_qs = Lead.objects.filter(status__iexact='Active').order_by('-created_at')[:50]
-        
         for lead in leads_qs:
-            # Get proper ticket number
-            ticket_number = getattr(lead, 'ticket_number', None)
-            if not ticket_number:
-                ticket_number = f"TKT-{lead.id:06d}"  # Format with leading zeros
-            
-            # Get owner name (handle both field names)
-            owner_name = getattr(lead, 'ownerName', None) or getattr(lead, 'owner_name', 'Unknown')
-            
-            # Get phone number (handle both field names)
-            phone_number = getattr(lead, 'phoneNo', None) or getattr(lead, 'phone_number', '')
-            
-            # Get company name if business customer
-            company_name = ''
+            ticket_number = getattr(lead, 'ticket_number', None) or f"TKT-{lead.id:06d}"
+            owner_name    = getattr(lead, 'ownerName', None) or getattr(lead, 'owner_name', 'Unknown')
+            phone_number  = getattr(lead, 'phoneNo', None) or getattr(lead, 'phone_number', '')
+            company_name  = ''
             if getattr(lead, 'customerType', '') == 'Business':
                 company_name = getattr(lead, 'name', '') or getattr(lead, 'company_name', '')
-            
-            # Get address (handle multiple address fields)
             address = getattr(lead, 'address', '')
             if not address and getattr(lead, 'customerType', '') == 'Individual':
                 address = getattr(lead, 'individualAddress', '')
-            
             lead_tickets.append({
-                'id': lead.id,
+                'id':           lead.id,
                 'ticket_number': ticket_number,
-                'owner_name': owner_name,
+                'owner_name':   owner_name,
                 'phone_number': phone_number,
-                'email': getattr(lead, 'email', '') or '',
-                'address': address or '',
+                'email':        getattr(lead, 'email', '') or '',
+                'address':      address or '',
                 'company_name': company_name,
-                'status': getattr(lead, 'status', 'Active'),
+                'status':       getattr(lead, 'status', 'Active'),
                 'customerType': getattr(lead, 'customerType', ''),
-                'place': getattr(lead, 'place', ''),
-                'business': getattr(lead, 'business', ''),
-                'priority': getattr(lead, 'priority', 'Medium'),
-                'created_at': lead.created_at if hasattr(lead, 'created_at') else None,
+                'place':        getattr(lead, 'place', ''),
+                'business':     getattr(lead, 'business', ''),
+                'priority':     getattr(lead, 'priority', 'Medium'),
+                'created_at':   lead.created_at if hasattr(lead, 'created_at') else None,
             })
-        
-        logger.info(f"✅ Loaded {len(lead_tickets)} active leads for quotation")
-        
+        logger.info(f"✅ Loaded {len(lead_tickets)} active leads")
     except Exception as e:
         logger.error(f"❌ Error loading leads: {e}", exc_info=True)
-        lead_tickets = []
-    
-    # ✅ GET ACTIVE EMPLOYEES/USERS
+
     active_employees = []
     try:
-        # Try to get users with status field
         user_fields = [f.name for f in User._meta.get_fields()]
-        
         if 'status' in user_fields:
             users_qs = User.objects.filter(status='active').order_by('name')
         elif 'is_active' in user_fields:
             users_qs = User.objects.filter(is_active=True).order_by('name')
         else:
             users_qs = User.objects.all().order_by('name')
-        
         for user in users_qs:
             active_employees.append({
-                'id': user.id,
-                'name': getattr(user, 'name', f'User {user.id}'),
-                'department': getattr(user, 'department', ''),
+                'id':          user.id,
+                'name':        getattr(user, 'name', f'User {user.id}'),
+                'department':  getattr(user, 'department', ''),
                 'designation': getattr(user, 'designation', ''),
-                'phone': getattr(user, 'phone_number', '') or getattr(user, 'phone', ''),
+                'phone':       getattr(user, 'phone_number', '') or getattr(user, 'phone', ''),
             })
-        
-        logger.info(f"✅ Loaded {len(active_employees)} active employees for quotation")
-        
     except Exception as e:
         logger.error(f"❌ Error loading employees: {e}")
-        active_employees = []
-    
-    # ✅ GET ITEMS FROM PURCHASE_ORDER
+
     items = []
     try:
         items = Item.objects.filter(is_active=True).order_by('section', 'name')
-        logger.info(f"✅ Loaded {items.count()} items for quotation")
     except Exception as e:
         logger.error(f"❌ Error loading items: {e}")
-        items = []
-    
-    # ✅ GET DEPARTMENTS (if needed for filtering)
+
     departments = []
     try:
         departments = Department.objects.filter(is_active=True).order_by('name')
     except Exception as e:
-        logger.debug(f"No departments available: {e}")
+        logger.debug(f"No departments: {e}")
 
-    # ✅ GET TAX MASTER RECORDS
     taxes = []
     try:
         taxes = TaxMaster.objects.all().order_by('name')
-        logger.info(f"✅ Loaded {taxes.count()} taxes for quotation")
     except Exception as e:
         logger.error(f"❌ Error loading taxes: {e}")
-        taxes = []
-    
-    # Calculate counts
-    leads_count = len(lead_tickets)
-    employees_count = len(active_employees)
-    items_count = items.count() if hasattr(items, 'count') else len(items)
-    
-    # Debug: Check lead data
-    if lead_tickets:
-        first_lead = lead_tickets[0]
-        logger.info(f"📅 First lead ticket: {first_lead.get('ticket_number')} - {first_lead.get('owner_name')}")
-        logger.info(f"📅 First lead created_at: {first_lead.get('created_at')}")
-        logger.info(f"📅 First lead phone: {first_lead.get('phone_number')}")
-    
+
     context = {
-        'lead_tickets': lead_tickets,  # Changed from active_leads to lead_tickets
-        'active_employees': active_employees,
-        'items': items,
-        'departments': departments,
-        'taxes': taxes,              # ✅ ADDED: Tax master list for dropdown
-        'leads_count': leads_count,
-        'employees_count': employees_count,
-        'items_count': items_count,
+        'lead_tickets':      lead_tickets,
+        'active_employees':  active_employees,
+        'items':             items,
+        'departments':       departments,
+        'taxes':             taxes,
+        'leads_count':       len(lead_tickets),
+        'employees_count':   len(active_employees),
+        'items_count':       items.count() if hasattr(items, 'count') else len(items),
     }
-    
-    logger.info(f"📊 Quotation List Context: {leads_count} leads, {employees_count} employees, {items_count} items")
-    
     return render(request, 'quotation_list.html', context)
 
 
 # ============================================================================
-# QUOTATION FORM VIEW - Display saved quotations
+# QUOTATION FORM VIEW
 # ============================================================================
-from django.db.models import Sum  # ADD THIS IMPORT
+from django.db.models import Sum
 
 def quotation_form_view(request):
-    """
-    Display saved quotations in quotation_form.html
-    Shows all quotations with their items
-    
-    LEAD FILTERING BY USER PERMISSIONS:
-    - Admin users (user_level='normal', 'admin_level', '4level'): See ALL active leads
-    - Regular users (user_level='3level', '5level'): See ONLY their created & assigned active leads
-    """
     try:
-        logger.info("🔍 Entering quotation_form_view")
-        
-        # Get current user information. Prefer custom session user, fallback to Django auth user.
         current_user = None
         current_user_name = None
         user_level = None
 
         if request.session.get('custom_user_id'):
             try:
-                current_user = User.objects.get(id=request.session['custom_user_id'])
+                current_user      = User.objects.get(id=request.session['custom_user_id'])
                 current_user_name = getattr(current_user, 'name', None)
-                user_level = getattr(current_user, 'user_level', None)
-                logger.info(f"👤 Current user (from session): {current_user_name} (Level: {user_level})")
+                user_level        = getattr(current_user, 'user_level', None)
             except User.DoesNotExist:
-                logger.warning("⚠️ User not found in session")
+                pass
 
-        # Fallback: if no custom session user, use Django's request.user when available
         if not current_user and hasattr(request, 'user') and request.user.is_authenticated:
             try:
-                current_user = request.user
+                current_user      = request.user
                 current_user_name = getattr(current_user, 'name', getattr(current_user, 'username', None))
-                user_level = getattr(current_user, 'user_level', None)
-                logger.info(f"👤 Current user (from request.user): {current_user_name} (Level: {user_level})")
+                user_level        = getattr(current_user, 'user_level', None)
             except Exception:
-                logger.debug("Could not read user attributes from request.user; continuing with defaults")
-        
-        # Get all quotations with related data - FIXED JOIN
-        quotations = Quotation.objects.select_related(
-            'lead'  # Make sure this is correct foreign key name
-        ).prefetch_related(
-            'items'
-        ).order_by('-created_at')
+                pass
 
-        # ✅ FIX: Check if we have a lead_id parameter from URL
+        quotations = Quotation.objects.select_related('lead').prefetch_related('items').all().order_by('-created_at')
+
         lead_id_from_url = request.GET.get('lead_id')
-        selected_lead = None
-        
+        selected_lead    = None
+
         if lead_id_from_url and lead_id_from_url.isdigit():
-            # Filter quotations by this specific lead
             quotations = quotations.filter(lead_id=int(lead_id_from_url))
-            logger.info(f"🔍 Filtering quotations for lead ID: {lead_id_from_url}")
-            
-            # Also get the lead name for display
             try:
                 selected_lead = Lead.objects.get(id=int(lead_id_from_url))
-                # Store in session for highlighting
-                request.session['selected_lead_id'] = int(lead_id_from_url)
+                request.session['selected_lead_id']   = int(lead_id_from_url)
                 request.session['selected_lead_name'] = selected_lead.ownerName
-                logger.info(f"✅ Selected lead: {selected_lead.ownerName}")
             except Lead.DoesNotExist:
-                logger.warning(f"⚠️ Lead {lead_id_from_url} not found")
+                pass
 
-        # ✅ GET DEPARTMENTS FOR BRANCH SELECTION
-        departments = Department.objects.filter(is_active=True).order_by('name')
-        logger.info(f"🏢 Loaded {departments.count()} active departments")
-        
-        # DEBUG: Check if we're getting any data
-        logger.info(f"📊 Quotations QuerySet: {quotations}")
-        
-        # Force evaluation to see actual data
+        departments    = Department.objects.filter(is_active=True).order_by('name')
         quotation_list = list(quotations)
-        logger.info(f"📊 Quotation list count: {len(quotation_list)}")
-        
-        # Log each quotation with lead info
-        for i, q in enumerate(quotation_list[:5]):
-            lead_info = f"{q.lead.ownerName}" if q.lead else "No Lead"
-            logger.info(f"  {i+1}. {q.quotation_number} - {lead_info} - ₹{q.grand_total} - Status: {q.status}")
-        
-        # ========================================
-        # LEAD FILTERING BASED ON USER PERMISSIONS
-        # ========================================
+
         active_leads = []
         try:
-            # Determine if user should see all leads or only their own
-            # Admin levels: 'normal' (Admin), 'admin_level' (Super Admin), '4level' (Superuser)
-            # Also treat Django staff/superuser as admins (fallback)
-            is_admin = False
-            try:
-                is_admin = user_level in ['normal', 'admin_level', '4level']
-            except Exception:
-                is_admin = False
-
-            # Fallback: if request.user is staff/superuser, treat as admin
+            is_admin = user_level in ['normal', 'admin_level', '4level']
             if not is_admin and hasattr(request, 'user') and request.user.is_authenticated:
-                try:
-                    if getattr(request.user, 'is_superuser', False) or getattr(request.user, 'is_staff', False):
-                        is_admin = True
-                        logger.info(f"🔓 Fallback: request.user is staff/superuser, treating as admin")
-                except Exception:
-                    pass
-            
+                if getattr(request.user, 'is_superuser', False) or getattr(request.user, 'is_staff', False):
+                    is_admin = True
+
             if is_admin:
-                # ========================================
-                # ADMIN USERS: See ALL active leads
-                # ========================================
-                # Super admin sees ALL user-created active leads (no limit)
-                # Other admins see last 50 for performance
-                if user_level == 'admin_level':  # Super Admin
-                    leads_qs = Lead.objects.filter(
-                        status__iexact='Active'
-                    ).order_by('-created_at')
-                    logger.info(f"🔓 Super Admin ({user_level}) - showing ALL active leads (no limit)")
-                else:  # Normal admin or superuser
-                    leads_qs = Lead.objects.filter(
-                        status__iexact='Active'
-                    ).order_by('-created_at')[:50]
-                    logger.info(f"🔓 Admin user ({user_level}) - showing last 50 active leads")
-                
+                if user_level == 'admin_level':
+                    leads_qs = Lead.objects.filter(status__iexact='Active').order_by('-created_at')
+                else:
+                    leads_qs = Lead.objects.filter(status__iexact='Active').order_by('-created_at')[:50]
             else:
-                # ========================================
-                # REGULAR USERS: See only CREATED or ASSIGNED leads
-                # ========================================
-                # Check if Lead model has 'created_by' and 'assignedTo' fields
-                lead_fields = [f.name for f in Lead._meta.get_fields()]
-                logger.info(f"📋 Available Lead fields: {lead_fields}")
-                
                 from django.db.models import Q
-                filters = Q(status__iexact='Active')
-                
-                # Add filters for created_by and assigned leads
+                lead_fields  = [f.name for f in Lead._meta.get_fields()]
+                filters      = Q(status__iexact='Active')
                 user_filters = Q()
-                
-                # Option 1: Check for created_by field (ForeignKey)
                 if 'created_by' in lead_fields:
                     user_filters |= Q(created_by=current_user)
-                    logger.info(f"🔍 Added filter: created_by={current_user}")
-                
-                # Option 2: Check for marketedBy field (CharField - commonly used for assigned user)
                 if 'marketedBy' in lead_fields and current_user_name:
                     user_filters |= Q(marketedBy=current_user_name)
-                    logger.info(f"🔍 Added filter: marketedBy={current_user_name}")
-                
-                # Option 3: Check for assignedTo field (CharField)
                 if 'assignedTo' in lead_fields and current_user_name:
                     user_filters |= Q(assignedTo=current_user_name)
-                    logger.info(f"🔍 Added filter: assignedTo={current_user_name}")
-                
-                # Option 4: Check for assigned_user field (ForeignKey - alternative naming)
                 if 'assigned_user' in lead_fields:
                     user_filters |= Q(assigned_user=current_user)
-                    logger.info(f"🔍 Added filter: assigned_user={current_user}")
-                
-                # Combine filters
                 if user_filters:
                     filters &= user_filters
                     leads_qs = Lead.objects.filter(filters).order_by('-created_at')[:50]
-                    logger.info(f"🔒 Regular user ({user_level}) - showing only created/assigned leads")
                 else:
-                    # If no matching fields found, show no leads for safety
                     leads_qs = Lead.objects.none()
-                    logger.warning(f"⚠️ No user-matching fields found in Lead model. Available fields: {lead_fields}")
-                    logger.warning(f"⚠️ User {current_user_name} will see NO leads. Please check your Lead model configuration.")
-            
-            # Build the active leads list - ADD is_selected flag for highlighting
+
             for lead in leads_qs:
-                # Check if this lead is the currently selected one
-                is_selected = False
-                if selected_lead and lead.id == selected_lead.id:
-                    is_selected = True
-                elif 'selected_lead_id' in request.session:
-                    is_selected = (lead.id == request.session.get('selected_lead_id'))
-                
+                is_selected = (
+                    (selected_lead and lead.id == selected_lead.id) or
+                    lead.id == request.session.get('selected_lead_id')
+                )
                 active_leads.append({
-                    'id': lead.id,
-                    'ownerName': lead.ownerName or '',
-                    'phoneNo': lead.phoneNo or '',
-                    'email': lead.email or '',
+                    'id':            lead.id,
+                    'ownerName':     lead.ownerName or '',
+                    'phoneNo':       lead.phoneNo or '',
+                    'email':         lead.email or '',
                     'ticket_number': getattr(lead, 'ticket_number', f'TKT-{lead.id}'),
-                    'status': lead.status or 'Active',
-                    'priority': getattr(lead, 'priority', 'Medium'),
-                    'place': lead.place or '',
-                    'business': lead.business or '',
-                    'customerType': lead.customerType or '',
-                    'created_at': lead.created_at if hasattr(lead, 'created_at') else lead.date,
-                    'is_selected': is_selected,  # Flag for template highlighting
+                    'status':        lead.status or 'Active',
+                    'priority':      getattr(lead, 'priority', 'Medium'),
+                    'place':         lead.place or '',
+                    'business':      lead.business or '',
+                    'customerType':  lead.customerType or '',
+                    'created_at':    lead.created_at if hasattr(lead, 'created_at') else lead.date,
+                    'is_selected':   is_selected,
                 })
-            
-            logger.info(f"📋 Loaded {len(active_leads)} active leads for user {current_user_name} (Level: {user_level})")
-            
         except Exception as e:
-            logger.error(f"❌ Error loading leads: {e}")
-            import traceback
-            logger.error(f"Traceback: {traceback.format_exc()}")
-            active_leads = []
-        
-        # Get active users
+            logger.error(f"❌ Error loading leads: {e}", exc_info=True)
+
         active_users = []
         try:
             user_fields = [f.name for f in User._meta.get_fields()]
-            
             if 'status' in user_fields:
                 users_qs = User.objects.filter(status='active').order_by('name')
             elif 'is_active' in user_fields:
                 users_qs = User.objects.filter(is_active=True).order_by('name')
             else:
                 users_qs = User.objects.all().order_by('name')
-            
             for user in users_qs:
                 active_users.append({
-                    'id': user.id,
-                    'name': getattr(user, 'name', f'User {user.id}'),
-                    'department': getattr(user, 'department', ''),
+                    'id':          user.id,
+                    'name':        getattr(user, 'name', f'User {user.id}'),
+                    'department':  getattr(user, 'department', ''),
                     'designation': getattr(user, 'designation', ''),
                 })
         except Exception as e:
             logger.error(f"❌ Error loading users: {e}")
-            active_users = []
-        
-        # Calculate statistics
-        total_quotations = len(quotation_list)
-        
-        # Get selected lead name from session for display
+
         selected_lead_name = request.session.get('selected_lead_name', '')
         if selected_lead:
             selected_lead_name = selected_lead.ownerName
-        
-        # ✅ UPDATED CONTEXT - INCLUDES DEPARTMENTS AND SELECTED LEAD INFO
+
+        from datetime import date
+        today = date.today().strftime('%Y-%m-%d')   # → "2026-03-12" (YYYY-MM-DD for <input type="date">)
+
         context = {
-            'quotations': quotation_list,  # Pass the evaluated list
-            'leads': active_leads,
-            'active_users': active_users,
-            'departments': departments,  # ✅ ADDED: Departments for branch selection
-            'total_quotations': total_quotations,
-            'leads_count': len(active_leads),
-            'current_user_level': user_level,  # Add user level to context for debugging
-            'current_user_name': current_user_name,  # Add user name to context
-            'selected_lead_id': lead_id_from_url if lead_id_from_url else request.session.get('selected_lead_id', ''),
+            'quotations':         quotation_list,
+            'leads':              active_leads,
+            'active_users':       active_users,
+            'departments':        departments,
+            'total_quotations':   len(quotation_list),
+            'leads_count':        len(active_leads),
+            'current_user_level': user_level,
+            'current_user_name':  current_user_name,
+            'selected_lead_id':   lead_id_from_url or request.session.get('selected_lead_id', ''),
             'selected_lead_name': selected_lead_name,
+            'today':              today,   # ← default value for Start Date & End Date inputs
         }
-        
-        logger.info(f"✅ Context prepared with {total_quotations} quotations, {len(active_leads)} leads, and {departments.count()} departments")
-        
         return render(request, 'quotation_form.html', context)
-        
+
     except Exception as e:
         logger.error(f"❌ Error in quotation_form_view: {e}", exc_info=True)
-        
-        # Return empty context but show error
-        # ✅ INCLUDE EMPTY DEPARTMENTS IN ERROR CASE TOO
         return render(request, 'quotation_form.html', {
-            'quotations': [],
-            'leads': [],
-            'active_users': [],
-            'departments': [],  # ✅ ADDED: Empty departments list
-            'total_quotations': 0,
-            'leads_count': 0,
-            'error_message': str(e),
+            'quotations': [], 'leads': [], 'active_users': [], 'departments': [],
+            'total_quotations': 0, 'leads_count': 0, 'error_message': str(e),
             'selected_lead_id': request.GET.get('lead_id', ''),
         })
 
 
-
-import json
-import logging
-from decimal import Decimal, InvalidOperation
-from datetime import datetime, timedelta
-from django.http import JsonResponse
-from django.db import transaction
-from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt
-
-# Import models
-from app5.models import Lead, Quotation, QuotationItem
-from purchase_order.models import Item
-from app1.models import User
-
-logger = logging.getLogger(__name__)
-
-
-@csrf_exempt  # Add this if you're having CSRF token issues
+# ============================================================================
+# QUOTATION SUBMIT (CREATE)
+# ============================================================================
+@csrf_exempt
 def quotation_submit(request):
-    """
-    Handle quotation submission from quotation_list.html
-    Save quotation and items to database.
-    Supports:
-      - application/json  (no attachment)
-      - multipart/form-data (with proposal_attachment file)
-    """
     if request.method != 'POST':
-        logger.warning(f"❌ Invalid request method: {request.method}")
-        return JsonResponse({
-            'success': False,
-            'message': 'Invalid request method. Only POST requests are allowed.'
-        }, status=405)
+        return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=405)
 
     try:
-        # ========== PARSE REQUEST (JSON or multipart) ==========
         proposal_file = None
-        content_type = request.content_type or ''
+        content_type  = request.content_type or ''
 
         if 'multipart/form-data' in content_type:
-            # --- multipart: quotation data arrives as form field 'data' ---
             raw_data = request.POST.get('data', '{}')
-
-            # Decode bytes safely if needed
             if isinstance(raw_data, bytes):
                 try:
                     raw_data = raw_data.decode('utf-8')
                 except UnicodeDecodeError:
                     raw_data = raw_data.decode('latin-1')
-
             try:
                 data = json.loads(raw_data)
             except json.JSONDecodeError as e:
-                logger.error(f"❌ Invalid JSON in multipart 'data' field: {e}")
-                return JsonResponse({
-                    'success': False,
-                    'message': 'Invalid JSON in form data.',
-                    'error_detail': str(e)
-                }, status=400)
-
+                return JsonResponse({'success': False, 'message': 'Invalid JSON in form data.'}, status=400)
             proposal_file = request.FILES.get('proposal_attachment')
-            if proposal_file:
-                logger.info(f"📎 Proposal attachment received: {proposal_file.name} "
-                            f"({proposal_file.size} bytes, {proposal_file.content_type})")
-
         else:
-            # --- plain JSON body ---
-            raw_body = request.body
-
-            # Fix UTF-8 decode error (e.g. ₹ symbol or regional characters mangled in transit)
             try:
-                body_str = raw_body.decode('utf-8')
-            except UnicodeDecodeError:
-                body_str = raw_body.decode('latin-1')
+                raw_body = request.body
+                body_str = raw_body.decode('utf-8') if isinstance(raw_body, bytes) else raw_body
+                data     = json.loads(body_str)
+            except (json.JSONDecodeError, UnicodeDecodeError) as e:
+                return JsonResponse({'success': False, 'message': 'Invalid JSON data.'}, status=400)
 
-            try:
-                data = json.loads(body_str)
-            except json.JSONDecodeError as e:
-                logger.error(f"❌ Invalid JSON data: {e}")
-                logger.debug(f"Request body (first 500): {body_str[:500]}...")
-                return JsonResponse({
-                    'success': False,
-                    'message': 'Invalid JSON data. Please check your input.',
-                    'error_detail': str(e)
-                }, status=400)
-
-        logger.info(f"📝 Received quotation submission request")
-        logger.debug(f"Raw data keys: {list(data.keys())}")
-
-        # ========== EXTRACT MAIN QUOTATION DATA ==========
-        # NOTE: Frontend sends 'lead_ticket_id' but we also accept 'lead_id'
-        lead_id = data.get('lead_id') or data.get('lead_ticket_id')
-        notes = data.get('notes', '').strip()
+        lead_id    = data.get('lead_id') or data.get('lead_ticket_id')
+        notes      = data.get('notes', '').strip()
         items_data = data.get('items', [])
 
-        # Financial totals
+        # Only accept the 3 valid statuses; default to 'submitted' for new quotations
+        quotation_status = str(data.get('status', 'submitted')).strip().lower()
+        if quotation_status not in QUOTATION_VALID_STATUSES:
+            logger.warning(f"⚠️ Invalid status '{quotation_status}', defaulting to 'submitted'")
+            quotation_status = 'submitted'
+
         try:
-            subtotal        = Decimal(str(data.get('subtotal',       0)))
-            total_discount  = Decimal(str(data.get('total_discount', 0)))
-            total_tax       = Decimal(str(data.get('total_tax',      0)))
-            grand_total     = Decimal(str(data.get('grand_total',    0)))
+            subtotal       = Decimal(str(data.get('subtotal',       0)))
+            total_discount = Decimal(str(data.get('total_discount', 0)))
+            total_tax      = Decimal(str(data.get('total_tax',      0)))
+            grand_total    = Decimal(str(data.get('grand_total',    0)))
         except (InvalidOperation, ValueError) as e:
-            logger.error(f"❌ Invalid decimal values in financial totals: {e}")
-            return JsonResponse({
-                'success': False,
-                'message': f'Invalid financial values: {str(e)}'
-            }, status=400)
+            return JsonResponse({'success': False, 'message': f'Invalid financial values: {e}'}, status=400)
 
-        logger.debug(f"📊 Totals - Subtotal: {subtotal}, Discount: {total_discount}, "
-                     f"Tax: {total_tax}, Grand Total: {grand_total}")
-        logger.debug(f"📦 Items count: {len(items_data)}")
-
-        # ========== VALIDATION ==========
-        validation_errors = []
-
+        # Validation
+        errors = []
         if not lead_id:
-            validation_errors.append('Please select a lead from the directory')
-
+            errors.append('Please select a lead')
         if not items_data:
-            validation_errors.append('Please add at least one item to the quotation')
-        else:
-            invalid_items = []
-            for idx, item in enumerate(items_data):
-                if not item.get('item_id') or not item.get('item_name'):
-                    invalid_items.append(idx + 1)
-
-                try:
-                    quantity    = Decimal(str(item.get('quantity',    0)))
-                    sales_price = Decimal(str(item.get('sales_price', 0)))
-                    unit_price  = Decimal(str(item.get('unit_price',  0)))
-
-                    if quantity <= 0:
-                        validation_errors.append(f'Item {idx + 1}: Quantity must be greater than 0')
-                    if sales_price < 0 or unit_price < 0:
-                        validation_errors.append(f'Item {idx + 1}: Price cannot be negative')
-                except (InvalidOperation, ValueError) as e:
-                    validation_errors.append(f'Item {idx + 1}: Invalid numeric value - {str(e)}')
-
-            if invalid_items:
-                validation_errors.append(
-                    f'Please select an item for rows: {", ".join(map(str, invalid_items))}'
-                )
-
+            errors.append('Please add at least one item')
         if grand_total <= 0:
-            validation_errors.append('Grand total must be greater than 0')
+            errors.append('Grand total must be greater than 0')
+        if errors:
+            return JsonResponse({'success': False, 'message': '\n'.join(errors), 'validation_errors': errors}, status=400)
 
-        if validation_errors:
-            logger.warning(f"❌ Validation errors: {validation_errors}")
-            return JsonResponse({
-                'success': False,
-                'message': '\n'.join(validation_errors),
-                'validation_errors': validation_errors
-            }, status=400)
-
-        # ========== LEAD PROCESSING ==========
         try:
             lead = Lead.objects.get(id=lead_id)
-            logger.info(f"✅ Found lead: {lead.ticket_number} - {lead.ownerName}")
         except Lead.DoesNotExist:
-            logger.error(f"❌ Lead {lead_id} not found")
-            return JsonResponse({
-                'success': False,
-                'message': f'Lead not found (ID: {lead_id})',
-                'lead_id': lead_id
-            }, status=404)
+            return JsonResponse({'success': False, 'message': f'Lead not found (ID: {lead_id})'}, status=404)
 
-        client_name  = lead.ownerName or getattr(lead, 'display_name', None) or "Unknown Client"
-        client_phone = lead.phoneNo or "N/A"
+        client_name  = lead.ownerName or 'Unknown Client'
+        client_phone = lead.phoneNo or 'N/A'
         client_email = lead.email or None
-
         company_name = None
         if lead.customerType == 'Business':
             company_name = lead.name or lead.business or lead.ownerName
 
-        logger.debug(f"👤 Client info - Name: {client_name}, Phone: {client_phone}, Email: {client_email}")
-
-        # ========== USER AUTHENTICATION ==========
         current_user = None
-        user_info    = "Anonymous"
-
+        user_info    = 'Anonymous'
         if request.session.get('custom_user_id'):
             try:
                 current_user = User.objects.get(id=request.session['custom_user_id'])
-                user_info = f"{current_user.name} (Session ID: {current_user.id})"
-                logger.info(f"👤 User from session: {user_info}")
+                user_info    = f"{current_user.name} (ID: {current_user.id})"
             except User.DoesNotExist:
-                logger.warning(f"⚠️ Session user {request.session.get('custom_user_id')} not found")
+                pass
 
-        if not current_user and request.user and request.user.is_authenticated:
-            try:
-                authenticated_username = request.user.username
-                current_user = (
-                    User.objects.filter(name=authenticated_username).first()
-                    or User.objects.filter(userid=authenticated_username).first()
-                )
-                if current_user:
-                    user_info = f"{current_user.name} (ID: {current_user.id})"
-                    logger.info(f"👤 User from Django auth: {user_info}")
-            except Exception as e:
-                logger.warning(f"⚠️ Could not get user from request.user: {e}")
-
-        if not current_user:
-            logger.info("👤 No authenticated user found, creating as anonymous")
-
-        # ========== QUOTATION CREATION ==========
         quotation_date = timezone.now().date()
         valid_until    = quotation_date + timedelta(days=30)
 
@@ -16918,449 +16646,263 @@ def quotation_submit(request):
             from django.db.models import Max
             last_quote       = Quotation.objects.aggregate(Max('id'))['id__max'] or 0
             quotation_number = f"QT-{quotation_date.strftime('%Y%m%d')}-{(last_quote + 1):04d}"
-            logger.info(f"🔢 Generated quotation number: {quotation_number}")
 
             quotation = Quotation.objects.create(
-                lead           = lead,
-                client_name    = client_name,
-                client_phone   = client_phone,
-                client_email   = client_email,
-                company_name   = company_name,
-                quotation_date = quotation_date,
-                valid_until    = valid_until,
+                lead             = lead,
+                client_name      = client_name,
+                client_phone     = client_phone,
+                client_email     = client_email,
+                company_name     = company_name,
+                quotation_date   = quotation_date,
+                valid_until      = valid_until,
                 quotation_number = quotation_number,
-                notes          = notes or None,
-                subtotal       = subtotal,
-                total_discount = total_discount,
-                total_tax      = total_tax,
-                grand_total    = grand_total,
-                status         = 'draft',
-                created_by     = current_user,
+                notes            = notes or None,
+                subtotal         = subtotal,
+                total_discount   = total_discount,
+                total_tax        = total_tax,
+                grand_total      = grand_total,
+                status           = quotation_status,
+                created_by       = current_user,
             )
-            logger.info(f"✅ Created quotation record: {quotation.id} - {quotation.quotation_number}")
+            logger.info(f"✅ Created quotation: {quotation.quotation_number} | status={quotation.status}")
 
-            # ========== SAVE PROPOSAL ATTACHMENT ==========
             if proposal_file:
                 try:
-                    # Validate file size server-side (10 MB limit)
-                    max_size = 10 * 1024 * 1024
-                    if proposal_file.size > max_size:
-                        raise ValueError(
-                            f"Attachment too large ({proposal_file.size} bytes). Maximum is 10 MB."
-                        )
-
-                    # Sanitise filename
+                    if proposal_file.size > 10 * 1024 * 1024:
+                        raise ValueError(f"File too large. Max 10 MB.")
                     from django.utils.text import get_valid_filename
-                    safe_name = get_valid_filename(proposal_file.name)
-
-                    # Save to the model's FileField (adjust field name if different)
-                    quotation.proposal_attachment.save(safe_name, proposal_file, save=True)
-                    logger.info(f"📎 Saved proposal attachment: {safe_name}")
-
+                    quotation.proposal_attachment.save(get_valid_filename(proposal_file.name), proposal_file, save=True)
                 except Exception as e:
-                    logger.error(f"❌ Failed to save proposal attachment: {e}", exc_info=True)
-                    # Don't abort the whole transaction — just warn in the response
-                    # Set a flag to surface this in the API response
-                    proposal_file = None  # signals failure below
+                    logger.error(f"❌ Attachment save failed: {e}", exc_info=True)
+                    proposal_file = None
 
-            # ========== QUOTATION ITEMS CREATION ==========
-            items_created   = 0
+            items_created    = 0
             total_line_total = Decimal('0')
 
             for idx, item_data in enumerate(items_data):
-                try:
-                    item_id = item_data.get('item_id')
-                    item    = None
-
-                    if item_id:
-                        try:
-                            item = Item.objects.get(id=item_id)
-                            logger.debug(f"  🛒 Found PO item: {item.name} (ID: {item.id})")
-                        except Item.DoesNotExist:
-                            logger.warning(f"  ⚠️ PO item {item_id} not found, using provided data")
-
+                item_id = item_data.get('item_id')
+                item    = None
+                if item_id:
                     try:
-                        quantity            = Decimal(str(item_data.get('quantity',   1)))
-                        sales_price         = Decimal(str(item_data.get('sales_price', 0)))
-                        unit_price          = Decimal(str(item_data.get('unit_price',  0)))
-                        discount_percentage = Decimal(str(item_data.get('discount',    0)))
-                        tax_percentage      = Decimal(str(item_data.get('tax',         0)))
-                        line_total          = Decimal(str(item_data.get('total',       0)))
-                        entry_rate          = Decimal(str(item_data.get('entry_rate',  0)))
-                    except (InvalidOperation, ValueError) as e:
-                        raise ValueError(f"Invalid numeric value in item data: {str(e)}")
+                        item = Item.objects.get(id=item_id)
+                    except Item.DoesNotExist:
+                        pass
 
-                    if quantity <= 0:
-                        raise ValueError(f"Invalid quantity: {quantity}")
+                quantity            = Decimal(str(item_data.get('quantity',   1)))
+                sales_price         = Decimal(str(item_data.get('sales_price', 0)))
+                unit_price          = Decimal(str(item_data.get('unit_price',  0)))
+                discount_percentage = Decimal(str(item_data.get('discount',    0)))
+                tax_percentage      = Decimal(str(item_data.get('tax',         0)))
+                line_total          = Decimal(str(item_data.get('total',       0)))
+                entry_rate          = Decimal(str(item_data.get('entry_rate',  0)))
 
-                    if line_total <= 0:
-                        logger.warning(f"  ⚠️ Item {idx+1} has zero/negative line total: {line_total}")
+                base_price            = sales_price if sales_price > 0 else unit_price
+                discount_amount       = (base_price * quantity) * (discount_percentage / 100)
+                amount_after_discount = (base_price * quantity) - discount_amount
+                tax_amount            = amount_after_discount * (tax_percentage / 100)
 
-                    base_price           = sales_price if sales_price > 0 else unit_price
-                    discount_amount      = (base_price * quantity) * (discount_percentage / 100)
-                    amount_after_discount = (base_price * quantity) - discount_amount
-                    tax_amount           = amount_after_discount * (tax_percentage / 100)
-
-                    item_name   = item_data.get('item_name', '') or (item.name if item else '') or 'Unknown Item'
-                    description = item_data.get('description', '') or (
-                        item.description if item and hasattr(item, 'description') and item.description else ''
-                    )
-                    unit     = item_data.get('unit', 'pcs') or (
-                        item.unit_of_measure if item and hasattr(item, 'unit_of_measure') else 'pcs'
-                    )
-                    hsn_code = item_data.get('hsn_code', '') or (
-                        item.hsn_code if item and hasattr(item, 'hsn_code') else ''
-                    )
-                    section  = item_data.get('section', '')
-
-                    quotation_item = QuotationItem.objects.create(
-                        quotation           = quotation,
-                        item                = item,
-                        item_name           = item_name,
-                        description         = description or (f"{item_name} - {section}" if section else item_name),
-                        quantity            = quantity,
-                        unit                = unit,
-                        entry_rate          = entry_rate,
-                        sales_price         = sales_price,
-                        unit_price          = unit_price,
-                        discount_percentage = discount_percentage,
-                        discount_amount     = discount_amount,
-                        tax_percentage      = tax_percentage,
-                        tax_amount          = tax_amount,
-                        line_total          = line_total,
-                        hsn_code            = hsn_code,
-                        order               = idx,
-                    )
-
-                    items_created    += 1
-                    total_line_total += line_total
-
-                    logger.debug(f"  📦 Created item {idx+1}: {quotation_item.item_name} "
-                                 f"(Qty: {quantity}, Price: ₹{base_price}, Total: ₹{line_total})")
-
-                except Exception as e:
-                    logger.error(f"❌ Error creating item {idx+1}: {e}", exc_info=True)
-                    raise  # Trigger transaction rollback
-
-            # Reconcile totals if there's a rounding discrepancy
-            total_discrepancy = abs(total_line_total - grand_total)
-            if total_discrepancy > Decimal('0.10'):
-                logger.warning(
-                    f"⚠️ Line totals ({total_line_total}) don't match grand total ({grand_total}). "
-                    f"Difference: {total_discrepancy} — correcting."
+                QuotationItem.objects.create(
+                    quotation           = quotation,
+                    item                = item,
+                    item_name           = item_data.get('item_name', '') or (item.name if item else 'Unknown'),
+                    description         = (
+                        lambda d, n: (d + '\n' + n.strip()) if d and d.strip() and n and n.strip() else (n.strip() if n and n.strip() else d)
+                    )(
+                        item_data.get('description', '') or (item.description if item else ''),
+                        item_data.get('notes', '') or (item.notes if item and hasattr(item, 'notes') and item.notes else '')
+                    ),
+                    quantity            = quantity,
+                    unit                = item_data.get('unit', 'pcs') or (item.unit_of_measure if item else 'pcs'),
+                    entry_rate          = entry_rate,
+                    sales_price         = sales_price,
+                    unit_price          = unit_price,
+                    discount_percentage = discount_percentage,
+                    discount_amount     = discount_amount,
+                    tax_percentage      = tax_percentage,
+                    tax_amount          = tax_amount,
+                    line_total          = line_total,
+                    hsn_code            = item_data.get('hsn_code', '') or (item.hsn_code if item else ''),
+                    order               = idx,
                 )
-                quotation.grand_total = total_line_total
-                quotation.subtotal    = total_line_total - total_tax
-                quotation.save()
-                logger.info("🔄 Updated quotation totals to match line items")
+                items_created    += 1
+                total_line_total += line_total
 
-        # ========== POST-CREATION: UPDATE LEAD ==========
-        lead_updated = False
-        try:
-            if hasattr(lead, 'details'):
-                prefix = f"Quotation created: {quotation_number} ({quotation_date})\n"
-                lead.details = prefix + (lead.details or '')
-                lead.save()
-                lead_updated = True
-                logger.debug("✅ Updated lead details with quotation info")
-        except Exception as e:
-            logger.warning(f"⚠️ Could not update lead details: {e}")
+        attachment_saved = bool(proposal_file) and bool(getattr(quotation, 'proposal_attachment', None))
 
-        # ========== SUCCESS RESPONSE ==========
-        attachment_saved = (
-            bool(proposal_file) and
-            bool(getattr(quotation, 'proposal_attachment', None))
-        )
-
-        response_data = {
+        return JsonResponse({
             'success': True,
             'message': f'✅ Quotation {quotation.quotation_number} created successfully!',
             'quotation': {
                 'id':               quotation.id,
                 'quotation_number': quotation.quotation_number,
-                'date':             quotation_date.strftime('%Y-%m-%d'),
-                'valid_until':      valid_until.strftime('%Y-%m-%d'),
-                'status':           'draft',
+                'status':           quotation.status,
                 'client_name':      client_name,
-                'client_phone':     client_phone,
                 'items_count':      items_created,
-                'subtotal':         float(subtotal),
-                'total_discount':   float(total_discount),
-                'total_tax':        float(total_tax),
                 'grand_total':      float(grand_total),
-                'created_by':       user_info,
                 'has_attachment':   attachment_saved,
             },
             'redirect_url': '/app5/quotation/',
-            'metadata': {
-                'lead_updated':      lead_updated,
-                'items_processed':   items_created,
-                'attachment_saved':  attachment_saved,
-                'user':              user_info,
-                'timestamp':         timezone.now().isoformat(),
-            }
-        }
-
-        logger.info(
-            f"🎉 Quotation {quotation.quotation_number} created with {items_created} items"
-            + (f" + attachment" if attachment_saved else "")
-        )
-        logger.info(f"📊 Totals — Subtotal: ₹{subtotal}, Tax: ₹{total_tax}, Grand Total: ₹{grand_total}")
-
-        return JsonResponse(response_data)
-
-    except Lead.DoesNotExist as e:
-        logger.error(f"❌ Lead not found: {e}")
-        return JsonResponse({
-            'success': False,
-            'message': 'Lead not found. Please select a valid lead.',
-            'error_detail': str(e)
-        }, status=404)
-
-    except Item.DoesNotExist as e:
-        logger.error(f"❌ Item not found: {e}")
-        return JsonResponse({
-            'success': False,
-            'message': 'One or more items not found in the system.',
-            'error_detail': str(e)
-        }, status=404)
+        })
 
     except Exception as e:
-        logger.error(f"❌ Unexpected error during quotation submission: {e}", exc_info=True)
-        return JsonResponse({
-            'success': False,
-            'message': f'An unexpected error occurred: {str(e)}',
-            'error_detail': str(e)
-        }, status=500)
+        logger.error(f"❌ quotation_submit error: {e}", exc_info=True)
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
 # ============================================================================
 # API ENDPOINTS
 # ============================================================================
-
 def get_quotation_items_api(request):
-    """API endpoint to get items for quotation form"""
     try:
-        items = Item.objects.filter(is_active=True).order_by('name')
-        
         items_data = []
-        for item in items:
+        for item in Item.objects.filter(is_active=True).order_by('name'):
             items_data.append({
-                'id': item.id,
-                'name': item.name,
+                'id':             item.id,
+                'name':           item.name,
                 'unit_of_measure': item.unit_of_measure,
-                'mrp': float(item.mrp) if item.mrp else 0,
+                'mrp':            float(item.mrp) if item.mrp else 0,
                 'purchase_price': float(item.purchase_price) if item.purchase_price else 0,
-                'cost': float(item.cost) if item.cost else 0,
+                'cost':           float(item.cost) if item.cost else 0,
                 'tax_percentage': float(item.tax_percentage) if item.tax_percentage else 0,
-                'hsn_code': item.hsn_code or '',
-                'description': item.description or '',
-                'section': item.section,
-                'department': item.department.name if item.department else 'N/A'
+                'hsn_code':       item.hsn_code or '',
+                'description':    item.description or '',
+                'notes':          item.notes if hasattr(item, 'notes') and item.notes else '',
+                'section':        item.section,
+                'department':     item.department.name if item.department else 'N/A',
             })
-        
-        return JsonResponse({
-            'success': True,
-            'items': items_data
-        })
+        return JsonResponse({'success': True, 'items': items_data})
     except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 
 def quotation_detail_api(request, quotation_id):
-    """
-    API endpoint to get quotation details
-    """
     try:
-        quotation = get_object_or_404(
-            Quotation.objects.prefetch_related('items'),
-            id=quotation_id
-        )
-        
-        # Build quotation data
+        quotation = get_object_or_404(Quotation.objects.prefetch_related('items'), id=quotation_id)
         quotation_data = {
-            'id': quotation.id,
+            'id':               quotation.id,
             'quotation_number': quotation.quotation_number,
-            'client_name': quotation.client_name,
-            'client_phone': quotation.client_phone,
-            'client_email': quotation.client_email or '',
-            'company_name': quotation.company_name or '',
-            'quotation_date': quotation.quotation_date.strftime('%Y-%m-%d'),
-            'valid_until': quotation.valid_until.strftime('%Y-%m-%d'),
-            'status': quotation.status,
-            'status_display': quotation.get_status_display(),
-            'subtotal': float(quotation.subtotal),
-            'total_discount': float(quotation.total_discount),
-            'total_tax': float(quotation.total_tax),
-            'grand_total': float(quotation.grand_total),
-            'notes': quotation.notes or '',
-            'created_at': quotation.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-            'items': []
+            'client_name':      quotation.client_name,
+            'client_phone':     quotation.client_phone,
+            'client_email':     quotation.client_email or '',
+            'company_name':     quotation.company_name or '',
+            'quotation_date':   quotation.quotation_date.strftime('%Y-%m-%d'),
+            'valid_until':      quotation.valid_until.strftime('%Y-%m-%d'),
+            'status':           quotation.status,
+            'status_display':   quotation.get_status_display(),
+            'subtotal':         float(quotation.subtotal),
+            'total_discount':   float(quotation.total_discount),
+            'total_tax':        float(quotation.total_tax),
+            'grand_total':      float(quotation.grand_total),
+            'notes':            quotation.notes or '',
+            'created_at':       quotation.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            'items':            [],
         }
-        
-        # Add lead info if available
         if quotation.lead:
             quotation_data['lead'] = {
-                'id': quotation.lead.id,
+                'id':            quotation.lead.id,
                 'ticket_number': quotation.lead.ticket_number,
-                'priority': quotation.lead.priority,
+                'priority':      quotation.lead.priority,
             }
-        
-        # Add items
         for item in quotation.items.all():
             quotation_data['items'].append({
-                'id': item.id,
-                'item_name': item.item_name,
-                'description': item.description or '',
-                'quantity': float(item.quantity),
-                'unit': item.unit,
-                'entry_rate': float(item.entry_rate),
-                'sales_price': float(item.sales_price),
-                'unit_price': float(item.unit_price),
-                'discount_percentage': float(item.discount_percentage),
-                'tax_percentage': float(item.tax_percentage),
-                'line_total': float(item.line_total),
-                'hsn_code': item.hsn_code or '',
+                'id':                   item.id,
+                'item_name':            item.item_name,
+                'description':          item.description or '',
+                'quantity':             float(item.quantity),
+                'unit':                 item.unit,
+                'entry_rate':           float(item.entry_rate),
+                'sales_price':          float(item.sales_price),
+                'unit_price':           float(item.unit_price),
+                'discount_percentage':  float(item.discount_percentage),
+                'tax_percentage':       float(item.tax_percentage),
+                'line_total':           float(item.line_total),
+                'hsn_code':             item.hsn_code or '',
             })
-        
-        return JsonResponse({
-            'success': True,
-            'quotation': quotation_data
-        })
-        
-    except Quotation.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'message': 'Quotation not found'
-        }, status=404)
-    
+        return JsonResponse({'success': True, 'quotation': quotation_data})
     except Exception as e:
         logger.error(f"Error getting quotation details: {e}")
-        return JsonResponse({
-            'success': False,
-            'message': str(e)
-        }, status=500)
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
 @csrf_exempt
 def quotation_delete(request, quotation_id):
-    """
-    Delete a quotation
-    """
     if request.method != 'DELETE':
-        return JsonResponse({
-            'success': False,
-            'message': 'Invalid request method. Use DELETE.'
-        }, status=405)
-    
+        return JsonResponse({'success': False, 'message': 'Use DELETE.'}, status=405)
     try:
         quotation = get_object_or_404(Quotation, id=quotation_id)
-        quotation_number = quotation.quotation_number
-        
-        # Delete quotation (items will be cascade deleted)
+        number    = quotation.quotation_number
         quotation.delete()
-        
-        logger.info(f"✅ Deleted quotation: {quotation_number}")
-        
-        return JsonResponse({
-            'success': True,
-            'message': f'Quotation {quotation_number} deleted successfully'
-        })
-        
-    except Quotation.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'message': f'Quotation {quotation_id} not found'
-        }, status=404)
-        
+        logger.info(f"✅ Deleted quotation: {number}")
+        return JsonResponse({'success': True, 'message': f'Quotation {number} deleted successfully'})
     except Exception as e:
         logger.error(f"Error deleting quotation: {e}")
-        return JsonResponse({
-            'success': False,
-            'message': f'Error deleting quotation: {str(e)}'
-        }, status=500)
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
 @csrf_exempt
 def quotation_update_status(request, quotation_id):
-    """
-    Update quotation status
-    """
+    """Quick inline status update (no items processing)."""
     if request.method != 'POST':
-        return JsonResponse({
-            'success': False,
-            'message': 'Invalid request method'
-        }, status=405)
-    
+        return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=405)
     try:
-        data = json.loads(request.body)
-        new_status = data.get('status')
-        
+        data       = json.loads(request.body)
+        new_status = data.get('status', '').strip()
+
         if not new_status:
+            return JsonResponse({'success': False, 'message': 'Status is required'}, status=400)
+
+        if new_status not in QUOTATION_VALID_STATUSES:
             return JsonResponse({
                 'success': False,
-                'message': 'Status is required'
+                'message': f"Invalid status '{new_status}'. Must be one of: {', '.join(QUOTATION_VALID_STATUSES)}"
             }, status=400)
-        
-        quotation = get_object_or_404(Quotation, id=quotation_id)
+
+        quotation  = get_object_or_404(Quotation, id=quotation_id)
         old_status = quotation.status
         quotation.status = new_status
         quotation.save()
-        
-        logger.info(f"✅ Updated quotation {quotation.quotation_number} status: {old_status} → {new_status}")
-        
-        return JsonResponse({
-            'success': True,
-            'message': f'Status updated to {new_status}',
-            'status': new_status
-        })
-        
+        logger.info(f"✅ {quotation.quotation_number} status: {old_status} → {new_status}")
+        return JsonResponse({'success': True, 'message': f'Status updated to {new_status}', 'status': new_status})
     except Exception as e:
         logger.error(f"Error updating quotation status: {e}")
-        return JsonResponse({
-            'success': False,
-            'message': str(e)
-        }, status=500)
-    
-    # views.py
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+
 def edit_quotation(request, quotation_id):
     try:
-        quotation = Quotation.objects.get(id=quotation_id)
+        quotation       = Quotation.objects.get(id=quotation_id)
         quotation_items = QuotationItem.objects.filter(quotation=quotation)
-        items = Item.objects.all()
-        leads = Lead.objects.filter(status='Active')
-        sections = items.values_list('section', flat=True).distinct()
-        taxes = TaxMaster.objects.all().order_by('name')  # ✅ ADDED
+        items           = Item.objects.all()
+        leads           = Lead.objects.filter(status='Active')
+        sections        = items.values_list('section', flat=True).distinct()
+        taxes           = TaxMaster.objects.all().order_by('name')
 
         items_json = []
         for item in items:
             items_json.append({
-                'id': item.id,
-                'name': item.name,
-                'description': item.description or '',
+                'id':             item.id,
+                'name':           item.name,
+                'description':    item.description or '',
                 'unit_of_measure': item.unit_of_measure,
-                'mrp': float(item.mrp) if item.mrp else 0,
+                'mrp':            float(item.mrp) if item.mrp else 0,
                 'purchase_price': float(item.purchase_price) if item.purchase_price else 0,
-                'cost': float(item.cost) if item.cost else 0,
+                'cost':           float(item.cost) if item.cost else 0,
                 'tax_percentage': float(item.tax_percentage) if item.tax_percentage else 0,
-                'hsn_code': item.hsn_code or '',
-                'section': item.section or '',
-                'department': item.department.name if item.department else 'N/A',
-                'is_active': item.is_active,
+                'hsn_code':       item.hsn_code or '',
+                'section':        item.section or '',
+                'department':     item.department.name if item.department else 'N/A',
+                'is_active':      item.is_active,
             })
 
         context = {
-            'quotation': quotation,
+            'quotation':       quotation,
             'quotation_items': quotation_items,
-            'items': items,
-            'active_leads': leads,
-            'leads_count': leads.count(),
-            'sections': sections,
-            'items_json': items_json,
-            'taxes': taxes,          # ✅ ADDED: Tax master list for dropdown
+            'items':           items,
+            'active_leads':    leads,
+            'leads_count':     leads.count(),
+            'sections':        sections,
+            'items_json':      items_json,
+            'taxes':           taxes,
         }
         return render(request, 'quotation_edit.html', context)
 
@@ -17369,26 +16911,21 @@ def edit_quotation(request, quotation_id):
         return redirect('app5:quotation_list')
 
 
+@csrf_exempt
 def update_quotation(request, pk):
     """
-    Update quotation via AJAX.
-    Supports:
-      - application/json           (no attachment)
-      - multipart/form-data        (with optional proposal_attachment file)
+    Full quotation update via AJAX (items + status + totals + attachment).
+    Accepts application/json or multipart/form-data.
     """
     if request.method != 'POST':
-        return JsonResponse({
-            'success': False,
-            'message': 'Invalid request method. Use POST.'
-        }, status=405)
+        return JsonResponse({'success': False, 'message': 'Invalid request method. Use POST.'}, status=405)
 
     try:
-        # ========== PARSE REQUEST (JSON or multipart) ==========
+        # ── Parse ────────────────────────────────────────────────────────────
         proposal_file = None
-        content_type = request.content_type or ''
+        content_type  = request.content_type or ''
 
         if 'multipart/form-data' in content_type:
-            # Data arrives as the 'data' form field (JSON string)
             raw_data = request.POST.get('data', '{}')
             if isinstance(raw_data, bytes):
                 try:
@@ -17398,284 +16935,220 @@ def update_quotation(request, pk):
             try:
                 data = json.loads(raw_data)
             except json.JSONDecodeError as e:
-                logger.error(f"❌ JSON decode error in multipart 'data' field: {e}")
                 return JsonResponse({'success': False, 'message': 'Invalid JSON data'}, status=400)
-
             proposal_file = request.FILES.get('proposal_attachment')
-            if proposal_file:
-                logger.info(f"📎 Attachment received: {proposal_file.name} ({proposal_file.size} bytes)")
-
         else:
-            # Plain JSON body
             try:
                 data = json.loads(request.body)
             except json.JSONDecodeError as e:
-                logger.error(f"❌ JSON decode error: {e}")
                 return JsonResponse({'success': False, 'message': 'Invalid JSON data'}, status=400)
 
-        logger.info(f"📝 Updating quotation {pk}")
-        logger.debug(f"Received data keys: {list(data.keys())}")
-
-        # ========== GET QUOTATION ==========
+        # ── Fetch quotation ───────────────────────────────────────────────────
         try:
             quotation = Quotation.objects.select_related('lead').get(id=pk)
-            logger.info(f"✅ Found quotation: {quotation.quotation_number}")
         except Quotation.DoesNotExist:
-            logger.error(f"❌ Quotation {pk} not found")
-            return JsonResponse({
-                'success': False,
-                'message': f'Quotation with ID {pk} not found'
-            }, status=404)
+            return JsonResponse({'success': False, 'message': f'Quotation {pk} not found'}, status=404)
 
-        # ========== ATOMIC TRANSACTION ==========
         with transaction.atomic():
 
-            # ---------- UPDATE LEAD (if changed) ----------
-            lead_id = data.get('lead_ticket_id')  # Changed from lead_id to match frontend
+            # ── Lead ──────────────────────────────────────────────────────────
+            lead_id = data.get('lead_ticket_id')
             if lead_id and str(lead_id) != str(quotation.lead.id if quotation.lead else None):
                 try:
-                    new_lead = Lead.objects.get(id=lead_id)
-                    old_lead_name = quotation.lead.ownerName if quotation.lead else "Unknown"
-                    quotation.lead = new_lead
-                    quotation.client_name = new_lead.ownerName or ''
+                    new_lead               = Lead.objects.get(id=lead_id)
+                    quotation.lead         = new_lead
+                    quotation.client_name  = new_lead.ownerName or ''
                     quotation.client_phone = new_lead.phoneNo or ''
                     quotation.client_email = new_lead.email or ''
                     if new_lead.customerType == 'Business':
                         quotation.company_name = new_lead.business or new_lead.name or ''
-                    logger.info(f"✅ Lead changed: {old_lead_name} → {new_lead.ownerName}")
                 except Lead.DoesNotExist:
-                    logger.warning(f"⚠️ Lead {lead_id} not found")
-                    return JsonResponse({
-                        'success': False,
-                        'message': f'Lead with ID {lead_id} not found'
-                    }, status=404)
+                    return JsonResponse({'success': False, 'message': f'Lead {lead_id} not found'}, status=404)
 
-            # ---------- UPDATE NOTES ----------
+            # ── Notes ─────────────────────────────────────────────────────────
             if 'notes' in data:
                 quotation.notes = data.get('notes', '').strip()
 
-            # ---------- UPDATE STATUS ----------
-            new_status = data.get('status')
-            if new_status and new_status in ['draft', 'sent', 'accepted', 'expired']:
-                quotation.status = new_status
-                logger.info(f"✅ Status → {new_status}")
+            # ── Status — only 3 valid values accepted ─────────────────────────
+            new_status = data.get('status', '').strip()
+            if new_status:
+                if new_status in QUOTATION_VALID_STATUSES:
+                    old_status       = quotation.status
+                    quotation.status = new_status
+                    logger.info(f"✅ Status: {old_status} → {new_status}")
+                else:
+                    logger.warning(f"⚠️ Rejected unknown status '{new_status}'")
 
-            # ---------- SAVE PROPOSAL ATTACHMENT ----------
-            attachment_saved = False
+            # ── Attachment ────────────────────────────────────────────────────
+            attachment_saved  = False
             attachment_warning = None
-
             if proposal_file:
                 try:
-                    max_size = 10 * 1024 * 1024
-                    if proposal_file.size > max_size:
-                        raise ValueError(
-                            f"Attachment too large ({proposal_file.size} bytes). Max 10 MB."
-                        )
+                    if proposal_file.size > 10 * 1024 * 1024:
+                        raise ValueError(f"File too large. Max 10 MB.")
                     from django.utils.text import get_valid_filename
                     safe_name = get_valid_filename(proposal_file.name)
-
-                    # Delete old file from storage if replacing
                     if quotation.proposal_attachment:
                         try:
                             quotation.proposal_attachment.delete(save=False)
-                            logger.info("🗑️ Deleted old proposal attachment from storage")
-                        except Exception as del_err:
-                            logger.warning(f"⚠️ Could not delete old attachment: {del_err}")
-
+                        except Exception:
+                            pass
                     quotation.proposal_attachment.save(safe_name, proposal_file, save=False)
                     attachment_saved = True
-                    logger.info(f"📎 Saved proposal attachment: {safe_name}")
-
                 except Exception as e:
-                    logger.error(f"❌ Failed to save proposal attachment: {e}", exc_info=True)
+                    logger.error(f"❌ Attachment save failed: {e}", exc_info=True)
                     attachment_warning = str(e)
 
-            # ---------- PROCESS ITEMS ----------
-            items_data = data.get('items', [])
-            logger.info(f"📦 Processing {len(items_data)} items")
-
-            # Get existing item IDs
-            existing_item_ids = set(
-                QuotationItem.objects.filter(quotation=quotation).values_list('id', flat=True)
-            )
-            updated_item_ids = set()
-            created_count = 0
-            updated_count = 0
+            # ── Items ─────────────────────────────────────────────────────────
+            items_data        = data.get('items', [])
+            existing_item_ids = set(QuotationItem.objects.filter(quotation=quotation).values_list('id', flat=True))
+            updated_item_ids  = set()
+            created_count = updated_count = 0
 
             for index, item_data in enumerate(items_data):
                 try:
                     quotation_item_id = item_data.get('id')
-                    item_object_id = item_data.get('item_id')
-
+                    item_object_id    = item_data.get('item_id')
                     if not item_object_id:
-                        logger.warning(f"⚠️ Skipping item {index+1}: no item_object_id")
                         continue
-
                     try:
                         item = Item.objects.get(id=item_object_id)
                     except Item.DoesNotExist:
-                        logger.error(f"❌ Item {item_object_id} not found")
                         continue
 
-                    try:
-                        quantity = Decimal(str(item_data.get('quantity', 1)))
-                        sales_price = Decimal(str(item_data.get('sales_price', 0)))
-                        unit_price = Decimal(str(item_data.get('unit_price', 0)))
-                        discount = Decimal(str(item_data.get('discount', 0)))
-                        tax = Decimal(str(item_data.get('tax', 0)))
-                        total = Decimal(str(item_data.get('total', 0)))
-                    except (ValueError, TypeError, InvalidOperation) as e:
-                        logger.error(f"❌ Number parse error for item {index+1}: {e}")
-                        continue
+                    quantity    = Decimal(str(item_data.get('quantity',    1)))
+                    sales_price = Decimal(str(item_data.get('sales_price', 0)))
+                    unit_price  = Decimal(str(item_data.get('unit_price',  0)))
+                    discount    = Decimal(str(item_data.get('discount',    0)))
+                    tax         = Decimal(str(item_data.get('tax',         0)))
+                    total       = Decimal(str(item_data.get('total',       0)))
 
                     if quantity <= 0:
-                        logger.warning(f"⚠️ Invalid quantity for item {index+1}: {quantity}")
                         continue
-
                     if sales_price <= 0 and unit_price <= 0:
                         sales_price = Decimal(str(item.mrp or 0))
 
-                    base_price = sales_price if sales_price > 0 else unit_price
+                    base_price      = sales_price if sales_price > 0 else unit_price
                     discount_amount = (base_price * quantity) * (discount / 100) if discount else Decimal('0')
-                    after_discount = (base_price * quantity) - discount_amount
-                    tax_amount = after_discount * (tax / 100) if tax else Decimal('0')
+                    after_discount  = (base_price * quantity) - discount_amount
+                    tax_amount      = after_discount * (tax / 100) if tax else Decimal('0')
+
+                    # Build description for new items: combine item.description + item.notes
+                    def _build_description(item_obj):
+                        d = (item_obj.description or '').strip()
+                        n = (item_obj.notes if item_obj and hasattr(item_obj, 'notes') and item_obj.notes else '').strip()
+                        if d and n:
+                            return d + '\n' + n
+                        return n or d
 
                     item_values = {
-                        'item': item,
-                        'item_name': item.name,
-                        'description': item.description or '',
-                        'quantity': quantity,
-                        'unit': item.unit_of_measure,
-                        'sales_price': sales_price,
-                        'unit_price': unit_price,
+                        'item':                item,
+                        'item_name':           item.name,
+                        'quantity':            quantity,
+                        'unit':                item.unit_of_measure,
+                        'sales_price':         sales_price,
+                        'unit_price':          unit_price,
                         'discount_percentage': discount,
-                        'tax_percentage': tax,
-                        'line_total': total,
-                        'discount_amount': discount_amount,
-                        'tax_amount': tax_amount,
-                        'hsn_code': item.hsn_code or '',
-                        'order': index,
+                        'tax_percentage':      tax,
+                        'line_total':          total,
+                        'discount_amount':     discount_amount,
+                        'tax_amount':          tax_amount,
+                        'hsn_code':            item.hsn_code or '',
+                        'order':               index,
                     }
 
                     if quotation_item_id and str(quotation_item_id).isdigit():
                         try:
-                            qi = QuotationItem.objects.get(
-                                id=int(quotation_item_id), quotation=quotation
-                            )
+                            qi = QuotationItem.objects.get(id=int(quotation_item_id), quotation=quotation)
+                            # ✅ Preserve existing description — don't overwrite notes set from quotation_list
+                            # Only update description if the item itself changed
+                            if qi.item_id != item.id:
+                                item_values['description'] = _build_description(item)
+                            # else: leave qi.description untouched
                             for k, v in item_values.items():
                                 setattr(qi, k, v)
                             qi.save()
                             updated_item_ids.add(int(quotation_item_id))
                             updated_count += 1
-                            logger.debug(f"✅ Updated item {index+1}: {item.name}")
                         except QuotationItem.DoesNotExist:
+                            item_values['description'] = _build_description(item)
                             qi = QuotationItem.objects.create(quotation=quotation, **item_values)
                             updated_item_ids.add(qi.id)
                             created_count += 1
                     else:
+                        item_values['description'] = _build_description(item)
                         qi = QuotationItem.objects.create(quotation=quotation, **item_values)
                         updated_item_ids.add(qi.id)
                         created_count += 1
-                        logger.info(f"✅ Created item {index+1}: {item.name}")
 
                 except Exception as e:
-                    logger.error(f"❌ Error processing item {index+1}: {e}", exc_info=True)
+                    logger.error(f"❌ Error on row {index + 1}: {e}", exc_info=True)
                     continue
 
-            # ---------- DELETE ITEMS NOT IN THE UPDATED LIST ----------
-            items_to_delete = existing_item_ids - updated_item_ids
             deleted_count = 0
-            for item_id in items_to_delete:
+            for item_id in (existing_item_ids - updated_item_ids):
                 try:
-                    qi = QuotationItem.objects.get(id=item_id, quotation=quotation)
-                    item_name = qi.item_name
-                    qi.delete()
+                    QuotationItem.objects.get(id=item_id, quotation=quotation).delete()
                     deleted_count += 1
-                    logger.info(f"🗑️ Deleted item: {item_name} (ID: {item_id})")
                 except QuotationItem.DoesNotExist:
                     pass
 
-            # ---------- RECALCULATE TOTALS ----------
-            subtotal = Decimal(str(data.get('subtotal', 0)))
+            # ── Totals ────────────────────────────────────────────────────────
+            subtotal       = Decimal(str(data.get('subtotal',       0)))
             total_discount = Decimal(str(data.get('total_discount', 0)))
-            total_tax = Decimal(str(data.get('total_tax', 0)))
-            grand_total = Decimal(str(data.get('grand_total', 0)))
+            total_tax      = Decimal(str(data.get('total_tax',      0)))
+            grand_total    = Decimal(str(data.get('grand_total',    0)))
 
-            # If totals are 0 or invalid, recalculate from items
             if grand_total <= 0 or subtotal <= 0:
                 qs = QuotationItem.objects.filter(quotation=quotation)
-                subtotal = Decimal('0')
-                total_discount = Decimal('0')
-                total_tax = Decimal('0')
-                
+                subtotal = total_discount = total_tax = Decimal('0')
                 if qs.exists():
                     for qi in qs:
-                        item_sub = (
-                            qi.line_total / (1 + qi.tax_percentage / 100)
-                            if qi.tax_percentage else qi.line_total
-                        )
-                        subtotal += item_sub
+                        item_sub        = (qi.line_total / (1 + qi.tax_percentage / 100) if qi.tax_percentage else qi.line_total)
+                        subtotal       += item_sub
                         total_discount += qi.discount_amount
-                        total_tax += qi.tax_amount
+                        total_tax      += qi.tax_amount
                     grand_total = subtotal + total_tax
-                    logger.info(f"💰 Recalculated — Subtotal: {subtotal:.2f}, "
-                                f"Tax: {total_tax:.2f}, Grand: {grand_total:.2f}")
-                else:
-                    logger.warning("⚠️ No items remaining after update")
 
-            quotation.subtotal = subtotal
+            quotation.subtotal       = subtotal
             quotation.total_discount = total_discount
-            quotation.total_tax = total_tax
-            quotation.grand_total = grand_total
-            quotation.updated_at = timezone.now()
+            quotation.total_tax      = total_tax
+            quotation.grand_total    = grand_total
             quotation.save()
 
-            logger.info(f"✅ Quotation {quotation.quotation_number} saved. "
-                        f"Created: {created_count}, Updated: {updated_count}, "
-                        f"Deleted: {deleted_count}")
+            logger.info(f"✅ Saved {quotation.quotation_number} | status={quotation.status} | "
+                        f"created={created_count} updated={updated_count} deleted={deleted_count}")
 
-        # ========== SUCCESS RESPONSE ==========
         response_data = {
             'success': True,
             'message': '✅ Quotation updated successfully',
             'quotation': {
-                'id': quotation.id,
+                'id':               quotation.id,
                 'quotation_number': quotation.quotation_number,
-                'status': quotation.status,
-                'subtotal': float(quotation.subtotal),
-                'total_discount': float(quotation.total_discount),
-                'total_tax': float(quotation.total_tax),
-                'grand_total': float(quotation.grand_total),
-                'items_count': QuotationItem.objects.filter(quotation=quotation).count(),
-                'has_attachment': bool(quotation.proposal_attachment),
-                'updated_at': (
-                    quotation.updated_at.isoformat()
-                    if quotation.updated_at else timezone.now().isoformat()
-                ),
+                'status':           quotation.status,
+                'subtotal':         float(quotation.subtotal),
+                'total_discount':   float(quotation.total_discount),
+                'total_tax':        float(quotation.total_tax),
+                'grand_total':      float(quotation.grand_total),
+                'items_count':      QuotationItem.objects.filter(quotation=quotation).count(),
+                'has_attachment':   bool(quotation.proposal_attachment),
+                'updated_at':       quotation.updated_at.isoformat(),
             },
             'summary': {
-                'items_created': created_count,
-                'items_updated': updated_count,
-                'items_deleted': deleted_count,
+                'items_created':    created_count,
+                'items_updated':    updated_count,
+                'items_deleted':    deleted_count,
                 'attachment_saved': attachment_saved,
             },
         }
-
         if attachment_warning:
-            response_data['attachment_warning'] = (
-                f'Quotation saved, but attachment could not be stored: {attachment_warning}'
-            )
+            response_data['attachment_warning'] = f'Quotation saved but attachment failed: {attachment_warning}'
 
         return JsonResponse(response_data)
 
     except Exception as e:
-        logger.error(f"❌ Error updating quotation {pk}: {e}", exc_info=True)
-        return JsonResponse({
-            'success': False,
-            'message': f'Error updating quotation: {str(e)}',
-            'error_type': type(e).__name__,
-        }, status=500)
-
+        logger.error(f"❌ update_quotation({pk}) error: {e}", exc_info=True)
+        return JsonResponse({'success': False, 'message': str(e), 'error_type': type(e).__name__}, status=500)
 
 
 from django.shortcuts import render, get_object_or_404
@@ -18434,6 +17907,44 @@ def send_quotation_whatsapp(request, quotation_id):
 
     except Exception as e:
         logger.exception(f"send_quotation_whatsapp failed: {e}")
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+from purchase_order.models import Item as POItem
+from .models import Quotation, QuotationItem
+
+@require_POST
+def update_quotation_item_notes(request, item_id):
+    """
+    Update the notes field on purchase_order.Item (master) and on all
+    QuotationItem rows that reference that item.
+    Called from the 'Save to Item Master' button in the quotation form popup.
+    """
+    try:
+        data = json.loads(request.body)
+        new_notes = data.get('notes', '').strip()
+
+        # 1. Update notes on the purchase_order Item master
+        item_updated = False
+        try:
+            po_item = POItem.objects.get(pk=item_id)
+            po_item.notes = new_notes
+            po_item.save(update_fields=['notes'])
+            item_updated = True
+        except POItem.DoesNotExist:
+            pass
+
+        # 2. Sync notes onto every QuotationItem row linked to this item
+        updated_count = QuotationItem.objects.filter(item_id=item_id).update(notes=new_notes)
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Notes saved successfully.',
+            'item_master_updated': item_updated,
+            'quotation_items_updated': updated_count,
+        })
+
+    except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 
