@@ -897,7 +897,18 @@ def collections_list(request):
     status_filter = request.GET.get('status_filter', '').strip()
 
     # Start with all collections
-    collections = Collection.objects.all().order_by('-created_at')
+    # Order: pending first, then by created_at ascending (oldest/first-added shown first)
+    from django.db.models import Case, When, Value, IntegerField
+    collections = Collection.objects.all().order_by(
+        Case(
+            When(status='pending', then=Value(0)),
+            When(status='multiple entry', then=Value(1)),
+            When(status='verified', then=Value(2)),
+            default=Value(3),
+            output_field=IntegerField()
+        ),
+        'created_at'  # oldest first within each status group
+    )
 
     # Apply search filter
     if search_query:
@@ -945,27 +956,18 @@ def collections_list(request):
 
     # Get items per page from query parameter (default: 10)
     items_per_page = request.GET.get('per_page', '10')
-    
-    # Handle "Show All" option
-    if items_per_page == 'all':
-        page_obj = collections
-        is_paginated = False
-    else:
-        try:
-            items_per_page = int(items_per_page)
-            if items_per_page < 1:
-                items_per_page = 10
-        except ValueError:
-            items_per_page = 10
-        
-        paginator = Paginator(collections, items_per_page)
-        page_number = request.GET.get('page')
-        page_obj = paginator.get_page(page_number)
-        is_paginated = page_obj.has_other_pages()
+
+    # Always send ALL records to template - JS handles pagination
+    page_obj = collections
+    is_paginated = False
+
+    # Fetch active departments from purchase_order app (used as branches)
+    departments = Department.objects.filter(is_active=True).order_by('name')
 
     # Render to template
     return render(request, 'collections_list.html', {
         'collections': page_obj,
+        'departments': departments,
         'total_amount': filtered_total_amount,
         'total_count': filtered_count,
         'this_month_count': this_month_count,
