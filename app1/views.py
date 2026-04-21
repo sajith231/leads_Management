@@ -4496,7 +4496,7 @@ def process_leave_request(request):
         if emp_phone:
             recipients.append(str(emp_phone))
         if action == 'approve':
-            recipients += ["9946545535","7593820007","7593820005","8129191379","9061947005","7306197537"]
+            recipients += ["7593820007","7593820005","8129191379","9061947005","7306197537"]
 
         for r in recipients:
             send_whatsapp_message_new_request(r, msg)
@@ -4889,7 +4889,7 @@ def process_late_request(request):
         if emp_phone:
             recipients.append(str(emp_phone))
         if action == 'approve':
-            recipients += ["9946545535","7593820007","7593820005","8129191379","9061947005","7306197537"]
+            recipients += ["7593820007","7593820005","8129191379","9061947005","7306197537"]
 
         for r in recipients:
             send_whatsapp_message_new_request(r, msg)
@@ -6790,7 +6790,7 @@ def process_early_request(request):
         if emp_phone:
             recipients.append(str(emp_phone))
         if action == 'approve':
-            recipients += ["9946545535","7593820007","7593820005","8129191379","9061947005","7306197537"]
+            recipients += ["7593820007","7593820005","8129191379","9061947005","7306197537"]
 
         for r in recipients:
             send_whatsapp_message_new_request(r, msg)
