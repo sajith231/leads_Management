@@ -476,8 +476,6 @@
         .table-wrapper {
             overflow-x: auto;
             margin-bottom: 10px;
-            max-height: 350px;
-            overflow-y: auto;
         }
 
         .items-table {
@@ -835,6 +833,11 @@
             }
             
             /* Totals in print */
+            .totals-section,
+            .grand-total-wrapper {
+                page-break-inside: avoid;
+            }
+
             .totals-table {
                 font-size: 9pt;
             }
@@ -889,15 +892,12 @@
                 gap: 5px;
             }
             
-            /* Force all content to stay on respective pages */
+            /* Allow content to flow naturally across pages */
             .page-2 {
                 page-break-after: always !important;
-                max-height: 100vh;
-                overflow: hidden;
             }
             
             .page-2-content {
-                max-height: 95vh;
             }
             
             /* Force background colors to print */

@@ -7155,139 +7155,71 @@ logger = logging.getLogger(__name__)
 
 
 # ============================================================================
-# QUOTATION LIST VIEW - Display form to create quotations
+# QUOTATION LIST VIEW - Display all saved quotations with created_by info
 # ============================================================================
 def quotation_list_view(request):
     """
-    Display quotation form with active leads, employees, and items
+    Display all saved quotations in a list table.
+    Shows ticket number, date, created_by user, customer, status, grand total, and actions.
     """
-    # ✅ GET ACTIVE LEADS (for quotation form)
-    lead_tickets = []  # Renamed from active_leads for template compatibility
-    try:
-        leads_qs = Lead.objects.filter(status__iexact='Active').order_by('-created_at')[:50]
-        
-        for lead in leads_qs:
-            # Get proper ticket number
-            ticket_number = getattr(lead, 'ticket_number', None)
-            if not ticket_number:
-                ticket_number = f"TKT-{lead.id:06d}"  # Format with leading zeros
-            
-            # Get owner name (handle both field names)
-            owner_name = getattr(lead, 'ownerName', None) or getattr(lead, 'owner_name', 'Unknown')
-            
-            # Get phone number (handle both field names)
-            phone_number = getattr(lead, 'phoneNo', None) or getattr(lead, 'phone_number', '')
-            
-            # Get company name if business customer
-            company_name = ''
-            if getattr(lead, 'customerType', '') == 'Business':
-                company_name = getattr(lead, 'name', '') or getattr(lead, 'company_name', '')
-            
-            # Get address (handle multiple address fields)
-            address = getattr(lead, 'address', '')
-            if not address and getattr(lead, 'customerType', '') == 'Individual':
-                address = getattr(lead, 'individualAddress', '')
-            
-            lead_tickets.append({
-                'id': lead.id,
-                'ticket_number': ticket_number,
-                'owner_name': owner_name,
-                'phone_number': phone_number,
-                'email': getattr(lead, 'email', '') or '',
-                'address': address or '',
-                'company_name': company_name,
-                'status': getattr(lead, 'status', 'Active'),
-                'customerType': getattr(lead, 'customerType', ''),
-                'place': getattr(lead, 'place', ''),
-                'business': getattr(lead, 'business', ''),
-                'priority': getattr(lead, 'priority', 'Medium'),
-                'created_at': lead.created_at if hasattr(lead, 'created_at') else None,
-            })
-        
-        logger.info(f"✅ Loaded {len(lead_tickets)} active leads for quotation")
-        
-    except Exception as e:
-        logger.error(f"❌ Error loading leads: {e}", exc_info=True)
-        lead_tickets = []
-    
-    # ✅ GET ACTIVE EMPLOYEES/USERS
-    active_employees = []
-    try:
-        # Try to get users with status field
-        user_fields = [f.name for f in User._meta.get_fields()]
-        
-        if 'status' in user_fields:
-            users_qs = User.objects.filter(status='active').order_by('name')
-        elif 'is_active' in user_fields:
-            users_qs = User.objects.filter(is_active=True).order_by('name')
-        else:
-            users_qs = User.objects.all().order_by('name')
-        
-        for user in users_qs:
-            active_employees.append({
-                'id': user.id,
-                'name': getattr(user, 'name', f'User {user.id}'),
-                'department': getattr(user, 'department', ''),
-                'designation': getattr(user, 'designation', ''),
-                'phone': getattr(user, 'phone_number', '') or getattr(user, 'phone', ''),
-            })
-        
-        logger.info(f"✅ Loaded {len(active_employees)} active employees for quotation")
-        
-    except Exception as e:
-        logger.error(f"❌ Error loading employees: {e}")
-        active_employees = []
-    
-    # ✅ GET ITEMS FROM PURCHASE_ORDER
-    items = []
-    try:
-        items = Item.objects.filter(is_active=True).order_by('section', 'name')
-        logger.info(f"✅ Loaded {items.count()} items for quotation")
-    except Exception as e:
-        logger.error(f"❌ Error loading items: {e}")
-        items = []
-    
-    # ✅ GET DEPARTMENTS (if needed for filtering)
-    departments = []
-    try:
-        departments = Department.objects.filter(is_active=True).order_by('name')
-    except Exception as e:
-        logger.debug(f"No departments available: {e}")
+    from django.db.models import Sum, Q
 
-    # ✅ GET TAX MASTER RECORDS
-    taxes = []
+    # ── Fetch all quotations with related data in one efficient query ──────────
     try:
-        taxes = TaxMaster.objects.all().order_by('name')
-        logger.info(f"✅ Loaded {taxes.count()} taxes for quotation")
+        quotations = (
+            Quotation.objects
+            .select_related(
+                'created_by',   # → q.created_by.name  (User who created it)
+                'lead',         # → q.lead.ticket_number
+            )
+            .prefetch_related('items')  # → q.items.count()
+            .order_by('-created_at')
+        )
+
+        # ── Summary stats for header cards ────────────────────────────────────
+        total_count     = quotations.count()
+        submitted_count = quotations.filter(status__iexact='submitted').count()
+        accepted_count  = quotations.filter(status__iexact='accepted').count()
+        rejected_count  = quotations.filter(status__iexact='rejected').count()
+        total_value     = quotations.aggregate(total=Sum('grand_total'))['total'] or 0
+
+        # ── Unique creators for the "Filter by User" dropdown ─────────────────
+        creator_ids = (
+            quotations
+            .exclude(created_by__isnull=True)
+            .values_list('created_by_id', flat=True)
+            .distinct()
+        )
+        try:
+            creators = User.objects.filter(id__in=creator_ids).order_by('name')
+        except Exception:
+            creators = []
+
+        logger.info(
+            f"📋 Quotation list: {total_count} total | "
+            f"{submitted_count} submitted | {accepted_count} accepted"
+        )
+
     except Exception as e:
-        logger.error(f"❌ Error loading taxes: {e}")
-        taxes = []
-    
-    # Calculate counts
-    leads_count = len(lead_tickets)
-    employees_count = len(active_employees)
-    items_count = items.count() if hasattr(items, 'count') else len(items)
-    
-    # Debug: Check lead data
-    if lead_tickets:
-        first_lead = lead_tickets[0]
-        logger.info(f"📅 First lead ticket: {first_lead.get('ticket_number')} - {first_lead.get('owner_name')}")
-        logger.info(f"📅 First lead created_at: {first_lead.get('created_at')}")
-        logger.info(f"📅 First lead phone: {first_lead.get('phone_number')}")
-    
+        logger.error(f"❌ Error loading quotation list: {e}", exc_info=True)
+        quotations      = []
+        total_count     = 0
+        submitted_count = 0
+        accepted_count  = 0
+        rejected_count  = 0
+        total_value     = 0
+        creators        = []
+
     context = {
-        'lead_tickets': lead_tickets,  # Changed from active_leads to lead_tickets
-        'active_employees': active_employees,
-        'items': items,
-        'departments': departments,
-        'taxes': taxes,              # ✅ ADDED: Tax master list for dropdown
-        'leads_count': leads_count,
-        'employees_count': employees_count,
-        'items_count': items_count,
+        'quotations':       quotations,
+        'total_count':      total_count,
+        'submitted_count':  submitted_count,
+        'accepted_count':   accepted_count,
+        'rejected_count':   rejected_count,
+        'total_value':      round(total_value, 2),
+        'creators':         creators,   # for the "Created By" filter dropdown
     }
-    
-    logger.info(f"📊 Quotation List Context: {leads_count} leads, {employees_count} employees, {items_count} items")
-    
+
     return render(request, 'quotation_list.html', context)
 
 
@@ -7989,7 +7921,6 @@ def quotation_submit(request):
             'message': f'An unexpected error occurred: {str(e)}',
             'error_detail': str(e)
         }, status=500)
-
 
 # ============================================================================
 # API ENDPOINTS
@@ -16437,7 +16368,7 @@ def quotation_form_view(request):
             except Exception:
                 pass
 
-        quotations = Quotation.objects.select_related('lead').prefetch_related('items').all().order_by('-created_at')
+        quotations = Quotation.objects.select_related('lead', 'created_by').prefetch_related('items').all().order_by('-created_at')
 
         lead_id_from_url = request.GET.get('lead_id')
         selected_lead    = None
@@ -16872,27 +16803,30 @@ def edit_quotation(request, quotation_id):
     try:
         quotation       = Quotation.objects.get(id=quotation_id)
         quotation_items = QuotationItem.objects.filter(quotation=quotation)
-        items           = Item.objects.all()
         leads           = Lead.objects.filter(status='Active')
-        sections        = items.values_list('section', flat=True).distinct()
         taxes           = TaxMaster.objects.all().order_by('name')
 
-        items_json = []
-        for item in items:
-            items_json.append({
-                'id':             item.id,
-                'name':           item.name,
-                'description':    item.description or '',
-                'unit_of_measure': item.unit_of_measure,
-                'mrp':            float(item.mrp) if item.mrp else 0,
-                'purchase_price': float(item.purchase_price) if item.purchase_price else 0,
-                'cost':           float(item.cost) if item.cost else 0,
-                'tax_percentage': float(item.tax_percentage) if item.tax_percentage else 0,
-                'hsn_code':       item.hsn_code or '',
-                'section':        item.section or '',
-                'department':     item.department.name if item.department else 'N/A',
-                'is_active':      item.is_active,
-            })
+        # ✅ FIX 1: Use PurchaseItem from purchase_order app (has all required fields)
+        from purchase_order.models import Item as PurchaseItem
+        items = PurchaseItem.objects.filter(is_active=True).order_by('section', 'name')
+        sections = items.values_list('section', flat=True).distinct()
+
+        # ✅ FIX 2: Serialize with json.dumps() so JS receives valid JSON
+        items_json = json.dumps([
+            {
+                'id':              item.id,
+                'name':            item.name,
+                'description':     item.description or '',
+                'unit_of_measure': item.unit_of_measure or '',
+                'mrp':             float(item.mrp) if item.mrp else 0,
+                'cost':            float(item.cost) if item.cost else 0,
+                'tax_percentage':  float(item.tax_percentage) if item.tax_percentage else 0,
+                'section':         (item.section or 'GENERAL').upper().strip(),
+                'department':      item.department.name if item.department else 'N/A',
+                'is_active':       item.is_active,
+            }
+            for item in items
+        ])
 
         context = {
             'quotation':       quotation,

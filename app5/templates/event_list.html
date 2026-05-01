@@ -346,6 +346,41 @@
             background: #fce7f3;
             color: #9d174d;
         }
+        .status-transferred {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        /* ── Next follow-up full-row highlighting ── */
+        .nfd-today td {
+            background: #dcfce7 !important;
+        }
+        .nfd-today td:first-child {
+            border-left: 4px solid #16a34a;
+        }
+        .nfd-today:hover td {
+            background: #bbf7d0 !important;
+        }
+
+        .nfd-upcoming td {
+            background: #f8f5c7!important;
+        }
+        .nfd-upcoming td:first-child {
+            border-left: 4px solid #ca8a04;
+        }
+        .nfd-upcoming:hover td {
+            background: #fef08a !important;
+        }
+
+        .nfd-overdue td {
+            background: #fee2e2 !important;
+        }
+        .nfd-overdue td:first-child {
+            border-left: 4px solid #dc2626;
+        }
+        .nfd-overdue:hover td {
+            background: #fecaca !important;
+        }
 
         /* MODERN REPLY CELL */
         .reply-cell {
@@ -954,6 +989,210 @@
                 min-width: 100%;
             }
         }
+
+        /* ── SINGLE-INPUT TICKET COMBOBOX ── */
+        .ticket-picker {
+            position: relative;
+            width: 100%;
+        }
+
+        .ticket-picker-input-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .ticket-picker-search-icon {
+            position: absolute;
+            left: 0.75rem;
+            color: #94a3b8;
+            font-size: 0.78rem;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .ticket-picker-clear-btn {
+            position: absolute;
+            right: 2rem;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 0.78rem;
+            cursor: pointer;
+            padding: 0.2rem;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            transition: color 0.15s, background 0.15s;
+        }
+
+        .ticket-picker-clear-btn:hover {
+            color: #ef4444;
+            background: #fee2e2;
+        }
+
+        .ticket-picker-arrow {
+            position: absolute;
+            right: 0.75rem;
+            font-size: 0.72rem;
+            color: #94a3b8;
+            pointer-events: none;
+            transition: transform 0.2s;
+        }
+
+        .ticket-picker-input {
+            width: 100%;
+            padding: 0.6rem 2.4rem 0.6rem 2.1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #f8fafc;
+            font-size: 0.85rem;
+            color: #1e293b;
+            font-family: inherit;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+            cursor: text;
+        }
+
+        .ticket-picker-input::placeholder {
+            color: #94a3b8;
+            font-style: italic;
+        }
+
+        .ticket-picker-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+            background: #fff;
+        }
+
+        .ticket-picker-input.has-value {
+            background: #fff;
+            font-weight: 600;
+            color: #0f172a;
+            border-color: #c7d9f0;
+        }
+
+        .ticket-picker-input.open {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+            background: #fff;
+        }
+
+        .ticket-picker-input.open ~ .ticket-picker-arrow {
+            transform: rotate(180deg);
+        }
+
+        /* Selected chip shown below input */
+        .ticket-picker-selected-chip {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            margin-top: 4px;
+            font-size: 0.75rem;
+        }
+
+        .ticket-picker-chip-ticket {
+            font-weight: 700;
+            color: #0f172a;
+            background: #d1e6fa;
+            padding: 2px 7px;
+            border-radius: 4px;
+            letter-spacing: -0.01em;
+        }
+
+        .ticket-picker-chip-owner {
+            color: #475569;
+            font-weight: 500;
+        }
+
+        .ticket-picker-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            min-width: 280px;
+            background: #fff;
+            border: 1px solid #3b82f6;
+            border-top: none;
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            z-index: 9999;
+            overflow: hidden;
+            display: none;
+        }
+
+        .ticket-picker-list {
+            list-style: none;
+            margin: 0;
+            padding: 0.3rem 0;
+            max-height: 220px;
+            overflow-y: auto;
+        }
+
+        .ticket-picker-list::-webkit-scrollbar { width: 5px; }
+        .ticket-picker-list::-webkit-scrollbar-thumb {
+            background: #cbd5e1; border-radius: 4px;
+        }
+
+        .ticket-picker-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0.55rem 0.9rem;
+            cursor: pointer;
+            transition: background 0.15s;
+            border-left: 3px solid transparent;
+        }
+
+        .ticket-picker-item:hover,
+        .ticket-picker-item.focused {
+            background: #f0f7ff;
+            border-left-color: #3b82f6;
+        }
+
+        .ticket-picker-item.selected-item {
+            background: #eff6ff;
+            border-left-color: #2563eb;
+        }
+
+        .tpi-ticket {
+            font-weight: 700;
+            font-size: 0.75rem;
+            color: #0f172a;
+            background: #d1e6fa;
+            padding: 2px 7px;
+            border-radius: 4px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .tpi-owner {
+            font-size: 0.82rem;
+            color: #334155;
+            font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .tpi-match {
+            background: #fef9c3;
+            border-radius: 2px;
+        }
+
+        .ticket-picker-empty {
+            padding: 1rem;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 0.82rem;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
@@ -982,6 +1221,7 @@
                     <option value="Proposal Sent">Proposal Sent</option>
                     <option value="Accepted">Accepted</option>
                     <option value="Rejected">Rejected</option>
+                    <option value="Transferred">Transferred</option>
                 </select>
             </div>
             <div class="filter-item">
@@ -991,6 +1231,16 @@
                     {% for branch in branches %}
                     <option value="{{ branch.name }}">{{ branch.name }}</option>
                     {% endfor %}
+                </select>
+            </div>
+            <div class="filter-item">
+                <select class="filter-select" id="customerFilter">
+                    <option value="all">All Customers</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <select class="filter-select" id="assignedFilter">
+                    <option value="all">All Assigned</option>
                 </select>
             </div>
             <div class="filter-actions">
@@ -1031,10 +1281,13 @@
                     {% for followup in followups %}
                     <tr data-created="{{ followup.created_at|date:'Y-m-d' }}"
                         data-followup="{{ followup.follow_up_date|date:'Y-m-d' }}"
+                        data-nfd="{{ followup.next_follow_up_date|date:'Y-m-d'|default:'' }}"
                         data-ticket="{{ followup.lead.ticket_number }}"
                         data-status="{{ followup.status }}"
                         data-followup-id="{{ followup.id }}"
-                        data-branch="{{ followup.branch_id|default:'' }}">
+                        data-branch="{{ followup.branch_id|default:'' }}"
+                        data-customer="{{ followup.lead.ownerName|default:'' }}"
+                        data-assigned="{{ followup.assigned_to|default:'' }}">
                         <td>
                             <span class="ticket-id">{{ followup.lead.ticket_number }}</span>
                             <div class="created-by">
@@ -1045,7 +1298,7 @@
                                 </div>
                             </div>
                         </td>
-                        <td>
+                        <td class="customer-name-cell">
                             <strong>{{ followup.lead.ownerName|default:"N/A" }}</strong>
                             {% if followup.lead.phoneNo %}
                                 <br><small style="color: #6c757d;">📞 {{ followup.lead.phoneNo }}</small>
@@ -1065,6 +1318,8 @@
                                 <span class="status-badge status-rejected">🚫 Rejected</span>
                             {% elif followup.status == 'Not Attended' %}
                                 <span class="status-badge status-notattended">🚷 Not Attended</span>
+                            {% elif followup.status == 'Transferred' %}
+                                <span class="status-badge status-transferred">🔁 Transferred</span>
                             {% else %}
                                 <span class="status-badge" style="background:#f1f5f9;color:#475569;">{{ followup.status }}</span>
                             {% endif %}
@@ -1294,11 +1549,14 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label>Ticket Number <span class="required">*</span></label>
-                            <select id="ticketNumber" name="ticket_number" required {% if edit_mode %}disabled{% endif %}>
+
+                            <!-- Hidden real select (carries value for form submit & existing JS) -->
+                            <select id="ticketNumber" name="ticket_number" required
+                                    style="display:none;" {% if edit_mode %}disabled{% endif %}>
                                 <option value="">-- Select Active Lead Ticket --</option>
                                 {% for lead in active_leads %}
-                                <option value="{{ lead.ticket_number }}" 
-                                        data-owner="{{ lead.owner_name }}" 
+                                <option value="{{ lead.ticket_number }}"
+                                        data-owner="{{ lead.owner_name }}"
                                         data-phone="{{ lead.phone }}"
                                         data-lead-id="{{ lead.id }}"
                                         data-branch="{{ lead.branch_id }}"
@@ -1307,6 +1565,34 @@
                                 </option>
                                 {% endfor %}
                             </select>
+
+                            <!-- Single-input searchable ticket combobox -->
+                            <div class="ticket-picker" id="ticketPicker">
+                                <div class="ticket-picker-input-wrap">
+                                    <i class="fas fa-search ticket-picker-search-icon"></i>
+                                    <input type="text" id="ticketPickerSearch"
+                                           class="ticket-picker-input"
+                                           placeholder="Type ticket no. or customer name…"
+                                           autocomplete="off" spellcheck="false"
+                                           role="combobox" aria-expanded="false" aria-haspopup="listbox">
+                                    <button type="button" class="ticket-picker-clear-btn" id="ticketPickerClear" tabindex="-1" title="Clear selection">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    <i class="fas fa-chevron-down ticket-picker-arrow" id="ticketPickerArrow"></i>
+                                </div>
+                                <!-- Selected chip shown below input -->
+                                <div class="ticket-picker-selected-chip" id="ticketPickerChip">
+                                    <span class="ticket-picker-chip-ticket" id="ticketPickerChipTicket"></span>
+                                    <span class="ticket-picker-chip-owner" id="ticketPickerChipOwner"></span>
+                                </div>
+
+                                <div class="ticket-picker-dropdown" id="ticketPickerDropdown">
+                                    <ul class="ticket-picker-list" id="ticketPickerList" role="listbox"></ul>
+                                    <div class="ticket-picker-empty" id="ticketPickerEmpty" style="display:none;">
+                                        No matching tickets found
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label>Date <span class="required">*</span></label>
@@ -1369,6 +1655,7 @@
                                 <option value="Proposal Sent">📄 Proposal Sent</option>
                                 <option value="On Hold">⏸️ On Hold</option>
                                 <option value="Rejected">🚫 Rejected</option>
+                                <option value="Transferred">🔁 Transferred</option>
                             </select>
                         </div>
                     </div>
@@ -2146,7 +2433,7 @@
         window.toggleConditionalFields = function() {
             const status = document.getElementById('status').value;
             const cond = document.getElementById('conditionalFields');
-            const requires = ['Follow-up Required', 'Not Attended', 'On Hold', 'Proposal Sent'];
+            const requires = ['Follow-up Required', 'Not Attended', 'On Hold', 'Proposal Sent', 'Transferred'];
             
             if (requires.includes(status)) {
                 cond.style.display = 'block';
@@ -2269,12 +2556,95 @@
         const endDate = document.getElementById('endDate');
         const filterFollowup = document.getElementById('filterFollowup');
         const branchFilter = document.getElementById('branchFilter');
+        const customerFilter = document.getElementById('customerFilter');
+        const assignedFilter = document.getElementById('assignedFilter');
         const clearFiltersBtn = document.getElementById('clearBtn');
         const resultCount = document.getElementById('resultCount');
         const tableRows = document.querySelectorAll('.table-container tbody tr');
         const totalRecordsSpan = document.getElementById('totalRecords');
 
+        // ── Populate Customer & Assigned To dropdowns from table data ──────
+        (function populateFilterDropdowns() {
+            const customers = new Set();
+            const assignees = new Set();
+            tableRows.forEach(row => {
+                if (row.cells.length === 1) return;
+                const c = (row.dataset.customer || '').trim();
+                const a = (row.dataset.assigned || '').trim();
+                if (c) customers.add(c);
+                if (a) assignees.add(a);
+            });
+            [...customers].sort().forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c; opt.textContent = c;
+                customerFilter.appendChild(opt);
+            });
+            [...assignees].sort().forEach(a => {
+                const opt = document.createElement('option');
+                opt.value = a; opt.textContent = a;
+                assignedFilter.appendChild(opt);
+            });
+        })();
+
+        // Helper: parse YYYY-MM-DD as local date (reused in filterTable)
+        function parseLocalDateStr(str) {
+            if (!str) return null;
+            const [y, m, d] = str.split('-').map(Number);
+            return new Date(y, m - 1, d);
+        }
+
+        // Helper: get the colour class a row WILL have after applyNfdColours
+        // We compute it inline so we can check it before the DOM is updated.
+        function getNfdClass(row) {
+            const nfdStr = row.dataset.nfd;
+            if (!nfdStr) return '';
+            const today = new Date(); today.setHours(0,0,0,0);
+            const nfdDate = parseLocalDateStr(nfdStr);
+            if (!nfdDate) return '';
+            const diff = (nfdDate - today) / 86400000;
+            if (diff === 0) return 'nfd-today';
+            if (diff > 0)  return 'nfd-upcoming';
+            return 'nfd-overdue';
+        }
+
+        // Helper: is this row the MOST RECENT for its ticket?
+        // (same logic as applyNfdColours step 2 — only most-recent keeps colour)
+        let _mostRecentByTicket = null;
+        function buildMostRecentMap() {
+            _mostRecentByTicket = {};
+            tableRows.forEach(row => {
+                if (row.cells.length <= 1) return;
+                const ticket = (row.dataset.ticket || '').trim();
+                if (!ticket) return;
+                const followupId   = parseInt(row.dataset.followupId || '0', 10);
+                const followupDate = row.dataset.followup || '';
+                const createdDate  = row.dataset.created  || '';
+                if (!_mostRecentByTicket[ticket]) _mostRecentByTicket[ticket] = [];
+                _mostRecentByTicket[ticket].push({ row, followupId, followupDate, createdDate });
+            });
+            // Sort each group descending; mark the first as most-recent
+            Object.values(_mostRecentByTicket).forEach(entries => {
+                entries.sort((a, b) => {
+                    if (b.followupId !== a.followupId) return b.followupId - a.followupId;
+                    if (b.followupDate !== a.followupDate) return b.followupDate.localeCompare(a.followupDate);
+                    return b.createdDate.localeCompare(a.createdDate);
+                });
+            });
+        }
+
+        function isMostRecentForTicket(row) {
+            if (!_mostRecentByTicket) buildMostRecentMap();
+            const ticket = (row.dataset.ticket || '').trim();
+            if (!ticket) return true;
+            const entries = _mostRecentByTicket[ticket];
+            if (!entries || entries.length === 0) return true;
+            return entries[0].row === row;
+        }
+
         function filterTable() {
+            // Rebuild the most-recent-ticket map on each filter run
+            buildMostRecentMap();
+
             let visible = 0;
             const query = searchAll.value.toLowerCase().trim();
             const start = startDate.value;
@@ -2300,8 +2670,22 @@
                 // Apply all filters
                 if (query && !ticketText.includes(query) && !customerText.includes(query) && !replyText.includes(query)) show = false;
                 
-                if (start && followupDate && followupDate < start) show = false;
-                if (end && followupDate && followupDate > end) show = false;
+                // ── Date range filter with coloured-row exception ────────────
+                // When a month filter is active, we still INCLUDE rows whose
+                // next-follow-up is overdue (red) or upcoming (yellow) so they
+                // are always visible alongside the current-month rows.
+                if (start || end) {
+                    const dateInRange = (!start || followupDate >= start) && (!end || followupDate <= end);
+                    if (!dateInRange) {
+                        // Only keep this out-of-range row if it carries an
+                        // active colour (red / yellow) AND is the most-recent
+                        // entry for its ticket.
+                        const nfdCls = getNfdClass(row);
+                        const isColoured = (nfdCls === 'nfd-overdue' || nfdCls === 'nfd-upcoming' || nfdCls === 'nfd-today');
+                        const isMostRecent = isMostRecentForTicket(row);
+                        if (!(isColoured && isMostRecent)) show = false;
+                    }
+                }
                 
                 if (fup === 'all') {
                     // Default "All Active" view — hide Accepted and Rejected
@@ -2321,10 +2705,19 @@
                 if (branchVal !== 'all') {
                     const rowBranchStr = String(rowBranch).trim();
                     const branchValStr = String(branchVal).trim();
-                    
-                    if (rowBranchStr !== branchValStr) {
-                        show = false;
-                    }
+                    if (rowBranchStr !== branchValStr) show = false;
+                }
+
+                // Customer filter
+                const customerVal = customerFilter.value;
+                if (customerVal !== 'all') {
+                    if ((row.dataset.customer || '').trim() !== customerVal) show = false;
+                }
+
+                // Assigned To filter
+                const assignedVal = assignedFilter.value;
+                if (assignedVal !== 'all') {
+                    if ((row.dataset.assigned || '').trim() !== assignedVal) show = false;
                 }
                 
                 if (show) {
@@ -2436,6 +2829,8 @@
         endDate.addEventListener('change', filterTable);
         filterFollowup.addEventListener('change', filterTable);
         branchFilter.addEventListener('change', filterTable);
+        customerFilter.addEventListener('change', filterTable);
+        assignedFilter.addEventListener('change', filterTable);
         
         // Month start/end dates from Django context
         const monthStart = '{{ month_start }}';
@@ -2446,8 +2841,10 @@
             searchAll.value = '';
             startDate.value = monthStart;
             endDate.value = monthEnd;
-            filterFollowup.value = 'all';
-            branchFilter.value = 'all';
+            filterFollowup.value  = 'all';
+            branchFilter.value    = 'all';
+            customerFilter.value  = 'all';
+            assignedFilter.value  = 'all';
             filterTable();
         });
 
@@ -2482,6 +2879,317 @@
             filterTable();
             
             console.log('🚀 Event List initialized - full screen fit with horizontal and vertical scroll');
+
+        // ── Follow-up row colouring ──────────────────────────────────────────
+        // Logic:
+        //   GREEN  — follow_up_date = today (due today)
+        //   RED    — follow_up_date is past AND no next_follow_up_date (missed/forgotten)
+        //   YELLOW — next_follow_up_date exists and is in the future (upcoming rescheduled)
+        //   WHITE  — everything else (accepted, rejected, future scheduled, etc.)
+        function applyNfdColours() {
+            // Parse YYYY-MM-DD safely in local time (avoids UTC timezone shift bug)
+            function parseLocalDate(str) {
+                if (!str) return null;
+                const [y, m, d] = str.split('-').map(Number);
+                return new Date(y, m - 1, d);
+            }
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const allRows = document.querySelectorAll('#tableBody tr');
+
+            // Step 1: Assign colours to all rows based on nfd date (as before)
+            allRows.forEach(row => {
+                row.classList.remove('nfd-today', 'nfd-upcoming', 'nfd-overdue');
+
+                const nfdStr = row.dataset.nfd; // next action follow-up date
+
+                if (!nfdStr) return; // no next follow-up date → white
+
+                const nfdDate = parseLocalDate(nfdStr);
+                const diff    = (nfdDate - today) / 86400000; // days difference
+
+                if (diff === 0) {
+                    // 🟢 GREEN — next follow-up is today
+                    row.classList.add('nfd-today');
+                } else if (diff > 0) {
+                    // 🟡 YELLOW — next follow-up is in the future (upcoming)
+                    row.classList.add('nfd-upcoming');
+                } else {
+                    // 🔴 RED — next follow-up date is past (missed/overdue)
+                    row.classList.add('nfd-overdue');
+                }
+            });
+
+            // Step 2: For each ticket that appears more than once,
+            //         keep colour ONLY on the most recent follow-up row.
+            //         All older rows for the same ticket become white.
+            //
+            // "Most recent" is determined by data-followup-id (higher id = newer),
+            // falling back to data-followup (follow-up date) then data-created.
+
+            const ticketGroups = {}; // ticket → [ { row, sortKey } ]
+
+            allRows.forEach(row => {
+                if (row.cells.length <= 1) return; // skip empty-state row
+                const ticket = (row.dataset.ticket || '').trim();
+                if (!ticket) return;
+
+                // Build a sortable key: prefer followup-id (numeric), then date strings
+                const followupId  = parseInt(row.dataset.followupId || '0', 10);
+                const followupDate = row.dataset.followup || '';
+                const createdDate  = row.dataset.created  || '';
+
+                if (!ticketGroups[ticket]) ticketGroups[ticket] = [];
+                ticketGroups[ticket].push({ row, followupId, followupDate, createdDate });
+            });
+
+            Object.values(ticketGroups).forEach(entries => {
+                if (entries.length <= 1) return; // only one row → keep its colour as-is
+
+                // Sort descending: highest id first, then latest date
+                entries.sort((a, b) => {
+                    if (b.followupId !== a.followupId) return b.followupId - a.followupId;
+                    if (b.followupDate !== a.followupDate) return b.followupDate.localeCompare(a.followupDate);
+                    return b.createdDate.localeCompare(a.createdDate);
+                });
+
+                // Most-recent row keeps its colour; all others → white (strip classes)
+                entries.slice(1).forEach(entry => {
+                    entry.row.classList.remove('nfd-today', 'nfd-upcoming', 'nfd-overdue');
+                });
+            });
+        }
+
+        // Run on load and after every filter/page change
+        applyNfdColours();
+        document.getElementById('tableBody').addEventListener('DOMSubtreeModified', applyNfdColours);
+        })();
+
+        // =========================================================================
+        // SINGLE-INPUT TICKET COMBOBOX — type to search, click or Enter to select
+        // =========================================================================
+        (function initTicketPicker() {
+            const realSelect   = document.getElementById('ticketNumber');
+            const searchInput  = document.getElementById('ticketPickerSearch');
+            const dropdown     = document.getElementById('ticketPickerDropdown');
+            const list         = document.getElementById('ticketPickerList');
+            const emptyMsg     = document.getElementById('ticketPickerEmpty');
+            const clearBtn     = document.getElementById('ticketPickerClear');
+            const chip         = document.getElementById('ticketPickerChip');
+            const chipTicket   = document.getElementById('ticketPickerChipTicket');
+            const chipOwner    = document.getElementById('ticketPickerChipOwner');
+            const arrowIcon    = document.getElementById('ticketPickerArrow');
+            let focusedIndex   = -1;
+            let isOpen         = false;
+            let selectedValue  = '';
+
+            if (!realSelect || !searchInput) return;
+
+            // ── Helpers ──────────────────────────────────────────────────────
+            function escHtml(s) {
+                return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            }
+
+            function highlight(text, query) {
+                if (!query) return escHtml(text);
+                const idx = text.toLowerCase().indexOf(query.toLowerCase());
+                if (idx === -1) return escHtml(text);
+                return escHtml(text.slice(0, idx))
+                    + '<mark class="tpi-match">' + escHtml(text.slice(idx, idx + query.length)) + '</mark>'
+                    + escHtml(text.slice(idx + query.length));
+            }
+
+            function getOptions() {
+                return Array.from(realSelect.options).filter(o => o.value && !o.hidden);
+            }
+
+            // ── Sync: write selected label into the input itself ─────────────
+            function syncUI() {
+                const opt = selectedValue
+                    ? Array.from(realSelect.options).find(o => o.value === selectedValue)
+                    : null;
+
+                if (opt) {
+                    const owner = (opt.dataset.owner || '').trim();
+                    searchInput.value = owner ? opt.value + '  ·  ' + owner : opt.value;
+                    searchInput.classList.add('has-value');
+                    clearBtn.style.display = 'flex';
+                } else {
+                    searchInput.value = '';
+                    searchInput.classList.remove('has-value');
+                    clearBtn.style.display = 'none';
+                }
+                // chip is unused — keep hidden
+                if (chip) chip.style.display = 'none';
+            }
+
+            // ── Render the filtered dropdown list ─────────────────────────────
+            function renderList(query) {
+                const opts     = getOptions();
+                const q        = (query || '').trim().toLowerCase();
+                const filtered = q
+                    ? opts.filter(o =>
+                        o.value.toLowerCase().includes(q) ||
+                        (o.dataset.owner || '').toLowerCase().includes(q))
+                    : opts;
+
+                list.innerHTML = '';
+                focusedIndex   = -1;
+
+                if (!filtered.length) { emptyMsg.style.display = 'block'; return; }
+                emptyMsg.style.display = 'none';
+
+                filtered.forEach(opt => {
+                    const li = document.createElement('li');
+                    li.className     = 'ticket-picker-item' + (opt.value === selectedValue ? ' selected-item' : '');
+                    li.role          = 'option';
+                    li.dataset.value = opt.value;
+                    li.innerHTML     = `<span class="tpi-ticket">${highlight(opt.value, q)}</span>
+                                        <span class="tpi-owner">${highlight(opt.dataset.owner || '', q)}</span>`;
+                    li.addEventListener('mousedown', e => { e.preventDefault(); selectOption(opt.value); });
+                    list.appendChild(li);
+                });
+
+                if (q) setFocus(0);
+            }
+
+            // ── Focus a list item by index ────────────────────────────────────
+            function setFocus(idx) {
+                const items = list.querySelectorAll('.ticket-picker-item');
+                if (!items.length) return;
+                items[focusedIndex]?.classList.remove('focused');
+                focusedIndex = Math.max(0, Math.min(items.length - 1, idx));
+                items[focusedIndex]?.classList.add('focused');
+                items[focusedIndex]?.scrollIntoView({ block: 'nearest' });
+            }
+
+            function moveFocus(dir) { setFocus(focusedIndex + dir); }
+
+            // ── Select an option ─────────────────────────────────────────────
+            function selectOption(value) {
+                selectedValue    = value;
+                realSelect.value = value;
+                realSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                syncUI();          // writes "TKT-XXXXX · Owner" into the input
+                closeDropdown();
+            }
+
+            // ── Clear selection ───────────────────────────────────────────────
+            function clearSelection() {
+                selectedValue    = '';
+                realSelect.value = '';
+                realSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                searchInput.value = '';
+                searchInput.classList.remove('has-value');
+                syncUI();
+                closeDropdown();
+            }
+
+            // ── Open / close ─────────────────────────────────────────────────
+            function openDropdown() {
+                if (realSelect.disabled || isOpen) return;
+                isOpen = true;
+                dropdown.style.display = 'block';
+                searchInput.classList.add('open');
+                searchInput.setAttribute('aria-expanded', 'true');
+                arrowIcon.style.transform = 'rotate(180deg)';
+                renderList(searchInput.value);
+            }
+
+            function closeDropdown() {
+                if (!isOpen) return;
+                isOpen = false;
+                dropdown.style.display = 'none';
+                searchInput.classList.remove('open');
+                searchInput.setAttribute('aria-expanded', 'false');
+                arrowIcon.style.transform = '';
+                focusedIndex = -1;
+                // Restore the selected label (or clear if nothing selected)
+                syncUI();
+            }
+
+            // ── Input events ──────────────────────────────────────────────
+            searchInput.addEventListener('focus', function() {
+                // Clear the label so user can type; dropdown opens with full list
+                searchInput.value = '';
+                openDropdown();
+            });
+
+            searchInput.addEventListener('input', function() {
+                if (!isOpen) openDropdown();
+                renderList(this.value);
+            });
+
+            searchInput.addEventListener('keydown', function(e) {
+                if (e.key === 'ArrowDown')  { e.preventDefault(); if (!isOpen) openDropdown(); else moveFocus(1); }
+                else if (e.key === 'ArrowUp') { e.preventDefault(); moveFocus(-1); }
+                else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const focused = list.querySelector('.ticket-picker-item.focused');
+                    if (focused) { selectOption(focused.dataset.value); return; }
+                    const all = list.querySelectorAll('.ticket-picker-item');
+                    if (all.length === 1) selectOption(all[0].dataset.value);
+                }
+                else if (e.key === 'Escape') {
+                    closeDropdown();
+                }
+                else if (e.key === 'Tab') { closeDropdown(); }
+                // Printable char typed while selected label is showing:
+                // clear it first so only the new character appears in the input
+                else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
+                    if (searchInput.classList.contains('has-value')) {
+                        searchInput.value = '';
+                        // browser will append the typed char via the input event
+                    }
+                }
+            });
+
+            searchInput.addEventListener('blur', function() {
+                // Delay so mousedown on list items fires first
+                setTimeout(() => {
+                    closeDropdown(); // closeDropdown calls syncUI which restores the label
+                }, 150);
+            });
+
+            clearBtn.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+                clearSelection();
+                searchInput.focus();
+            });
+
+            // Close on outside click
+            document.addEventListener('mousedown', function(e) {
+                const picker = document.getElementById('ticketPicker');
+                if (picker && !picker.contains(e.target)) closeDropdown();
+            });
+
+            // ── Sync when realSelect changes programmatically ─────────────────
+            realSelect.addEventListener('change', function() {
+                selectedValue = this.value;
+                if (!selectedValue) { clearSelection(); }
+                else { syncUI(); }
+            });
+
+            // ── Disable visual state (edit mode) ─────────────────────────────
+            new MutationObserver(function() {
+                const dis = realSelect.disabled;
+                searchInput.disabled    = dis;
+                searchInput.style.opacity  = dis ? '0.65' : '1';
+                searchInput.style.cursor   = dis ? 'not-allowed' : 'text';
+                if (dis) closeDropdown();
+            }).observe(realSelect, { attributes: true, attributeFilter: ['disabled'] });
+
+            // ── Hook into resetForm ────────────────────────────────────────────
+            const origReset = window.resetForm;
+            window.resetForm = function() {
+                if (origReset) origReset();
+                clearSelection();
+            };
+
+            // ── Init ───────────────────────────────────────────────────────────
+            syncUI();
         })();
     </script>
 </body>

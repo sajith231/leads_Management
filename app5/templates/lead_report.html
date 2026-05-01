@@ -1291,6 +1291,7 @@
                             <th>Campaign</th>
                             
                             <th>Marketed By</th>
+                            <th>Consulted By</th>
                             <th>Reference From</th>
                             <th>Actions</th>
                         </tr>
@@ -1359,6 +1360,14 @@
                                 {% endif %}
                                 <br>
 
+                                <!-- Firm Name (for Business) -->
+                                {% if lead.customerType == "Business" and lead.name %}
+                                    <div style="margin-top: 4px; font-size: 12px; color: #1976d2;">
+                                        <i class="fas fa-building me-1" style="color: #6a11cb;"></i>
+                                        <span>{{ lead.name }}</span>
+                                    </div>
+                                {% endif %}
+
                                 <!-- ✅ FIXED: Place (business vs individual) with maps link -->
                                 
                             
@@ -1381,6 +1390,17 @@
                            
                             
                             <td>{{ lead.marketedBy|default:'' }}</td>
+                            
+                            <td>
+                                {% if lead.Consultant %}
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <i class="fas fa-user-tie" style="color: #6a11cb; font-size: 13px;"></i>
+                                        <span>{{ lead.Consultant }}</span>
+                                    </div>
+                                {% else %}
+                                    <span style="color: #999;">-</span>
+                                {% endif %}
+                            </td>
                             
                             <td>{{ lead.refFrom|default:"-" }}</td>
 

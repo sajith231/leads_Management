@@ -958,13 +958,9 @@
 
                                 <!-- Quotation Status -->
                                 <div class="ticket-field">
-                                    <label for="quotation-status">Quotation Status *</label>
-                                    <select id="quotation-status">
-                                        <option value="">Select Status</option>
-                                        <option value="accepted">Accepted</option>
-                                        <option value="submitted">Submitted</option>
-                                        <option value="rejected">Rejected</option>
-                                    </select>
+                                    <label for="quotation-status">Quotation Status</label>
+                                    <input type="text" id="quotation-status" value="Submitted" readonly
+                                           style="background-color:#e3f2fd;border-color:#1976d2;color:#1976d2;font-weight:600;cursor:not-allowed;">
                                 </div>
 
                             </div>
@@ -1025,7 +1021,7 @@
                             <button type="button" class="btn-submit" onclick="submitQuotation()">
                                 <i class="fas fa-paper-plane"></i> Submit Quotation
                             </button>
-                            <button class="btn-refresh" onclick="window.location.href='{% url 'app5:lead_report' %}'">
+                            <button class="btn-refresh" onclick="window.location.href='{% url 'app5:quotation_form_view' %}'">
                                 <i class="fas fa-sync-alt"></i> Back
                             </button>
                         </div>
@@ -1093,16 +1089,7 @@
             {% endfor %}
         ];
         
-        // ── Status dropdown live colour feedback ──
-        document.addEventListener('DOMContentLoaded', function () {
-            const statusSelect = document.getElementById('quotation-status');
-            statusSelect.addEventListener('change', function () {
-                this.classList.remove('status-accepted', 'status-submitted', 'status-rejected');
-                if (this.value) {
-                    this.classList.add('status-' + this.value);
-                }
-            });
-        });
+        // ── Status colour feedback (removed – status is always submitted) ──
 
         function handleTicketSelection(selectElement) {
             const selectedOption = $(selectElement).find('option:selected');
@@ -1633,13 +1620,7 @@
                 return;
             }
             
-            // ── Validate status ──
-            const quotationStatus = document.getElementById('quotation-status').value;
-            if (!quotationStatus) {
-                showNotification('Please select a quotation status', 'warning');
-                document.getElementById('quotation-status').focus();
-                return;
-            }
+            const quotationStatus = 'submitted';
 
             const itemRows = document.querySelectorAll('#items-body tr');
             if (itemRows.length === 0) {
@@ -1716,7 +1697,7 @@
                 
                 if (response.ok && result.success) {
                     showNotification('Quotation submitted successfully for ' + selectedLead.owner_name + '!', 'success');
-                    setTimeout(() => { window.location.href = '{% url "app5:quotation_form" %}?lead_id=' + selectedLead.id; }, 1500);
+                    setTimeout(() => { window.location.href = '{% url "app5:quotation_form_view" %}?lead_id=' + selectedLead.id; }, 1500);
                 } else {
                     showNotification(result.message || 'Error submitting quotation', 'error');
                 }
@@ -1739,9 +1720,7 @@
             $('#total-discount').text('0.00');
             $('#total-tax').text('0.00');
             $('#grand-total').text('0.00');
-            const statusSel = document.getElementById('quotation-status');
-            statusSel.value = '';
-            statusSel.className = '';
+            // status is always submitted – no reset needed
             removeAttachment();
             showNotification('Form reset. You can create a new quotation.', 'info');
         }
@@ -1832,12 +1811,7 @@
                 if (e.target === this) closeAttachmentModal();
             });
 
-            // Status colour feedback
-            const statusSelect = document.getElementById('quotation-status');
-            statusSelect.addEventListener('change', function () {
-                this.classList.remove('status-accepted', 'status-submitted', 'status-rejected');
-                if (this.value) this.classList.add('status-' + this.value);
-            });
+            // Status is always submitted – no colour feedback needed
         });
 
         $(document).ready(function() {

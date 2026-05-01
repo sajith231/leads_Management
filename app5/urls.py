@@ -142,7 +142,7 @@ urlpatterns = [
   path('state/<int:id>/edit/', views.state_master_edit, name='state_master_edit'),
   path('state/<int:id>/delete/', views.state_master_delete, name='state_master_delete'),
   path('quotation-item-notes/<int:item_id>/update/', views.update_quotation_item_notes, name='quotation_item_notes_update'),
-
+  path('quotation/update-status/<int:quotation_id>/', views.quotation_update_status, name='quotation_update_status'),
 
 
     path('event-form/', views.event_form_view, name='event_form'),
