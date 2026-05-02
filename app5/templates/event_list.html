@@ -382,6 +382,78 @@
             background: #fecaca !important;
         }
 
+        /* ── Previous Replies Timeline ── */
+        .prev-reply-item {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 10px;
+            position: relative;
+        }
+        .prev-reply-item:not(:last-child)::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 32px;
+            bottom: -10px;
+            width: 2px;
+            background: #e2e8f0;
+        }
+        .prev-reply-dot {
+            flex-shrink: 0;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #ede9fe;
+            border: 2px solid #a78bfa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            color: #6d28d9;
+            font-weight: 700;
+            margin-top: 2px;
+        }
+        .prev-reply-body {
+            flex: 1;
+            background: #faf5ff;
+            border: 1px solid #e9d5ff;
+            border-radius: 10px;
+            padding: 0.65rem 0.9rem;
+            border-left: 3px solid #a78bfa;
+        }
+        .prev-reply-header {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .prev-reply-date {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #6d28d9;
+            background: #ede9fe;
+            padding: 2px 8px;
+            border-radius: 20px;
+        }
+        .prev-reply-by {
+            font-size: 0.7rem;
+            color: #64748b;
+        }
+        .prev-reply-status {
+            font-size: 0.68rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 20px;
+            margin-left: auto;
+        }
+        .prev-reply-text {
+            font-size: 0.82rem;
+            color: #374151;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
         /* MODERN REPLY CELL */
         .reply-cell {
             max-width: 150px;
@@ -1339,9 +1411,18 @@
                                     '{{ followup.next_action|default:""|escapejs }}',
                                     '{{ followup.next_follow_up_date|date:"Y-m-d"|default:"" }}',
                                     {{ followup.parsed_selected_items|default:"[]"|safe }},
-                                    '{{ followup.selected_requirement_items|default:""|escapejs }}'
-                                )" title="View full reply">
+                                    '{{ followup.selected_requirement_items|default:""|escapejs }}',
+                                    {{ followup.id }}
+                                )" title="View current reply">
                                     <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="view-reply-btn history-btn" onclick="showPreviousReplies(
+                                    '{{ followup.lead.ticket_number|escapejs }}',
+                                    '{{ followup.lead.ownerName|escapejs }}',
+                                    {{ followup.id }},
+                                    '{{ followup.created_at|date:"Y-m-d H:i:s" }}'
+                                )" title="View previous replies" style="background:#ede9fe; color:#7c3aed;">
+                                    <i class="fas fa-history"></i>
                                 </button>
                             </div>
                         </td>
@@ -1468,6 +1549,11 @@
         </div>
     </div>
 
+    <!-- Hidden follow-up history store (all followups, grouped by ticket) -->
+    <script id="followupHistoryData" type="application/json">
+    [{% for followup in followups %}{"id":{{ followup.id }},"ticket":"{{ followup.lead.ticket_number|escapejs }}","customer":"{{ followup.lead.ownerName|escapejs }}","created_by":"{{ followup.custom_user_name|default:'Unknown'|escapejs }}","follow_up_date":"{{ followup.follow_up_date|date:'Y-m-d' }}","created_at":"{{ followup.created_at|date:'Y-m-d H:i:s' }}","status":"{{ followup.status|escapejs }}","reply":"{{ followup.reply|escapejs }}","contact_method":"{{ followup.contact_method|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]
+    </script>
+
     <!-- Reply View Modal - UPDATED WITH IMPROVED ITEM DISPLAY -->
     <div class="modal-overlay" id="replyModal">
         <div class="modal-content large" id="replyModalContent">
@@ -1480,10 +1566,11 @@
             <div class="reply-meta" id="replyMeta">
                 <!-- Will be filled by JavaScript -->
             </div>
-            
+
             <div class="reply-section">
                 <div class="section-label">
-                    <i class="fas fa-reply"></i> Customer Reply
+                    <i class="fas fa-reply" style="color:#3b82f6;"></i>
+                    <span style="font-weight:700;">Current Reply</span>
                 </div>
                 <div class="reply-content" id="fullReply">
                     <!-- Will be filled by JavaScript -->
@@ -1518,6 +1605,43 @@
                 <div class="reply-content" id="nextActionDetails" style="background: #e5f0ff; border-left-color: #3b82f6;">
                     <!-- Will be filled by JavaScript -->
                 </div>
+            </div>
+
+            <!-- Add New Follow-up Button -->
+            <div style="margin-top: 1.5rem; padding-top: 1.2rem; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 0.8rem;">
+                <button type="button" class="btn btn-clear" onclick="closeReplyModal()" style="padding: 0.6rem 1.2rem;">
+                    <i class="fas fa-times"></i> Close
+                </button>
+                <button type="button" id="addFollowupFromReplyBtn" onclick="openNewFollowupFromReply()" 
+                    style="background: #0f6a33; color: white; border: none; border-radius: 8px; padding: 0.6rem 1.4rem; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: 0 4px 6px rgba(15,106,51,0.2); transition: all 0.2s;">
+                    <i class="fas fa-plus"></i> Add New Follow-up
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Previous Replies History Modal -->
+    <div class="modal-overlay" id="prevRepliesModal">
+        <div class="modal-content large" style="max-width:780px;">
+            <button class="close-modal-btn" onclick="closePrevRepliesModal()">×</button>
+
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:1.2rem;">
+                <div style="background:#ede9fe; width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center;">
+                    <i class="fas fa-history" style="color:#7c3aed; font-size:1.1rem;"></i>
+                </div>
+                <div>
+                    <h2 style="font-size:1.25rem; font-weight:700; color:#0f172a; margin:0;">Previous Replies</h2>
+                    <p id="prevRepliesSubtitle" style="font-size:0.82rem; color:#64748b; margin:0;"></p>
+                </div>
+                <span id="prevRepliesBadge" style="margin-left:auto; background:#ede9fe; color:#6d28d9; font-size:0.75rem; font-weight:700; padding:4px 12px; border-radius:20px;"></span>
+            </div>
+
+            <div id="prevRepliesBody" style="max-height:65vh; overflow-y:auto; padding-right:4px;"></div>
+
+            <div style="margin-top:1.2rem; padding-top:1rem; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end;">
+                <button type="button" class="btn btn-clear" onclick="closePrevRepliesModal()" style="padding:0.6rem 1.4rem;">
+                    <i class="fas fa-times"></i> Close
+                </button>
             </div>
         </div>
     </div>
@@ -1991,8 +2115,123 @@
             }, 2000);
         }
 
+        // Stores the ticket number of the currently viewed reply, for "Add New Follow-up"
+        let _replyModalTicket = '';
+
+        // Opens Create Follow-up modal pre-filled with the same customer/ticket
+        function openNewFollowupFromReply() {
+            closeReplyModal();
+            resetForm();
+            filterTicketsByBranch();
+
+            const ticketSelect = document.getElementById('ticketNumber');
+            if (_replyModalTicket) {
+                ticketSelect.value = _replyModalTicket;
+                ticketSelect.disabled = false;
+                // Trigger change to load customer info & requirement items
+                ticketSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+
+            modalTitle.textContent = '📋 Create Follow-Up';
+            modalSubtitle.textContent = 'Continuing follow-up for the same customer';
+            submitBtn.innerHTML = '💾 Save Follow-Up';
+            document.getElementById('followUpId').value = '';
+            modal.classList.add('show');
+        }
+
+        // ── Previous Replies Modal ────────────────────────────────────────────
+        const statusColors = {
+            'Accepted':           { bg:'#d1fae5', color:'#065f46' },
+            'Follow-up Required': { bg:'#fef3c7', color:'#92400e' },
+            'Proposal Sent':      { bg:'#dbeafe', color:'#1e40af' },
+            'On Hold':            { bg:'#f3e8ff', color:'#6b21a8' },
+            'Rejected':           { bg:'#fee2e2', color:'#991b1b' },
+            'Not Attended':       { bg:'#fce7f3', color:'#9d174d' },
+            'Transferred':        { bg:'#e0f2fe', color:'#0369a1' },
+        };
+
+        function buildPrevRepliesHTML(ticketNumber, excludeId, currentCreatedAt) {
+            const raw = document.getElementById('followupHistoryData');
+            if (!raw) return [];
+            const all = JSON.parse(raw.textContent || '[]');
+            const currentDt = currentCreatedAt ? new Date(currentCreatedAt) : null;
+            return all.filter(f => {
+                if (f.ticket !== ticketNumber) return false;
+                if (f.id === excludeId) return false;
+                if (!f.reply || !f.reply.trim()) return false;
+                // Only show follow-ups created BEFORE the current one
+                if (currentDt) {
+                    const fDt = new Date(f.created_at);
+                    if (isNaN(fDt) || fDt >= currentDt) return false;
+                }
+                return true;
+            }).sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        }
+
+        function renderPrevRepliesTimeline(prev) {
+            if (!prev.length) {
+                return `<div style="text-align:center; padding:2.5rem 1rem; color:#94a3b8;">
+                    <i class="fas fa-comment-slash" style="font-size:2rem; margin-bottom:12px; display:block;"></i>
+                    No previous replies found for this customer.
+                </div>`;
+            }
+            let html = '';
+            prev.forEach((f, idx) => {
+                const sc = statusColors[f.status] || { bg:'#f1f5f9', color:'#475569' };
+                // Show created_at with date + time
+                let dateLabel = '', timeLabel = '';
+                if (f.created_at) {
+                    const dt = new Date(f.created_at);
+                    if (!isNaN(dt)) {
+                        dateLabel = dt.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+                        timeLabel = dt.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', hour12:true });
+                    }
+                }
+                const safeReply = f.reply
+                    ? f.reply.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')
+                    : '<span style="color:#94a3b8;font-style:italic;">No reply text</span>';
+                html += `
+                <div class="prev-reply-item">
+                    <div class="prev-reply-dot">${idx + 1}</div>
+                    <div class="prev-reply-body">
+                        <div class="prev-reply-header">
+                            <span class="prev-reply-date">
+                                <i class="fas fa-calendar-alt" style="margin-right:4px;"></i>${dateLabel}
+                                ${timeLabel ? `<span style="font-weight:400; opacity:0.8; margin-left:5px;"><i class="fas fa-clock" style="margin-right:3px;"></i>${timeLabel}</span>` : ''}
+                            </span>
+                            <span class="prev-reply-by"><i class="fas fa-user" style="margin-right:3px;"></i>${f.created_by || 'Unknown'}</span>
+                            ${f.contact_method ? `<span class="prev-reply-by" style="background:#f1f5f9;padding:2px 7px;border-radius:20px;">${f.contact_method}</span>` : ''}
+                            <span class="prev-reply-status" style="background:${sc.bg};color:${sc.color};">${f.status}</span>
+                        </div>
+                        <div class="prev-reply-text">${safeReply}</div>
+                    </div>
+                </div>`;
+            });
+            return html;
+        }
+
+        function showPreviousReplies(ticketNumber, customerName, currentId, currentCreatedAt) {
+            const prev = buildPrevRepliesHTML(ticketNumber, currentId, currentCreatedAt);
+            document.getElementById('prevRepliesSubtitle').textContent =
+                `${customerName || 'Customer'}  ·  ${ticketNumber || ''}`;
+            document.getElementById('prevRepliesBadge').textContent =
+                `${prev.length} repl${prev.length === 1 ? 'y' : 'ies'}`;
+            document.getElementById('prevRepliesBody').innerHTML = renderPrevRepliesTimeline(prev);
+            document.getElementById('prevRepliesModal').classList.add('show');
+        }
+
+        function closePrevRepliesModal() {
+            document.getElementById('prevRepliesModal').classList.remove('show');
+        }
+
+        document.getElementById('prevRepliesModal').addEventListener('click', function(e) {
+            if (e.target === this) closePrevRepliesModal();
+        });
+        // ─────────────────────────────────────────────────────────────────────
+
         // Reply Modal functions - UPDATED WITH IMPROVED ITEM DISPLAY
-        function showReplyModal(customerName, ticketNumber, followUpDate, status, reply, notes, contactMethod, createdBy, assignedTo, nextAction, nextFollowUpDate, selectedItems, rawItemsJson) {
+        function showReplyModal(customerName, ticketNumber, followUpDate, status, reply, notes, contactMethod, createdBy, assignedTo, nextAction, nextFollowUpDate, selectedItems, rawItemsJson, currentFollowupId) {
+            _replyModalTicket = ticketNumber || '';
             const metaDiv = document.getElementById('replyMeta');
             const replyDiv = document.getElementById('fullReply');
             const notesDiv = document.getElementById('fullNotes');
@@ -2208,6 +2447,9 @@
         // Close with Escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
+                if (document.getElementById('prevRepliesModal').classList.contains('show')) {
+                    closePrevRepliesModal();
+                }
                 if (replyModal.classList.contains('show')) {
                     closeReplyModal();
                 }
