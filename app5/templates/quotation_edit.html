@@ -217,6 +217,35 @@
             outline: none;
         }
         
+        /* ── Item Notes button ── */
+        .btn-view-notes {
+            background: none;
+            border: none;
+            color: #4a6fdc;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 4px;
+            font-size: 13px;
+            vertical-align: middle;
+            transition: color 0.2s, background 0.2s;
+            display: inline-flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .btn-view-notes:hover {
+            color: #fff;
+            background: #4a6fdc;
+        }
+        .item-desc-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .item-desc-wrapper select {
+            flex: 1;
+            min-width: 0;
+        }
+
         .btn-delete {
             background: linear-gradient(135deg, #e74c3c, #c0392b);
             color: white;
@@ -870,6 +899,7 @@
                                             </select>
                                         </td>
                                         <td>
+                                            <div class="item-desc-wrapper">
                                             <select class="item-desc" name="item_id[]" onchange="loadItemDetails(this)" required>
                                                 <option value="">Select Item</option>
                                                 {% for item in items %}
@@ -883,6 +913,10 @@
                                                 </option>
                                                 {% endfor %}
                                             </select>
+                                            <button type="button" class="btn-view-notes" title="View / edit item notes" onclick="viewItemNotes(this)">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            </div>
                                         </td>
                                         <td>
                                             <input type="number" class="item-qty" name="quantity[]" value="{{ qitem.quantity|floatformat:0 }}" step="1" min="1" onchange="calculateRow(this)" onkeypress="return event.charCode >= 48 && event.charCode <= 57" placeholder="Qty">
@@ -1298,6 +1332,14 @@
                 option.setAttribute('data-tax', item.tax_percentage || 0);
                 option.setAttribute('data-unit', item.unit_of_measure || '');
                 itemSelect[0].appendChild(option);
+                // Store full item data on the jQuery-wrapped option for notes popup
+                $(option).data('item-data', {
+                    id: item.id,
+                    name: item.name,
+                    notes: item.notes || '',
+                    description: item.description || '',
+                    section: item.section || ''
+                });
             });
             
             // Restore previous selection if still available
@@ -1421,9 +1463,14 @@
                 </td>
                 <!-- ITEM DESCRIPTION SECOND -->
                 <td>
-                    <select class="item-desc" name="item_id[]" onchange="loadItemDetails(this)" required disabled>
-                        <option value="">Select Item</option>
-                    </select>
+                    <div class="item-desc-wrapper">
+                        <select class="item-desc" name="item_id[]" onchange="loadItemDetails(this)" required disabled>
+                            <option value="">Select Item</option>
+                        </select>
+                        <button type="button" class="btn-view-notes" title="View / edit item notes" onclick="viewItemNotes(this)">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
                 </td>
                 <td>
                     <input type="number" class="item-qty" name="quantity[]" value="1" step="1" min="1" onchange="calculateRow(this)" onkeypress="return event.charCode >= 48 && event.charCode <= 57" placeholder="Qty">
@@ -1704,6 +1751,211 @@
                 submitBtn.disabled = false;
             }
         }
+        // ═══════════════════════════════════════════════════
+        // ITEM NOTES — VIEW & EDIT POPUP
+        // ═══════════════════════════════════════════════════
+        function closeNotesPopup() {
+            const p = document.getElementById('item-notes-popup');
+            const o = document.getElementById('item-notes-overlay');
+            if (p) p.remove();
+            if (o) o.remove();
+        }
+
+        function viewItemNotes(btn) {
+            const row = $(btn).closest('tr');
+            const select = row.find('.item-desc');
+            const selectedOption = select.find('option:selected');
+            const itemId = select.val();
+
+            if (!itemId) {
+                showNotification('Please select an item first to view its notes.', 'warning');
+                return;
+            }
+
+            const itemName = selectedOption.text();
+            // Try jQuery .data() first (set by updateItemOptions), then fall back to purchaseOrderItems
+            let itemData = selectedOption.data('item-data');
+            if (!itemData) {
+                const found = purchaseOrderItems.find(i => String(i.id) === String(itemId));
+                if (found) itemData = { id: found.id, name: found.name, notes: found.notes || '', description: found.description || '' };
+            }
+            const notes = (itemData && itemData.notes) ? itemData.notes : '';
+
+            // Remove any existing popup
+            closeNotesPopup();
+
+            const popup = document.createElement('div');
+            popup.id = 'item-notes-popup';
+            popup.style.cssText = `
+                position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                background: #fff; border-radius: 10px; padding: 28px 32px; z-index: 9999;
+                min-width: 380px; max-width: 540px; width: 90%;
+                box-shadow: 0 8px 40px rgba(0,0,0,0.22);
+                border-top: 4px solid #a095f6;
+            `;
+            popup.innerHTML = `
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                    <h3 style="margin:0;color:#a095f6;font-size:16px;">
+                        <i class="fas fa-sticky-note" style="margin-right:8px;"></i>Item Notes
+                    </h3>
+                    <button id="notes-close-btn"
+                        style="background:none;border:none;font-size:20px;cursor:pointer;color:#888;line-height:1;">&times;</button>
+                </div>
+                <p id="notes-item-name" style="margin:0 0 12px;color:#555;font-size:13px;font-weight:600;"></p>
+
+                <!-- VIEW mode -->
+                <div id="notes-view-mode">
+                    <div id="notes-display-text"
+                        style="background:#f8f9fc;border-radius:6px;padding:14px 16px;min-height:60px;font-size:14px;color:#333;white-space:pre-wrap;line-height:1.6;border:1px solid #e0e4f0;">
+                    </div>
+                    <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end;">
+                        <button id="notes-edit-btn"
+                            style="display:inline-flex;align-items:center;gap:6px;background:#f0a500;color:#fff;padding:8px 16px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:600;">
+                            <i class="fas fa-edit"></i> Edit Notes
+                        </button>
+                    </div>
+                </div>
+
+                <!-- EDIT mode (hidden initially) -->
+                <div id="notes-edit-mode" style="display:none;">
+                    <textarea id="notes-edit-textarea"
+                        style="width:100%;min-height:120px;border:1px solid #c0cadf;border-radius:6px;padding:12px 14px;font-size:14px;color:#333;line-height:1.6;resize:vertical;box-sizing:border-box;outline:none;"
+                        placeholder="Enter notes for this item..."></textarea>
+                    <div id="notes-save-status" style="min-height:20px;margin-top:6px;font-size:12px;"></div>
+                    <div style="margin-top:12px;display:flex;gap:10px;justify-content:flex-end;">
+                        <button id="notes-cancel-btn"
+                            style="display:inline-flex;align-items:center;gap:6px;background:#e0e0e0;color:#555;padding:8px 16px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:600;">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button id="notes-save-btn"
+                            style="display:inline-flex;align-items:center;gap:6px;background:#27ae60;color:#fff;padding:8px 16px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:600;">
+                            <i class="fas fa-save"></i> Save to Item Master
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Populate item name and notes safely
+            popup.querySelector('#notes-item-name').textContent = itemName;
+            const displayEl = popup.querySelector('#notes-display-text');
+            if (notes) {
+                displayEl.textContent = notes;
+            } else {
+                displayEl.innerHTML = '<span style="color:#aaa;font-style:italic;">No notes available for this item.</span>';
+            }
+
+            // Store state on popup element
+            popup._currentNotes = notes;
+            popup._itemId = itemId;
+            popup._selectOption = selectedOption;
+
+            // Wire buttons
+            popup.querySelector('#notes-close-btn').addEventListener('click', closeNotesPopup);
+            popup.querySelector('#notes-edit-btn').addEventListener('click', switchToEditMode);
+            popup.querySelector('#notes-cancel-btn').addEventListener('click', switchToViewMode);
+            popup.querySelector('#notes-save-btn').addEventListener('click', function () {
+                saveItemNotes(itemId, this);
+            });
+
+            const overlay = document.createElement('div');
+            overlay.id = 'item-notes-overlay';
+            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:9998;';
+            overlay.onclick = closeNotesPopup;
+
+            document.body.appendChild(overlay);
+            document.body.appendChild(popup);
+        }
+
+        function switchToEditMode() {
+            document.getElementById('notes-view-mode').style.display = 'none';
+            document.getElementById('notes-edit-mode').style.display = 'block';
+            const popup = document.getElementById('item-notes-popup');
+            const ta = document.getElementById('notes-edit-textarea');
+            ta.value = (popup && popup._currentNotes) ? popup._currentNotes : '';
+            ta.focus();
+        }
+
+        function switchToViewMode() {
+            document.getElementById('notes-edit-mode').style.display = 'none';
+            document.getElementById('notes-view-mode').style.display = 'block';
+            document.getElementById('notes-save-status').textContent = '';
+        }
+
+        async function saveItemNotes(itemId, saveBtn) {
+            const newNotes = document.getElementById('notes-edit-textarea').value.trim();
+            const statusEl = document.getElementById('notes-save-status');
+            const csrftoken = getCookie('csrftoken');
+
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            statusEl.style.color = '#888';
+            statusEl.textContent = 'Saving to Item Master…';
+
+            try {
+                const response = await fetch(`/app5/quotation-item-notes/${itemId}/update/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify({ notes: newNotes })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    statusEl.style.color = '#27ae60';
+                    statusEl.textContent = '✓ Saved successfully!';
+
+                    // Update popup state and cached option data
+                    const popup = document.getElementById('item-notes-popup');
+                    if (popup) {
+                        popup._currentNotes = newNotes;
+                        if (popup._selectOption) {
+                            const cached = popup._selectOption.data('item-data');
+                            if (cached) {
+                                cached.notes = newNotes;
+                                popup._selectOption.data('item-data', cached);
+                            }
+                        }
+                    }
+                    // Also update purchaseOrderItems cache
+                    const localItem = purchaseOrderItems.find(i => String(i.id) === String(itemId));
+                    if (localItem) localItem.notes = newNotes;
+
+                    // Refresh view-mode display
+                    const displayEl = document.getElementById('notes-display-text');
+                    if (displayEl) {
+                        if (newNotes) {
+                            displayEl.textContent = newNotes;
+                        } else {
+                            displayEl.innerHTML = '<span style="color:#aaa;font-style:italic;">No notes available for this item.</span>';
+                        }
+                    }
+
+                    showNotification('Item notes updated successfully!', 'success');
+
+                    setTimeout(() => {
+                        switchToViewMode();
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = '<i class="fas fa-save"></i> Save to Item Master';
+                    }, 900);
+
+                } else {
+                    throw new Error(result.error || `Server returned ${response.status}`);
+                }
+            } catch (err) {
+                statusEl.style.color = '#e74c3c';
+                statusEl.textContent = '✗ Save failed. Please try again.';
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fas fa-save"></i> Save to Item Master';
+                console.error('Notes save error:', err);
+            }
+        }
+        // ═══════════════════════════════════════════════════
+        // END ITEM NOTES
+        // ═══════════════════════════════════════════════════
+
         // ═══════════════════════════════════════════════════
         // PROPOSAL ATTACHMENT — PDF VIEWER & UPLOAD
         // ═══════════════════════════════════════════════════

@@ -605,6 +605,25 @@
             font-size: 0.75rem;
         }
 
+        /* ── Follow-up date color indicator dot ── */
+        .nfd-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 5px;
+            vertical-align: middle;
+            flex-shrink: 0;
+        }
+        .nfd-dot-today   { background: #16a34a; box-shadow: 0 0 0 2px #bbf7d0; }
+        .nfd-dot-upcoming { background: #ca8a04; box-shadow: 0 0 0 2px #fef08a; }
+        .nfd-dot-overdue  { background: #dc2626; box-shadow: 0 0 0 2px #fecaca; }
+
+        .next-action-date {
+            display: inline-flex;
+            align-items: center;
+        }
+
         /* MODERN ACTION BUTTONS */
         .action-buttons {
             display: flex;
@@ -1329,9 +1348,29 @@
         </div>
         {% endif %}
 
-        <!-- Results Count -->
-        <div class="result-count" id="resultCount">
-            📋 <span id="totalRecords">{{ followups|length }}</span> follow-ups
+        <!-- Results Count + Color Legend Row -->
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.8rem;">
+            <div class="result-count" id="resultCount" style="margin-bottom:0;">
+                 <span id="totalRecords">{{ followups|length }}</span> follow-ups
+            </div>
+            <!-- Follow-up Color Indicator Legend -->
+            <div style="display:flex; align-items:center; gap:0.6rem; background:white; border:1px solid #e2e8f0; border-radius:30px; padding:0.35rem 1rem; font-size:0.75rem; font-weight:500; color:#475569; flex-wrap:wrap;">
+                <span style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.04em; color:#94a3b8; font-weight:600; margin-right:2px;">Next Follow-up:</span>
+                <span style="display:inline-flex; align-items:center; gap:5px;">
+                    <span style="display:inline-block; width:9px; height:9px; border-radius:50%; background:#dc2626; box-shadow:0 0 0 2px #fecaca; flex-shrink:0;"></span>
+                    Overdue
+                </span>
+                <span style="color:#e2e8f0;">|</span>
+                <span style="display:inline-flex; align-items:center; gap:5px;">
+                    <span style="display:inline-block; width:9px; height:9px; border-radius:50%; background:#16a34a; box-shadow:0 0 0 2px #bbf7d0; flex-shrink:0;"></span>
+                    Today
+                </span>
+                <span style="color:#e2e8f0;">|</span>
+                <span style="display:inline-flex; align-items:center; gap:5px;">
+                    <span style="display:inline-block; width:9px; height:9px; border-radius:50%; background:#ca8a04; box-shadow:0 0 0 2px #fef08a; flex-shrink:0;"></span>
+                    Upcoming
+                </span>
+            </div>
         </div>
 
         <!-- Table Container - Full Screen Fit -->
@@ -1481,7 +1520,7 @@
                                 <div class="next-action-item">
                                     <span class="next-action-label">Follow-up:</span>
                                     <span class="next-action-value">
-                                        <span class="next-action-date">{{ followup.next_follow_up_date|date:'M d' }}</span>
+                                        <span class="next-action-date" data-nfd-date="{{ followup.next_follow_up_date|date:'Y-m-d' }}"><span class="nfd-dot"></span>{{ followup.next_follow_up_date|date:'M d' }}</span>
                                     </span>
                                 </div>
                                 {% endif %}
@@ -2969,7 +3008,8 @@
             });
             
             // Update count text
-            resultCount.innerHTML = `📋 <span id="totalRecords">${visible}</span> follow-up${visible !== 1 ? 's' : ''}`;
+            document.getElementById('totalRecords').textContent = visible;
+            resultCount.querySelector && (resultCount.querySelector('#totalRecords') || document.getElementById('totalRecords')).textContent;
             
             // Reset to first page and apply pagination
             currentPage = 1;
@@ -3206,7 +3246,37 @@
 
         // Run on load and after every filter/page change
         applyNfdColours();
-        document.getElementById('tableBody').addEventListener('DOMSubtreeModified', applyNfdColours);
+
+        // ── Apply colour dots to the "Follow-up:" date badge in Next Action column ──
+        function applyNfdDots() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            document.querySelectorAll('.next-action-date[data-nfd-date]').forEach(span => {
+                const dateStr = span.dataset.nfdDate;
+                const dot = span.querySelector('.nfd-dot');
+                if (!dot || !dateStr) return;
+
+                const [y, m, d] = dateStr.split('-').map(Number);
+                const nfdDate = new Date(y, m - 1, d);
+                const diff = (nfdDate - today) / 86400000;
+
+                dot.className = 'nfd-dot'; // reset
+                if (diff === 0) {
+                    dot.classList.add('nfd-dot-today');
+                    dot.title = 'Due today';
+                } else if (diff > 0) {
+                    dot.classList.add('nfd-dot-upcoming');
+                    dot.title = `Upcoming in ${Math.round(diff)} day${diff > 1 ? 's' : ''}`;
+                } else {
+                    dot.classList.add('nfd-dot-overdue');
+                    dot.title = `Overdue by ${Math.abs(Math.round(diff))} day${Math.abs(diff) > 1 ? 's' : ''}`;
+                }
+            });
+        }
+
+        applyNfdDots();
+        document.getElementById('tableBody').addEventListener('DOMSubtreeModified', applyNfdDots);
         })();
 
         // =========================================================================
