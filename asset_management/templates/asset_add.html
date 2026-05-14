@@ -1,0 +1,908 @@
+{% extends "base.html" %}
+{% block title %}Add Asset{% endblock %}
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Mono&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f6fa;
+      --surface: #ffffff;
+      --surface2: #f0f1f5;
+      --border: #dde0ea;
+      --border-focus: #2563eb;
+      --accent: #2563eb;
+      --accent2: #6d28d9;
+      --danger: #dc2626;
+      --success: #16a34a;
+      --warn: #d97706;
+      --text: #111827;
+      --muted: #6b7280;
+      --label: #374151;
+      --shadow: rgba(0,0,0,0.07);
+    }
+
+    .add-asset-page {
+      font-family: 'Google Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px 60px;
+    }
+
+    /* Page header */
+    .page-header {
+      width: 100%;
+      max-width: 720px;
+      margin-bottom: 28px;
+      animation: fadeDown 0.45s ease both;
+    }
+
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 11.5px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .breadcrumb a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .breadcrumb a:hover { text-decoration: underline; }
+    .breadcrumb span { color: var(--muted); }
+
+    .page-title-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .page-icon {
+      width: 46px;
+      height: 46px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 4px 16px rgba(37,99,235,0.22);
+    }
+
+    .page-icon svg { color: #fff; }
+
+    .page-title-text h1 {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      line-height: 1.1;
+    }
+
+    .page-title-text p {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    /* Form card */
+    .form-card {
+      width: 100%;
+      max-width: 720px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: 0 4px 32px var(--shadow);
+      overflow: hidden;
+      animation: fadeUp 0.5s ease both 0.08s;
+    }
+
+    .form-card-header {
+      padding: 22px 32px 18px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .form-card-header .step-badge {
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: rgba(37,99,235,0.08);
+      border: 1px solid rgba(37,99,235,0.18);
+      border-radius: 6px;
+      padding: 3px 10px;
+    }
+
+    .form-card-header h2 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* Form body */
+    .form-body {
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    /* Section divider */
+    .section-label {
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 14px;
+      letter-spacing: 0.18em;
+      text-transform: capitalize;
+      color: black;
+      font-weight: bold;
+      margin-bottom: 16px;
+      margin-top: 28px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-label:first-child { margin-top: 0; }
+
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* Form grid */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      animation: fadeUp 0.4s ease both;
+    }
+
+    .form-group:nth-child(1) { animation-delay: 0.10s; }
+    .form-group:nth-child(2) { animation-delay: 0.14s; }
+    .form-group:nth-child(3) { animation-delay: 0.18s; }
+    .form-group:nth-child(4) { animation-delay: 0.22s; }
+    .form-group:nth-child(5) { animation-delay: 0.26s; }
+
+    .form-group.full { grid-column: 1 / -1; }
+
+    .form-group label {
+      font-size: 13px;
+      font-weight: 600;
+      color:black;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .form-group label .req {
+      color: var(--danger);
+      font-size: 14px;
+      line-height: 1;
+    }
+
+    .form-group .hint {
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: -3px;
+    }
+
+    /* Inputs */
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 13px;
+      padding: 12px 16px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      width: 100%;
+    }
+
+    .form-group input::placeholder,
+    .form-group textarea::placeholder { color: #b0b5c0; }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    }
+
+    .form-group input.error,
+    .form-group select.error,
+    .form-group textarea.error {
+      border-color: var(--danger);
+      box-shadow: 0 0 0 3px rgba(220,38,38,0.1);
+    }
+
+    .error-msg {
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 11px;
+      color: var(--danger);
+      display: none;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .error-msg.show { display: flex; }
+
+    /* Select styling */
+    .form-group select {
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 40px;
+      cursor: pointer;
+    }
+
+    .form-group select option { background: #fff; color: var(--text); }
+
+    /* Textarea */
+    .form-group textarea {
+      resize: vertical;
+      min-height: 100px;
+      line-height: 1.6;
+    }
+
+    /* Spec display row */
+    .spec-display-row { display: flex; align-items: flex-start; gap: 10px; }
+
+    .spec-tags-wrapper {
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      min-height: 56px;
+      flex: 1;
+    }
+
+    .spec-tag {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-family: 'Google Sans Mono', monospace;
+    }
+
+    .spec-tag .spec-label {
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .spec-tag .spec-value {
+      font-size: 12.5px;
+      color: var(--text);
+      font-weight: 600;
+      line-height: 1.2;
+    }
+
+    .spec-empty { font-family: 'Google Sans Mono', monospace; font-size: 12px; color: #b0b5c0; }
+
+   
+
+   
+    /* Asset detail modal */
+    .asset-modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.25s;
+    }
+    .asset-modal-backdrop.show { opacity: 1; pointer-events: all; }
+
+    .asset-modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      width: 100%; max-width: 480px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.18);
+      transform: translateY(16px) scale(0.97);
+      transition: transform 0.25s;
+      overflow: hidden;
+    }
+    .asset-modal-backdrop.show .asset-modal { transform: none; }
+
+    .asset-modal-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .asset-modal-header h3 { font-size: 15px; font-weight: 700; }
+    .asset-modal-id { font-family: 'Google Sans Mono', monospace; font-size: 11px; color: var(--accent); margin-top: 2px; }
+
+    .btn-modal-close {
+      background: none; border: none; cursor: pointer; color: var(--muted);
+      padding: 4px; border-radius: 6px; display: flex;
+      transition: color 0.15s, background 0.15s;
+    }
+    .btn-modal-close:hover { color: var(--danger); background: rgba(220,38,38,0.07); }
+
+    .asset-modal-body { padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 14px; }
+
+    .modal-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .modal-field label {
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--muted); display: block; margin-bottom: 3px;
+    }
+    .modal-field span { font-size: 13px; font-weight: 600; color: var(--text); }
+    .modal-field span.empty { color: var(--muted); font-weight: 400; font-style: italic; }
+
+    .modal-divider { height: 1px; background: var(--border); }
+
+    .modal-spec-tags { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+    .modal-spec-tag {
+      display: flex; flex-direction: column; gap: 3px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 8px 10px;
+      font-family: 'Google Sans Mono', monospace;
+    }
+    .modal-spec-tag .msl {
+      font-size: 9px; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--accent); line-height: 1;
+    }
+    .modal-spec-tag .msv { font-size: 12px; font-weight: 600; color: var(--text); line-height: 1.2; }
+
+
+
+    /* File upload */
+    .file-upload {
+      border: 1.5px dashed var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+    }
+
+    .file-upload:hover {
+      border-color: var(--accent);
+      background: rgba(37,99,235,0.03);
+    }
+
+    .file-upload input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .file-upload-icon { margin-bottom: 8px; color: var(--muted); }
+    .file-upload p { font-size: 13px; color: var(--muted); }
+    .file-upload span { color: var(--accent); font-weight: 600; }
+    .file-name { font-family: 'Google Sans Mono', monospace; font-size: 12px; color: var(--success); margin-top: 6px; }
+
+    /* Form footer */
+    .form-footer {
+      padding: 22px 32px;
+      border-top: 1px solid var(--border);
+      background: var(--surface2);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .footer-note {
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .footer-note svg { color: var(--warn); flex-shrink: 0; }
+
+    .footer-actions { display: flex; gap: 12px; align-items: right; }
+
+    .btn-cancel {
+      padding: 12px 26px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-family: 'Google Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      letter-spacing: 0.01em;
+    }
+
+    .btn-cancel:hover {
+      border-color: var(--text);
+      color: var(--text);
+      background: var(--surface);
+    }
+
+    .btn-submit {
+      padding: 12px 32px;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      font-family: 'Google Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 18px rgba(37,99,235,0.28);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: 0.01em;
+    }
+
+    .btn-submit:hover {
+      opacity: 0.93;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 28px rgba(37,99,235,0.35);
+    }
+
+    .btn-submit:active { transform: none; }
+
+    /* Success overlay */
+    .success-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .success-overlay.show { opacity: 1; pointer-events: all; }
+
+    .success-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 48px 52px;
+      text-align: center;
+      box-shadow: 0 16px 64px rgba(0,0,0,0.12);
+      transform: scale(0.92);
+      transition: transform 0.3s;
+    }
+
+    .success-overlay.show .success-box { transform: scale(1); }
+
+    .success-check {
+      width: 68px;
+      height: 68px;
+      background: rgba(22,163,74,0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+    }
+
+    .success-check svg { color: var(--success); }
+    .success-box h3 { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+    .success-box p { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+
+    .btn-back {
+      padding: 12px 28px;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      font-family: 'Google Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(37,99,235,0.25);
+    }
+
+    /* Animations */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-12px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    @media (max-width: 600px) {
+      body { padding: 24px 14px 48px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .return-fields { grid-template-columns: 1fr; }
+      .form-body { padding: 22px 20px; }
+      .form-footer { flex-direction: column; align-items: stretch; }
+      .footer-actions { flex-direction: column; }
+      .btn-cancel, .btn-submit { justify-content: center; }
+      .success-box { padding: 36px 28px; }
+    }
+  </style>
+
+<div class="add-asset-page">
+  <!-- Page header -->
+  <div class="page-header">
+    
+    <div class="page-title-row">
+      <div class="page-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <rect x="2" y="7" width="20" height="14" rx="2"/>
+          <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+          <line x1="12" y1="12" x2="12" y2="17"/>
+          <line x1="9.5" y1="14.5" x2="14.5" y2="14.5"/>
+        </svg>
+      </div>
+      <div class="page-title-text">
+        <h1>Add New Asset</h1>
+        <p>Assign an asset to an employee and log all relevant details.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form card -->
+  <div class="form-card">
+  
+
+    <div class="form-body">
+
+      <!-- Section: Assignment -->
+      <div class="section-label">Assignment Info</div>
+      <div class="form-grid">
+
+        <!-- Employee -->
+        <div class="form-group">
+          <label>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Select Employee <span class="req">*</span>
+          </label>
+          <select id="fEmployee" name="employee_id" onchange="clearError(this)">
+            <option value="">— Choose an employee —</option>
+            {% for user in users %}
+              <option value="{{ user.id }}">{{ user.name }}</option>
+            {% endfor %}
+          </select>
+          <span class="error-msg" id="err-employee">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Please select an employee.
+          </span>
+        </div>
+
+        <!-- Asset -->
+        <div class="form-group">
+          <label>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            Select Asset <span class="req">*</span>
+          </label>
+          <select id="fAsset" name="asset_id" onchange="clearError(this); fillAssetSpecs(this.value)">
+            <option value="">— Choose an asset —</option>
+            {% for a in available_assets %}
+              <option value="{{ a.asset_id }}"{% if a.status == 'returned' %} data-status="returned"{% endif %}>
+                {{ a.name }} — {{ a.category }}
+              </option>
+            {% endfor %}
+          </select>
+          <span class="error-msg" id="err-asset">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Please select an asset.
+          </span>
+        </div>
+      </div>
+
+      <!-- Section: Spec Details -->
+      <div class="section-label">Specification Details</div>
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Spec Details
+          </label>
+          <div class="spec-display-row">
+            <div class="spec-tags-wrapper" id="specTagsWrapper">
+              <span class="spec-empty" id="specEmpty">Select an asset to view specs</span>
+            </div>
+            
+          </div>
+          <input type="hidden" id="fSpec" />
+        </div>
+
+        <div class="form-group full">
+          <label>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Attachment <span style="color:var(--muted);font-weight:400;font-size:12px;">(optional)</span>
+          </label>
+          <div class="file-upload" id="fileUploadBox">
+            <input type="file" id="fFile" accept=".pdf,.jpg,.png,.docx" onchange="handleFile(this)"/>
+            <div class="file-upload-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </div>
+            <p><span>Click to upload</span> or drag and drop</p>
+            <p style="font-size:11px;margin-top:4px;">PDF, JPG, PNG, DOCX up to 10MB</p>
+            <div class="file-name" id="fileName"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="section-label" style="margin-top:28px;">Additional Notes</div>
+      <div class="form-group full" style="margin-bottom:4px;">
+        <label>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Notes <span style="color:var(--muted);font-weight:400;font-size:12px;">(optional)</span>
+        </label>
+        <textarea id="fNotes" placeholder="Any additional remarks about this asset or assignment…"></textarea>
+      </div>
+
+    </div><!-- /form-body -->
+
+    <!-- Footer -->
+    <div class="form-footer">
+      
+      <div class="footer-actions">
+        <button class="btn-cancel" onclick="handleCancel()">
+          Cancel
+        </button>
+        <button class="btn-submit" onclick="handleSubmit()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Submit
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /form-card -->
+
+  <!-- Success overlay -->
+  <div class="success-overlay" id="successOverlay">
+    <div class="success-box">
+      <div class="success-check">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h3>Asset Added!</h3>
+      <p>The asset has been successfully assigned<br>and logged in the system.</p>
+      <button class="btn-back" onclick="window.location.href='{% url "asset_management" %}'">← Back to Asset List</button>
+    </div>
+  </div>
+</div><!-- /add-asset-page -->
+
+<!-- Asset Detail Modal -->
+<div class="asset-modal-backdrop" id="assetModalBackdrop" onclick="closeAssetModal(event)">
+  <div class="asset-modal">
+    <div class="asset-modal-header">
+      <div>
+        <h3 id="modalAssetName"></h3>
+        <div class="asset-modal-id" id="modalAssetId"></div>
+      </div>
+      <button class="btn-modal-close" onclick="closeAssetModal(null)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="asset-modal-body">
+      <div class="modal-row">
+        <div class="modal-field"><label>Category</label><span id="mCategory"></span></div>
+        <div class="modal-field"><label>Brand</label><span id="mBrand"></span></div>
+        <div class="modal-field"><label>Model</label><span id="mModel"></span></div>
+        <div class="modal-field"><label>Serial No.</label><span id="mSerial"></span></div>
+        <div class="modal-field"><label>Purchase Date</label><span id="mPurchaseDate"></span></div>
+        <div class="modal-field"><label>Warranty Expiry</label><span id="mWarranty"></span></div>
+      </div>
+      <div class="modal-divider"></div>
+      <div>
+        <div style="font-family:'Google Sans Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Specifications</div>
+        <div class="modal-spec-tags" id="mSpecTags"></div>
+      </div>
+      <div class="modal-divider"></div>
+      <div class="modal-row">
+        <div class="modal-field"><label>Purchase Value</label><span id="mValue"></span></div>
+        <div class="modal-field"><label>Status</label><span id="mStatus"></span></div>
+      </div>
+      <div class="modal-field"><label>Notes</label><span id="mNotes"></span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function handleFile(input) {
+    const fn = input.files[0]?.name;
+    document.getElementById('fileName').textContent = fn ? `📎 ${fn}` : '';
+  }
+
+  function clearError(el) {
+    el.classList.remove('error');
+    const errEl = document.getElementById('err-' + el.id.replace('f','').toLowerCase());
+    if (errEl) errEl.classList.remove('show');
+  }
+
+  function showError(id, errId) {
+    const el = document.getElementById(id);
+    el.classList.add('error');
+    document.getElementById(errId).classList.add('show');
+    return el;
+  }
+
+  function handleSubmit() {
+    let valid = true, firstError = null;
+    if (!document.getElementById('fEmployee').value) { const el = showError('fEmployee','err-employee'); if (!firstError) firstError=el; valid=false; }
+    if (!document.getElementById('fAsset').value)    { const el = showError('fAsset','err-asset');       if (!firstError) firstError=el; valid=false; }
+    if (!valid) { firstError?.scrollIntoView({behavior:'smooth',block:'center'}); return; }
+
+    const formData = new FormData();
+    formData.append('employee_id',  document.getElementById('fEmployee').value);
+    formData.append('asset_id',     document.getElementById('fAsset').value);
+    formData.append('spec_details', document.getElementById('fSpec').value);
+    formData.append('notes',        document.getElementById('fNotes').value);
+
+    const fileInput = document.getElementById('fFile');
+    if (fileInput.files[0]) {
+      formData.append('image', fileInput.files[0]);
+    }
+
+    fetch('/asset_management/api/assignments/add/', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCookie('csrftoken') },
+      body: formData,
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) document.getElementById('successOverlay').classList.add('show');
+      else alert('Error: ' + data.error);
+    })
+    .catch(() => alert('Network error. Please try again.'));
+  }
+
+  function getCookie(name) {
+    const v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+    return v ? v[2] : null;
+  }
+
+  function handleCancel() {
+    if (confirm('Discard this form and go back to the asset list?'))
+      window.location.href = '{% url "asset_management" %}';
+  }
+
+  // ── Asset data ─────────────────────────────────────────────────────────────
+  const ASSET_DATA = {
+    {% for a in available_assets %}
+    "{{ a.asset_id }}": {
+      name: "{{ a.name }}", category: "{{ a.category }}",
+      brand: "{{ a.brand }}", model: "{{ a.model_number }}",
+      serial: "{{ a.serial_number }}", purchaseDate: "{{ a.purchase_date|default:'' }}",
+      warranty: "{{ a.warranty_expiry|default:'' }}", value: "{{ a.purchase_value }}",
+      status: "{{ a.status }}", notes: "{{ a.notes|escapejs }}",
+      cpu: "{{ a.spec_cpu }}", ram: "{{ a.spec_ram }}",
+      storage: "{{ a.spec_storage }}", display: "{{ a.spec_display }}",
+      os: "{{ a.spec_os }}", color: "{{ a.spec_color }}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  };
+
+  const SPEC_LABELS = [
+    { key: 'cpu',     label: 'CPU'     },
+    { key: 'ram',     label: 'RAM'     },
+    { key: 'storage', label: 'Storage' },
+    { key: 'display', label: 'Display' },
+    { key: 'os',      label: 'OS'      },
+    { key: 'color',   label: 'Color'   },
+  ];
+
+  function fillAssetSpecs(assetId) {
+    const wrapper = document.getElementById('specTagsWrapper');
+    const btn = document.getElementById('btnViewSpec');
+    wrapper.innerHTML = '';
+    if (!assetId || !ASSET_DATA[assetId]) {
+      wrapper.innerHTML = '<span class="spec-empty">Select an asset to view specs</span>';
+      document.getElementById('fSpec').value = '';
+      btn.disabled = true;
+      return;
+    }
+    const d = ASSET_DATA[assetId];
+    const parts = [];
+    SPEC_LABELS.forEach(function(item) {
+      const val = d[item.key];
+      if (val && val.trim()) {
+        parts.push(val.trim());
+        const s = document.createElement('span');
+        s.className = 'spec-tag';
+        s.innerHTML = '<span class="spec-label">' + item.label + '</span><span class="spec-value">' + val.trim() + '</span>';
+        wrapper.appendChild(s);
+      }
+    });
+    if (!parts.length) {
+      wrapper.innerHTML = '<span class="spec-empty">No specs recorded for this asset</span>';
+    }
+    document.getElementById('fSpec').value = parts.join(',');
+    btn.disabled = !parts.length;
+  }
+
+  // ── Asset detail modal ─────────────────────────────────────────────────────
+  function openAssetModal() {
+    const assetId = document.getElementById('fAsset').value;
+    if (!assetId || !ASSET_DATA[assetId]) return;
+    const d = ASSET_DATA[assetId];
+    document.getElementById('modalAssetName').textContent = d.name;
+    document.getElementById('modalAssetId').textContent = assetId;
+    setModal('mCategory', d.category); setModal('mBrand', d.brand);
+    setModal('mModel', d.model);       setModal('mSerial', d.serial);
+    setModal('mPurchaseDate', d.purchaseDate); setModal('mWarranty', d.warranty);
+    setModal('mValue', d.value ? '\u20B9 ' + Number(d.value).toLocaleString() : '');
+    setModal('mStatus', d.status);     setModal('mNotes', d.notes);
+    const sc = document.getElementById('mSpecTags');
+    sc.innerHTML = '';
+    const SPEC_KEYS_MODAL = [{k:'cpu',l:'CPU'},{k:'ram',l:'RAM'},{k:'storage',l:'Storage'},{k:'display',l:'Display'},{k:'os',l:'OS'},{k:'color',l:'Color'}];
+    const specs = SPEC_KEYS_MODAL.filter(item => d[item.k] && d[item.k].trim());
+    if (specs.length) {
+      specs.forEach(function(item){
+        const t = document.createElement('span'); t.className='modal-spec-tag';
+        t.innerHTML = '<span class="msl">'+item.l+'</span><span class="msv">'+d[item.k].trim()+'</span>';
+        sc.appendChild(t);
+      });
+    } else {
+      sc.innerHTML = '<span style="font-size:12px;color:var(--muted);font-style:italic;">No specifications recorded</span>';
+    }
+    document.getElementById('assetModalBackdrop').classList.add('show');
+  }
+
+  function setModal(id, val) {
+    const el = document.getElementById(id);
+    if (val && String(val).trim()) { el.textContent = val; el.className = ''; }
+    else { el.textContent = '\u2014'; el.className = 'empty'; }
+  }
+
+  function closeAssetModal(e) {
+    if (e && e.target !== document.getElementById('assetModalBackdrop')) return;
+    document.getElementById('assetModalBackdrop').classList.remove('show');
+  }
+
+
+</script>
+
+{% endblock %}

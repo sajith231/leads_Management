@@ -1,0 +1,1658 @@
+{% extends "base.html" %}
+
+{% block title %}Job Card List{% endblock %}
+
+{% block content %}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Asset List</title>
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Mono&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f6fa;
+      --surface: #ffffff;
+      --surface2: #f0f1f5;
+      --border: #dde0ea;
+      --accent: #2563eb;
+      --accent2: #6d28d9;
+      --danger: #dc2626;
+      --success: #16a34a;
+      --warn: #d97706;
+      --text: #111827;
+      --muted: #6b7280;
+      --tag-bg: #f0f1f5;
+    }
+
+    body {
+      font-family: 'Google Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    /* Subtle grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(37,99,235,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(37,99,235,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrapper {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      margin: 0;
+      padding: 24px 28px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 36px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .header-left .eyebrow {
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .header-left h1 {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .header-left h1 span {
+      color:black;
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 24px;
+      margin-top: 10px;
+    }
+
+    .stat-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .stat-pill .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+
+    .dot-blue { background: var(--accent); }
+    .dot-green { background: var(--success); }
+    .dot-warn { background: var(--warn); }
+
+    /* Add New Button */
+    .btn-add {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 13px 24px;
+      font-family: 'Google Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.02em;
+      transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 4px 24px rgba(79,142,247,0.25);
+      white-space: nowrap;
+      text-decoration: none;
+    }
+
+    .btn-add:hover {
+      opacity: 0.92;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 32px rgba(79,142,247,0.35);
+    }
+
+    .btn-add svg { flex-shrink: 0; }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 22px;
+      flex-wrap: wrap;
+    }
+
+    .search-box {
+      position: relative;
+      flex: 1;
+      min-width: 220px;
+    }
+
+    .search-box svg {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    .search-box input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      color: var(--text);
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 13px;
+      padding: 11px 14px 11px 42px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-box input::placeholder { color: var(--muted); }
+    .search-box input:focus { border-color: var(--accent); }
+
+    .filter-select {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      color: var(--text);
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 13px;
+      padding: 11px 36px 11px 14px;
+      outline: none;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      transition: border-color 0.2s;
+    }
+
+    .filter-select:focus { border-color: var(--accent); }
+
+    /* Table container */
+    .table-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 48px rgba(0,0,0,0.4);
+    }
+
+    .table-scroll { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 960px;
+    }
+
+    thead tr {
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+    }
+
+    thead th {
+      padding: 14px 18px;
+      text-align: left;
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform:capitalize;
+      color:black;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+      transition: color 0.15s;
+    }
+
+    thead th:hover { color: var(--accent); }
+
+    thead th.sort-asc::after { content: ' ↑'; color: var(--accent); }
+    thead th.sort-desc::after { content: ' ↓'; color: var(--accent); }
+
+    /* Serial No column */
+    th.col-sno, td.col-sno {
+      width: 56px;
+      text-align: left;
+      padding-left: 18px;
+      padding-right: 4px;
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 12px;
+      color:black;
+      font-weight: 600;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+      animation: rowIn 0.4s ease both;
+    }
+
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(79,142,247,0.04); }
+    tbody tr.selected { background: rgba(79,142,247,0.07); }
+
+    @keyframes rowIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    tbody tr:nth-child(1)  { animation-delay: 0.03s; }
+    tbody tr:nth-child(2)  { animation-delay: 0.07s; }
+    tbody tr:nth-child(3)  { animation-delay: 0.11s; }
+    tbody tr:nth-child(4)  { animation-delay: 0.15s; }
+    tbody tr:nth-child(5)  { animation-delay: 0.19s; }
+
+    td {
+      padding: 15px 18px;
+      font-size: 13.5px;
+      vertical-align: middle;
+      text-align: left;
+    }
+
+    /* Custom checkbox */
+    .custom-check {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    /* Employee cell */
+    .emp-cell { display: flex; align-items: center; gap: 10px; }
+
+    .emp-name { font-weight: 600; font-size: 13.5px; }
+    .emp-dept { font-family: 'Google Sans Mono', monospace; font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+    /* Asset cell */
+    .asset-name { font-weight: 600; }
+    .asset-id { font-family: 'Google Sans Mono', monospace; font-size: 11px; color: var(--accent); margin-top: 2px; }
+
+    /* Spec tag */
+    .spec-tag {
+      display: inline-block;
+      background: var(--tag-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 3px 9px;
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      margin: 2px 3px 2px 0;
+      white-space: nowrap;
+    }
+
+    /* Return date */
+    .date-cell { font-family: 'Google Sans Mono', monospace; font-size: 12.5px; }
+    .date-cell .overdue { color: var(--danger); }
+    .date-cell .soon { color: var(--warn); }
+    .date-cell .ok { color: var(--success); }
+    .date-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      border-radius: 6px;
+      padding: 4px 9px;
+      font-size: 11.5px;
+      font-family: 'Google Sans Mono', monospace;
+      margin-top: 3px;
+    }
+
+    .date-badge.overdue { background: rgba(247,97,79,0.12); color: var(--danger); border: 1px solid rgba(247,97,79,0.2); }
+    .date-badge.soon    { background: rgba(247,183,79,0.12); color: var(--warn);   border: 1px solid rgba(247,183,79,0.2); }
+    .date-badge.ok      { background: rgba(79,207,142,0.12); color: var(--success); border: 1px solid rgba(79,207,142,0.2); }
+
+    /* Returned-by cell */
+    .ret-cell { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+    
+    .ret-none { color: var(--muted); font-family: 'Google Sans Mono', monospace; font-size: 12px; }
+
+    /* Action buttons */
+    .actions { display: flex; align-items: center; gap: 6px; }
+
+    .action-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+
+    .action-btn:hover { border-color: transparent; }
+    .action-btn.view:hover   { background: rgba(79,142,247,0.18); color: var(--accent); }
+    .action-btn.edit:hover   { background: rgba(79,207,142,0.18); color: var(--success); }
+    .action-btn.delete:hover { background: rgba(247,97,79,0.18);  color: var(--danger); }
+    .action-btn.return:hover { background: rgba(217,119,6,0.18);  color: var(--warn); }
+    .action-btn.img-view:hover { background: rgba(109,40,217,0.15); color: var(--accent2); border-color: var(--accent2); }
+
+    /* Pagination */
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      background: var(--surface2);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .page-info {
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .page-btns { display: flex; gap: 6px; align-items: center; }
+
+    .page-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .page-btn:hover, .page-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      padding: 20px;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      width: 100%;
+      max-width: 540px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+      transform: translateY(16px) scale(0.98);
+      transition: transform 0.25s;
+      overflow: hidden;
+    }
+
+    .modal-overlay.open .modal {
+      transform: translateY(0) scale(1);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 22px 26px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-header h2 {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+
+    .modal-close {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .modal-close:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
+
+    .modal-body { padding: 24px 26px; display: flex; flex-direction: column; gap: 18px; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    .form-group { display: flex; flex-direction: column; gap: 7px; }
+    .form-group.full { grid-column: 1 / -1; }
+
+    .form-group label {
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 10.5px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      color: var(--text);
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 13px;
+      padding: 11px 14px;
+      outline: none;
+      transition: border-color 0.2s;
+      width: 100%;
+    }
+
+    .form-group select {
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 36px;
+    }
+
+    .form-group select option { background: var(--surface2); }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus { border-color: var(--accent); }
+
+    .form-group input::placeholder,
+    .form-group textarea::placeholder { color: var(--muted); }
+
+    .form-group textarea { resize: vertical; min-height: 80px; }
+
+    .modal-footer {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      padding: 18px 26px;
+      border-top: 1px solid var(--border);
+      background: var(--surface2);
+    }
+
+    .btn-cancel {
+      padding: 11px 22px;
+      border-radius: 9px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-family: 'Google Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-cancel:hover { border-color: var(--text); color: var(--text); }
+
+    .btn-save {
+      padding: 11px 26px;
+      border-radius: 9px;
+      border: none;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      font-family: 'Google Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.15s;
+      box-shadow: 0 4px 16px rgba(79,142,247,0.3);
+    }
+
+    .btn-save:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 20px;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      z-index: 200;
+      transform: translateY(20px);
+      opacity: 0;
+      transition: all 0.3s;
+    }
+
+    .toast.show { transform: none; opacity: 1; }
+    .toast.success .toast-dot { background: var(--success); }
+    .toast.error   .toast-dot { background: var(--danger); }
+    .toast-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* Spec view btn */
+    .btn-spec-view {
+      width: 30px; height: 30px;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .btn-spec-view:hover { background: rgba(37,99,235,0.12); border-color: var(--accent); }
+
+    /* Spec modal */
+    .spec-modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+      z-index: 300;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .spec-modal-backdrop.open { opacity: 1; pointer-events: all; }
+    .spec-modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 100%; max-width: 560px;
+      max-height: 88vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      transform: translateY(12px) scale(0.97);
+      transition: transform 0.22s;
+    }
+    .spec-modal-backdrop.open .spec-modal { transform: none; }
+    .spec-modal-header {
+      padding: 18px 22px 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .spec-modal-header h3 { font-size: 14px; font-weight: 700; }
+    .spec-modal-id { font-family: 'Google Sans Mono',monospace; font-size: 11px; color: var(--accent); margin-top: 2px; }
+    .spec-modal-body { padding: 18px 22px 22px; display: flex; flex-direction: column; gap: 14px; }
+    .spec-modal-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .spec-modal-field label { font-family:'Google Sans Mono',monospace; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); display:block; margin-bottom:3px; }
+    .spec-modal-field span { font-size:13px; font-weight:600; color:var(--text); }
+    .spec-modal-field span.empty   { color:var(--muted); font-weight:400; font-style:italic; }
+    .spec-modal-field span.loading { color:var(--muted); font-weight:400; font-style:italic; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+    .spec-modal-divider { height:1px; background:var(--border); }
+    .spec-modal-tags { display:flex; flex-wrap:wrap; gap:6px; }
+    .spec-modal-tag { background:var(--tag-bg); border:1px solid var(--border); border-radius:6px; padding:4px 10px; font-family:'Google Sans Mono',monospace; font-size:11px; color:var(--text); }
+    .empty-state {
+      padding: 64px 24px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .empty-state svg { margin-bottom: 16px; opacity: 0.4; }
+    .empty-state p { font-size: 14px; }
+
+    @media (max-width: 640px) {
+      .wrapper { padding: 24px 16px; }
+      .form-row { grid-template-columns: 1fr; }
+      .header-left h1 { font-size: 24px; }
+      .stats-row { gap: 14px; }
+    }
+
+    /* ── Rich View Modal ─────────────────────────────────────────────────── */
+    .view-modal-wide { max-width: 760px !important; }
+
+    .vm-section-label {
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 700;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 2px;
+    }
+    .vm-section-label.ret { color: var(--warn); border-color: rgba(217,119,6,0.3); }
+
+    .vm-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .vm-grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 14px;
+    }
+
+    .vm-field { display: flex; flex-direction: column; gap: 3px; }
+    .vm-field.full { grid-column: 1 / -1; }
+
+    .vm-label {
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .vm-val { font-size: 14px; font-weight: 700; color: var(--text); }
+    .vm-sub { font-family: 'Google Sans Mono', monospace; font-size: 11px; color: var(--muted); }
+    .vm-sub.accent { color: var(--accent); }
+    .vm-empty { color: var(--muted); font-style: italic; font-size: 13px; font-weight: 400; }
+
+    .vm-notes {
+      font-size: 13px;
+      color: var(--text);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* Images row */
+    .vm-img-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .vm-img-panel {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--surface2);
+      display: flex;
+      flex-direction: column;
+    }
+    .vm-img-label {
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 8px 12px 6px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .vm-img-frame {
+      position: relative;
+      min-height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+    }
+    .vm-img-frame img {
+      width: 100%;
+      max-height: 180px;
+      object-fit: cover;
+      display: block;
+    }
+    .vm-img-frame.clickable { cursor: zoom-in; }
+    .vm-img-frame.clickable:hover::after {
+      content: '🔍 Click to enlarge';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(0,0,0,0.55);
+      color: #fff;
+      font-size: 11px;
+      text-align: center;
+      padding: 6px;
+    }
+    .vm-img-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      min-height: 120px;
+      opacity: 0.6;
+    }
+
+    .vm-spec-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    /* ── Image Preview Modal ─────────────────────────────────────────────── */
+    .img-modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(6px);
+      z-index: 400;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.22s;
+      padding: 20px;
+    }
+    .img-modal-backdrop.open { opacity: 1; pointer-events: all; }
+
+    .img-modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      width: 100%; max-width: 680px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 28px 80px rgba(0,0,0,0.55);
+      transform: translateY(14px) scale(0.97);
+      transition: transform 0.25s;
+    }
+    .img-modal-backdrop.open .img-modal { transform: none; }
+
+    .img-modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 22px 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+      border-radius: 18px 18px 0 0;
+    }
+    .img-modal-header h3 { font-size: 15px; font-weight: 700; }
+    .img-modal-sub { font-family: 'Google Sans Mono',monospace; font-size: 11px; color: var(--accent); margin-top: 2px; }
+
+    .img-modal-body {
+      padding: 22px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+    @media (max-width: 520px) { .img-modal-body { grid-template-columns: 1fr; } }
+
+    .img-panel {
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .img-panel-label {
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--muted);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .img-panel-label svg { opacity: 0.6; }
+    .img-panel-frame {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--surface2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 160px;
+      cursor: pointer;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      position: relative;
+    }
+    .img-panel-frame:hover { border-color: var(--accent2); box-shadow: 0 0 0 3px rgba(109,40,217,0.12); }
+    .img-panel-frame img {
+      width: 100%; height: 200px; object-fit: contain; display: block;
+    }
+    .img-panel-empty {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 8px; padding: 28px; color: var(--muted); text-align: center;
+      min-height: 160px;
+    }
+    .img-panel-empty svg { opacity: 0.35; }
+    .img-panel-empty span { font-size: 12px; font-family: 'Google Sans Mono', monospace; }
+
+    /* Fullscreen lightbox */
+    .img-lightbox {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.92);
+      z-index: 500;
+      display: none; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .img-lightbox.open { display: flex; }
+    .img-lightbox img {
+      max-width: 100%; max-height: 90vh;
+      border-radius: 10px;
+      box-shadow: 0 0 80px rgba(0,0,0,0.7);
+      object-fit: contain;
+    }
+    .img-lightbox-close {
+      position: absolute; top: 20px; right: 20px;
+      width: 40px; height: 40px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 10px;
+      color: #fff; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+    }
+    .img-lightbox-close:hover { background: rgba(220,38,38,0.6); }
+    .img-open-hint {
+      position: absolute; bottom: 8px; right: 10px;
+      font-family: 'Google Sans Mono', monospace; font-size: 9.5px;
+      color: var(--accent); opacity: 0; transition: opacity 0.15s;
+      pointer-events: none;
+    }
+    .img-panel-frame:hover .img-open-hint { opacity: 1; }
+  </style>
+
+<div class="wrapper">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="eyebrow">Asset Management</div>
+      <h1>Asset <span>List</span></h1>
+      
+    </div>
+    <a href="{% url 'assignment_add' %}" class="btn-add">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add New Asset
+    </a>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="search-box">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="Search employees, assets…" oninput="filterTable()"/>
+    </div>
+    <select class="filter-select" onchange="filterTable()" id="statusFilter">
+      <option value="">All Status</option>
+      <option value="overdue">Overdue</option>
+      <option value="soon">Due Soon</option>
+      <option value="ok">On Track</option>
+    </select>
+    
+  </div>
+
+  <!-- Table -->
+  <div class="table-card">
+    <div class="table-scroll">
+      <table id="assetTable">
+        <thead>
+          <tr>
+            <th class="col-sno">S.No</th>
+            <th onclick="sortTable(0)">Employee</th>
+            <th onclick="sortTable(1)">Asset</th>
+            <th>Image</th>
+            <th>Spec Details</th>
+            <th onclick="sortTable(3)">Return Date</th>
+            <th>Returned By</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination">
+      <div class="page-info" id="pageInfo">Showing 1–5 of 12 entries</div>
+      <div class="page-btns">
+        <button class="page-btn" onclick="changePage(-1)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <span id="pageBtnsInner" style="display:flex;gap:6px;"></span>
+        <button class="page-btn" onclick="changePage(1)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModalOverlay" onclick="closeOnOverlay(event,'editModalOverlay')">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Edit Assignment</h2>
+      <button class="modal-close" onclick="closeEditModal()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Employee</label>
+          <select id="fEmployee">
+            <option value="">Choose employee…</option>
+            {% for user in users %}
+              <option value="{{ user.id }}">{{ user.name }}{% if user.branch %} — {{ user.branch }}{% endif %}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Asset</label>
+          <input type="text" id="fAssetDisplay" readonly style="background:var(--surface2);cursor:not-allowed;"/>
+          <input type="hidden" id="fAssetId"/>
+        </div>
+      </div>
+      <div class="form-group full">
+        <label>Spec Details</label>
+        <textarea id="fSpec" placeholder="e.g. 32GB RAM, M3 Pro, 1TB SSD…"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Return Date</label>
+          <input type="date" id="fReturn"/>
+        </div>
+        <div class="form-group">
+          <label>Returned By</label>
+          <select id="fReturnedBy">
+            <option value="">Not yet returned</option>
+            {% for user in users %}
+              <option value="{{ user.id }}">{{ user.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="form-group full">
+        <label>Notes</label>
+        <textarea id="fNotes" placeholder="Additional notes…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+      <button class="btn-save" onclick="saveAsset()">Update</button>
+    </div>
+  </div>
+</div>
+
+<!-- Return Modal -->
+<div class="modal-overlay" id="returnModalOverlay" onclick="closeOnOverlay(event,'returnModalOverlay')">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <h2>Return Asset</h2>
+      <button class="modal-close" onclick="closeReturnModal()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group full">
+        <label>Return Date</label>
+        <input type="date" id="rReturnDate"/>
+      </div>
+      <div class="form-group full">
+        <label>Returned By</label>
+        <select id="rReturnedBy">
+          <option value="">— Select person —</option>
+          {% for user in users %}
+            <option value="{{ user.id }}">{{ user.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group full">
+        <label>Notes</label>
+        <textarea id="rNotes" placeholder="Return remarks…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeReturnModal()">Cancel</button>
+      <button class="btn-save" style="background:linear-gradient(135deg,var(--warn),#b45309);" onclick="saveReturn()">Confirm Return</button>
+    </div>
+  </div>
+</div>
+
+<!-- View Modal (Kept for compatibility but not used for navigation anymore) -->
+<div class="modal-overlay" id="viewModalOverlay" onclick="closeOnOverlay(event,'viewModalOverlay')">
+  <div class="modal view-modal-wide" style="max-height:90vh;overflow-y:auto;">
+    <div class="modal-header" style="position:sticky;top:0;z-index:1;background:var(--surface);">
+      <div>
+        <h2 style="font-size:16px;" id="vmTitle">Assignment Details</h2>
+        <div style="font-family:'Google Sans Mono',monospace;font-size:11px;color:var(--accent);margin-top:2px;" id="vmSubtitle"></div>
+      </div>
+      <button class="modal-close" onclick="closeViewModal()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="viewModalBody" style="gap:18px;"></div>
+    <div class="modal-footer">
+      <button class="btn-save" onclick="closeViewModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span class="toast-dot"></span>
+  <span id="toastMsg">Saved successfully</span>
+</div>
+
+<script>
+  // ── Data ──────────────────────────────────────────────────────────────────
+  const avatarColors = [
+    ['#1e3a5f','#4f8ef7'], ['#1f3a2b','#4fcf8e'], ['#3a1f1e','#f7614f'],
+    ['#3a2f1e','#f7b74f'], ['#2a1e3a','#7c5cfc'], ['#1e3a38','#4fd4cf']
+  ];
+
+  function ava(name, size=34) {
+    const idx = name.charCodeAt(0) % avatarColors.length;
+    const [bg, fg] = avatarColors[idx];
+    return { bg, fg, init: name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase() };
+  }
+
+  function getCookie(name) {
+    const v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+    return v ? v[2] : null;
+  }
+
+  let assets = [];
+  let currentPage = 1;
+  const PER_PAGE = 15;
+  let sortCol = -1, sortAsc = true;
+  let editingId = null;
+  let filteredData = [];
+
+  // ── Load assignments from API ─────────────────────────────────────────────
+  function loadAssignments(search='') {
+    const url = '/asset_management/api/assignments/' + (search ? `?search=${encodeURIComponent(search)}` : '');
+    fetch(url)
+      .then(r => r.json())
+      .then(data => {
+        assets = data.assignments.map(a => ({
+          id:             a.id,
+          emp:            a.emp,
+          emp_id:         a.emp_id,
+          dept:           a.dept,
+          asset:          a.asset,
+          assetId:        a.assetId,
+          assetStatus:    a.assetStatus  || '',
+          specs:          a.specs,
+          attachment:     a.attachment   || '',
+          assignedDate:   a.assignedDate || '',
+          returnDate:     a.returnDate   || '',
+          returnedBy:     a.returnedBy   || '',
+          returnedById:   a.returnedById || '',
+          image:          a.image        || '',
+          returnDocument: a.returnDocument || '',
+          notes:          a.notes        || '',
+        }));
+        filteredData = [...assets];
+        currentPage = 1;
+        render();
+      })
+      .catch(() => showToast('Failed to load assignments.', 'error'));
+  }
+
+  // ── Date helpers ─────────────────────────────────────────────────────────
+  function dateStatus(dateStr) {
+    if (!dateStr) return 'ok';
+    const d = new Date(dateStr), now = new Date();
+    const diff = (d - now) / 86400000;
+    if (diff < 0)   return 'overdue';
+    if (diff <= 14) return 'soon';
+    return 'ok';
+  }
+
+  function fmtDate(dateStr) {
+    if (!dateStr) return '—';
+    return new Date(dateStr).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  function render() {
+    const body = document.getElementById('tableBody');
+    const start = (currentPage-1)*PER_PAGE;
+    const slice = filteredData.slice(start, start+PER_PAGE);
+
+    if (slice.length === 0) {
+      body.innerHTML = `<tr><td colspan="8"><div class="empty-state">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="3"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+        <p>No assets found matching your search.</p></div></td></tr>`;
+      return;
+    }
+
+    body.innerHTML = slice.map((a, i) => {
+      const av = ava(a.emp);
+      const st = dateStatus(a.returnDate);
+      const stLabel = st==='overdue' ? '⚠ Overdue' : st==='soon' ? '⏰ Due Soon' : '✓ On Track';
+      const specHtml = `<button class="btn-spec-view" onclick="openSpecModal('${a.assetId}', ${a.id})" title="View spec details">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>`;
+      const retHtml = a.returnedBy
+        ? (() => { const r=ava(a.returnedBy); return `<div class="ret-cell">${a.returnedBy}</div>`; })()
+        : `<span class="ret-none">— Not returned</span>`;
+
+      return `<tr style="animation-delay:${i*0.04}s">
+        <td class="col-sno">${start + i + 1}</td>
+        <td>
+          <div class="emp-cell">
+           
+            <div><div class="emp-name">${a.emp}</div><div class="emp-dept">${a.dept}</div></div>
+          </div>
+        </td>
+        <td>
+          <div class="asset-name">${a.asset}</div>
+          <div class="asset-id">${a.assetId}</div>
+        </td>
+        <td>
+          ${(a.image || a.returnDocument) ? `
+            <button class="action-btn img-view" title="View Images" onclick="openImageModal(${a.id})">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4 2.03 2.71L16 11l4 5H8l3-3zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z"/>
+              </svg>
+            </button>` : '<span style="color:var(--muted);font-size:12px;">—</span>'}
+        </td>
+        <td>${specHtml}</td>
+        <td>
+          <div class="date-cell">
+            <div>${fmtDate(a.returnDate)}</div>
+            <div class="date-badge ${st}">${stLabel}</div>
+          </div>
+        </td>
+        <td>${retHtml}</td>
+        <td>
+          <div class="actions">
+            <!-- UPDATED: View button now navigates to asset_details.html page -->
+            <button class="action-btn view" title="View Details" data-id="${a.id}" onclick="window.location.href='/asset_management/assignments/' + this.dataset.id + '/'">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+            <button class="action-btn edit" title="Edit" data-id="${a.id}" onclick="window.location.href='/asset_management/assignments/' + this.dataset.id + '/edit/'">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            ${a.returnedBy
+              ? `<button class="action-btn return" title="Already Returned" disabled style="opacity:0.32;cursor:not-allowed;pointer-events:none;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+                </button>`
+              : `<button class="action-btn return" title="Return Asset" data-id="${a.id}" onclick="window.location.href='/asset_management/assignments/' + this.dataset.id + '/return/'">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+                </button>`
+            }
+            <button class="action-btn delete" title="Delete" data-id="${a.id}" onclick="deleteAsset(this.dataset.id)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            </button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    const total = filteredData.length;
+    const end = Math.min(start+PER_PAGE, total);
+    document.getElementById('pageInfo').textContent = `Showing ${start+1}–${end} of ${total} entries`;
+
+    const totalPages = Math.ceil(total/PER_PAGE);
+    const pageBtnsContainer = document.getElementById('pageBtnsInner');
+    pageBtnsContainer.innerHTML = '';
+    for (let n = 1; n <= totalPages; n++) {
+      const btn = document.createElement('button');
+      btn.className = 'page-btn' + (n === currentPage ? ' active' : '');
+      btn.textContent = n;
+      btn.onclick = () => setPage(n);
+      pageBtnsContainer.appendChild(btn);
+    }
+  }
+
+  // ── Filter ────────────────────────────────────────────────────────────────
+  function filterTable() {
+    const q    = document.getElementById('searchInput').value.toLowerCase();
+    const st   = document.getElementById('statusFilter').value;
+
+    filteredData = assets.filter(a => {
+      const matchQ  = !q  || a.emp.toLowerCase().includes(q) || a.asset.toLowerCase().includes(q) || a.assetId.toLowerCase().includes(q);
+      const matchSt = !st || dateStatus(a.returnDate) === st;
+      return matchQ && matchSt;
+    });
+
+    currentPage = 1;
+    render();
+  }
+
+  // ── Sort ──────────────────────────────────────────────────────────────────
+  function sortTable(col) {
+    if (sortCol === col) sortAsc = !sortAsc; else { sortCol = col; sortAsc = true; }
+    const keys = ['emp','asset','',  'returnDate'];
+    const key = keys[col];
+    if (!key) return;
+    filteredData.sort((a,b) => (a[key] > b[key] ? 1 : -1) * (sortAsc ? 1 : -1));
+    render();
+  }
+
+  // ── Pagination ────────────────────────────────────────────────────────────
+  function setPage(n) { currentPage = n; render(); }
+  function changePage(d) {
+    const max = Math.ceil(filteredData.length/PER_PAGE);
+    currentPage = Math.max(1, Math.min(max, currentPage+d));
+    render();
+  }
+
+  // ── Select all ────────────────────────────────────────────────────────────
+  function toggleAll(cb) {
+    document.querySelectorAll('#tableBody .custom-check').forEach(c => c.checked = cb.checked);
+    document.querySelectorAll('#tableBody tr').forEach(r => r.classList.toggle('selected', cb.checked));
+  }
+
+  // ── Edit Modal ────────────────────────────────────────────────────────────
+  function openEditModal(id) {
+    const a = assets.find(x => String(x.id) === String(id));
+    if (!a) {
+      console.error('Assignment not found:', id);
+      showToast('Assignment not found', 'error');
+      return;
+    }
+    editingId = a.id;
+
+    document.getElementById('fEmployee').value     = String(a.emp_id);
+    document.getElementById('fAssetDisplay').value = a.asset + ' (' + a.assetId + ')';
+    document.getElementById('fAssetId').value      = a.assetId;
+    document.getElementById('fSpec').value         = Array.isArray(a.specs) ? a.specs.join(', ') : (a.specs || '');
+    document.getElementById('fReturn').value       = a.returnDate || '';
+    document.getElementById('fReturnedBy').value   = String(a.returnedById || '');
+    document.getElementById('fNotes').value        = a.notes || '';
+    document.getElementById('editModalOverlay').classList.add('open');
+  }
+
+  function openModal(mode, id) { if (mode === 'edit') openEditModal(id); }
+
+  function closeEditModal() {
+    document.getElementById('editModalOverlay').classList.remove('open');
+    editingId = null;
+  }
+
+  function closeOnOverlay(e, overlayId) {
+    if (e.target === document.getElementById(overlayId)) {
+      if (overlayId === 'editModalOverlay') closeEditModal();
+      else if (overlayId === 'returnModalOverlay') closeReturnModal();
+      else closeViewModal();
+    }
+  }
+
+  // ── Return Modal ──────────────────────────────────────────────────────────
+  let returningId = null;
+
+  function openReturnModal(id) {
+    returningId = id;
+    document.getElementById('rReturnDate').value  = new Date().toISOString().split('T')[0];
+    document.getElementById('rReturnedBy').value  = '';
+    document.getElementById('rNotes').value       = '';
+    document.getElementById('returnModalOverlay').classList.add('open');
+  }
+
+  function closeReturnModal() {
+    document.getElementById('returnModalOverlay').classList.remove('open');
+    returningId = null;
+  }
+
+  function saveReturn() {
+    const returnDate = document.getElementById('rReturnDate').value;
+    if (!returnDate) { showToast('Please select a return date.', 'error'); return; }
+    const payload = {
+      return_date:    returnDate,
+      returned_by_id: document.getElementById('rReturnedBy').value || null,
+      notes:          document.getElementById('rNotes').value,
+    };
+    fetch('/asset_management/api/assignments/' + returningId + '/edit/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+      body: JSON.stringify(payload),
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        showToast('Asset returned successfully!', 'success');
+        loadAssignments();
+        closeReturnModal();
+      } else {
+        showToast('Error: ' + data.error, 'error');
+      }
+    })
+    .catch(() => showToast('Network error.', 'error'));
+  }
+
+  function saveAsset() {
+    const empId = document.getElementById('fEmployee').value;
+    if (!empId) { showToast('Please select an employee.', 'error'); return; }
+
+    const payload = {
+      employee_id:    empId,
+      spec_details:   document.getElementById('fSpec').value,
+      return_date:    document.getElementById('fReturn').value || null,
+      returned_by_id: document.getElementById('fReturnedBy').value || null,
+      notes:          document.getElementById('fNotes').value,
+    };
+
+    fetch('/asset_management/api/assignments/' + editingId + '/edit/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+      body: JSON.stringify(payload),
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        showToast('Assignment updated successfully!', 'success');
+        loadAssignments();
+        closeEditModal();
+      } else {
+        showToast('Error: ' + data.error, 'error');
+      }
+    })
+    .catch(() => showToast('Network error.', 'error'));
+  }
+
+  // ── Delete ────────────────────────────────────────────────────────────────
+  function deleteAsset(id) {
+    if (!confirm('Delete this assignment?')) return;
+    fetch('/asset_management/api/assignments/' + id + '/delete/', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCookie('csrftoken') },
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        showToast('Assignment deleted.', 'error');
+        loadAssignments();
+      } else {
+        showToast('Error: ' + data.error, 'error');
+      }
+    })
+    .catch(() => showToast('Network error.', 'error'));
+  }
+
+  // ── View Modal (Kept for compatibility but not used for navigation) ──────
+  function viewAsset(id) {
+    // This function is kept but no longer called by the View button
+    // The View button now navigates to the asset_details.html page
+    // If you want to keep the modal functionality, you can still access it via other means
+    console.log('View modal is deprecated. Use the details page instead.');
+  }
+
+  function closeViewModal() {
+    document.getElementById('viewModalOverlay').classList.remove('open');
+  }
+
+  // ── Toast ─────────────────────────────────────────────────────────────────
+  function showToast(msg, type='success') {
+    const t = document.getElementById('toast');
+    document.getElementById('toastMsg').textContent = msg;
+    t.className = `toast ${type} show`;
+    setTimeout(()=>t.classList.remove('show'), 3000);
+  }
+
+  // ── Spec Modal — live fetch from asset master API ─────────────────────────
+  function openSpecModal(assetId, assignmentId) {
+    const a = assets.find(x => String(x.id) === String(assignmentId));
+
+    // Open modal immediately with loading state
+    document.getElementById('smAssetName').textContent = a ? a.asset : assetId;
+    document.getElementById('smAssetId').textContent   = assetId;
+    ['smCategory','smBrand','smModel','smSerial','smPurchaseDate','smWarranty','smValue','smStatus','smNotes',
+     'smCpu','smRam','smStorage','smDisplay','smOs','smColor']
+      .forEach(id => { const el = document.getElementById(id); el.textContent = '…'; el.className = 'loading'; });
+    document.getElementById('specModalBackdrop').classList.add('open');
+
+    // Fetch full asset details from the master API
+    fetch('/asset_management/api/assets/' + encodeURIComponent(assetId) + '/')
+      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+      .then(data => {
+        const d = data.asset;
+
+        document.getElementById('smAssetName').textContent = d.name || assetId;
+        document.getElementById('smAssetId').textContent   = d.id   || assetId;
+
+        smSet('smCategory',    d.category    || '');
+        smSet('smBrand',       d.brand       || '');
+        smSet('smModel',       d.model       || '');
+        smSet('smSerial',      d.serial      || '');
+        smSet('smPurchaseDate',d.purchaseDate|| '');
+        smSet('smWarranty',    d.warranty    || '');
+        smSet('smValue',       d.value ? '₹\u202f' + Number(d.value).toLocaleString('en-IN') : '');
+        smSet('smStatus',      d.status      || '');
+        smSet('smNotes',       d.notes       || (a ? a.notes : ''));
+        // Technical spec fields from asset master
+        const sp = d.specs || {};
+        smSet('smCpu',     sp.cpu     || '');
+        smSet('smRam',     sp.ram     || '');
+        smSet('smStorage', sp.storage || '');
+        smSet('smDisplay', sp.display || '');
+        smSet('smOs',      sp.os      || '');
+        smSet('smColor',   sp.color   || '');
+
+      })
+      .catch(() => {
+        // Fallback: show whatever we have from the assignment record
+        document.getElementById('smAssetName').textContent = a ? a.asset : assetId;
+        ['smCategory','smBrand','smModel','smSerial','smPurchaseDate','smWarranty','smValue','smStatus',
+         'smCpu','smRam','smStorage','smDisplay','smOs','smColor']
+          .forEach(id => smSet(id, ''));
+        smSet('smNotes', a ? a.notes : '');
+      });
+  }
+
+  function smSet(id, val) {
+    const el = document.getElementById(id);
+    if (val && String(val).trim()) { el.textContent = val; el.className = ''; }
+    else { el.textContent = '—'; el.className = 'empty'; }
+  }
+
+  function closeSpecModal(e) {
+    if (e && e.target !== document.getElementById('specModalBackdrop')) return;
+    document.getElementById('specModalBackdrop').classList.remove('open');
+  }
+
+  // ── Image Preview Modal ───────────────────────────────────────────────────
+  function openImageModal(id) {
+    const a = assets.find(x => String(x.id) === String(id));
+    if (!a) return;
+
+    document.getElementById('imgModalTitle').textContent = a.asset || 'Asset Images';
+    document.getElementById('imgModalSub').textContent   = a.assetId || '';
+
+    // Asset photo (from asset_add.html)
+    const imgAsset   = document.getElementById('imgAsset');
+    const emptyAsset = document.getElementById('imgEmptyAsset');
+    const panelAsset = document.getElementById('imgPanelAsset');
+    if (a.image) {
+      imgAsset.src = a.image;
+      imgAsset.style.display = 'block';
+      emptyAsset.style.display = 'none';
+      panelAsset.dataset.src = a.image;
+      panelAsset.style.cursor = 'zoom-in';
+    } else {
+      imgAsset.style.display = 'none';
+      emptyAsset.style.display = 'flex';
+      panelAsset.dataset.src = '';
+      panelAsset.style.cursor = 'default';
+    }
+
+    // Return document (from asset_return.html)
+    const imgReturn   = document.getElementById('imgReturn');
+    const emptyReturn = document.getElementById('imgEmptyReturn');
+    const panelReturn = document.getElementById('imgPanelReturn');
+    if (a.returnDocument) {
+      imgReturn.src = a.returnDocument;
+      imgReturn.style.display = 'block';
+      emptyReturn.style.display = 'none';
+      panelReturn.dataset.src = a.returnDocument;
+      panelReturn.style.cursor = 'zoom-in';
+    } else {
+      imgReturn.style.display = 'none';
+      emptyReturn.style.display = 'flex';
+      panelReturn.dataset.src = '';
+      panelReturn.style.cursor = 'default';
+    }
+
+    document.getElementById('imgModalBackdrop').classList.add('open');
+  }
+
+  function closeImgModal(e) {
+    if (e && e.target !== document.getElementById('imgModalBackdrop')) return;
+    document.getElementById('imgModalBackdrop').classList.remove('open');
+  }
+
+  function openLightbox(src) {
+    if (!src) return;
+    document.getElementById('lightboxImg').src = src;
+    document.getElementById('imgLightbox').classList.add('open');
+  }
+
+  function closeLightbox() {
+    document.getElementById('imgLightbox').classList.remove('open');
+  }
+
+  loadAssignments();
+</script>
+
+<!-- Image Preview Modal -->
+<div class="img-modal-backdrop" id="imgModalBackdrop" onclick="closeImgModal(event)">
+  <div class="img-modal">
+    <div class="img-modal-header">
+      <div>
+        <h3 id="imgModalTitle">Asset Images</h3>
+        <div class="img-modal-sub" id="imgModalSub"></div>
+      </div>
+      <button class="modal-close" onclick="closeImgModal(null)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="img-modal-body">
+      <!-- Asset image (from asset_add.html) -->
+      <div class="img-panel">
+        <div class="img-panel-label">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          Asset Photo
+        </div>
+        <div class="img-panel-frame" id="imgPanelAsset" onclick="openLightbox(this.dataset.src)" data-src="">
+          <div class="img-panel-empty" id="imgEmptyAsset">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <span>No asset image</span>
+          </div>
+          <img id="imgAsset" src="" alt="Asset" style="display:none;"/>
+          <span class="img-open-hint">Click to enlarge</span>
+        </div>
+      </div>
+      <!-- Return document (from asset_return.html) -->
+      <div class="img-panel">
+        <div class="img-panel-label">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+          Return Document
+        </div>
+        <div class="img-panel-frame" id="imgPanelReturn" onclick="openLightbox(this.dataset.src)" data-src="">
+          <div class="img-panel-empty" id="imgEmptyReturn">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+            <span>No return document</span>
+          </div>
+          <img id="imgReturn" src="" alt="Return Document" style="display:none;"/>
+          <span class="img-open-hint">Click to enlarge</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Fullscreen Lightbox -->
+<div class="img-lightbox" id="imgLightbox" onclick="closeLightbox()">
+  <button class="img-lightbox-close" onclick="closeLightbox()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  </button>
+  <img id="lightboxImg" src="" alt=""/>
+</div>
+
+<!-- Spec Detail Modal -->
+<div class="spec-modal-backdrop" id="specModalBackdrop" onclick="closeSpecModal(event)">
+  <div class="spec-modal">
+    <div class="spec-modal-header">
+      <div>
+        <h3 id="smAssetName"></h3>
+        <div class="spec-modal-id" id="smAssetId"></div>
+      </div>
+      <button class="modal-close" onclick="closeSpecModal(null)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="spec-modal-body">
+      <!-- Identity row -->
+      <div class="spec-modal-row">
+        <div class="spec-modal-field"><label>Category</label><span id="smCategory"></span></div>
+        <div class="spec-modal-field"><label>Brand</label><span id="smBrand"></span></div>
+        <div class="spec-modal-field"><label>Model No.</label><span id="smModel"></span></div>
+        <div class="spec-modal-field"><label>Serial No.</label><span id="smSerial"></span></div>
+      </div>
+      <div class="spec-modal-divider"></div>
+
+      <!-- Technical Specs -->
+      <div>
+        <div style="font-family:'Google Sans Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Technical Specifications</div>
+        <div class="spec-modal-row" style="grid-template-columns:1fr 1fr 1fr;">
+          <div class="spec-modal-field"><label>CPU</label><span id="smCpu"></span></div>
+          <div class="spec-modal-field"><label>RAM</label><span id="smRam"></span></div>
+          <div class="spec-modal-field"><label>Storage</label><span id="smStorage"></span></div>
+          <div class="spec-modal-field"><label>Display</label><span id="smDisplay"></span></div>
+          <div class="spec-modal-field"><label>OS</label><span id="smOs"></span></div>
+          <div class="spec-modal-field"><label>Color</label><span id="smColor"></span></div>
+        </div>
+      </div>
+      <div class="spec-modal-divider"></div>
+
+      <!-- Purchase info + status -->
+      <div class="spec-modal-row">
+        <div class="spec-modal-field"><label>Purchase Date</label><span id="smPurchaseDate"></span></div>
+        <div class="spec-modal-field"><label>Warranty Expiry</label><span id="smWarranty"></span></div>
+        <div class="spec-modal-field"><label>Purchase Value</label><span id="smValue"></span></div>
+        <div class="spec-modal-field"><label>Status</label><span id="smStatus"></span></div>
+      </div>
+      <div class="spec-modal-divider"></div>
+
+      <div class="spec-modal-field"><label>Notes</label><span id="smNotes"></span></div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

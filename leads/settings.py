@@ -88,6 +88,7 @@ INSTALLED_APPS = [
     'campaign',
     'public_folder',
     'software_update',
+    'asset_management',
 ]
 
 

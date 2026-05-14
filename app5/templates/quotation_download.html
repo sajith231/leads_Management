@@ -476,8 +476,6 @@
         .table-wrapper {
             overflow-x: auto;
             margin-bottom: 10px;
-            max-height: 350px;
-            overflow-y: auto;
         }
 
         .items-table {
@@ -521,7 +519,10 @@
         .items-table td {
             padding: 6px 5px;
             word-wrap: break-word;
+            overflow-wrap: anywhere;
+            word-break: break-word;
             font-size: 12px;
+            vertical-align: top;
         }
 
         .items-table td.text-center { text-align: center; }
@@ -531,12 +532,22 @@
             font-weight: 600;
             color: #2c3e50;
             font-size: 12px;
+            word-break: break-word;
+            overflow-wrap: anywhere;
         }
 
         .item-description {
             font-size: 10px;
-            color: #7f8c8d;
-            margin-top: 2px;
+            color: #555;
+            margin-top: 4px;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            white-space: pre-wrap;
+            line-height: 1.5;
+            padding: 4px 6px;
+            background: #f8f9fa;
+            border-left: 2px solid #d0d0d0;
+            border-radius: 3px;
         }
 
         /* ── totals section (compact) ── */
@@ -835,6 +846,11 @@
             }
             
             /* Totals in print */
+            .totals-section,
+            .grand-total-wrapper {
+                page-break-inside: avoid;
+            }
+
             .totals-table {
                 font-size: 9pt;
             }
@@ -889,15 +905,12 @@
                 gap: 5px;
             }
             
-            /* Force all content to stay on respective pages */
+            /* Allow content to flow naturally across pages */
             .page-2 {
                 page-break-after: always !important;
-                max-height: 100vh;
-                overflow: hidden;
             }
             
             .page-2-content {
-                max-height: 95vh;
             }
             
             /* Force background colors to print */
@@ -1192,7 +1205,7 @@
                                     <td>
                                         <div class="item-name">{{ item.item_name }}</div>
                                         {% if item.description %}
-                                        <div class="item-description">{{ item.description|linebreaksbr }}</div>
+                                        <div class="item-description">{{ item.description }}</div>
                                         {% endif %}
                                     </td>
                                     <td class="text-center">{{ item.quantity }}</td>
@@ -1245,14 +1258,16 @@
                     </div>
 
                     <!-- Notes Section -->
-                    {% if quotation.notes %}
+                    {% with note_text=notes|default:quotation.notes %}
+                    {% if note_text %}
                     <div class="notes-section">
                         <div class="notes-box">
                             <h4><i class="fas fa-sticky-note"></i> Notes</h4>
-                            <div class="notes-content">{{ quotation.notes|linebreaks }}</div>
+                            <div class="notes-content">{{ note_text|linebreaks }}</div>
                         </div>
                     </div>
                     {% endif %}
+                    {% endwith %}
                 </div>
             </div>
         </div>

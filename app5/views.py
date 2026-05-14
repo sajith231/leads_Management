@@ -4077,7 +4077,7 @@ def lead_form_view(request):
                     f"📝 Details: {details_val[:200] if details_val else 'N/A'}"
                 )
 
-                notify_numbers = ['8157831029', '8590340907']
+                notify_numbers = ['7593820007', '7593820005']
                 for number in notify_numbers:
                     try:
                         wa_payload = {
@@ -7155,139 +7155,71 @@ logger = logging.getLogger(__name__)
 
 
 # ============================================================================
-# QUOTATION LIST VIEW - Display form to create quotations
+# QUOTATION LIST VIEW - Display all saved quotations with created_by info
 # ============================================================================
 def quotation_list_view(request):
     """
-    Display quotation form with active leads, employees, and items
+    Display all saved quotations in a list table.
+    Shows ticket number, date, created_by user, customer, status, grand total, and actions.
     """
-    # ✅ GET ACTIVE LEADS (for quotation form)
-    lead_tickets = []  # Renamed from active_leads for template compatibility
-    try:
-        leads_qs = Lead.objects.filter(status__iexact='Active').order_by('-created_at')[:50]
-        
-        for lead in leads_qs:
-            # Get proper ticket number
-            ticket_number = getattr(lead, 'ticket_number', None)
-            if not ticket_number:
-                ticket_number = f"TKT-{lead.id:06d}"  # Format with leading zeros
-            
-            # Get owner name (handle both field names)
-            owner_name = getattr(lead, 'ownerName', None) or getattr(lead, 'owner_name', 'Unknown')
-            
-            # Get phone number (handle both field names)
-            phone_number = getattr(lead, 'phoneNo', None) or getattr(lead, 'phone_number', '')
-            
-            # Get company name if business customer
-            company_name = ''
-            if getattr(lead, 'customerType', '') == 'Business':
-                company_name = getattr(lead, 'name', '') or getattr(lead, 'company_name', '')
-            
-            # Get address (handle multiple address fields)
-            address = getattr(lead, 'address', '')
-            if not address and getattr(lead, 'customerType', '') == 'Individual':
-                address = getattr(lead, 'individualAddress', '')
-            
-            lead_tickets.append({
-                'id': lead.id,
-                'ticket_number': ticket_number,
-                'owner_name': owner_name,
-                'phone_number': phone_number,
-                'email': getattr(lead, 'email', '') or '',
-                'address': address or '',
-                'company_name': company_name,
-                'status': getattr(lead, 'status', 'Active'),
-                'customerType': getattr(lead, 'customerType', ''),
-                'place': getattr(lead, 'place', ''),
-                'business': getattr(lead, 'business', ''),
-                'priority': getattr(lead, 'priority', 'Medium'),
-                'created_at': lead.created_at if hasattr(lead, 'created_at') else None,
-            })
-        
-        logger.info(f"✅ Loaded {len(lead_tickets)} active leads for quotation")
-        
-    except Exception as e:
-        logger.error(f"❌ Error loading leads: {e}", exc_info=True)
-        lead_tickets = []
-    
-    # ✅ GET ACTIVE EMPLOYEES/USERS
-    active_employees = []
-    try:
-        # Try to get users with status field
-        user_fields = [f.name for f in User._meta.get_fields()]
-        
-        if 'status' in user_fields:
-            users_qs = User.objects.filter(status='active').order_by('name')
-        elif 'is_active' in user_fields:
-            users_qs = User.objects.filter(is_active=True).order_by('name')
-        else:
-            users_qs = User.objects.all().order_by('name')
-        
-        for user in users_qs:
-            active_employees.append({
-                'id': user.id,
-                'name': getattr(user, 'name', f'User {user.id}'),
-                'department': getattr(user, 'department', ''),
-                'designation': getattr(user, 'designation', ''),
-                'phone': getattr(user, 'phone_number', '') or getattr(user, 'phone', ''),
-            })
-        
-        logger.info(f"✅ Loaded {len(active_employees)} active employees for quotation")
-        
-    except Exception as e:
-        logger.error(f"❌ Error loading employees: {e}")
-        active_employees = []
-    
-    # ✅ GET ITEMS FROM PURCHASE_ORDER
-    items = []
-    try:
-        items = Item.objects.filter(is_active=True).order_by('section', 'name')
-        logger.info(f"✅ Loaded {items.count()} items for quotation")
-    except Exception as e:
-        logger.error(f"❌ Error loading items: {e}")
-        items = []
-    
-    # ✅ GET DEPARTMENTS (if needed for filtering)
-    departments = []
-    try:
-        departments = Department.objects.filter(is_active=True).order_by('name')
-    except Exception as e:
-        logger.debug(f"No departments available: {e}")
+    from django.db.models import Sum, Q
 
-    # ✅ GET TAX MASTER RECORDS
-    taxes = []
+    # ── Fetch all quotations with related data in one efficient query ──────────
     try:
-        taxes = TaxMaster.objects.all().order_by('name')
-        logger.info(f"✅ Loaded {taxes.count()} taxes for quotation")
+        quotations = (
+            Quotation.objects
+            .select_related(
+                'created_by',   # → q.created_by.name  (User who created it)
+                'lead',         # → q.lead.ticket_number
+            )
+            .prefetch_related('items')  # → q.items.count()
+            .order_by('-created_at')
+        )
+
+        # ── Summary stats for header cards ────────────────────────────────────
+        total_count     = quotations.count()
+        submitted_count = quotations.filter(status__iexact='submitted').count()
+        accepted_count  = quotations.filter(status__iexact='accepted').count()
+        rejected_count  = quotations.filter(status__iexact='rejected').count()
+        total_value     = quotations.aggregate(total=Sum('grand_total'))['total'] or 0
+
+        # ── Unique creators for the "Filter by User" dropdown ─────────────────
+        creator_ids = (
+            quotations
+            .exclude(created_by__isnull=True)
+            .values_list('created_by_id', flat=True)
+            .distinct()
+        )
+        try:
+            creators = User.objects.filter(id__in=creator_ids).order_by('name')
+        except Exception:
+            creators = []
+
+        logger.info(
+            f"📋 Quotation list: {total_count} total | "
+            f"{submitted_count} submitted | {accepted_count} accepted"
+        )
+
     except Exception as e:
-        logger.error(f"❌ Error loading taxes: {e}")
-        taxes = []
-    
-    # Calculate counts
-    leads_count = len(lead_tickets)
-    employees_count = len(active_employees)
-    items_count = items.count() if hasattr(items, 'count') else len(items)
-    
-    # Debug: Check lead data
-    if lead_tickets:
-        first_lead = lead_tickets[0]
-        logger.info(f"📅 First lead ticket: {first_lead.get('ticket_number')} - {first_lead.get('owner_name')}")
-        logger.info(f"📅 First lead created_at: {first_lead.get('created_at')}")
-        logger.info(f"📅 First lead phone: {first_lead.get('phone_number')}")
-    
+        logger.error(f"❌ Error loading quotation list: {e}", exc_info=True)
+        quotations      = []
+        total_count     = 0
+        submitted_count = 0
+        accepted_count  = 0
+        rejected_count  = 0
+        total_value     = 0
+        creators        = []
+
     context = {
-        'lead_tickets': lead_tickets,  # Changed from active_leads to lead_tickets
-        'active_employees': active_employees,
-        'items': items,
-        'departments': departments,
-        'taxes': taxes,              # ✅ ADDED: Tax master list for dropdown
-        'leads_count': leads_count,
-        'employees_count': employees_count,
-        'items_count': items_count,
+        'quotations':       quotations,
+        'total_count':      total_count,
+        'submitted_count':  submitted_count,
+        'accepted_count':   accepted_count,
+        'rejected_count':   rejected_count,
+        'total_value':      round(total_value, 2),
+        'creators':         creators,   # for the "Created By" filter dropdown
     }
-    
-    logger.info(f"📊 Quotation List Context: {leads_count} leads, {employees_count} employees, {items_count} items")
-    
+
     return render(request, 'quotation_list.html', context)
 
 
@@ -7990,7 +7922,6 @@ def quotation_submit(request):
             'error_detail': str(e)
         }, status=500)
 
-
 # ============================================================================
 # API ENDPOINTS
 # ============================================================================
@@ -8192,43 +8123,39 @@ def quotation_edit(request, pk):
     quotation = get_object_or_404(Quotation, pk=pk)
     quotation_items = quotation.items.select_related('item').all()
 
-    # ✅ FIX: Fetch ALL active items with proper section field (raw key, not display)
     purchase_items = Item.objects.filter(is_active=True).order_by('name')
 
-    # ✅ FIX: Serialize items_json with section as the raw DB key value
     items_json = json.dumps([
         {
             'id': item.id,
             'name': item.name,
-            'section': item.section or 'GENERAL',       # raw key e.g. "HARDWARE"
+            'section': item.section or 'GENERAL',
             'mrp': float(item.mrp or 0),
             'cost': float(item.cost or 0),
             'tax_percentage': float(item.tax_percentage or 0),
             'unit_of_measure': item.unit_of_measure or '',
+            'notes': item.notes or '',                  # ✅ added
         }
         for item in purchase_items
     ])
 
-    # ✅ FIX: Build sections list from actual DB values (raw keys)
     sections = list(
         Item.objects.filter(is_active=True)
         .values_list('section', flat=True)
         .distinct()
         .order_by('section')
     )
-    # Normalize: replace None/empty with 'GENERAL'
     sections = sorted(set(s or 'GENERAL' for s in sections))
 
-    # Also pass taxes, active_leads, etc.
-    taxes = TaxMaster.objects.filter(is_active=True)  # adjust model name
-    active_leads = Lead.objects.filter(status='active')  # adjust as needed
+    taxes = TaxMaster.objects.filter(is_active=True)
+    active_leads = Lead.objects.filter(status='active')
 
     context = {
         'quotation': quotation,
         'quotation_items': quotation_items,
-        'items_json': items_json,       # ✅ used by JS purchaseOrderItems
-        'sections': sections,           # ✅ used by Django template section loop
-        'items': purchase_items,        # ✅ used by Django template item loop
+        'items_json': items_json,
+        'sections': sections,
+        'items': purchase_items,
         'taxes': taxes,
         'active_leads': active_leads,
     }
@@ -8254,7 +8181,6 @@ def update_quotation(request, pk):
         content_type = request.content_type or ''
 
         if 'multipart/form-data' in content_type:
-            # Data arrives as the 'data' form field (JSON string)
             raw_data = request.POST.get('data', '{}')
             if isinstance(raw_data, bytes):
                 try:
@@ -8272,7 +8198,6 @@ def update_quotation(request, pk):
                 logger.info(f"📎 Attachment received: {proposal_file.name} ({proposal_file.size} bytes)")
 
         else:
-            # Plain JSON body
             try:
                 data = json.loads(request.body)
             except json.JSONDecodeError as e:
@@ -8297,7 +8222,7 @@ def update_quotation(request, pk):
         with transaction.atomic():
 
             # ---------- UPDATE LEAD (if changed) ----------
-            lead_id = data.get('lead_ticket_id')  # Changed from lead_id to match frontend
+            lead_id = data.get('lead_ticket_id')
             if lead_id and str(lead_id) != str(quotation.lead.id if quotation.lead else None):
                 try:
                     new_lead = Lead.objects.get(id=lead_id)
@@ -8316,13 +8241,13 @@ def update_quotation(request, pk):
                         'message': f'Lead with ID {lead_id} not found'
                     }, status=404)
 
-            # ---------- UPDATE NOTES ----------
+            # ---------- UPDATE NOTES ----------  ✅ FIXED: saves None instead of ''
             if 'notes' in data:
-                quotation.notes = data.get('notes', '').strip()
+                quotation.notes = data.get('notes', '').strip() or None
 
-            # ---------- UPDATE STATUS ----------
+            # ---------- UPDATE STATUS ----------  ✅ FIXED: added 'submitted' and 'rejected'
             new_status = data.get('status')
-            if new_status and new_status in ['draft', 'sent', 'accepted', 'expired']:
+            if new_status and new_status in ['draft', 'sent', 'submitted', 'accepted', 'rejected', 'expired']:
                 quotation.status = new_status
                 logger.info(f"✅ Status → {new_status}")
 
@@ -8340,7 +8265,6 @@ def update_quotation(request, pk):
                     from django.utils.text import get_valid_filename
                     safe_name = get_valid_filename(proposal_file.name)
 
-                    # Delete old file from storage if replacing
                     if quotation.proposal_attachment:
                         try:
                             quotation.proposal_attachment.delete(save=False)
@@ -8360,7 +8284,6 @@ def update_quotation(request, pk):
             items_data = data.get('items', [])
             logger.info(f"📦 Processing {len(items_data)} items")
 
-            # Get existing item IDs
             existing_item_ids = set(
                 QuotationItem.objects.filter(quotation=quotation).values_list('id', flat=True)
             )
@@ -8410,6 +8333,7 @@ def update_quotation(request, pk):
                     _upd_notes = item.notes if hasattr(item, 'notes') and item.notes else ''
                     if _upd_notes and _upd_notes.strip():
                         _upd_desc = (_upd_desc + '\n' + _upd_notes.strip()) if _upd_desc and _upd_desc.strip() else _upd_notes.strip()
+
                     item_values = {
                         'item': item,
                         'item_name': item.name,
@@ -8471,13 +8395,12 @@ def update_quotation(request, pk):
             total_tax = Decimal(str(data.get('total_tax', 0)))
             grand_total = Decimal(str(data.get('grand_total', 0)))
 
-            # If totals are 0 or invalid, recalculate from items
             if grand_total <= 0 or subtotal <= 0:
                 qs = QuotationItem.objects.filter(quotation=quotation)
                 subtotal = Decimal('0')
                 total_discount = Decimal('0')
                 total_tax = Decimal('0')
-                
+
                 if qs.exists():
                     for qi in qs:
                         item_sub = (
@@ -8547,7 +8470,6 @@ def update_quotation(request, pk):
         }, status=500)
 
 
-
 from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
 from datetime import timedelta
@@ -8566,12 +8488,12 @@ def download_quotation(request, quotation_id):
     dropdown in the lead form), so each lead shows its own branch correctly.
     """
     from .models import Quotation
-    
+
     quotation = get_object_or_404(Quotation, id=quotation_id)
-    
+
     # ── Step 1: Get the associated Lead ──────────────────────────────────
     lead = _get_lead_from_quotation(quotation)
-    
+
     # ── Step 2: Client address (business vs individual) ───────────────────
     client_address = ''
     if lead:
@@ -8579,17 +8501,16 @@ def download_quotation(request, quotation_id):
             client_address = getattr(lead, 'place', '') or ''
         else:
             client_address = getattr(lead, 'individualPlace', '') or ''
-    
+
     # ── Step 3: Resolve the correct branch ID ─────────────────────────────
     branch_id, source = _resolve_branch_id(quotation, lead, request)
-    
+
     # ── Step 4: Load Department from DB using the resolved branch_id ──────
     branch = None
     try:
         from purchase_order.models import Department
-        
+
         if branch_id:
-            # Try to find department by ID (if branch_id is numeric)
             if str(branch_id).isdigit():
                 try:
                     department = Department.objects.get(id=int(branch_id), is_active=True)
@@ -8605,14 +8526,12 @@ def download_quotation(request, quotation_id):
                     )
                     branch = get_default_department()
             else:
-                # If branch_id is not numeric (like a name), try to find by name
                 try:
-                    # Try exact name match first
                     department = Department.objects.filter(
                         name__iexact=branch_id.strip(),
                         is_active=True
                     ).first()
-                    
+
                     if department:
                         branch = _dept_to_branch(department)
                         logger.info(
@@ -8620,12 +8539,11 @@ def download_quotation(request, quotation_id):
                             f"(ID: {branch['id']}, source: {source})"
                         )
                     else:
-                        # Try partial name match as fallback
                         department = Department.objects.filter(
                             name__icontains=branch_id.strip(),
                             is_active=True
                         ).first()
-                        
+
                         if department:
                             branch = _dept_to_branch(department)
                             logger.info(
@@ -8640,34 +8558,33 @@ def download_quotation(request, quotation_id):
                     branch = get_default_department()
         else:
             branch = get_default_department()
-    
+
     except ImportError:
         logger.warning("⚠️ Department model not available — using fallback")
         branch = get_fallback_branch(branch_id)
-    
+
     # ── Step 5: Build address & contact display strings ───────────────────
     if branch:
         parts = [branch[k] for k in ('address', 'city', 'state') if branch.get(k)]
         if branch.get('pincode'):
             parts.append(f"PIN: {branch['pincode']}")
         branch['full_address_display'] = ', '.join(parts)
-        
+
         cp = []
-        if branch.get('contact_number'):   
+        if branch.get('contact_number'):
             cp.append(branch['contact_number'])
-        if branch.get('alternate_number'): 
+        if branch.get('alternate_number'):
             cp.append(branch['alternate_number'])
         branch['contact_display'] = ' / '.join(cp) if cp else ''
-        
-        # ✅ Ensure has_logo is properly set
+
         if 'has_logo' not in branch:
             branch['has_logo'] = bool(branch.get('logo_url'))
-    
+
     # ── Step 6: Calculate items and totals ────────────────────────────────
     items = quotation.items.all()
     subtotal = 0
     total_tax = 0
-    
+
     for item in items:
         sale_price = getattr(item, 'sales_price', 0) or 0
         quantity   = getattr(item, 'quantity', 1) or 1
@@ -8675,19 +8592,19 @@ def download_quotation(request, quotation_id):
         subtotal  += item_total
         tax_pct    = getattr(item, 'tax_percentage', 0) or 0
         total_tax += (item_total * tax_pct) / 100
-    
+
     discount_amount  = getattr(quotation, 'discount_amount', 0) or 0
     shipping_charges = getattr(quotation, 'shipping_charges', 0) or 0
     grand_total      = subtotal + total_tax - discount_amount + shipping_charges
-    
+
     def fmt(value):
         return f"{value:,.2f}"
-    
+
     # ── Step 7: Client info ───────────────────────────────────────────────
     client_name  = getattr(quotation, 'client_name', '')  or ''
     client_phone = getattr(quotation, 'client_phone', '') or ''
     client_email = getattr(quotation, 'client_email', '') or ''
-    
+
     if lead:
         if not client_name:
             client_name = getattr(lead, 'ownerName', '') or ''
@@ -8695,7 +8612,7 @@ def download_quotation(request, quotation_id):
             client_phone = getattr(lead, 'phoneNo', '') or ''
         if not client_email:
             client_email = getattr(lead, 'email', '') or ''
-    
+
     # ── Step 8: Build context ─────────────────────────────────────────────
     context = {
         # Core objects
@@ -8703,7 +8620,7 @@ def download_quotation(request, quotation_id):
         'branch':    branch,
         'items':     items,
         'lead_data': lead,
-        
+
         # Money values
         'subtotal':              fmt(subtotal),
         'subtotal_raw':          subtotal,
@@ -8715,7 +8632,7 @@ def download_quotation(request, quotation_id):
         'shipping_charges_raw':  shipping_charges,
         'grand_total':           fmt(grand_total),
         'grand_total_raw':       grand_total,
-        
+
         # Metadata
         'item_count':       items.count(),
         'today':            timezone.now().date(),
@@ -8727,23 +8644,26 @@ def download_quotation(request, quotation_id):
                             or getattr(quotation, 'quotation_date', None)
                             or timezone.now(),
         'created_place':    branch.get('city', '') if branch else '',
-        
+
         # Client info
         'client_name':    client_name,
         'client_email':   client_email,
         'client_phone':   client_phone,
         'client_address': client_address,
-        
+
         # ✅ Company / Branch info — each lead gets its OWN branch data
-        'company_name':     branch['name']                       if branch else 'Our Company',
+        'company_name':     branch['name']                        if branch else 'Our Company',
         'company_address':  branch.get('full_address_display', '') if branch else '',
-        'company_contact':  branch.get('contact_display', '')    if branch else '',
-        'company_gst':      branch.get('gst_number', '')         if branch else '',
-        'company_email':    branch.get('email', '')              if branch else '',
-        'company_logo_url': branch.get('logo_url', '')           if branch else '',
-        'company_has_logo': branch.get('has_logo', False)        if branch else False,
+        'company_contact':  branch.get('contact_display', '')     if branch else '',
+        'company_gst':      branch.get('gst_number', '')          if branch else '',
+        'company_email':    branch.get('email', '')               if branch else '',
+        'company_logo_url': branch.get('logo_url', '')            if branch else '',
+        'company_has_logo': branch.get('has_logo', False)         if branch else False,
+
+        # ✅ FIXED: Notes explicitly passed so download template always gets it
+        'notes': quotation.notes or '',
     }
-    
+
     return render(request, 'quotation_download.html', context)
 
 
@@ -13239,7 +13159,7 @@ def lead_form_view(request):
                     f"📝 Details: {details_val[:200] if details_val else 'N/A'}"
                 )
 
-                notify_numbers = ['8157831029', '8590340907']
+                notify_numbers = ['7593820007', '7593820005']
                 for number in notify_numbers:
                     try:
                         wa_payload = {
@@ -16437,7 +16357,7 @@ def quotation_form_view(request):
             except Exception:
                 pass
 
-        quotations = Quotation.objects.select_related('lead').prefetch_related('items').all().order_by('-created_at')
+        quotations = Quotation.objects.select_related('lead', 'created_by').prefetch_related('items').all().order_by('-created_at')
 
         lead_id_from_url = request.GET.get('lead_id')
         selected_lead    = None
@@ -16872,27 +16792,29 @@ def edit_quotation(request, quotation_id):
     try:
         quotation       = Quotation.objects.get(id=quotation_id)
         quotation_items = QuotationItem.objects.filter(quotation=quotation)
-        items           = Item.objects.all()
         leads           = Lead.objects.filter(status='Active')
-        sections        = items.values_list('section', flat=True).distinct()
         taxes           = TaxMaster.objects.all().order_by('name')
 
-        items_json = []
-        for item in items:
-            items_json.append({
-                'id':             item.id,
-                'name':           item.name,
-                'description':    item.description or '',
-                'unit_of_measure': item.unit_of_measure,
-                'mrp':            float(item.mrp) if item.mrp else 0,
-                'purchase_price': float(item.purchase_price) if item.purchase_price else 0,
-                'cost':           float(item.cost) if item.cost else 0,
-                'tax_percentage': float(item.tax_percentage) if item.tax_percentage else 0,
-                'hsn_code':       item.hsn_code or '',
-                'section':        item.section or '',
-                'department':     item.department.name if item.department else 'N/A',
-                'is_active':      item.is_active,
-            })
+        from purchase_order.models import Item as PurchaseItem
+        items = PurchaseItem.objects.filter(is_active=True).order_by('section', 'name')
+        sections = items.values_list('section', flat=True).distinct()
+
+        items_json = json.dumps([
+            {
+                'id':              item.id,
+                'name':            item.name,
+                'description':     item.description or '',
+                'notes':           item.notes or '',          # ← added
+                'unit_of_measure': item.unit_of_measure or '',
+                'mrp':             float(item.mrp) if item.mrp else 0,
+                'cost':            float(item.cost) if item.cost else 0,
+                'tax_percentage':  float(item.tax_percentage) if item.tax_percentage else 0,
+                'section':         (item.section or 'GENERAL').upper().strip(),
+                'department':      item.department.name if item.department else 'N/A',
+                'is_active':       item.is_active,
+            }
+            for item in items
+        ])
 
         context = {
             'quotation':       quotation,
@@ -17060,11 +16982,20 @@ def update_quotation(request, pk):
                     if quotation_item_id and str(quotation_item_id).isdigit():
                         try:
                             qi = QuotationItem.objects.get(id=int(quotation_item_id), quotation=quotation)
-                            # ✅ Preserve existing description — don't overwrite notes set from quotation_list
-                            # Only update description if the item itself changed
+                            # ✅ IMPROVED: Preserve existing description in all cases
+                            # Description is either:
+                            # - Set by user via notes popup (contains notes+description)
+                            # - Set during creation from Item master
+                            # Either way, don't overwrite it unless item changed
                             if qi.item_id != item.id:
+                                # Item changed: rebuild description from new item
                                 item_values['description'] = _build_description(item)
-                            # else: leave qi.description untouched
+                                logger.debug(f"Item changed for row {index+1}, rebuilding description")
+                            else:
+                                # Item stayed same: keep existing description (preserves edited notes)
+                                item_values['description'] = qi.description
+                                logger.debug(f"Item unchanged for row {index+1}, preserving existing description with notes")
+                            
                             for k, v in item_values.items():
                                 setattr(qi, k, v)
                             qi.save()
@@ -17169,12 +17100,12 @@ def download_quotation(request, quotation_id):
     dropdown in the lead form), so each lead shows its own branch correctly.
     """
     from .models import Quotation
-    
+
     quotation = get_object_or_404(Quotation, id=quotation_id)
-    
+
     # ── Step 1: Get the associated Lead ──────────────────────────────────
     lead = _get_lead_from_quotation(quotation)
-    
+
     # ── Step 2: Client address (business vs individual) ───────────────────
     client_address = ''
     if lead:
@@ -17182,17 +17113,16 @@ def download_quotation(request, quotation_id):
             client_address = getattr(lead, 'place', '') or ''
         else:
             client_address = getattr(lead, 'individualPlace', '') or ''
-    
+
     # ── Step 3: Resolve the correct branch ID ─────────────────────────────
     branch_id, source = _resolve_branch_id(quotation, lead, request)
-    
+
     # ── Step 4: Load Department from DB using the resolved branch_id ──────
     branch = None
     try:
         from purchase_order.models import Department
-        
+
         if branch_id:
-            # Try to find department by ID (if branch_id is numeric)
             if str(branch_id).isdigit():
                 try:
                     department = Department.objects.get(id=int(branch_id), is_active=True)
@@ -17208,14 +17138,12 @@ def download_quotation(request, quotation_id):
                     )
                     branch = get_default_department()
             else:
-                # If branch_id is not numeric (like a name), try to find by name
                 try:
-                    # Try exact name match first
                     department = Department.objects.filter(
                         name__iexact=branch_id.strip(),
                         is_active=True
                     ).first()
-                    
+
                     if department:
                         branch = _dept_to_branch(department)
                         logger.info(
@@ -17223,12 +17151,11 @@ def download_quotation(request, quotation_id):
                             f"(ID: {branch['id']}, source: {source})"
                         )
                     else:
-                        # Try partial name match as fallback
                         department = Department.objects.filter(
                             name__icontains=branch_id.strip(),
                             is_active=True
                         ).first()
-                        
+
                         if department:
                             branch = _dept_to_branch(department)
                             logger.info(
@@ -17243,34 +17170,33 @@ def download_quotation(request, quotation_id):
                     branch = get_default_department()
         else:
             branch = get_default_department()
-    
+
     except ImportError:
         logger.warning("⚠️ Department model not available — using fallback")
         branch = get_fallback_branch(branch_id)
-    
+
     # ── Step 5: Build address & contact display strings ───────────────────
     if branch:
         parts = [branch[k] for k in ('address', 'city', 'state') if branch.get(k)]
         if branch.get('pincode'):
             parts.append(f"PIN: {branch['pincode']}")
         branch['full_address_display'] = ', '.join(parts)
-        
+
         cp = []
-        if branch.get('contact_number'):   
+        if branch.get('contact_number'):
             cp.append(branch['contact_number'])
-        if branch.get('alternate_number'): 
+        if branch.get('alternate_number'):
             cp.append(branch['alternate_number'])
         branch['contact_display'] = ' / '.join(cp) if cp else ''
-        
-        # ✅ Ensure has_logo is properly set
+
         if 'has_logo' not in branch:
             branch['has_logo'] = bool(branch.get('logo_url'))
-    
+
     # ── Step 6: Calculate items and totals ────────────────────────────────
     items = quotation.items.all()
     subtotal = 0
     total_tax = 0
-    
+
     for item in items:
         sale_price = getattr(item, 'sales_price', 0) or 0
         quantity   = getattr(item, 'quantity', 1) or 1
@@ -17278,19 +17204,19 @@ def download_quotation(request, quotation_id):
         subtotal  += item_total
         tax_pct    = getattr(item, 'tax_percentage', 0) or 0
         total_tax += (item_total * tax_pct) / 100
-    
+
     discount_amount  = getattr(quotation, 'discount_amount', 0) or 0
     shipping_charges = getattr(quotation, 'shipping_charges', 0) or 0
     grand_total      = subtotal + total_tax - discount_amount + shipping_charges
-    
+
     def fmt(value):
         return f"{value:,.2f}"
-    
+
     # ── Step 7: Client info ───────────────────────────────────────────────
     client_name  = getattr(quotation, 'client_name', '')  or ''
     client_phone = getattr(quotation, 'client_phone', '') or ''
     client_email = getattr(quotation, 'client_email', '') or ''
-    
+
     if lead:
         if not client_name:
             client_name = getattr(lead, 'ownerName', '') or ''
@@ -17298,7 +17224,7 @@ def download_quotation(request, quotation_id):
             client_phone = getattr(lead, 'phoneNo', '') or ''
         if not client_email:
             client_email = getattr(lead, 'email', '') or ''
-    
+
     # ── Step 8: Build context ─────────────────────────────────────────────
     context = {
         # Core objects
@@ -17306,7 +17232,7 @@ def download_quotation(request, quotation_id):
         'branch':    branch,
         'items':     items,
         'lead_data': lead,
-        
+
         # Money values
         'subtotal':              fmt(subtotal),
         'subtotal_raw':          subtotal,
@@ -17318,7 +17244,7 @@ def download_quotation(request, quotation_id):
         'shipping_charges_raw':  shipping_charges,
         'grand_total':           fmt(grand_total),
         'grand_total_raw':       grand_total,
-        
+
         # Metadata
         'item_count':       items.count(),
         'today':            timezone.now().date(),
@@ -17330,23 +17256,26 @@ def download_quotation(request, quotation_id):
                             or getattr(quotation, 'quotation_date', None)
                             or timezone.now(),
         'created_place':    branch.get('city', '') if branch else '',
-        
+
         # Client info
         'client_name':    client_name,
         'client_email':   client_email,
         'client_phone':   client_phone,
         'client_address': client_address,
-        
+
         # ✅ Company / Branch info — each lead gets its OWN branch data
-        'company_name':     branch['name']                       if branch else 'Our Company',
+        'company_name':     branch['name']                        if branch else 'Our Company',
         'company_address':  branch.get('full_address_display', '') if branch else '',
-        'company_contact':  branch.get('contact_display', '')    if branch else '',
-        'company_gst':      branch.get('gst_number', '')         if branch else '',
-        'company_email':    branch.get('email', '')              if branch else '',
-        'company_logo_url': branch.get('logo_url', '')           if branch else '',
-        'company_has_logo': branch.get('has_logo', False)        if branch else False,
+        'company_contact':  branch.get('contact_display', '')     if branch else '',
+        'company_gst':      branch.get('gst_number', '')          if branch else '',
+        'company_email':    branch.get('email', '')               if branch else '',
+        'company_logo_url': branch.get('logo_url', '')            if branch else '',
+        'company_has_logo': branch.get('has_logo', False)         if branch else False,
+
+        # ✅ FIXED: Notes explicitly passed so download template always gets it
+        'notes': quotation.notes or '',
     }
-    
+
     return render(request, 'quotation_download.html', context)
 
 
@@ -17917,7 +17846,8 @@ from .models import Quotation, QuotationItem
 def update_quotation_item_notes(request, item_id):
     """
     Update the notes field on purchase_order.Item (master) and on all
-    QuotationItem rows that reference that item.
+    QuotationItem rows that reference that item, PLUS update the description
+    field in QuotationItem so notes are displayed in quotation_download.html.
     Called from the 'Save to Item Master' button in the quotation form popup.
     """
     try:
@@ -17935,11 +17865,33 @@ def update_quotation_item_notes(request, item_id):
             pass
 
         # 2. Sync notes onto every QuotationItem row linked to this item
-        updated_count = QuotationItem.objects.filter(item_id=item_id).update(notes=new_notes)
+        # Also update description field to include notes (for display in quotation_download)
+        quotation_items = QuotationItem.objects.filter(item_id=item_id)
+        updated_count = 0
+        
+        for qi in quotation_items:
+            # Extract item description from the Item master
+            item_desc = (item_id and POItem.objects.filter(id=item_id).values_list('description', flat=True).first()) or ''
+            item_desc = (item_desc or '').strip()
+            
+            # Build new description: item desc + new notes
+            if new_notes:
+                if item_desc:
+                    new_description = item_desc + '\n' + new_notes
+                else:
+                    new_description = new_notes
+            else:
+                new_description = item_desc
+            
+            # Update both notes and description fields
+            qi.notes = new_notes
+            qi.description = new_description
+            qi.save(update_fields=['notes', 'description'])
+            updated_count += 1
 
         return JsonResponse({
             'success': True,
-            'message': 'Notes saved successfully.',
+            'message': 'Notes saved successfully and will appear in quotation download.',
             'item_master_updated': item_updated,
             'quotation_items_updated': updated_count,
         })

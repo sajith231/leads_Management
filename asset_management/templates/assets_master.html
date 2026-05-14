@@ -1,0 +1,1298 @@
+{% extends "base.html" %}
+
+{% block title %}Asset Master{% endblock %}
+
+{% block content %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Asset Master | Focused Asset Creation</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg:            #ffffff;
+            --surface:       #f4f5f7;
+            --card:          #ffffff;
+            --border:        #e0e3ea;
+            --accent:        #f0a500;
+            --accent2:       #e05c2a;
+            --green:         #16a34a;
+            --red:           #dc2626;
+            --blue:          #2563eb;
+            --text:          #111318;
+            --muted:         #6b7280;
+            --tag-bg:        #f0f1f4;
+            --input-bg:      #f8f9fb;
+            --shadow:        0 8px 20px rgba(0,0,0,0.05);
+            --transition:    0.2s ease;
+        }
+
+        body {
+            background: var(--bg);
+            font-family: 'DM Sans', sans-serif;
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .app-container {
+            max-width: 1500px;
+            margin: 0 auto;
+            padding: 32px 28px 48px;
+            width: 100%;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: white;
+            box-shadow: 0 6px 14px rgba(240,165,0,0.25);
+        }
+
+        .topbar-title h1 {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+
+        .topbar-title p {
+            font-size: 13px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: var(--shadow);
+            transition: all 0.2s;
+        }
+
+        .screen {
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        .screen-hidden {
+            display: none !important;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .field.span-2 { grid-column: span 2; }
+        .field.span-3 { grid-column: span 3; }
+
+        label {
+            font-size: 12px;
+            font-weight: 600;
+            color: black;
+            letter-spacing: 0.5px;
+            text-transform: capitalize;
+        }
+
+        label .required {
+            color: var(--accent);
+            margin-left: 4px;
+        }
+
+        input, select, textarea {
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 14px;
+            font-size: 14px;
+            font-family: 'DM Sans', sans-serif;
+            transition: all 0.2s;
+            outline: none;
+            width: 100%;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--accent);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(240,165,0,0.12);
+        }
+
+        .input-icon-wrap { position: relative; }
+
+        .input-icon-wrap i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .input-icon-wrap input,
+        .input-icon-wrap select {
+            padding-left: 40px;
+        }
+
+        .spec-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-top: 8px;
+        }
+
+        .spec-item {
+            background: var(--tag-bg);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px 16px;
+        }
+
+        .spec-item label {
+            font-size: 11px;
+            text-transform: capitalize;
+            color: black;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .spec-item input {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--border);
+            border-radius: 0;
+            padding: 6px 0 4px;
+            font-family: 'DM Mono', monospace;
+            font-size: 13px;
+        }
+
+        .spec-item input:focus {
+            border-bottom-color: var(--accent);
+            box-shadow: none;
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 26px 0;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 16px;
+            justify-content: flex-end;
+            margin-top: 28px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 24px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            box-shadow: 0 3px 10px rgba(240,165,0,0.3);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(240,165,0,0.35);
+        }
+
+        .btn-secondary {
+            background: rgba(0,0,0,0.05);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: var(--tag-bg);
+            border-color: var(--accent);
+        }
+
+        .btn-danger {
+            background: rgba(220,38,38,0.1);
+            color: var(--red);
+            border: 1px solid rgba(220,38,38,0.25);
+        }
+
+        .btn-sm {
+            padding: 7px 14px;
+            font-size: 14px;
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 14px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .search-wrap {
+            position: relative;
+            flex: 1;
+        }
+
+        .search-wrap i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted);
+        }
+
+        .search-wrap input { padding-left: 40px; }
+
+        .table-wrap {
+            overflow-x: auto;
+            border-radius: 18px;
+            border: 1px solid var(--border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            background: var(--surface);
+            padding: 14px 16px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            text-transform: capitalize;
+            color: black;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tbody tr {
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            transition: background 0.15s;
+        }
+
+        tbody tr:hover { background: rgba(240,165,0,0.04); }
+
+        tbody td {
+            padding: 14px 16px;
+            font-size: 13.5px;
+            vertical-align: middle;
+        }
+
+        .asset-name {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+        }
+
+        .asset-icon {
+            width: 34px;
+            height: 34px;
+            background: var(--tag-bg);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .mono {
+            font-family: 'DM Mono', monospace;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge-available {
+            background: rgba(240,165,0,0.12);
+            color: #c97e00;
+            border: 1px solid rgba(240,165,0,0.2);
+        }
+
+        .badge-assigned {
+            background: rgba(37,99,235,0.12);
+            color: var(--blue);
+            border: 1px solid rgba(37,99,235,0.2);
+        }
+
+        .badge-returned {
+            background: rgba(22,163,74,0.12);
+            color: var(--green);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.65);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            box-sizing: border-box;
+        }
+
+        .modal-overlay.open { display: flex; }
+
+        .modal {
+            background: white;
+            border-radius: 28px;
+            width: 100%;
+            max-width: 700px;
+            max-height: 86vh;
+            overflow: hidden;
+            box-shadow: 0 40px 80px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            left: 0;
+            transform: none;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 22px 24px 18px;
+            border-bottom: 1px solid var(--border);
+            background: white;
+            border-radius: 28px 28px 0 0;
+            flex-shrink: 0;
+        }
+
+        .modal-header-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 22px;
+            flex-shrink: 0;
+            box-shadow: 0 6px 14px rgba(240,165,0,0.3);
+        }
+
+        .modal-header-text { flex: 1; }
+
+        .modal-header-text h3 {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+
+        .modal-header-text p {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 3px;
+            font-family: 'DM Mono', monospace;
+        }
+
+        .modal-body {
+            padding: 20px 24px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .detail-section {}
+
+        .detail-section-title {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .detail-section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .detail-grid.cols-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        @media (max-width: 600px) {
+            .detail-grid { grid-template-columns: repeat(2, 1fr); }
+            .modal-header-text h3 { font-size: 16px; }
+        }
+
+        .detail-cell {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 12px 14px;
+        }
+
+        .detail-cell label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            color: var(--muted);
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .detail-cell .cell-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+            word-break: break-word;
+        }
+
+        .detail-cell .cell-value.mono {
+            font-family: 'DM Mono', monospace;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .detail-cell .cell-value.muted {
+            color: var(--muted);
+            font-weight: 400;
+        }
+
+        .modal-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            border-radius: 40px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .notes-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px 16px;
+            font-size: 14px;
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .modal-footer {
+            padding: 14px 24px 20px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            border-top: 1px solid var(--border);
+            flex-shrink: 0;
+            background: white;
+            border-radius: 0 0 28px 28px;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: white;
+            border-left: 4px solid var(--accent);
+            border-radius: 16px;
+            padding: 14px 20px;
+            display: flex;
+            gap: 12px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+            transform: translateY(80px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            z-index: 300;
+            min-width: 240px;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Loading overlay */
+        .loading-row td {
+            text-align: center;
+            padding: 56px 20px;
+            color: var(--muted);
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 22px;
+            height: 22px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .empty-state {
+            text-align: center;
+            padding: 56px 20px;
+            color: var(--muted);
+        }
+
+        @media (max-width: 780px) {
+            .app-container { padding: 20px 18px; }
+            .form-grid { grid-template-columns: 1fr; }
+            .field.span-2, .field.span-3 { grid-column: span 1; }
+            .spec-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+
+<div class="app-container">
+    <!-- Top Bar -->
+    <div class="topbar">
+        <div class="topbar-left">
+            <div class="logo-icon"><i class="fas fa-cube"></i></div>
+            <div class="topbar-title">
+                <h1>Asset Master</h1>
+                <p>Intelligent asset lifecycle</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== SCREEN 1: ASSET LIST ========== -->
+    <div id="screen-list" class="screen">
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                <div class="card-title" style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; font-size: 14px; color: black;">
+                    <i class="fas fa-database" style="color: var(--accent); margin-right: 6px;"></i> REGISTERED ASSETS
+                </div>
+                <button id="show-add-button" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus-circle"></i> Add New Asset
+                </button>
+            </div>
+
+            <!-- Search & Filter -->
+            <div class="search-bar">
+                <div class="search-wrap">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="global-search" placeholder="Search by name, ID or serial..." autocomplete="off">
+                </div>
+                <select id="status-filter" style="width: 150px; border-radius: 40px;">
+                    <option value="">All status</option>
+                    <option value="available">Available</option>
+                    <option value="assigned">Assigned</option>
+                    <option value="returned">Returned</option>
+                </select>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Asset</th>
+                            <th>Category</th>
+                            <th>Serial</th>
+                            <th>Purchase Date</th>
+                            <th>Value (₹)</th>
+                            <th>Status</th>
+                            <th style="width: 130px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="asset-table-body">
+                        <tr class="loading-row">
+                            <td colspan="7"><span class="spinner"></span> Loading assets…</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== SCREEN 2: ADD / EDIT FORM ========== -->
+    <div id="screen-form" class="screen screen-hidden">
+        <div class="card">
+            <div class="card-title" style="font-size: 14px; font-weight: 700;">
+                <i class="fas fa-plus-circle" style="color: var(--accent)"></i>
+                <span id="form-screen-title">Create new asset</span>
+            </div>
+
+            <div class="form-grid" style="margin-top: 24px;">
+                <div class="field">
+                    <label>Asset Name <span class="required">*</span></label>
+                    <div class="input-icon-wrap">
+                        <i class="fas fa-tag"></i>
+                        <input type="text" id="am-name" placeholder="e.g. MacBook Pro M3">
+                    </div>
+                </div>
+                <div class="field">
+                    <label>Asset ID / Code <span class="required">*</span></label>
+                    <div class="input-icon-wrap">
+                        <i class="fas fa-barcode"></i>
+                        <input type="text" id="am-id" placeholder="AST-2025-XXX">
+                    </div>
+                </div>
+                <div class="field">
+                    <label>Category <span class="required">*</span></label>
+                    <select id="am-category">
+                        <option value="">Select Category</option>
+                        <option>Laptop</option>
+                        <option>Desktop</option>
+                        <option>Mobile / Tablet</option>
+                        <option>Monitor</option>
+                        <option>Printer / Scanner</option>
+                        <option>Networking Equipment</option>
+                        <option>Vehicle</option>
+                        <option>Furniture</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Brand / Make</label>
+                    <input type="text" id="am-brand" placeholder="Dell, Apple, HP">
+                </div>
+                <div class="field">
+                    <label>Model Number</label>
+                    <input type="text" id="am-model" placeholder="Latitude 5440">
+                </div>
+                <div class="field">
+                    <label>Serial Number</label>
+                    <input type="text" id="am-serial" placeholder="SN-1234">
+                </div>
+                <div class="field">
+                    <label>Purchase Date</label>
+                    <input type="date" id="am-purchase-date">
+                </div>
+                <div class="field">
+                    <label>Purchase Value (₹)</label>
+                    <input type="number" id="am-value" placeholder="0.00" min="0">
+                </div>
+                <div class="field">
+                    <label>Warranty Expiry</label>
+                    <input type="date" id="am-warranty">
+                </div>
+            </div>
+
+            <div class="divider"></div>
+            <div class="card-title" style="font-size: 13px; font-weight: 700;">
+                <i class="fas fa-microchip"></i> Technical Specifications
+            </div>
+            <div class="spec-grid">
+                <div class="spec-item">
+                    <label>Processor / CPU</label>
+                    <input type="text" id="spec-cpu" placeholder="Intel Core i7">
+                </div>
+                <div class="spec-item">
+                    <label>RAM</label>
+                    <input type="text" id="spec-ram" placeholder="16GB DDR5">
+                </div>
+                <div class="spec-item">
+                    <label>Storage</label>
+                    <input type="text" id="spec-storage" placeholder="512GB SSD">
+                </div>
+                <div class="spec-item">
+                    <label>Display / Screen</label>
+                    <input type="text" id="spec-display" placeholder='14″ Retina'>
+                </div>
+                <div class="spec-item">
+                    <label>OS / Software</label>
+                    <input type="text" id="spec-os" placeholder="Windows 11 Pro">
+                </div>
+                <div class="spec-item">
+                    <label>Color / Finish</label>
+                    <input type="text" id="spec-color" placeholder="Space Gray">
+                </div>
+            </div>
+
+            <div class="field" style="margin-top: 18px;">
+                <label>Additional Notes</label>
+                <textarea id="am-notes" rows="3" placeholder="Accessories, condition, remarks…"></textarea>
+            </div>
+
+            <div class="form-actions">
+                <button class="btn btn-secondary" id="cancel-form-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Assets
+                </button>
+                <button class="btn btn-primary" id="save-asset-btn">
+                    <i class="fas fa-save"></i> Save Asset
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Asset Modal -->
+<div class="modal-overlay" id="view-modal">
+    <div class="modal">
+        <!-- Header -->
+        <div class="modal-header">
+            <div class="modal-header-icon" id="modal-header-icon">
+                <i class="fas fa-box"></i>
+            </div>
+            <div class="modal-header-text">
+                <h3 id="modal-title">Asset Details</h3>
+                <p id="modal-subtitle">—</p>
+            </div>
+            <div id="modal-status-wrap"></div>
+            <button class="btn btn-secondary btn-sm" onclick="closeModal()" style="padding: 8px 14px; margin-left: 8px;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="modal-body" id="modal-content"></div>
+
+        <!-- Footer -->
+        <div class="modal-footer">
+            <button class="btn btn-secondary btn-sm" id="modal-edit-btn" onclick="">
+                <i class="fas fa-pen"></i> Edit Asset
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="closeModal()">
+                <i class="fas fa-times"></i> Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toastMsg" class="toast">
+    <i class="fas fa-check-circle" style="color: var(--green);"></i>
+    <div>
+        <strong id="toast-title"></strong>
+        <div id="toast-desc" style="font-size: 12px; margin-top: 4px;"></div>
+    </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────
+//  API base URL  (resolved from Django's URL conf)
+// ─────────────────────────────────────────────────────────
+const API_BASE = "{% url 'asset_list' %}".replace(/\/$/, '');
+
+// ─────────────────────────────────────────────────────────
+//  CSRF helper  (reads Django's csrftoken cookie)
+// ─────────────────────────────────────────────────────────
+function getCookie(name) {
+    const match = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '=([^;]*)'));
+    return match ? decodeURIComponent(match[1]) : null;
+}
+
+const CSRF_TOKEN = getCookie('csrftoken');
+
+async function apiPost(url, body) {
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': CSRF_TOKEN,
+        },
+        body: JSON.stringify(body),
+    });
+    return res.json();
+}
+
+async function apiGet(url) {
+    const res = await fetch(url);
+    return res.json();
+}
+
+// ─────────────────────────────────────────────────────────
+//  App state
+// ─────────────────────────────────────────────────────────
+let assets = [];
+let editModeFlag    = false;
+let editingAssetId  = null;
+
+const categoryIcons = {
+    'Laptop':               'fa-laptop',
+    'Desktop':              'fa-desktop',
+    'Mobile / Tablet':      'fa-mobile-alt',
+    'Monitor':              'fa-tv',
+    'Printer / Scanner':    'fa-print',
+    'Networking Equipment': 'fa-network-wired',
+    'Vehicle':              'fa-car',
+    'Furniture':            'fa-couch',
+    'Other':                'fa-box',
+};
+
+// DOM refs
+const screenList    = document.getElementById('screen-list');
+const screenForm    = document.getElementById('screen-form');
+const addNewBtn     = document.getElementById('show-add-button');
+const cancelFormBtn = document.getElementById('cancel-form-btn');
+const saveBtn       = document.getElementById('save-asset-btn');
+
+// ─────────────────────────────────────────────────────────
+//  Screen navigation
+// ─────────────────────────────────────────────────────────
+function showListScreen() {
+    screenList.classList.remove('screen-hidden');
+    screenForm.classList.add('screen-hidden');
+}
+
+function showFormScreen(editMode = false) {
+    screenList.classList.add('screen-hidden');
+    screenForm.classList.remove('screen-hidden');
+    document.getElementById('form-screen-title').textContent = editMode ? 'Edit asset' : 'Create new asset';
+    screenForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ─────────────────────────────────────────────────────────
+//  Load all assets from Django API
+// ─────────────────────────────────────────────────────────
+async function loadAssets() {
+    const tbody = document.getElementById('asset-table-body');
+    tbody.innerHTML = `<tr class="loading-row"><td colspan="7"><span class="spinner"></span> Loading assets…</td></tr>`;
+    try {
+        const data = await apiGet(`${API_BASE}/`);
+        assets = data.assets || [];
+        renderAssetTable();
+    } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><i class="fas fa-exclamation-triangle fa-2x" style="color:var(--red)"></i><p style="margin-top:10px">Failed to load assets. Please refresh.</p></div></td></tr>`;
+        console.error('loadAssets error:', err);
+    }
+}
+
+// ─────────────────────────────────────────────────────────
+//  Render table  (client-side search + filter on loaded data)
+// ─────────────────────────────────────────────────────────
+function renderAssetTable() {
+    const searchTerm   = (document.getElementById('global-search')?.value || '').toLowerCase();
+    const statusFilter = document.getElementById('status-filter')?.value || '';
+
+    const filtered = assets.filter(a => {
+        const matchSearch  = a.name.toLowerCase().includes(searchTerm)
+                          || a.id.toLowerCase().includes(searchTerm)
+                          || (a.serial || '').toLowerCase().includes(searchTerm);
+        const matchStatus  = !statusFilter || a.status === statusFilter;
+        return matchSearch && matchStatus;
+    });
+
+    const tbody = document.getElementById('asset-table-body');
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><i class="fas fa-archive fa-2x"></i><p style="margin-top:10px">No assets found</p></div></td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = filtered.map(a => `
+        <tr>
+            <td>
+                <div class="asset-name">
+                    <div class="asset-icon"><i class="fas ${categoryIcons[a.category] || 'fa-box'}"></i></div>
+                    <div>
+                        <div>${escapeHtml(a.name)}</div>
+                        <div class="mono">${escapeHtml(a.id)}</div>
+                    </div>
+                </div>
+            </td>
+            <td>${escapeHtml(a.category)}</td>
+            <td class="mono">${escapeHtml(a.serial || '—')}</td>
+            <td class="mono">${a.purchaseDate ? new Date(a.purchaseDate).toLocaleDateString('en-IN') : '—'}</td>
+            <td class="mono">${a.value ? '₹' + Number(a.value).toLocaleString('en-IN') : '—'}</td>
+            <td>
+                <span class="badge badge-${a.status === 'available' ? 'available' : (a.status === 'assigned' ? 'assigned' : 'returned')}">
+                    <i class="fas fa-circle" style="font-size: 6px;"></i>
+                    ${a.status.charAt(0).toUpperCase() + a.status.slice(1)}
+                </span>
+            </td>
+            <td style="display: flex; gap: 6px;">
+                <button class="btn btn-secondary btn-sm" onclick="viewAssetDetails('${escapeHtml(a.id)}')"><i class="fas fa-eye"></i></button>
+                <button class="btn btn-secondary btn-sm" onclick="editAssetById('${escapeHtml(a.id)}')"><i class="fas fa-pen"></i></button>
+                <button class="btn btn-danger btn-sm"    onclick="deleteAssetById('${escapeHtml(a.id)}')"><i class="fas fa-trash"></i></button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// ─────────────────────────────────────────────────────────
+//  Form helpers
+// ─────────────────────────────────────────────────────────
+function resetFormFields() {
+    ['am-name','am-id','am-brand','am-model','am-serial','am-notes',
+     'spec-cpu','spec-ram','spec-storage','spec-display','spec-os','spec-color']
+        .forEach(id => document.getElementById(id).value = '');
+
+    document.getElementById('am-category').value    = '';
+    document.getElementById('am-purchase-date').value = '';
+    document.getElementById('am-warranty').value    = '';
+    document.getElementById('am-value').value       = '';
+    editModeFlag   = false;
+    editingAssetId = null;
+}
+
+function fillFormForEdit(a) {
+    document.getElementById('am-name').value          = a.name;
+    document.getElementById('am-id').value            = a.id;
+    document.getElementById('am-category').value      = a.category;
+    document.getElementById('am-brand').value         = a.brand || '';
+    document.getElementById('am-model').value         = a.model || '';
+    document.getElementById('am-serial').value        = a.serial || '';
+    document.getElementById('am-purchase-date').value = a.purchaseDate || '';
+    document.getElementById('am-value').value         = a.value || '';
+    document.getElementById('am-warranty').value      = a.warranty || '';
+    document.getElementById('spec-cpu').value         = a.specs.cpu || '';
+    document.getElementById('spec-ram').value         = a.specs.ram || '';
+    document.getElementById('spec-storage').value     = a.specs.storage || '';
+    document.getElementById('spec-display').value     = a.specs.display || '';
+    document.getElementById('spec-os').value          = a.specs.os || '';
+    document.getElementById('spec-color').value       = a.specs.color || '';
+    document.getElementById('am-notes').value         = a.notes || '';
+}
+
+function buildPayload() {
+    return {
+        id:           document.getElementById('am-id').value.trim(),
+        name:         document.getElementById('am-name').value.trim(),
+        category:     document.getElementById('am-category').value,
+        brand:        document.getElementById('am-brand').value.trim(),
+        model:        document.getElementById('am-model').value.trim(),
+        serial:       document.getElementById('am-serial').value.trim(),
+        purchaseDate: document.getElementById('am-purchase-date').value,
+        value:        parseFloat(document.getElementById('am-value').value) || 0,
+        warranty:     document.getElementById('am-warranty').value,
+        specs: {
+            cpu:     document.getElementById('spec-cpu').value.trim(),
+            ram:     document.getElementById('spec-ram').value.trim(),
+            storage: document.getElementById('spec-storage').value.trim(),
+            display: document.getElementById('spec-display').value.trim(),
+            os:      document.getElementById('spec-os').value.trim(),
+            color:   document.getElementById('spec-color').value.trim(),
+        },
+        notes: document.getElementById('am-notes').value.trim(),
+    };
+}
+
+// ─────────────────────────────────────────────────────────
+//  Save  (create or update)
+// ─────────────────────────────────────────────────────────
+async function saveAssetHandler() {
+    const payload = buildPayload();
+
+    if (!payload.name || !payload.id || !payload.category) {
+        showToast('Missing fields', 'Name, Asset ID and Category are required', true);
+        return;
+    }
+
+    setSaving(true);
+
+    try {
+        let data;
+        if (editModeFlag && editingAssetId) {
+            // UPDATE existing asset
+            data = await apiPost(`${API_BASE}/${encodeURIComponent(editingAssetId)}/edit/`, payload);
+        } else {
+            // CREATE new asset
+            data = await apiPost(`${API_BASE}/add/`, payload);
+        }
+
+        if (data.success) {
+            // Refresh local cache from server
+            await loadAssets();
+            resetFormFields();
+            showListScreen();
+            showToast(
+                editModeFlag ? 'Asset updated' : 'Asset created',
+                editModeFlag ? `${payload.name} has been modified` : `${payload.name} added to master list`,
+                false
+            );
+        } else {
+            showToast('Error', data.error || 'Could not save asset.', true);
+        }
+    } catch (err) {
+        showToast('Network error', 'Please try again.', true);
+        console.error('saveAssetHandler error:', err);
+    } finally {
+        setSaving(false);
+    }
+}
+
+function setSaving(saving) {
+    saveBtn.disabled       = saving;
+    cancelFormBtn.disabled = saving;
+    saveBtn.innerHTML      = saving
+        ? '<span class="spinner" style="width:16px;height:16px;border-width:2px;margin-right:0"></span> Saving…'
+        : '<i class="fas fa-save"></i> Save Asset';
+}
+
+// ─────────────────────────────────────────────────────────
+//  Delete
+// ─────────────────────────────────────────────────────────
+async function deleteAssetById(id) {
+    const asset = assets.find(a => a.id === id);
+    if (!asset) return;
+
+    if (!confirm(`Delete "${asset.name}" permanently? This action cannot be undone.`)) return;
+
+    try {
+        const data = await apiPost(`${API_BASE}/${encodeURIComponent(id)}/delete/`, {});
+        if (data.success) {
+            assets = assets.filter(a => a.id !== id);
+            renderAssetTable();
+            showToast('Asset deleted', `${asset.name} removed`, false);
+        } else {
+            showToast('Error', data.error || 'Could not delete asset.', true);
+        }
+    } catch (err) {
+        showToast('Network error', 'Please try again.', true);
+        console.error('deleteAssetById error:', err);
+    }
+}
+
+// ─────────────────────────────────────────────────────────
+//  Edit
+// ─────────────────────────────────────────────────────────
+function editAssetById(id) {
+    const asset = assets.find(a => a.id === id);
+    if (!asset) return;
+    resetFormFields();
+    fillFormForEdit(asset);
+    editModeFlag   = true;
+    editingAssetId = asset.id;
+    showFormScreen(true);
+}
+
+// ─────────────────────────────────────────────────────────
+//  View details modal
+// ─────────────────────────────────────────────────────────
+function viewAssetDetails(id) {
+    const a = assets.find(x => x.id === id);
+    if (!a) return;
+
+    // ── Header ──────────────────────────────────────────
+    const icon = categoryIcons[a.category] || 'fa-box';
+    document.getElementById('modal-header-icon').innerHTML = `<i class="fas ${icon}"></i>`;
+    document.getElementById('modal-title').textContent     = a.name;
+    document.getElementById('modal-subtitle').textContent  = a.id + (a.brand ? '  ·  ' + a.brand : '');
+
+    // Status badge in header
+    const statusColors = {
+        available: { bg: 'rgba(240,165,0,0.12)', color: '#c97e00', border: 'rgba(240,165,0,0.25)', dot: '#f0a500' },
+        assigned:  { bg: 'rgba(37,99,235,0.12)',  color: '#2563eb', border: 'rgba(37,99,235,0.25)',  dot: '#2563eb' },
+        returned:  { bg: 'rgba(22,163,74,0.12)',  color: '#16a34a', border: 'rgba(22,163,74,0.25)',  dot: '#16a34a' },
+    };
+    const sc = statusColors[a.status] || statusColors.available;
+    document.getElementById('modal-status-wrap').innerHTML = `
+        <span class="modal-status-badge" style="background:${sc.bg}; color:${sc.color}; border:1px solid ${sc.border};">
+            <i class="fas fa-circle" style="font-size:7px; color:${sc.dot};"></i>
+            ${a.status.charAt(0).toUpperCase() + a.status.slice(1)}
+        </span>`;
+
+    // Wire up Edit button
+    document.getElementById('modal-edit-btn').onclick = () => { closeModal(); editAssetById(a.id); };
+
+    // ── Body sections ────────────────────────────────────
+    function cell(label, value, mono = false) {
+        const isEmpty = !value || value === '—';
+        return `
+            <div class="detail-cell">
+                <label>${label}</label>
+                <div class="cell-value ${mono ? 'mono' : ''} ${isEmpty ? 'muted' : ''}">${isEmpty ? '—' : escapeHtml(String(value))}</div>
+            </div>`;
+    }
+
+    // Section 1 — Identification
+    const identHtml = `
+        <div class="detail-section">
+            <div class="detail-section-title"><i class="fas fa-id-card" style="color:var(--accent)"></i> Identification</div>
+            <div class="detail-grid">
+                ${cell('Asset ID', a.id, true)}
+                ${cell('Asset Name', a.name)}
+                ${cell('Category', a.category)}
+                ${cell('Brand / Make', a.brand)}
+                ${cell('Model Number', a.model, true)}
+                ${cell('Serial Number', a.serial, true)}
+            </div>
+        </div>`;
+
+    // Section 2 — Purchase Info
+    const purchaseDate  = a.purchaseDate ? new Date(a.purchaseDate).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : '';
+    const warrantyDate  = a.warranty     ? new Date(a.warranty).toLocaleDateString('en-IN',     { day:'2-digit', month:'short', year:'numeric' }) : '';
+    const purchaseValue = a.value        ? '₹ ' + Number(a.value).toLocaleString('en-IN')       : '';
+
+    // Warranty status highlight
+    let warrantyDisplay = warrantyDate || '';
+    if (a.warranty) {
+        const today   = new Date();
+        const expDate = new Date(a.warranty);
+        const daysLeft = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
+        if (daysLeft < 0)        warrantyDisplay += '  (Expired)';
+        else if (daysLeft < 90)  warrantyDisplay += `  (${daysLeft}d left)`;
+    }
+
+    const purchaseHtml = `
+        <div class="detail-section">
+            <div class="detail-section-title"><i class="fas fa-receipt" style="color:var(--accent)"></i> Purchase Info</div>
+            <div class="detail-grid">
+                ${cell('Purchase Date', purchaseDate)}
+                ${cell('Purchase Value', purchaseValue)}
+                ${cell('Warranty Expiry', warrantyDisplay)}
+            </div>
+        </div>`;
+
+    // Section 3 — Technical Specs
+    const specEntries = [
+        ['Processor / CPU', a.specs.cpu],
+        ['RAM',             a.specs.ram],
+        ['Storage',         a.specs.storage],
+        ['Display / Screen',a.specs.display],
+        ['OS / Software',   a.specs.os],
+        ['Color / Finish',  a.specs.color],
+    ];
+    const hasAnySpec = specEntries.some(([, v]) => v && v.trim());
+    const specsHtml = hasAnySpec ? `
+        <div class="detail-section">
+            <div class="detail-section-title"><i class="fas fa-microchip" style="color:var(--accent)"></i> Technical Specifications</div>
+            <div class="detail-grid">
+                ${specEntries.map(([label, val]) => cell(label, val, true)).join('')}
+            </div>
+        </div>` : '';
+
+    // Section 4 — Notes
+    const notesHtml = a.notes ? `
+        <div class="detail-section">
+            <div class="detail-section-title"><i class="fas fa-sticky-note" style="color:var(--accent)"></i> Notes</div>
+            <div class="notes-box">${escapeHtml(a.notes)}</div>
+        </div>` : '';
+
+    document.getElementById('modal-content').innerHTML = identHtml + purchaseHtml + specsHtml + notesHtml;
+    document.getElementById('view-modal').classList.add('open');
+}
+
+function closeModal() {
+    document.getElementById('view-modal').classList.remove('open');
+}
+
+// ─────────────────────────────────────────────────────────
+//  Toast
+// ─────────────────────────────────────────────────────────
+function showToast(title, desc, isError = false) {
+    const toast = document.getElementById('toastMsg');
+    document.getElementById('toast-title').textContent = title;
+    document.getElementById('toast-desc').textContent  = desc;
+    toast.style.borderLeftColor = isError ? 'var(--red)' : 'var(--accent)';
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2800);
+}
+
+// ─────────────────────────────────────────────────────────
+//  Utility
+// ─────────────────────────────────────────────────────────
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+// ─────────────────────────────────────────────────────────
+//  Event listeners
+// ─────────────────────────────────────────────────────────
+document.getElementById('global-search').addEventListener('input', renderAssetTable);
+document.getElementById('status-filter').addEventListener('change', renderAssetTable);
+
+addNewBtn.addEventListener('click', () => {
+    resetFormFields();
+    showFormScreen(false);
+});
+
+cancelFormBtn.addEventListener('click', () => {
+    resetFormFields();
+    showListScreen();
+});
+
+saveBtn.addEventListener('click', saveAssetHandler);
+
+// Close modal on overlay click
+document.getElementById('view-modal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeModal();
+});
+
+// Expose globals used in inline onclick
+window.closeModal       = closeModal;
+window.viewAssetDetails = viewAssetDetails;
+window.editAssetById    = editAssetById;
+window.deleteAssetById  = deleteAssetById;
+
+// ─────────────────────────────────────────────────────────
+//  Bootstrap
+// ─────────────────────────────────────────────────────────
+loadAssets();
+</script>
+
+{% endblock %}

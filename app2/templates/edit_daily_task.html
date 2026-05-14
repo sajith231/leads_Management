@@ -2,70 +2,506 @@
 {% load static %}
 
 {% block content %}
-<div class="container">
-    <h2 class="my-4">Edit Daily Task</h2>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+    /* Jira Color Palette */
+    :root {
+        --jira-blue: #0052CC;
+        --jira-blue-hover: #0747A6;
+        --jira-blue-light: #DEEBFF;
+        --jira-purple: #6554C0;
+        --jira-green: #00875A;
+        --jira-green-light: #E3FCEF;
+        --jira-yellow: #FF991F;
+        --jira-yellow-light: #FFFAE6;
+        --jira-red: #DE350B;
+        --jira-red-light: #FFEBE6;
+        --jira-gray-bg: #F4F5F7;
+        --jira-gray-border: #DFE1E6;
+        --jira-gray-text: #5E6C84;
+        --jira-dark-text: #172B4D;
+        --jira-white: #FFFFFF;
+    }
+
+    /* Jira-style Body */
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+        background-color: var(--jira-gray-bg);
+        color: var(--jira-dark-text);
+    }
+
+    /* Jira-style Container */
+    .jira-container {
+        max-width: 900px;
+        margin: 40px auto;
+        background-color: var(--jira-white);
+        border-radius: 3px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        padding: 32px;
+    }
+
+    /* Jira-style Header */
+    .jira-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 32px;
+        padding-bottom: 16px;
+        border-bottom: 2px solid var(--jira-gray-border);
+    }
+
+    .jira-header h2 {
+        font-size: 24px;
+        font-weight: 500;
+        color: var(--jira-dark-text);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .jira-header-icon {
+        color: var(--jira-blue);
+        font-size: 28px;
+    }
+
+    /* Jira-style Form Group */
+    .jira-form-group {
+        margin-bottom: 24px;
+    }
+
+    .jira-label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--jira-gray-text);
+        margin-bottom: 8px;
+    }
+
+    .jira-label .required {
+        color: var(--jira-red);
+        margin-left: 4px;
+    }
+
+    /* Jira-style Input */
+    .jira-input {
+        width: 100%;
+        padding: 8px 12px;
+        font-size: 14px;
+        border: 2px solid var(--jira-gray-border);
+        border-radius: 3px;
+        background-color: var(--jira-white);
+        color: var(--jira-dark-text);
+        transition: all 0.2s ease;
+    }
+
+    .jira-input:focus {
+        outline: none;
+        border-color: var(--jira-blue);
+        box-shadow: 0 0 0 1px var(--jira-blue);
+    }
+
+    .jira-input:disabled {
+        background-color: var(--jira-gray-bg);
+        color: var(--jira-gray-text);
+        cursor: not-allowed;
+    }
+
+    /* Jira-style Select */
+    .jira-select {
+        width: 100%;
+        padding: 8px 12px;
+        font-size: 14px;
+        border: 2px solid var(--jira-gray-border);
+        border-radius: 3px;
+        background-color: var(--jira-white);
+        color: var(--jira-dark-text);
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .jira-select:focus {
+        outline: none;
+        border-color: var(--jira-blue);
+        box-shadow: 0 0 0 1px var(--jira-blue);
+    }
+
+    /* Jira-style Textarea */
+    .jira-textarea {
+        width: 100%;
+        padding: 8px 12px;
+        font-size: 14px;
+        border: 2px solid var(--jira-gray-border);
+        border-radius: 3px;
+        background-color: var(--jira-white);
+        color: var(--jira-dark-text);
+        resize: vertical;
+        min-height: 100px;
+        font-family: inherit;
+        transition: all 0.2s ease;
+    }
+
+    .jira-textarea:focus {
+        outline: none;
+        border-color: var(--jira-blue);
+        box-shadow: 0 0 0 1px var(--jira-blue);
+    }
+
+    /* Jira-style Help Text */
+    .jira-help-text {
+        font-size: 12px;
+        color: var(--jira-gray-text);
+        margin-top: 6px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .jira-help-text i {
+        font-size: 14px;
+        color: var(--jira-blue);
+    }
+
+    /* Jira-style Buttons */
+    .jira-btn {
+        padding: 8px 16px;
+        border-radius: 3px;
+        font-weight: 500;
+        font-size: 14px;
+        transition: all 0.15s ease;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .jira-btn-primary {
+        background-color: var(--jira-blue);
+        color: white;
+    }
+
+    .jira-btn-primary:hover {
+        background-color: var(--jira-blue-hover);
+    }
+
+    .jira-btn-secondary {
+        background-color: transparent;
+        color: var(--jira-gray-text);
+        border: 2px solid var(--jira-gray-border);
+    }
+
+    .jira-btn-secondary:hover {
+        background-color: var(--jira-gray-bg);
+    }
+
+    .jira-btn-group {
+        display: flex;
+        gap: 12px;
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 2px solid var(--jira-gray-border);
+    }
+
+    /* Jira-style Alert */
+    .jira-alert {
+        padding: 12px 16px;
+        border-radius: 3px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 14px;
+    }
+
+    .jira-alert-success {
+        background-color: var(--jira-green-light);
+        color: var(--jira-green);
+        border-left: 4px solid var(--jira-green);
+    }
+
+    .jira-alert-error {
+        background-color: var(--jira-red-light);
+        color: var(--jira-red);
+        border-left: 4px solid var(--jira-red);
+    }
+
+    .jira-alert-warning {
+        background-color: var(--jira-yellow-light);
+        color: #974F0C;
+        border-left: 4px solid var(--jira-yellow);
+    }
+
+    .jira-alert i {
+        font-size: 18px;
+    }
+
+    .jira-alert-close {
+        margin-left: auto;
+        cursor: pointer;
+        background: none;
+        border: none;
+        color: inherit;
+        opacity: 0.7;
+        font-size: 16px;
+    }
+
+    .jira-alert-close:hover {
+        opacity: 1;
+    }
+
+    /* Project Badge */
+    .project-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        background-color: var(--jira-blue-light);
+        border: 2px solid var(--jira-blue);
+        border-radius: 3px;
+        font-size: 15px;
+        font-weight: 500;
+        color: var(--jira-blue);
+    }
+
+    .project-badge i {
+        font-size: 18px;
+    }
+
+    /* Priority Badge Styles */
+    .priority-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 8px;
+        border-radius: 3px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .priority-high {
+        background-color: var(--jira-red-light);
+        color: var(--jira-red);
+    }
+
+    .priority-medium {
+        background-color: var(--jira-yellow-light);
+        color: #974F0C;
+    }
+
+    .priority-low {
+        background-color: var(--jira-green-light);
+        color: var(--jira-green);
+    }
+
+    /* Two Column Layout */
+    .jira-form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+    }
+
+    @media (max-width: 768px) {
+        .jira-form-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="jira-container">
+    <!-- Header -->
+    <div class="jira-header">
+        <h2>
+            <i class="fas fa-edit jira-header-icon"></i>
+            Edit Daily Task
+        </h2>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="jira-alert jira-alert-{{ message.tags }}">
+                <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-circle{% else %}info-circle{% endif %}"></i>
+                <span>{{ message }}</span>
+                <button type="button" class="jira-alert-close" onclick="this.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Form -->
     <form method="post" action="{% url 'edit_daily_task' task.id %}">
         {% csrf_token %}
-        <div class="mb-3">
-            <label for="project_assigned" class="form-label">Project (Assigned)</label>
-            <select class="form-select" id="project_assigned" name="project_assigned">
-                <option value="">Select Project</option>
-                {% for project in assigned_projects %}
-                <option value="{{ project }}" {% if task.project == project %}selected{% endif %}>{{ project }}</option>
-                {% endfor %}
-            </select>
-            <div class="form-text">OR</div>
+        
+        <!-- Project (Read-only) -->
+        <div class="jira-form-group">
+            <label class="jira-label">
+                <i class="fas fa-folder"></i> Project
+            </label>
+            <div class="project-badge">
+                <i class="fas fa-briefcase"></i>
+                {{ task.project }}
+            </div>
+            <div class="jira-help-text">
+                <i class="fas fa-lock"></i>
+                Project cannot be changed
+            </div>
         </div>
-        <div class="mb-3">
-            <label for="project" class="form-label">Project (Manual Entry)</label>
-            <input type="text" class="form-control" id="project" name="project" placeholder="Enter project name if not in assigned list" value="{{ task.project }}">
+        
+        <!-- Task -->
+        <div class="jira-form-group">
+            <label for="task" class="jira-label">
+                <i class="fas fa-tasks"></i> Task Description
+                <span class="required">*</span>
+            </label>
+            <input 
+                type="text" 
+                class="jira-input" 
+                id="task" 
+                name="task" 
+                required 
+                value="{{ task.task }}"
+                placeholder="Enter task description"
+            >
+            <div class="jira-help-text">
+                <i class="fas fa-info-circle"></i>
+                Provide a clear and concise task description
+            </div>
         </div>
-        <div class="mb-3">
-            <label for="task" class="form-label">Task</label>
-            <input type="text" class="form-control" id="task" name="task" required value="{{ task.task }}">
+
+        <!-- Priority and Due Date Row -->
+        <div class="jira-form-row">
+            <!-- Priority -->
+            <div class="jira-form-group">
+                <label for="priority" class="jira-label">
+                    <i class="fas fa-flag"></i> Priority
+                    <span class="required">*</span>
+                </label>
+                <select 
+                    class="jira-select" 
+                    id="priority" 
+                    name="priority" 
+                    required
+                >
+                    <option value="high" {% if task.priority == 'high' %}selected{% endif %}>
+                        🔴 High
+                    </option>
+                    <option value="medium" {% if task.priority == 'medium' %}selected{% endif %}>
+                        🟡 Medium
+                    </option>
+                    <option value="low" {% if task.priority == 'low' %}selected{% endif %}>
+                        🟢 Low
+                    </option>
+                </select>
+                <div class="jira-help-text">
+                    <i class="fas fa-info-circle"></i>
+                    Set task priority level
+                </div>
+            </div>
+
+            <!-- Due Date -->
+            <div class="jira-form-group">
+                <label for="due_date" class="jira-label">
+                    <i class="fas fa-calendar-alt"></i> Due Date
+                </label>
+                <input 
+                    type="date" 
+                    class="jira-input" 
+                    id="due_date" 
+                    name="due_date" 
+                    value="{% if task.due_date %}{{ task.due_date|date:'Y-m-d' }}{% endif %}"
+                >
+                <div class="jira-help-text">
+                    <i class="fas fa-info-circle"></i>
+                    Optional: Set a deadline for this task
+                </div>
+            </div>
         </div>
-        <div class="mb-3">
-            <label for="remark" class="form-label">Remark (Optional)</label>
-            <textarea class="form-control" id="remark" name="remark" rows="3">{{ task.remark }}</textarea>
+        
+        <!-- Remark -->
+        <div class="jira-form-group">
+            <label for="remark" class="jira-label">
+                <i class="fas fa-comment-dots"></i> Remarks
+            </label>
+            <textarea 
+                class="jira-textarea" 
+                id="remark" 
+                name="remark" 
+                rows="4"
+                placeholder="Add any additional notes or comments (optional)"
+            >{{ task.remark }}</textarea>
+            <div class="jira-help-text">
+                <i class="fas fa-info-circle"></i>
+                Optional: Add any additional details or context
+            </div>
         </div>
-        <button type="submit" class="btn btn-primary">Save</button>
+        
+        <!-- Action Buttons -->
+        <div class="jira-btn-group">
+            <button type="submit" class="jira-btn jira-btn-primary">
+                <i class="fas fa-save"></i>
+                Save Changes
+            </button>
+            <a href="{% if is_admin %}{% url 'daily_task_admin' %}{% else %}{% url 'daily_task_user' %}{% endif %}" 
+               class="jira-btn jira-btn-secondary">
+                <i class="fas fa-times"></i>
+                Cancel
+            </a>
+        </div>
     </form>
 </div>
+
 {% endblock %}
 
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const projectInput = document.getElementById('project');
-        const projectAssignedSelect = document.getElementById('project_assigned');
         const form = document.querySelector('form');
+        const taskInput = document.getElementById('task');
+        const prioritySelect = document.getElementById('priority');
 
-        // Disable manual input when an assigned project is selected
-        projectAssignedSelect.addEventListener('change', function() {
-            if (this.value) {
-                projectInput.disabled = true;
-                projectInput.value = '';
-            } else {
-                projectInput.disabled = false;
-            }
-        });
-
-        // Disable assigned select when manual input has value
-        projectInput.addEventListener('input', function() {
-            if (this.value) {
-                projectAssignedSelect.disabled = true;
-                projectAssignedSelect.value = '';
-            } else {
-                projectAssignedSelect.disabled = false;
-            }
-        });
-
+        // Form validation
         form.addEventListener('submit', function(event) {
-            if (!projectInput.value && !projectAssignedSelect.value) {
-                alert('Either "Project (Assigned)" or "Project (Manual Entry)" must be filled.');
+            if (!taskInput.value.trim()) {
+                alert('⚠️ Please enter a task description.');
                 event.preventDefault();
+                taskInput.focus();
+                return false;
             }
         });
+
+        // Auto-focus on task field
+        taskInput.focus();
+        
+        // Select text in task input for easy editing
+        taskInput.select();
+
+        // Visual feedback for priority selection
+        prioritySelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            this.style.borderColor = getPriorityColor(this.value);
+        });
+
+        function getPriorityColor(priority) {
+            switch(priority) {
+                case 'high':
+                    return '#DE350B';
+                case 'medium':
+                    return '#FF991F';
+                case 'low':
+                    return '#00875A';
+                default:
+                    return '#DFE1E6';
+            }
+        }
+
+        // Set initial border color based on selected priority
+        prioritySelect.style.borderColor = getPriorityColor(prioritySelect.value);
     });
 </script>
 {% endblock %}

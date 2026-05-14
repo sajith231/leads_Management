@@ -8,145 +8,440 @@
 <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
 
 <style>
-    td,th{
+    /* Jira-inspired styles */
+    .jira-container {
+        background: #f4f5f7;
+        min-height: 100vh;
+    }
+    
+    .jira-header {
+        background: white;
+        border-radius: 3px;
+        box-shadow: 0 1px 2px rgba(9, 30, 66, 0.25);
+        padding: 20px 24px;
+        margin-bottom: 20px;
+    }
+    
+    .jira-table-container {
+        background: white;
+        border-radius: 3px;
+        box-shadow: 0 1px 1px rgba(9, 30, 66, 0.25);
+        overflow: hidden;
+    }
+    
+    .jira-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    
+    .jira-table thead {
+        background: #f4f5f7;
+    }
+    
+    .jira-table th {
+        padding: 12px 16px;
+        text-align: left;
+        font-size: 12px;
+        font-weight: 600;
+        color: #5e6c84;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #dfe1e6;
+    }
+    
+    .jira-table td {
+        padding: 12px 16px;
+        border-bottom: 1px solid #f4f5f7;
+        color: #172b4d;
+    }
+    
+    .jira-table tbody tr {
+        transition: background-color 0.1s;
+    }
+    
+    .jira-table tbody tr:hover {
+        background: #f4f5f7;
+    }
+    
+    .jira-project-name {
+        font-weight: 600;
+        color: #172b4d;
+        font-size: 14px;
+    }
+    
+    .jira-project-desc {
+        color: #5e6c84;
+        font-size: 12px;
+        margin-top: 2px;
+    }
+    
+    .jira-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 3px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .jira-status-badge:hover {
+        opacity: 0.8;
+    }
+    
+    .jira-dropdown {
+        background: white;
+        border: 1px solid #dfe1e6;
+        border-radius: 3px;
+        box-shadow: 0 4px 8px rgba(9, 30, 66, 0.25);
+        z-index: 100;
+    }
+    
+    .jira-dropdown-item {
+        padding: 8px 12px;
+        cursor: pointer;
+        transition: background 0.1s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: #172b4d;
+    }
+    
+    .jira-dropdown-item:hover {
+        background: #f4f5f7;
+    }
+    
+    .jira-progress-bar {
+        background: #dfe1e6;
+        border-radius: 3px;
+        height: 8px;
+        overflow: hidden;
+    }
+    
+    .jira-progress-fill {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 0.3s;
+    }
+    
+    .jira-toast {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        background: #00875a;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 3px;
+        box-shadow: 0 4px 8px rgba(9, 30, 66, 0.25);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        font-weight: 500;
+        transform: scale(0);
+        transition: transform 0.2s;
+        z-index: 1000;
+    }
+    
+    .jira-toast.show {
+        transform: scale(1);
+    }
+    
+    .jira-empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 3px;
+        box-shadow: 0 1px 1px rgba(9, 30, 66, 0.25);
+    }
+    
+    .jira-empty-icon {
+        font-size: 48px;
+        color: #dfe1e6;
+        margin-bottom: 16px;
+    }
+    
+    .jira-team-popup-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(9, 30, 66, 0.54);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+    
+    .jira-team-popup {
+        background: white;
+        border-radius: 3px;
+        box-shadow: 0 20px 32px -8px rgba(9, 30, 66, 0.25);
+        padding: 0;
+        min-width: 400px;
+        max-width: 500px;
+        max-height: 80vh;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .jira-popup-header {
+        padding: 20px 24px;
+        border-bottom: 2px solid #f4f5f7;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .jira-popup-header h4 {
+        color: #172b4d;
+        font-size: 20px;
+        font-weight: 600;
+        margin: 0;
+    }
+    
+    .jira-popup-close {
+        background: transparent;
+        border: none;
+        color: #5e6c84;
+        cursor: pointer;
+        font-size: 20px;
+        padding: 4px;
+        line-height: 1;
+        transition: color 0.2s;
+    }
+    
+    .jira-popup-close:hover {
+        color: #172b4d;
+    }
+    
+    .jira-popup-body {
+        padding: 20px 24px;
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+    
+    .jira-team-member {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        font-size: 14px;
+        color: #172b4d;
+        border-radius: 3px;
+        transition: background 0.1s;
+    }
+    
+    .jira-team-member:hover {
+        background: #f4f5f7;
+    }
+    
+    .jira-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #0052cc;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+    
+    td, th {
         border: .1px solid #0000000b;
     }
 </style>
 
-<div class="min-h-screen bg-gradient-to-br from-purple-200 via-blue-100 to-pink-200 p-6">
-    <div class=" mx-auto bg-white bg-opacity-90 rounded-2xl shadow-xl p-8">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold text-gray-800">My Assigned Projects</h1>
+<div class="jira-container p-6">
+    <div class="mx-auto">
+        <div class="jira-header">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-semibold text-gray-800">
+                        <i class="fa-solid fa-diagram-project text-blue-600"></i> My Assigned Projects
+                    </h1>
+                    <p class="text-sm text-gray-500 mt-1">Track and manage your project assignments</p>
+                </div>
+            </div>
         </div>
 
         <!-- Success message toast -->
-        <div id="statusUpdateToast" class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg transform transition-transform duration-300 scale-0 z-50">
+        <div id="statusUpdateToast" class="jira-toast">
             <div class="flex items-center">
-                <i class="fas fa-check-circle mr-2"></i>
+                <i class="fas fa-check-circle"></i>
                 <span id="toastMessage">Status updated successfully!</span>
             </div>
         </div>
 
         {% if assigned_projects %}
-        <div class="bg-white rounded-lg shadow-md p-6 overflow-x-auto">
-            <table class="min-w-full table-auto rounded-l-xl">
-                <thead class="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wider rounded-lxl">
-                    <tr class="text-center">
-                        <th class="px-4 py-3 text-left border-l-none">Project</th>
-                        <th class="px-4 py-3 text-left">Team Members</th>
-                        <th class="px-4 py-3 text-left">Start Date</th>
-                        <th class="px-4 py-3 text-left">Deadline</th>
-                        <th class="px-4 py-3 text-left">Client</th>
-                        <th class="px-4 py-3 text-left">Status</th>
-                        <th class="px-4 py-3 text-left">Countdown</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200 text-gray-800">
-                    {% for project in assigned_projects %}
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-4">
-                            <div class="font-semibold text-gray-900">{{ project.project.project_name }}</div>
-                            <div class="text-sm text-gray-500">{{ project.project.description|truncatechars:60 }}</div>
-                        </td>
+        <div class="jira-table-container">
+            <div class="overflow-x-auto">
+                <table class="jira-table min-w-full">
+                    <thead>
+                        <tr>
+                            <th class="border-l-none">Project</th>
+                            <th>Team Members</th>
+                            <th>Start Date</th>
+                            <th>Deadline</th>
+                            <th>Client</th>
+                            <th>Status</th>
+                            <th>Countdown</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for project in assigned_projects %}
+                        <tr>
+                            <td>
+    <div class="jira-project-name">{{ project.project.project_name }}</div>
+    <div class="jira-project-desc">
+        {{ project.project.notes|striptags|truncatechars:60 }}
+    </div>
+</td>
 
-                        <td class="px-4 py-4 text-left">
-                            <div x-data="{ show: false }" class="relative">
-                                <i @click="show = !show" class="fa-solid fa-user text-xl rounded-full p-2 bg-gray-200 text-blue-600 cursor-pointer"></i>
-                                <div x-show="show" @click.away="show = false"
-                                     class="absolute z-10 mt-2 p-4 bg-white border rounded-lg shadow-lg w-60">
-                                    <h4 class="text-sm font-semibold text-gray-800 mb-2">Team Members</h4>
-                                    <div class="flex flex-col gap-2">
-                                        {% for member in project.members.all %}
-                                        <div class="flex items-center gap-2">
-                                            <i class="fa-solid fa-user text-blue-600 bg-gray-200 rounded-full p-1 text-sm"></i>
-                                            <span class="text-sm text-gray-700">
-                                                {{ member.name }}
-                                                {% if member.id == employee.id %}
-                                                <span class="text-xs text-green-600">(You)</span>
-                                                {% endif %}
-                                            </span>
+
+                            <td>
+                                <div x-data="{ showTeam: false }">
+                                    <button @click="showTeam = true" class="focus:outline-none">
+                                        <i class="fa-solid fa-users text-lg rounded-full p-2 bg-blue-100 text-blue-600 cursor-pointer hover:bg-blue-200 transition"></i>
+                                    </button>
+                                    
+                                    <!-- Modal Overlay -->
+                                    <div x-show="showTeam" 
+                                         @click.self="showTeam = false"
+                                         x-transition:enter="transition ease-out duration-200"
+                                         x-transition:enter-start="opacity-0"
+                                         x-transition:enter-end="opacity-100"
+                                         x-transition:leave="transition ease-in duration-150"
+                                         x-transition:leave-start="opacity-100"
+                                         x-transition:leave-end="opacity-0"
+                                         class="jira-team-popup-overlay"
+                                         style="display: none;">
+                                         
+                                        <!-- Modal Content -->
+                                        <div x-show="showTeam"
+                                             @click.stop
+                                             x-transition:enter="transition ease-out duration-200"
+                                             x-transition:enter-start="opacity-0 transform scale-95"
+                                             x-transition:enter-end="opacity-100 transform scale-100"
+                                             x-transition:leave="transition ease-in duration-150"
+                                             x-transition:leave-start="opacity-100 transform scale-100"
+                                             x-transition:leave-end="opacity-0 transform scale-95"
+                                             class="jira-team-popup">
+                                             
+                                            <!-- Header -->
+                                            <div class="jira-popup-header">
+                                                <h4>Team Members</h4>
+                                                <button @click="showTeam = false" class="jira-popup-close">
+                                                    <i class="fa-solid fa-xmark"></i>
+                                                </button>
+                                            </div>
+                                            
+                                            <!-- Body -->
+                                            <div class="jira-popup-body">
+                                                <div class="flex flex-col">
+                                                    {% for member in project.members.all %}
+                                                    <div class="jira-team-member">
+                                                        <div class="jira-avatar">
+                                                            {{ member.name|slice:":1"|upper }}
+                                                        </div>
+                                                        <div class="flex-1">
+                                                            <div class="font-medium text-sm">{{ member.name }}</div>
+                                                            {% if member.id == employee.id %}
+                                                            <span class="text-xs text-green-600 font-semibold">(You)</span>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
                                         </div>
-                                        {% endfor %}
                                     </div>
                                 </div>
-                            </div>
-                        </td>
+                            </td>
 
-                        <td class="px-4 py-4 text-sm text-gray-600 text-left">{{ project.start_date|date:"Y-m-d" }}</td>
-                        <td class="px-4 py-4 text-sm text-gray-600 text-left">{{ project.deadline|date:"Y-m-d" }}</td>
-                        <td class="px-4 py-4 text-sm text-gray-600 text-left">{{ project.client }}</td>
+                            <td class="text-sm text-gray-600">{{ project.start_date|date:"Y-m-d" }}</td>
+                            <td class="text-sm text-gray-600">{{ project.deadline|date:"Y-m-d" }}</td>
+                            <td class="text-sm text-gray-600">{{ project.client }}</td>
 
-                        <td class="px-4 py-4 text-left" x-data="{ open: false }">
-                            <div class="inline-block relative">
-                                <div @click="open = !open" class="cursor-pointer px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1
-                                    {% if project.status == 'not_started' %}bg-gray-100 text-gray-800
-                                    {% elif project.status == 'started' %}bg-blue-100 text-blue-800
-                                    {% elif project.status == 'in_progress' %}bg-yellow-100 text-yellow-800
-                                    {% elif project.status == 'on_hold' %}bg-orange-100 text-orange-800
-                                    {% elif project.status == 'canceled' %}bg-red-100 text-red-800
-                                    {% else %}bg-green-100 text-green-800{% endif %}">
-                                    <i class="
-                                        {% if project.status == 'not_started' %}fa-regular fa-circle-dot
-                                        {% elif project.status == 'started' %}fa-solid fa-play
-                                        {% elif project.status == 'in_progress' %}fa-solid fa-spinner animate-spin
-                                        {% elif project.status == 'on_hold' %}fa-solid fa-pause
-                                        {% elif project.status == 'canceled' %}fa-solid fa-xmark
-                                        {% else %}fa-solid fa-check{% endif %}
-                                    "></i>
-                                    <span class="status-badge">{{ project.get_status_display }}</span>
-                                </div>
-                        
-                                <!-- Dropdown -->
-                                <div x-show="open" @click.away="open = false"
-                                     class="absolute mt-2 w-44 bg-white shadow-lg border rounded z-20 p-2 space-y-1 text-sm">
-                                    <template x-for="option in [
-                                        { value: 'not_started', label: 'Not Started', icon: 'fa-regular fa-circle-dot' },
-                                        { value: 'started', label: 'Started', icon: 'fa-solid fa-play' },
-                                        { value: 'in_progress', label: 'In Progress', icon: 'fa-solid fa-spinner' },
-                                        { value: 'on_hold', label: 'On Hold', icon: 'fa-solid fa-pause' },
-                                        { value: 'canceled', label: 'Canceled', icon: 'fa-solid fa-xmark' },
-                                        { value: 'finished', label: 'Finished', icon: 'fa-solid fa-check' }
-                                    ]">
-                                        <div @click="open = false; updateProjectStatus('{{ project.id }}', option.value, $el.closest('td'))"
-                                             class="flex items-center gap-2 px-3 py-1.5 rounded hover:bg-gray-100 cursor-pointer">
-                                            <i :class="option.icon"></i>
-                                            <span x-text="option.label"></span>
-                                        </div>
-                                    </template>
-                                </div>
-                            </div>
-                        </td>
-                        
-                        
-
-                        <td class="px-4 py-4 text-left">
-                            <div class="w-full">
-                                <div class="flex justify-between text-xs text-gray-600 mb-1">
-                                    <span>{{ project.countdown.remaining }} days left</span>
-                                    <span>{{ project.countdown.percentage }}%</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2.5">
-                                    <div class="h-2.5 rounded-full
-                                        {% if project.countdown.percentage < 50 %}bg-blue-600
-                                        {% elif project.countdown.percentage < 75 %}bg-yellow-500
-                                        {% elif project.countdown.percentage < 90 %}bg-orange-500
-                                        {% else %}bg-red-600{% endif %}"
-                                        style="width: {{ project.countdown.percentage }}%">
+                            <td x-data="{ open: false }">
+                                <div class="inline-block relative">
+                                    <div @click="open = !open" class="jira-status-badge cursor-pointer
+                                        {% if project.status == 'not_started' %}bg-gray-100 text-gray-800
+                                        {% elif project.status == 'started' %}bg-blue-100 text-blue-800
+                                        {% elif project.status == 'in_progress' %}bg-yellow-100 text-yellow-800
+                                        {% elif project.status == 'on_hold' %}bg-orange-100 text-orange-800
+                                        {% elif project.status == 'canceled' %}bg-red-100 text-red-800
+                                        {% else %}bg-green-100 text-green-800{% endif %}">
+                                        <i class="
+                                            {% if project.status == 'not_started' %}fa-regular fa-circle-dot
+                                            {% elif project.status == 'started' %}fa-solid fa-play
+                                            {% elif project.status == 'in_progress' %}fa-solid fa-spinner animate-spin
+                                            {% elif project.status == 'on_hold' %}fa-solid fa-pause
+                                            {% elif project.status == 'canceled' %}fa-solid fa-xmark
+                                            {% else %}fa-solid fa-check{% endif %}
+                                        "></i>
+                                        <span class="status-badge">{{ project.get_status_display }}</span>
+                                    </div>
+                            
+                                    <!-- Dropdown -->
+                                    <div x-show="open" @click.away="open = false"
+                                         class="absolute mt-2 w-44 jira-dropdown p-2 space-y-1">
+                                        <template x-for="option in [
+                                            { value: 'not_started', label: 'Not Started', icon: 'fa-regular fa-circle-dot' },
+                                            { value: 'started', label: 'Started', icon: 'fa-solid fa-play' },
+                                            { value: 'in_progress', label: 'In Progress', icon: 'fa-solid fa-spinner' },
+                                            { value: 'on_hold', label: 'On Hold', icon: 'fa-solid fa-pause' },
+                                            { value: 'canceled', label: 'Canceled', icon: 'fa-solid fa-xmark' },
+                                            { value: 'finished', label: 'Finished', icon: 'fa-solid fa-check' }
+                                        ]">
+                                            <div @click="open = false; updateProjectStatus('{{ project.id }}', option.value, $el.closest('td'))"
+                                                 class="jira-dropdown-item rounded">
+                                                <i :class="option.icon"></i>
+                                                <span x-text="option.label"></span>
+                                            </div>
+                                        </template>
                                     </div>
                                 </div>
-                                <span class="text-xs text-gray-400">{{ project.countdown.total }} total days</span>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            </td>
+                            
+                            <td>
+                                <div class="w-full">
+                                    <div class="flex justify-between text-xs text-gray-600 mb-2">
+                                        <span class="font-medium">{{ project.countdown.remaining }} days left</span>
+                                        <span class="font-medium">{{ project.countdown.percentage }}%</span>
+                                    </div>
+                                    <div class="jira-progress-bar">
+                                        <div class="jira-progress-fill
+                                            {% if project.countdown.percentage < 50 %}bg-blue-600
+                                            {% elif project.countdown.percentage < 75 %}bg-yellow-500
+                                            {% elif project.countdown.percentage < 90 %}bg-orange-500
+                                            {% else %}bg-red-600{% endif %}"
+                                            style="width: {{ project.countdown.percentage }}%">
+                                        </div>
+                                    </div>
+                                    <span class="text-xs text-gray-400 mt-1 block">{{ project.countdown.total }} total days</span>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
         {% else %}
-        <div class="text-center py-8">
-            <i class="fas fa-folder-open fa-3x text-gray-400 mb-4"></i>
+        <div class="jira-empty-state">
+            <i class="fas fa-folder-open jira-empty-icon"></i>
             <h3 class="text-lg font-medium text-gray-700">No projects assigned</h3>
-            <p class="text-sm text-gray-500">You haven't been assigned to any projects yet.</p>
+            <p class="text-sm text-gray-500 mt-2">You haven't been assigned to any projects yet.</p>
         </div>
         {% endif %}
     </div>
@@ -209,11 +504,11 @@ $(document).ready(function() {
         
         // Show toast
         var toast = $('#statusUpdateToast');
-        toast.removeClass('scale-0').addClass('scale-100');
+        toast.addClass('show');
         
         // Hide toast after 3 seconds
         setTimeout(function() {
-            toast.removeClass('scale-100').addClass('scale-0');
+            toast.removeClass('show');
         }, 3000);
     }
     
@@ -231,32 +526,32 @@ $(document).ready(function() {
             case 'not_started':
                 displayText = 'Not Started';
                 iconClass = 'fa-regular fa-circle-dot';
-                badgeContainer.attr('class', 'px-2 inline-flex items-center gap-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800');
+                badgeContainer.attr('class', 'jira-status-badge cursor-pointer bg-gray-100 text-gray-800');
                 break;
             case 'started':
                 displayText = 'Started';
                 iconClass = 'fa-solid fa-play';
-                badgeContainer.attr('class', 'px-2 inline-flex items-center gap-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800');
+                badgeContainer.attr('class', 'jira-status-badge cursor-pointer bg-blue-100 text-blue-800');
                 break;
             case 'in_progress':
                 displayText = 'In Progress';
                 iconClass = 'fa-solid fa-spinner animate-spin';
-                badgeContainer.attr('class', 'px-2 inline-flex items-center gap-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800');
+                badgeContainer.attr('class', 'jira-status-badge cursor-pointer bg-yellow-100 text-yellow-800');
                 break;
             case 'on_hold':
                 displayText = 'On Hold';
                 iconClass = 'fa-solid fa-pause';
-                badgeContainer.attr('class', 'px-2 inline-flex items-center gap-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800');
+                badgeContainer.attr('class', 'jira-status-badge cursor-pointer bg-orange-100 text-orange-800');
                 break;
             case 'canceled':
                 displayText = 'Canceled';
                 iconClass = 'fa-solid fa-xmark';
-                badgeContainer.attr('class', 'px-2 inline-flex items-center gap-1 text-xs font-semibold rounded-full bg-red-100 text-red-800');
+                badgeContainer.attr('class', 'jira-status-badge cursor-pointer bg-red-100 text-red-800');
                 break;
             case 'finished':
                 displayText = 'Finished';
                 iconClass = 'fa-solid fa-check';
-                badgeContainer.attr('class', 'px-2 inline-flex items-center gap-1 text-xs font-semibold rounded-full bg-green-100 text-green-800');
+                badgeContainer.attr('class', 'jira-status-badge cursor-pointer bg-green-100 text-green-800');
                 break;
         }
         
@@ -275,8 +570,8 @@ $(document).ready(function() {
         function showToast(message) {
             $('#toastMessage').text(message);
             const toast = $('#statusUpdateToast');
-            toast.removeClass('scale-0').addClass('scale-100');
-            setTimeout(() => toast.removeClass('scale-100').addClass('scale-0'), 3000);
+            toast.addClass('show');
+            setTimeout(() => toast.removeClass('show'), 3000);
         }
     
         // Reusable status update logic (used in popup now)
@@ -349,10 +644,10 @@ $(document).ready(function() {
             }
     
             badge.text(displayText);
-            badgeContainer.removeClass().addClass('px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ' + classes);
+            badgeContainer.removeClass().addClass('jira-status-badge cursor-pointer ' + classes);
             badgeContainer.find('i').attr('class', iconClass);
         }
     });
-    </script>
+</script>
     
 {% endblock %}

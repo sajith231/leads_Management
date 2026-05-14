@@ -3,6 +3,11 @@
 {% block title %}Lead Report{% endblock %}
 
 {% block content %}
+<script>
+    // Remove any font-awesome 6.7.x link injected by base.html to prevent
+    // Tracking Prevention warnings — this template self-loads FA 6.4.0 below.
+    document.querySelectorAll('link[href*="font-awesome/6.7"]').forEach(el => el.remove());
+</script>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -749,10 +754,143 @@
             border: 1px solid #e0e0e0;
         }
         
-        .client-info { display: flex; flex-direction: column; gap: 6px; }
-        .client-name { font-weight: 700; color: #333; font-size: 15px; }
+        .client-info { display: flex; flex-direction: column; gap: 4px; }
+        /* Single line: name + view icon side by side */
+        .client-name-row { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; }
+        .client-name { font-weight: 700; color: #333; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .client-phone { font-size: 13px; color: #090909; }
         .client-email { background-color: #afcbeb; font-size: 12px; color: #0a0a0a; }
+        /* Visible sub-lines below client name */
+        .client-firm-inline {
+            display: flex; align-items: center; gap: 5px;
+            font-size: 12px; font-weight: 600; color: #5a5a5a;
+        }
+        .client-firm-inline i { color: #7c3aed; font-size: 11px; }
+        .client-phone-inline {
+            display: flex; align-items: center; gap: 5px;
+            font-size: 12px; color: #374151;
+        }
+        .client-phone-inline i { color: #16a34a; font-size: 11px; }
+        /* Hide all client detail spans - shown only inside the modal */
+        .client-owner, .client-phone, .client-email-addr,
+        .client-firm, .client-address, .client-branch { display: none; }
+
+        /* View icon button inline with client name */
+        .btn-client-view {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, #4a6fdc, #3a5fcc);
+            color: white;
+            border: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-client-view:hover {
+            background: linear-gradient(135deg, #3a5fcc, #2a4fbc);
+            transform: scale(1.15);
+            box-shadow: 0 3px 8px rgba(74,111,220,0.4);
+        }
+
+        /* Client Details Modal */
+        #clientDetailModal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            z-index: 99998;
+            align-items: center;
+            justify-content: center;
+        }
+        #clientDetailModal.open { display: flex; }
+        .client-modal-box {
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+            width: 420px;
+            max-width: 95vw;
+            overflow: hidden;
+            animation: clientModalIn 0.25s ease;
+        }
+        @keyframes clientModalIn {
+            from { opacity:0; transform: scale(0.92) translateY(-16px); }
+            to   { opacity:1; transform: scale(1) translateY(0); }
+        }
+        .client-modal-header {
+            background: linear-gradient(135deg, #4a6fdc, #3a5fcc);
+            color: white;
+            padding: 18px 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .client-modal-header h3 {
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+        }
+        .client-modal-close {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        .client-modal-close:hover { background: rgba(255,255,255,0.35); }
+        .client-modal-body { padding: 22px; display: flex; flex-direction: column; gap: 14px; }
+        .client-detail-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .client-detail-row:last-child { border-bottom: none; padding-bottom: 0; }
+        .client-detail-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        .client-detail-icon.blue   { background: #e3f0ff; color: #2563eb; }
+        .client-detail-icon.green  { background: #e6f9f0; color: #16a34a; }
+        .client-detail-icon.orange { background: #fff4e5; color: #d97706; }
+        .client-detail-icon.purple { background: #f3e8ff; color: #7c3aed; }
+        .client-detail-icon.red    { background: #ffeaea; color: #dc2626; }
+        .client-detail-icon.teal   { background: #e0f7f4; color: #0d9488; }
+        .client-detail-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+        .client-detail-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        .client-detail-value.muted { color: #9ca3af; font-weight: 400; font-style: italic; }
         .amount { font-weight: 600; color: #030303; font-size: 15px; }
         
         .action-cell { display: flex; gap: 8px; }
@@ -909,6 +1047,11 @@
             width: 90%;
         }
         .client-branch { font-size: 11px; color: #4a6fdc; font-weight: 600; display: flex; align-items: center; gap: 3px; margin-top: 2px; }
+        .client-owner { font-size: 12px; color: #555; display: flex; align-items: center; gap: 4px; }
+        .client-email-addr { font-size: 12px; color: #555; display: flex; align-items: center; gap: 4px; word-break: break-all; }
+        .client-firm { font-size: 12px; color: #333; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+        .client-address { font-size: 11px; color: #777; display: flex; align-items: flex-start; gap: 4px; line-height: 1.4; }
+        .created-by-badge { display: inline-flex; align-items: center; gap: 4px; margin-top: 5px; border-radius: 20px;  font-size: 11px; color: #4a6fdc; font-weight: 600; }
         .modal-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
         .modal-header i { color: #f44336; font-size: 24px; }
         .modal-header h3 { color: #333; font-size: 20px; }
@@ -1226,6 +1369,32 @@
         #statusFilter option[value="submitted"] { color: #1565c0; }
         #statusFilter option[value="accepted"]  { color: #1b5e20; }
         #statusFilter option[value="rejected"]  { color: #b71c1c; }
+
+        /* Inline status dropdown in table */
+        .status-select {
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid;
+            cursor: pointer;
+            outline: none;
+            min-width: 115px;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 26px;
+            transition: all 0.2s;
+        }
+        .status-select:focus { box-shadow: 0 0 0 3px rgba(74,111,220,0.15); }
+        .status-select.sel-submitted { background-color:#e3f2fd; border-color:#90caf9; color:#1565c0; }
+        .status-select.sel-accepted  { background-color:#e8f5e9; border-color:#a5d6a7; color:#1b5e20; }
+        .status-select.sel-rejected  { background-color:#ffebee; border-color:#ef9a9a; color:#b71c1c; }
+        .status-select.sel-unknown   { background-color:#f5f5f5; border-color:#e0e0e0; color:#757575; }
         
         @media (max-width: 1200px) {
             .main-content { flex-direction: column; }
@@ -1424,7 +1593,7 @@
                     
                     <div class="header-actions">
                         {% if not selected_lead_id %}
-                        <button class="btn-refresh" onclick="window.location.href='{% url 'app5:lead_report' %}'">
+                        <button class="btn-refresh" onclick="window.location.href='{% url 'app5:quotation_form_view' %}'">
                             <i class="fas fa-sync-alt"></i> Back
                         </button>
                         {% endif %}
@@ -1459,7 +1628,7 @@
                                 <tr>
                                     <th width="60">Sl.No</th>
                                     <th width="110">Date</th>
-                                    <th width="150">Client</th>
+                                    <th width="200">Client</th>
                                     <th width="80">Items</th>
                                     <th width="110">Subtotal</th>
                                     <th width="100">Tax</th>
@@ -1490,17 +1659,36 @@
                                             {% if quotation.lead %}
                                                 <span class="client-email">{{ quotation.lead.ticket_number|default:"No Ticket" }}</span>
                                             {% endif %}
+                                            <br>
+                                            {% if quotation.created_by %}
+                                                <span class="created-by-badge">
+                                                    <i class="fas fa-user-circle"></i>{{ quotation.created_by.name }}
+                                                </span>
+                                            {% else %}
+                                                <span class="created-by-badge" style="background:#f5f5f5;color:#aaa;border-color:#e0e0e0;">
+                                                    <i class="fas fa-user-slash"></i> —
+                                                </span>
+                                            {% endif %}
                                         </td>
 
                                         <td>
-                                            <div class="client-info">
-                                                <span class="client-name">{{ quotation.client_name|default:"Unknown Client" }}</span>
-                                                <span class="client-phone">{{ quotation.client_phone|default:"No Phone" }}</span>
-                                                {% if quotation.department.name %}
-                                                <span class="client-branch"><i class="fas fa-building"></i>{{ quotation.department.name }}</span>
-                                                {% elif quotation.lead.requirement %}
-                                                <span class="client-branch"><i class="fas fa-building"></i>{{ quotation.lead.requirement }}</span>
+                                            <div class="client-info"
+                                                 data-owner="{{ quotation.lead.ownerName|default:'' }}"
+                                                 data-phone="{{ quotation.client_phone|default:'' }}"
+                                                 data-email="{{ quotation.client_email|default:'' }}"
+                                                 data-firm="{{ quotation.company_name|default:'' }}"
+                                                 data-address="{% if quotation.lead.address %}{{ quotation.lead.address }}{% elif quotation.lead.individualAddress %}{{ quotation.lead.individualAddress }}{% endif %}"
+                                                 data-branch="{{ quotation.lead.requirement|default:'' }}">
+                                                <div class="client-name-row">
+                                                    <span class="client-name">{{ quotation.client_name|default:"Unknown Client" }}</span>
+                                                    <button class="btn-client-view" onclick="showClientModal(this)" title="View client details">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                </div>
+                                                {% if quotation.company_name %}
+                                                <span class="client-firm-inline"><i class="fas fa-briefcase"></i>{{ quotation.company_name }}</span>
                                                 {% endif %}
+                                                <span class="client-phone-inline"><i class="fas fa-phone"></i>{{ quotation.client_phone|default:"No Phone" }}</span>
                                             </div>
                                         </td>
 
@@ -1522,27 +1710,15 @@
 
                                         <!-- STATUS CELL -->
                                         <td>
-                                            {% if quotation.status %}
-                                                {% with s=quotation.status|lower %}
-                                                    <span class="quotation-status-badge 
-                                                        {% if s == 'submitted' %}status-submitted
-                                                        {% elif s == 'accepted' %}status-accepted
-                                                        {% elif s == 'rejected' %}status-rejected
-                                                        {% else %}status-unknown{% endif %}">
-                                                        <i class="fas 
-                                                            {% if s == 'submitted' %}fa-paper-plane
-                                                            {% elif s == 'accepted' %}fa-check-circle
-                                                            {% elif s == 'rejected' %}fa-times-circle
-                                                            {% else %}fa-circle{% endif %}">
-                                                        </i>
-                                                        {{ quotation.get_status_display }}
-                                                    </span>
-                                                {% endwith %}
-                                            {% else %}
-                                                <span class="quotation-status-badge status-unknown">
-                                                    <i class="fas fa-minus-circle"></i> —
-                                                </span>
-                                            {% endif %}
+                                            {% with s=quotation.status|default:''|lower %}
+                                            <select class="status-select sel-{% if s == 'submitted' %}submitted{% elif s == 'accepted' %}accepted{% elif s == 'rejected' %}rejected{% else %}unknown{% endif %}"
+                                                    data-quotation-id="{{ quotation.id }}"
+                                                    onchange="updateQuotationStatus(this)">
+                                                <option value="submitted" {% if s == 'submitted' %}selected{% endif %}>&#x2708; Submitted</option>
+                                                <option value="accepted"  {% if s == 'accepted'  %}selected{% endif %}>&#x2714; Accepted</option>
+                                                <option value="rejected"  {% if s == 'rejected'  %}selected{% endif %}>&#x2716; Rejected</option>
+                                            </select>
+                                            {% endwith %}
                                         </td>
 
                                         <td class="proposal-cell">
@@ -2019,6 +2195,32 @@
         _style.textContent = `@keyframes slideIn { from { opacity:0; transform:translateX(100px); } to { opacity:1; transform:translateX(0); } }`;
         document.head.appendChild(_style);
 
+        async function updateQuotationStatus(selectEl) {
+            const quotationId = selectEl.getAttribute('data-quotation-id');
+            const newStatus = selectEl.value;
+            // Update colour class
+            selectEl.className = 'status-select sel-' + newStatus;
+            // Also update data-status on the row for filter compatibility
+            const row = selectEl.closest('tr');
+            if (row) row.setAttribute('data-status', newStatus);
+            try {
+                const csrftoken = getCookie('csrftoken');
+                const response = await fetch(`/app5/quotation/update-status/${quotationId}/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                if (response.ok) {
+                    showNotification('Status updated to ' + newStatus.charAt(0).toUpperCase() + newStatus.slice(1), 'success');
+                } else {
+                    showNotification('Failed to update status', 'error');
+                }
+            } catch (err) {
+                console.error('Status update error:', err);
+                showNotification('Network error updating status', 'error');
+            }
+        }
+
         function updateDirectoryDateDisplay() {
             const now = new Date();
             const dd = document.getElementById('dateDisplay');
@@ -2110,7 +2312,7 @@
             const branchModal = document.getElementById('branchModal');
             if (branchModal) branchModal.addEventListener('click', e => { if (e.target === branchModal) closeBranchModal(); });
             document.getElementById('itemsModal').addEventListener('click', e => { if (e.target === document.getElementById('itemsModal')) closeItemsModal(); });
-            document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeBranchModal(); closeItemsModal(); } });
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeBranchModal(); closeItemsModal(); closeClientModal(); } });
 
             ['branchFilter','statusFilter','dateFrom','dateTo'].forEach(id => {
                 const el = document.getElementById(id);
@@ -2120,6 +2322,91 @@
             let totalAmount = 0;
             rows.forEach(r => { totalAmount += parseFloat((r.querySelector('td:nth-child(7)')?.textContent || '').replace('₹','').replace(/,/g,'')) || 0; });
             updateFilterStats(0, rows.length, totalAmount);
+        });
+    </script>
+
+    <!-- Client Detail Modal -->
+    <div id="clientDetailModal">
+        <div class="client-modal-box">
+            <div class="client-modal-header">
+                <h3><i class="fas fa-user-circle"></i> Client Details</h3>
+                <button class="client-modal-close" onclick="closeClientModal()" title="Close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="client-modal-body">
+                <div class="client-detail-row">
+                    <div class="client-detail-icon blue"><i class="fas fa-user"></i></div>
+                    <div>
+                        <div class="client-detail-label">Owner Name</div>
+                        <div class="client-detail-value" id="cdOwner">—</div>
+                    </div>
+                </div>
+                <div class="client-detail-row">
+                    <div class="client-detail-icon green"><i class="fas fa-phone"></i></div>
+                    <div>
+                        <div class="client-detail-label">Phone</div>
+                        <div class="client-detail-value" id="cdPhone">—</div>
+                    </div>
+                </div>
+                <div class="client-detail-row">
+                    <div class="client-detail-icon orange"><i class="fas fa-envelope"></i></div>
+                    <div>
+                        <div class="client-detail-label">Email</div>
+                        <div class="client-detail-value" id="cdEmail">—</div>
+                    </div>
+                </div>
+                <div class="client-detail-row">
+                    <div class="client-detail-icon purple"><i class="fas fa-briefcase"></i></div>
+                    <div>
+                        <div class="client-detail-label">Firm Name</div>
+                        <div class="client-detail-value" id="cdFirm">—</div>
+                    </div>
+                </div>
+                <div class="client-detail-row">
+                    <div class="client-detail-icon red"><i class="fas fa-map-marker-alt"></i></div>
+                    <div>
+                        <div class="client-detail-label">Address</div>
+                        <div class="client-detail-value" id="cdAddress">—</div>
+                    </div>
+                </div>
+                <div class="client-detail-row">
+                    <div class="client-detail-icon teal"><i class="fas fa-building"></i></div>
+                    <div>
+                        <div class="client-detail-label">Branch</div>
+                        <div class="client-detail-value" id="cdBranch">—</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showClientModal(btn) {
+            const info = btn.closest('.client-info');
+            const set = (id, val) => {
+                const el = document.getElementById(id);
+                if (val && val.trim()) {
+                    el.textContent = val.trim();
+                    el.classList.remove('muted');
+                } else {
+                    el.textContent = '—';
+                    el.classList.add('muted');
+                }
+            };
+            set('cdOwner',   info.dataset.owner);
+            set('cdPhone',   info.dataset.phone);
+            set('cdEmail',   info.dataset.email);
+            set('cdFirm',    info.dataset.firm);
+            set('cdAddress', info.dataset.address);
+            set('cdBranch',  info.dataset.branch);
+            document.getElementById('clientDetailModal').classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeClientModal() {
+            document.getElementById('clientDetailModal').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        document.getElementById('clientDetailModal').addEventListener('click', function(e) {
+            if (e.target === this) closeClientModal();
         });
     </script>
 
@@ -2145,7 +2432,7 @@
                     <i class="fas fa-spinner"></i>
                     <span>Loading document...</span>
                 </div>
-                <iframe id="pdf-viewer-iframe" src="" title="Proposal PDF" onload="onPDFLoaded()"></iframe>
+                <iframe id="pdf-viewer-iframe" src="" title="Proposal PDF"></iframe>
             </div>
         </div>
     </div>
@@ -2171,6 +2458,9 @@
             document.getElementById('pdf-viewer-iframe').style.visibility = 'visible';
         }
 
+        // Attach load listener via JS (avoids "not defined" race with inline onload)
+        document.getElementById('pdf-viewer-iframe').addEventListener('load', onPDFLoaded);
+
         function closePDFModal() {
             document.getElementById('pdf-modal-overlay').classList.remove('open');
             document.body.style.overflow = '';
@@ -2180,6 +2470,31 @@
 
         document.getElementById('pdf-modal-overlay').addEventListener('click', e => { if (e.target === document.getElementById('pdf-modal-overlay')) closePDFModal(); });
         document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.getElementById('pdf-modal-overlay').classList.contains('open')) closePDFModal(); });
+
+        // Service Worker: intercept missing static files from base.html
+        // Returns empty 200 responses so no 404s appear in the console.
+        if ('serviceWorker' in navigator) {
+            const swCode = `
+self.addEventListener('fetch', function(event) {
+    const url = new URL(event.request.url);
+    const blocked = [
+        '/static/css/bootstrap.min.css',
+        '/static/js/bootstrap.bundle.min.js',
+        '/static/js/scripts.js'
+    ];
+    if (blocked.some(p => url.pathname === p)) {
+        event.respondWith(new Response('', {
+            status: 200,
+            headers: { 'Content-Type': 'text/plain' }
+        }));
+    }
+});
+            `;
+            const blob = new Blob([swCode], { type: 'application/javascript' });
+            const swUrl = URL.createObjectURL(blob);
+            navigator.serviceWorker.register(swUrl, { scope: '/' })
+                .catch(() => {}); // silently ignore if SW registration fails
+        }
     </script>
 </body>
 </html>

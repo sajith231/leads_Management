@@ -1,0 +1,1045 @@
+{% extends "base.html" %}
+{% block title %}Edit Assignment{% endblock %}
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Mono&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f6fa;
+      --surface: #ffffff;
+      --surface2: #f0f1f5;
+      --border: #dde0ea;
+      --border-focus: #0891b2;
+      --accent: #2563eb;
+      --accent2: #6d28d9;
+      --edit-accent: #0891b2;
+      --edit-accent2: #0e7490;
+      --danger: #dc2626;
+      --success: #16a34a;
+      --warn: #d97706;
+      --text: #111827;
+      --muted: #6b7280;
+      --shadow: rgba(0,0,0,0.07);
+    }
+
+    .edit-asset-page {
+      font-family: 'Google Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px 60px;
+    }
+
+    .page-header {
+      width: 100%;
+      max-width: 720px;
+      margin-bottom: 28px;
+      animation: fadeDown 0.45s ease both;
+    }
+
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 11.5px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .breadcrumb a { color: var(--accent); text-decoration: none; }
+    .breadcrumb a:hover { text-decoration: underline; }
+
+    .page-title-row { display: flex; align-items: center; gap: 14px; }
+
+    .page-icon {
+      width: 46px; height: 46px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 4px 16px rgba(8,145,178,0.28);
+    }
+    .page-icon svg { color: #fff; }
+
+    .page-title-text h1 {
+      font-size: 26px; font-weight: 800;
+      letter-spacing: -0.02em; color: var(--text); line-height: 1.1;
+    }
+    .page-title-text p { font-size: 13px; color: var(--muted); margin-top: 3px; }
+
+    /* Edit banner */
+    .edit-banner {
+      width: 100%; max-width: 720px;
+      background: rgba(8,145,178,0.07);
+      border: 1px solid rgba(8,145,178,0.22);
+      border-radius: 12px;
+      padding: 12px 18px;
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 18px;
+      font-size: 13px; color: var(--edit-accent2);
+      animation: fadeDown 0.5s ease both 0.05s;
+    }
+    .edit-banner svg { flex-shrink: 0; color: var(--edit-accent); }
+
+    .form-card {
+      width: 100%; max-width: 720px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: 0 4px 32px var(--shadow);
+      overflow: hidden;
+      animation: fadeUp 0.5s ease both 0.08s;
+    }
+
+    .form-card-header {
+      padding: 22px 32px 18px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+      display: flex; align-items: center; gap: 10px;
+    }
+
+    .step-badge {
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--edit-accent);
+      background: rgba(8,145,178,0.08);
+      border: 1px solid rgba(8,145,178,0.2);
+      border-radius: 6px; padding: 3px 10px;
+    }
+
+    .form-card-header h2 { font-size: 15px; font-weight: 700; color: var(--text); }
+
+    .assignment-id-pill {
+      margin-left: auto;
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 11px; color: var(--muted);
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; padding: 4px 12px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .assignment-id-pill span { color: var(--edit-accent); font-weight: 600; }
+
+    .form-body {
+      padding: 32px;
+      display: flex; flex-direction: column; gap: 0;
+    }
+
+    .section-label {
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 14px; letter-spacing: 0.18em; text-transform: capitalize;
+      color: black; font-weight: bold;
+      margin-bottom: 16px; margin-top: 28px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .section-label:first-child { margin-top: 0; }
+    .section-label::after { content:''; flex:1; height:1px; background:var(--border); }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+    .form-group {
+      display: flex; flex-direction: column; gap: 7px;
+      animation: fadeUp 0.4s ease both;
+    }
+    .form-group:nth-child(1) { animation-delay: 0.10s; }
+    .form-group:nth-child(2) { animation-delay: 0.14s; }
+    .form-group:nth-child(3) { animation-delay: 0.18s; }
+    .form-group:nth-child(4) { animation-delay: 0.22s; }
+    .form-group:nth-child(5) { animation-delay: 0.26s; }
+    .form-group.full { grid-column: 1 / -1; }
+
+    .form-group label {
+      font-size: 13px; font-weight: 600; color: black;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .form-group label .req { color: var(--danger); font-size: 14px; line-height: 1; }
+
+    .changed-dot {
+      width: 7px; height: 7px;
+      background: var(--warn); border-radius: 50%;
+      display: none; margin-left: auto; flex-shrink: 0;
+    }
+    .changed-dot.show { display: block; }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 10px; color: var(--text);
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 13px; padding: 12px 16px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      width: 100%;
+    }
+    .form-group input::placeholder,
+    .form-group textarea::placeholder { color: #b0b5c0; }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(8,145,178,0.1);
+    }
+    .form-group input.error,
+    .form-group select.error { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(220,38,38,0.1); }
+    .form-group input.modified,
+    .form-group select.modified,
+    .form-group textarea.modified { border-color: var(--warn); background: rgba(217,119,6,0.03); }
+
+    .error-msg {
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 11px; color: var(--danger);
+      display: none; align-items: center; gap: 4px;
+    }
+    .error-msg.show { display: flex; }
+
+    .form-group select {
+      appearance: none; -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 14px center;
+      padding-right: 40px; cursor: pointer;
+    }
+    .form-group select option { background: #fff; color: var(--text); }
+
+    .form-group textarea { resize: vertical; min-height: 100px; line-height: 1.6; }
+
+    /* Spec display */
+    .spec-display-row { display: flex; align-items: flex-start; gap: 10px; }
+    .spec-tags-wrapper {
+      background: #fff; border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 14px 16px;
+      display: grid; grid-template-columns: repeat(3,1fr);
+      gap: 10px; min-height: 56px; flex: 1;
+    }
+    .spec-tag {
+      display: flex; flex-direction: column; gap: 4px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 8px 12px;
+      font-family: 'Google Sans Mono', monospace;
+    }
+    .spec-tag .spec-label {
+      font-size: 9.5px; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--edit-accent); line-height: 1;
+    }
+    .spec-tag .spec-value { font-size: 12.5px; color: var(--text); font-weight: 600; line-height: 1.2; }
+    .spec-empty { font-family: 'Google Sans Mono', monospace; font-size: 12px; color: #b0b5c0; }
+
+    /* Asset image upload */
+    .img-upload-zone {
+      border: 1.5px dashed var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+      text-align: center;
+      cursor: pointer;
+      position: relative;
+      transition: border-color 0.2s, background 0.2s;
+      
+      margin-top: 10px;
+    }
+    
+    .img-upload-zone.has-file { border-color: var(--edit-accent); background: rgba(8,145,178,0.04); }
+    .img-upload-zone input[type="file"] {
+      position: absolute; inset: 0; opacity: 0;
+      cursor: pointer; width: 100%; height: 100%;
+    }
+    .img-upload-zone .upload-icon { color: var(--muted); margin-bottom: 6px; }
+    .img-upload-zone p { font-size: 13px; color: var(--muted); }
+    .img-upload-zone span.hl { color: var(--edit-accent); font-weight: 600; }
+    .img-upload-zone .file-name-display {
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 11.5px; color: var(--success);
+      margin-top: 6px; display: none;
+    }
+    .img-upload-zone.has-file .file-name-display { display: block; }
+    .img-new-preview {
+      max-height: 90px; max-width: 140px;
+      object-fit: contain; border-radius: 8px;
+      border: 1px solid var(--border);
+      display: none; margin: 8px auto 0;
+      cursor: zoom-in;
+    }
+    .img-new-preview.show { display: block; }
+
+    /* Return date & returned-by fields */
+    .form-group input[type="date"] { cursor: pointer; }
+
+    /* Return condition tint */
+    
+    .ret-input:focus { border-color: var(--warn) !important; box-shadow: 0 0 0 3px rgba(217,119,6,0.13) !important; }
+
+    /* Form footer */
+    .form-footer {
+      padding: 22px 32px;
+      border-top: 1px solid var(--border);
+      background: var(--surface2);
+      display: flex; align-items: center;
+      justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+    }
+
+    .footer-meta {
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 11px; color: var(--muted);
+      display: flex; flex-direction: column; gap: 3px;
+    }
+    .footer-meta .meta-item { display: flex; align-items: center; gap: 5px; }
+
+    .footer-actions { display: flex; gap: 12px; align-items: center; }
+
+    .btn-cancel {
+      padding: 12px 26px; border-radius: 10px;
+      border: 1.5px solid var(--border); background: transparent;
+      color: var(--muted); font-family: 'Google Sans', sans-serif;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      transition: all 0.15s; letter-spacing: 0.01em;
+    }
+    .btn-cancel:hover { border-color: var(--text); color: var(--text); background: var(--surface); }
+
+    .btn-submit {
+      padding: 12px 32px; border-radius: 10px; border: none;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff; font-family: 'Google Sans', sans-serif;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      transition: opacity 0.15s, transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 18px rgba(8,145,178,0.3);
+      display: flex; align-items: center; gap: 8px; letter-spacing: 0.01em;
+    }
+    .btn-submit:hover { opacity: 0.93; transform: translateY(-1px); box-shadow: 0 8px 28px rgba(8,145,178,0.38); }
+    .btn-submit:active { transform: none; }
+
+    /* Success overlay */
+    .success-overlay {
+      position: fixed; inset: 0;
+      background: rgba(255,255,255,0.92); backdrop-filter: blur(8px);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    }
+    .success-overlay.show { opacity: 1; pointer-events: all; }
+    .success-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; padding: 48px 52px;
+      text-align: center; box-shadow: 0 16px 64px rgba(0,0,0,0.12);
+      transform: scale(0.92); transition: transform 0.3s;
+    }
+    .success-overlay.show .success-box { transform: scale(1); }
+    .success-check {
+      width: 68px; height: 68px;
+      background: rgba(8,145,178,0.1); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+    }
+    .success-check svg { color: var(--edit-accent); }
+    .success-box h3 { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+    .success-box p { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+    .btn-back {
+      padding: 12px 28px; border-radius: 10px; border: none;
+      background: linear-gradient(135deg, var(--edit-accent), var(--edit-accent2));
+      color: #fff; font-family: 'Google Sans', sans-serif;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      box-shadow: 0 4px 16px rgba(8,145,178,0.28);
+    }
+
+    /* Asset image preview panel */
+    .asset-img-panel {
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border-top: 1.5px solid var(--border);
+    }
+    .asset-img-panel-header {
+      padding: 8px 14px;
+      
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      
+    }
+    .asset-img-panel-header svg { color: var(--edit-accent); }
+    .asset-img-preview {
+      max-width: 20%;
+      max-height: 220px;
+      object-fit: contain;
+      background: #fff;
+      display: block;
+      padding: 12px;
+      cursor: zoom-in;
+      transition: opacity 0.15s;
+    }
+    .asset-img-preview:hover { opacity: 0.88; }
+    .asset-img-placeholder {
+      width: 100%;
+      aspect-ratio: 16/9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: #fff;
+      color: #b0b5c0;
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 12px;
+    }
+    .asset-img-placeholder svg { opacity: 0.35; }
+    .img-zoom-hint {
+      padding: 5px 14px 7px;
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      
+    }
+    .img-zoom-hint svg { opacity: 0.55; }
+
+    /* Lightbox overlay */
+    .lightbox-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.88);
+      backdrop-filter: blur(6px);
+      z-index: 500;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.22s ease;
+    }
+    .lightbox-backdrop.show { opacity: 1; pointer-events: all; }
+    .lightbox-img {
+      max-width: 92vw; max-height: 88vh;
+      object-fit: contain;
+      border-radius: 10px;
+      box-shadow: 0 32px 96px rgba(0,0,0,0.6);
+      transform: scale(0.94); transition: transform 0.22s ease;
+      display: block;
+    }
+    .lightbox-backdrop.show .lightbox-img { transform: scale(1); }
+    .lightbox-close {
+      position: absolute; top: 18px; right: 22px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 50%; width: 40px; height: 40px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: #fff; transition: background 0.15s;
+    }
+    .lightbox-close:hover { background: rgba(255,255,255,0.22); }
+    .lightbox-caption {
+      position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+      font-family: 'Google Sans Mono', monospace;
+      font-size: 12px; color: rgba(255,255,255,0.6);
+      background: rgba(0,0,0,0.4); border-radius: 20px;
+      padding: 5px 16px; white-space: nowrap;
+    }
+
+    @keyframes fadeDown { from { opacity:0; transform:translateY(-12px); } to { opacity:1; transform:none; } }
+    @keyframes fadeUp   { from { opacity:0; transform:translateY(10px);  } to { opacity:1; transform:none; } }
+
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .form-body { padding: 22px 20px; }
+      .form-footer { flex-direction: column; align-items: stretch; }
+      .footer-actions { flex-direction: column; }
+      .btn-cancel, .btn-submit { justify-content: center; }
+      .success-box { padding: 36px 28px; }
+      .assignment-id-pill { display: none; }
+    }
+  </style>
+
+<div class="edit-asset-page">
+
+  <!-- Page header -->
+  <div class="page-header">
+    
+    <div class="page-title-row">
+      <div class="page-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+      </div>
+      <div class="page-title-text">
+        <h1>Edit Assignment</h1>
+        <p>Update the assignment details and save changes.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit notice banner -->
+  
+
+  <!-- Form card -->
+  <div class="form-card">
+
+    <div class="form-card-header">
+     
+      <h2>Assignment Details</h2>
+      <div class="assignment-id-pill">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        ID: <span>{{ assignment.pk }}</span>
+      </div>
+    </div>
+
+    <div class="form-body">
+
+      <!-- Section: Assignment Info -->
+      <div class="section-label">Assignment Info</div>
+      <div class="form-grid">
+
+        <!-- Employee -->
+        <div class="form-group">
+          <label>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Select Employee <span class="req">*</span>
+            <span class="changed-dot" id="dot-employee"></span>
+          </label>
+          <select id="fEmployee" name="employee_id"
+                  onchange="clearError(this); trackChange(this, 'dot-employee', ORIGINAL.employee)">
+            <option value="">— Choose an employee —</option>
+            {% for user in users %}
+              <option value="{{ user.id }}"
+                {% if user.id|stringformat:"s" == assignment.employee_id %}selected{% endif %}>
+                {{ user.name }}{% if user.branch %} ({{ user.branch }}){% endif %}
+              </option>
+            {% endfor %}
+          </select>
+          <span class="error-msg" id="err-employee">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Please select an employee.
+          </span>
+        </div>
+
+        <!-- Asset -->
+        <div class="form-group">
+          <label>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            Select Asset <span class="req">*</span>
+            <span class="changed-dot" id="dot-asset"></span>
+          </label>
+          <select id="fAsset" name="asset_id"
+                  onchange="clearError(this); fillAssetSpecs(this.value); trackChange(this, 'dot-asset', ORIGINAL.asset)">
+            <option value="">— Choose an asset —</option>
+            {% for a in available_assets %}
+              <option value="{{ a.asset_id }}"
+                {% if a.asset_id == assignment.asset.asset_id %}selected{% endif %}>
+                {{ a.name }} ({{ a.asset_id }}) — {{ a.category }}
+              </option>
+            {% endfor %}
+          </select>
+          <span class="error-msg" id="err-asset">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Please select an asset.
+          </span>
+        </div>
+      </div>
+
+      <!-- Section: Spec Details (auto-populated from asset) -->
+      <div class="section-label">Specification Details</div>
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Asset Spec Details
+          </label>
+          <div class="spec-display-row">
+            <div class="spec-tags-wrapper" id="specTagsWrapper">
+              <span class="spec-empty">Select an asset to view specs</span>
+            </div>
+          </div>
+          <input type="hidden" id="fSpec" value="{{ assignment.spec_details }}" />
+        </div>
+
+        <!-- Asset image preview + upload side by side -->
+        <div class="form-group full">
+          <label>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            Asset Image
+          </label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:stretch;">
+
+            <!-- Current image -->
+            <div class="asset-img-panel" id="assetImgPanel" style="border:1.5px solid var(--border);">
+              <div class="asset-img-panel-header">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                Current Image
+              </div>
+              {% if assignment.asset.image %}
+                <img id="assetImgPreview"
+                     src="{{ assignment.asset.image.url }}"
+                     alt="{{ assignment.asset.name }}"
+                     class="asset-img-preview"
+                     style="max-width:100%;max-height:120px;margin:0 auto;display:block;"
+                     onclick="openLightbox(this.src, this.alt)" />
+              {% else %}
+                <div class="asset-img-placeholder" id="assetImgPlaceholder">
+                  <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                  No image on record
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- Upload new image -->
+            <div class="img-upload-zone" id="imgUploadZone" style="margin-top:0;">
+              <input type="file" id="fAssetImage" accept="image/*" onchange="handleNewImage(this)" />
+              <div class="upload-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              </div>
+              <p><span class="hl">Click to upload</span> new image</p>
+              <p style="font-size:11px;margin-top:3px;">JPG, PNG, WEBP</p>
+              <img id="newImgPreview" class="img-new-preview" src="" alt="New image preview"
+                   onclick="openLightbox(this.src,'New Asset Image')" />
+              <div class="file-name-display" id="newImgName"></div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Section: Return Info -->
+      <div class="section-label">Return Info</div>
+      <div class="form-grid">
+
+        <!-- Return Date -->
+        <div class="form-group">
+          <label>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Return Date <span style="color:var(--muted);font-weight:400;font-size:12px;">(optional)</span>
+            <span class="changed-dot" id="dot-returndate"></span>
+          </label>
+          <input type="date" id="fReturn"
+                 value="{{ assignment.return_date|date:'Y-m-d'|default:'' }}"
+                 oninput="trackChange(this, 'dot-returndate', ORIGINAL.returnDate)" />
+        </div>
+
+        <!-- Returned By -->
+        <div class="form-group">
+          <label>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+            Returned By <span style="color:var(--muted);font-weight:400;font-size:12px;">(optional)</span>
+            <span class="changed-dot" id="dot-returnedby"></span>
+          </label>
+          <select id="fReturnedBy"
+                  onchange="trackChange(this, 'dot-returnedby', ORIGINAL.returnedById)">
+            <option value="">— Not yet returned —</option>
+            {% for user in users %}
+              <option value="{{ user.id }}"
+                {% if user.id|stringformat:"s" == assignment.returned_by_id %}selected{% endif %}>
+                {{ user.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Condition on Return -->
+        <div class="form-group full">
+          <label>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Condition on Return
+            <span style="color:var(--muted);font-weight:400;font-size:12px;">(optional)</span>
+            <span class="changed-dot" id="dot-returncondition"></span>
+          </label>
+          <textarea id="fReturnCondition" class="ret-input"
+                    style="min-height:80px;"
+                    placeholder="e.g. Good condition, minor scratches on lid, charger included…"
+                    oninput="trackChange(this, 'dot-returncondition', ORIGINAL.returnCondition)">{{ assignment.return_condition }}</textarea>
+        </div>
+
+        <!-- Return Document / Image -->
+        <div class="form-group full">
+          <label>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Return Document
+          </label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:stretch;">
+
+            <!-- Current return document -->
+            {% if assignment.return_document %}
+              {% with doc_url=assignment.return_document.url doc_name=assignment.return_document.name %}
+              {% with ext=doc_name|lower %}
+              <div style="border:1.5px solid var(--border);border-radius:10px;overflow:hidden;background:transparent;">
+                <div style="padding:7px 14px;border-bottom:1px solid var(--border);font-family:'Google Sans Mono',monospace;font-size:10px;letter-spacing:0.13em;text-transform:uppercase;color:#111827;font-weight:700;display:flex;align-items:center;gap:6px;">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  Uploaded at time of return
+                </div>
+                {% if ext|slice:"-4:" == ".jpg" or ext|slice:"-5:" == ".jpeg" or ext|slice:"-4:" == ".png" or ext|slice:"-5:" == ".webp" %}
+                  <div style="padding:12px;display:flex;flex-direction:column;align-items:center;gap:8px;">
+                    <img src="{{ doc_url }}"
+                         alt="Return document"
+                         onclick="openLightbox('{{ doc_url }}', 'Return Document — {{ assignment.asset.name }}')"
+                         style="max-height:100px;max-width:100%;object-fit:contain;border-radius:8px;cursor:zoom-in;transition:opacity 0.15s;"
+                         onmouseover="this.style.opacity='0.87'" onmouseout="this.style.opacity='1'" />
+                  </div>
+                {% else %}
+                  <div style="padding:14px 16px;display:flex;align-items:center;gap:12px;">
+                    <div style="width:36px;height:36px;border-radius:8px;background:rgba(217,119,6,0.10);border:1px solid rgba(217,119,6,0.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--warn)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    </div>
+                    <div style="flex:1;min-width:0;">
+                      <div style="font-family:'Google Sans Mono',monospace;font-size:11.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ doc_name|slice:"24:" }}</div>
+                    </div>
+                    <a href="{{ doc_url }}" target="_blank" download
+                       style="flex-shrink:0;padding:6px 12px;border-radius:8px;border:1.5px solid rgba(217,119,6,0.35);background:transparent;color:var(--warn);font-family:'Google Sans',sans-serif;font-size:11px;font-weight:600;cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:4px;"
+                       onmouseover="this.style.background='rgba(217,119,6,0.07)'" onmouseout="this.style.background='transparent'">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                      Download
+                    </a>
+                  </div>
+                {% endif %}
+              </div>
+              {% endwith %}
+              {% endwith %}
+            {% else %}
+              <div style="border:1.5px dashed var(--border);border-radius:10px;padding:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:var(--surface2);color:var(--muted);text-align:center;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.35;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <span style="font-family:'Google Sans Mono',monospace;font-size:11.5px;">No document uploaded</span>
+              </div>
+            {% endif %}
+
+            <!-- Upload new return document -->
+            <div class="img-upload-zone" style="margin-top:0;">
+              <input type="file" id="fReturnDoc" accept=".pdf,.jpg,.jpeg,.png,.webp,.docx" onchange="handleReturnDoc(this)" />
+              <div class="upload-icon" style="color:var(--warn);">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              </div>
+              <p><span style="color:var(--warn);font-weight:600;">Click to upload</span> new document</p>
+              <p style="font-size:11px;margin-top:3px;">PDF, JPG, PNG, DOCX</p>
+              <img id="retDocPreview" class="img-new-preview" src="" alt="Return doc preview"
+                   onclick="openLightbox(this.src,'New Return Document')" />
+              <div class="file-name-display" id="retDocName"></div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Notes -->
+      <div class="form-group full" style="margin-top:18px;">
+        <label>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Notes
+        </label>
+        <textarea id="fNotes" class="ret-input" style="min-height:100px;" placeholder="Additional assignment notes...">{{ assignment.notes }}</textarea>
+      </div>
+    </div><!-- /form-body -->
+
+    <!-- Footer -->
+    <div class="form-footer">
+      <div class="footer-meta">
+        <div class="meta-item">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Assigned: {{ assignment.assigned_date|date:"d M Y" }}
+        </div>
+        <div class="meta-item">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Last updated: {{ assignment.updated_at|date:"d M Y, H:i" }}
+        </div>
+      </div>
+      <div class="footer-actions">
+        <button class="btn-cancel" onclick="handleCancel()">Cancel</button>
+        <button class="btn-submit" onclick="handleSubmit()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Save Changes
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /form-card -->
+
+  <!-- Success overlay -->
+  <div class="success-overlay" id="successOverlay">
+    <div class="success-box">
+      <div class="success-check">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h3>Changes Saved!</h3>
+      <p>Assignment #{{ assignment.pk }} has been updated<br>and changes logged in the system.</p>
+      <button class="btn-back" onclick="window.location.href='{% url "asset_management" %}'">← Back to Asset List</button>
+    </div>
+  </div>
+</div><!-- /edit-asset-page -->
+
+<script>
+  // ── Original values for change-tracking ──────────────────────────────────────
+  const ORIGINAL = {
+    employee:    '{{ assignment.employee_id }}',
+    asset:       '{{ assignment.asset.asset_id }}',
+    specNotes:   `{{ assignment.spec_details|escapejs }}`,
+    returnDate:  '{{ assignment.return_date|date:"Y-m-d"|default:"" }}',
+    returnedById:'{{ assignment.returned_by_id }}',
+    notes:       `{{ assignment.notes|escapejs }}`,
+    returnCondition:  `{{ assignment.return_condition|escapejs }}`,
+  };
+
+  function trackChange(el, dotId, original) {
+    const changed = el.value !== original;
+    el.classList.toggle('modified', changed);
+    const dot = document.getElementById(dotId);
+    if (dot) dot.classList.toggle('show', changed);
+  }
+
+  // ── Error helpers ─────────────────────────────────────────────────────────────
+  function clearError(el) {
+    el.classList.remove('error');
+    const errEl = document.getElementById('err-' + el.id.replace('f','').toLowerCase());
+    if (errEl) errEl.classList.remove('show');
+  }
+
+  function showError(id, errId) {
+    const el = document.getElementById(id);
+    el.classList.add('error');
+    document.getElementById(errId).classList.add('show');
+    return el;
+  }
+
+  // ── New asset image handler ───────────────────────────────────────────────────
+  function handleNewImage(input) {
+    const file = input.files[0];
+    const zone = document.getElementById('imgUploadZone');
+    const preview = document.getElementById('newImgPreview');
+    const nameEl  = document.getElementById('newImgName');
+    if (!file) {
+      zone.classList.remove('has-file');
+      preview.classList.remove('show');
+      preview.src = '';
+      nameEl.textContent = '';
+      updateAssetImage(null, null);
+      return;
+    }
+    zone.classList.add('has-file');
+    nameEl.textContent = '📎 ' + file.name;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      preview.src = e.target.result;
+      preview.classList.add('show');
+      updateAssetImage(e.target.result, file.name);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // ── Return document handler ───────────────────────────────────────────────────
+  function handleReturnDoc(input) {
+    const file = input.files[0];
+    const preview = document.getElementById('retDocPreview');
+    const nameEl  = document.getElementById('retDocName');
+    const zone    = input.closest('.img-upload-zone');
+    if (!file) {
+      zone.classList.remove('has-file');
+      preview.classList.remove('show');
+      preview.src = '';
+      nameEl.textContent = '';
+      return;
+    }
+    zone.classList.add('has-file');
+    nameEl.textContent = '📎 ' + file.name;
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        preview.src = e.target.result;
+        preview.classList.add('show');
+      };
+      reader.readAsDataURL(file);
+    } else {
+      preview.classList.remove('show');
+      preview.src = '';
+    }
+  }
+
+  // ── Submit ────────────────────────────────────────────────────────────────────
+  function handleSubmit() {
+    let valid = true, firstError = null;
+    if (!document.getElementById('fEmployee').value) {
+      const el = showError('fEmployee','err-employee'); if (!firstError) firstError=el; valid=false;
+    }
+    if (!document.getElementById('fAsset').value) {
+      const el = showError('fAsset','err-asset'); if (!firstError) firstError=el; valid=false;
+    }
+    if (!valid) { firstError?.scrollIntoView({behavior:'smooth',block:'center'}); return; }
+
+    const imageFile   = document.getElementById('fAssetImage').files[0];
+    const retDocFile  = document.getElementById('fReturnDoc').files[0];
+
+    // Use FormData when any file is attached, JSON otherwise
+    if (imageFile || retDocFile) {
+      const fd = new FormData();
+      fd.append('employee_id',    document.getElementById('fEmployee').value);
+      fd.append('spec_details',   document.getElementById('fSpec').value);
+      fd.append('return_date',    document.getElementById('fReturn').value || '');
+      fd.append('returned_by_id', document.getElementById('fReturnedBy').value || '');
+      fd.append('notes',          document.getElementById('fNotes').value);
+      fd.append('return_condition', document.getElementById('fReturnCondition').value);
+      if (imageFile)  fd.append('asset_image',    imageFile);
+      if (retDocFile) fd.append('return_document', retDocFile);
+
+      fetch('/asset_management/api/assignments/{{ assignment.pk }}/edit/', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') },
+        body: fd,
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) document.getElementById('successOverlay').classList.add('show');
+        else alert('Error: ' + data.error);
+      })
+      .catch(() => alert('Network error. Please try again.'));
+    } else {
+      const payload = {
+        employee_id:    document.getElementById('fEmployee').value,
+        spec_details:   document.getElementById('fSpec').value,
+        return_date:    document.getElementById('fReturn').value || null,
+        returned_by_id: document.getElementById('fReturnedBy').value || null,
+        notes:          document.getElementById('fNotes').value,
+        return_condition: document.getElementById('fReturnCondition').value,
+      };
+      fetch('/asset_management/api/assignments/{{ assignment.pk }}/edit/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+        body: JSON.stringify(payload),
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) document.getElementById('successOverlay').classList.add('show');
+        else alert('Error: ' + data.error);
+      })
+      .catch(() => alert('Network error. Please try again.'));
+    }
+  }
+
+  function getCookie(name) {
+    const v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+    return v ? v[2] : null;
+  }
+
+  function handleCancel() {
+    if (confirm('Discard unsaved changes and go back to the asset list?'))
+      window.location.href = '{% url "asset_management" %}';
+  }
+
+  // ── Asset data (for spec preview) ────────────────────────────────────────────
+  const ASSET_DATA = {
+    {% for a in available_assets %}
+    "{{ a.asset_id }}": {
+      name:    "{{ a.name }}",
+      image:   "{% if a.image %}{{ a.image.url }}{% endif %}",
+      cpu:     "{{ a.spec_cpu }}",
+      ram:     "{{ a.spec_ram }}",
+      storage: "{{ a.spec_storage }}",
+      display: "{{ a.spec_display }}",
+      os:      "{{ a.spec_os }}",
+      color:   "{{ a.spec_color }}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  };
+
+  const SPEC_LABELS = [
+    { key:'cpu',     label:'CPU'     },
+    { key:'ram',     label:'RAM'     },
+    { key:'storage', label:'Storage' },
+    { key:'display', label:'Display' },
+    { key:'os',      label:'OS'      },
+    { key:'color',   label:'Color'   },
+  ];
+
+  function fillAssetSpecs(assetId) {
+    const wrapper = document.getElementById('specTagsWrapper');
+    wrapper.innerHTML = '';
+    if (!assetId || !ASSET_DATA[assetId]) {
+      wrapper.innerHTML = '<span class="spec-empty">Select an asset to view specs</span>';
+      document.getElementById('fSpec').value = '';
+      updateAssetImage(null, null);
+      return;
+    }
+    const d = ASSET_DATA[assetId];
+    const parts = [];
+    SPEC_LABELS.forEach(function(item) {
+      const val = d[item.key];
+      if (val && val.trim()) {
+        parts.push(val.trim());
+        const s = document.createElement('span');
+        s.className = 'spec-tag';
+        s.innerHTML = '<span class="spec-label">'+item.label+'</span><span class="spec-value">'+val.trim()+'</span>';
+        wrapper.appendChild(s);
+      }
+    });
+    if (!parts.length) {
+      wrapper.innerHTML = '<span class="spec-empty">No specs recorded for this asset</span>';
+    }
+    document.getElementById('fSpec').value = parts.join(',');
+    updateAssetImage(d.image, d.name);
+  }
+
+  // ── Asset image panel updater ─────────────────────────────────────────────────
+  function updateAssetImage(url, name) {
+    const panel = document.getElementById('assetImgPanel');
+    if (!panel) return;
+    const header = panel.querySelector('.asset-img-panel-header');
+    while (panel.lastChild && panel.lastChild !== header) {
+      panel.removeChild(panel.lastChild);
+    }
+    if (url && url.trim()) {
+      const img = document.createElement('img');
+      img.id = 'assetImgPreview';
+      img.src = url;
+      img.alt = name || '';
+      img.className = 'asset-img-preview';
+      img.onclick = function() { openLightbox(this.src, this.alt); };
+      panel.appendChild(img);
+      const hint = document.createElement('div');
+      hint.className = 'img-zoom-hint';
+     
+      panel.appendChild(hint);
+    } else {
+      const ph = document.createElement('div');
+      ph.className = 'asset-img-placeholder';
+      ph.innerHTML = '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>No image on record';
+      panel.appendChild(ph);
+    }
+  }
+
+  // ── Lightbox ──────────────────────────────────────────────────────────────────
+  function openLightbox(src, alt) {
+    const backdrop = document.getElementById('lightboxBackdrop');
+    const img      = document.getElementById('lightboxImg');
+    const caption  = document.getElementById('lightboxCaption');
+    img.src = src; img.alt = alt || '';
+    caption.textContent = alt || '';
+    backdrop.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeLightbox(e) {
+    if (e && e.target !== document.getElementById('lightboxBackdrop')) return;
+    document.getElementById('lightboxBackdrop').classList.remove('show');
+    document.body.style.overflow = '';
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeLightbox(null);
+  });
+
+  // ── Init: populate specs and image for the currently assigned asset ───────────
+  document.addEventListener('DOMContentLoaded', function() {
+    const assetId = document.getElementById('fAsset').value;
+    if (assetId) fillAssetSpecs(assetId);
+  });
+</script>
+
+<!-- Image Lightbox -->
+<div class="lightbox-backdrop" id="lightboxBackdrop" onclick="closeLightbox(event)">
+  <button class="lightbox-close" onclick="closeLightbox(null)" aria-label="Close">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  </button>
+  <img class="lightbox-img" id="lightboxImg" src="" alt="" />
+  <div class="lightbox-caption" id="lightboxCaption"></div>
+</div>
+
+{% endblock %}
