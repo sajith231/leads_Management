@@ -54,6 +54,7 @@ class Location(models.Model):
 
 from django.db import models
 from app2.models import JobRole
+from purchase_order.models import Department
 
 
 class User(models.Model):
@@ -91,6 +92,7 @@ class User(models.Model):
     allowed_menus = models.TextField(blank=True, null=True)
     job_role = models.ForeignKey(JobRole, on_delete=models.SET_NULL, null=True, blank=True, related_name='users')
     phone_number = models.CharField(max_length=20, null=True, blank=True)
+    departments = models.ManyToManyField(Department, blank=True, related_name='users', help_text="Departments assigned to this user")
 
 
     
