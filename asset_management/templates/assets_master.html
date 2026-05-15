@@ -6,7 +6,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Asset Master | Focused Asset Creation</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -35,7 +34,7 @@
 
         body {
             background: var(--bg);
-            font-family: 'DM Sans', sans-serif;
+            font-family: inherit;
             color: var(--text);
             min-height: 100vh;
         }
@@ -120,7 +119,7 @@
         .field.span-3 { grid-column: span 3; }
 
         label {
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 600;
             color: black;
             letter-spacing: 0.5px;
@@ -135,10 +134,9 @@
         input, select, textarea {
             background: var(--input-bg);
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: 6px;
             padding: 12px 14px;
             font-size: 14px;
-            font-family: 'DM Sans', sans-serif;
             transition: all 0.2s;
             outline: none;
             width: 100%;
@@ -168,7 +166,7 @@
 
         .spec-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 16px;
             margin-top: 8px;
         }
@@ -181,7 +179,7 @@
         }
 
         .spec-item label {
-            font-size: 11px;
+            font-size: 12px;
             text-transform: capitalize;
             color: black;
             margin-bottom: 6px;
@@ -194,7 +192,6 @@
             border-bottom: 1px solid var(--border);
             border-radius: 0;
             padding: 6px 0 4px;
-            font-family: 'DM Mono', monospace;
             font-size: 13px;
         }
 
@@ -223,13 +220,12 @@
             align-items: center;
             gap: 10px;
             padding: 11px 24px;
-            border-radius: 40px;
+            border-radius: 6px;
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             border: none;
             transition: all 0.2s;
-            font-family: 'DM Sans', sans-serif;
         }
 
         .btn:disabled {
@@ -307,11 +303,12 @@
         thead th {
             background: var(--surface);
             padding: 14px 16px;
-            font-size: 12px;
-            font-weight: 700;
+            font-size: 13px;
+            font-weight: 600;
             letter-spacing: 0.6px;
             text-transform: capitalize;
-            color: black;
+            background-color: #111318;
+            color: rgb(255, 254, 254);
             text-align: left;
             border-bottom: 1px solid var(--border);
         }
@@ -350,7 +347,6 @@
         }
 
         .mono {
-            font-family: 'DM Mono', monospace;
             font-size: 12px;
             color: var(--muted);
         }
@@ -452,7 +448,6 @@
             font-size: 12px;
             color: var(--muted);
             margin-top: 3px;
-            font-family: 'DM Mono', monospace;
         }
 
         .modal-body {
@@ -471,7 +466,7 @@
             font-weight: 700;
             letter-spacing: 0.8px;
             text-transform: uppercase;
-            color: var(--muted);
+            color: #c18410;
             margin-bottom: 12px;
             display: flex;
             align-items: center;
@@ -501,8 +496,7 @@
         }
 
         .detail-cell {
-            background: var(--surface);
-            border: 1px solid var(--border);
+           
             border-radius: 14px;
             padding: 12px 14px;
         }
@@ -525,7 +519,6 @@
         }
 
         .detail-cell .cell-value.mono {
-            font-family: 'DM Mono', monospace;
             font-size: 13px;
             font-weight: 500;
         }
@@ -609,7 +602,10 @@
             margin-right: 8px;
         }
 
-        @keyframes spin { to { transform: rotate(360deg); } }
+        #am-image-preview-wrap:hover { border-color: var(--accent); }
+        #am-image-preview-wrap:hover #am-image-change-overlay { display:flex !important; }
+
+
 
         .empty-state {
             text-align: center;
@@ -619,9 +615,14 @@
 
         @media (max-width: 780px) {
             .app-container { padding: 20px 18px; }
-            .form-grid { grid-template-columns: 1fr; }
+            .form-grid { grid-template-columns: 1fr 1fr !important; }
             .field.span-2, .field.span-3 { grid-column: span 1; }
-            .spec-grid { grid-template-columns: 1fr; }
+            .spec-grid { grid-template-columns: repeat(2, 1fr) !important; }
+        }
+
+        @media (max-width: 480px) {
+            .form-grid { grid-template-columns: 1fr !important; }
+            .spec-grid { grid-template-columns: 1fr !important; }
         }
     </style>
 
@@ -655,6 +656,21 @@
                     <i class="fas fa-search"></i>
                     <input type="text" id="global-search" placeholder="Search by name, ID or serial..." autocomplete="off">
                 </div>
+                <select id="dept-filter" style="width: 190px; border-radius: 40px;">
+                    <option value="">All departments</option>
+                </select>
+                <select id="category-filter" style="width: 170px; border-radius: 40px;">
+                    <option value="">All categories</option>
+                    <option>Laptop</option>
+                    <option>Desktop</option>
+                    <option>Mobile / Tablet</option>
+                    <option>Monitor</option>
+                    <option>Printer / Scanner</option>
+                    <option>Networking Equipment</option>
+                    <option>Vehicle</option>
+                    <option>Furniture</option>
+                    <option>Other</option>
+                </select>
                 <select id="status-filter" style="width: 150px; border-radius: 40px;">
                     <option value="">All status</option>
                     <option value="available">Available</option>
@@ -669,6 +685,7 @@
                         <tr>
                             <th>Asset</th>
                             <th>Category</th>
+                            <th>Department</th>
                             <th>Serial</th>
                             <th>Purchase Date</th>
                             <th>Value (₹)</th>
@@ -688,25 +705,21 @@
 
     <!-- ========== SCREEN 2: ADD / EDIT FORM ========== -->
     <div id="screen-form" class="screen screen-hidden">
-        <div class="card">
-            <div class="card-title" style="font-size: 14px; font-weight: 700;">
+        <div class="card" style="max-width: 960px; margin: 0 auto;">
+            <div class="card-title" style="font-size: 15px; font-weight: 700;">
                 <i class="fas fa-plus-circle" style="color: var(--accent)"></i>
                 <span id="form-screen-title">Create new asset</span>
             </div>
 
-            <div class="form-grid" style="margin-top: 24px;">
+            <!-- Row 1: Department & Category (2 columns) -->
+            <div class="form-grid" style="margin-top: 24px; grid-template-columns: repeat(2, 1fr);">
                 <div class="field">
-                    <label>Asset Name <span class="required">*</span></label>
+                    <label>Department</label>
                     <div class="input-icon-wrap">
-                        <i class="fas fa-tag"></i>
-                        <input type="text" id="am-name" placeholder="e.g. MacBook Pro M3">
-                    </div>
-                </div>
-                <div class="field">
-                    <label>Asset ID / Code <span class="required">*</span></label>
-                    <div class="input-icon-wrap">
-                        <i class="fas fa-barcode"></i>
-                        <input type="text" id="am-id" placeholder="AST-2025-XXX">
+                        <i class="fas fa-building"></i>
+                        <select id="am-department">
+                            <option value="">— Select Department —</option>
+                        </select>
                     </div>
                 </div>
                 <div class="field">
@@ -724,6 +737,24 @@
                         <option>Other</option>
                     </select>
                 </div>
+            </div>
+
+            <!-- Row 2: Asset ID, Asset Name, Brand, Model (4 columns) -->
+            <div class="form-grid" style="margin-top: 16px; grid-template-columns: repeat(4, 1fr);">
+                <div class="field">
+                    <label>Asset ID / Code <span class="required">*</span></label>
+                    <div class="input-icon-wrap">
+                        <i class="fas fa-barcode"></i>
+                        <input type="text" id="am-id" placeholder="AST-2025-XXX">
+                    </div>
+                </div>
+                <div class="field">
+                    <label>Asset Name <span class="required">*</span></label>
+                    <div class="input-icon-wrap">
+                        <i class="fas fa-tag"></i>
+                        <input type="text" id="am-name" placeholder="e.g. MacBook Pro M3">
+                    </div>
+                </div>
                 <div class="field">
                     <label>Brand / Make</label>
                     <input type="text" id="am-brand" placeholder="Dell, Apple, HP">
@@ -732,6 +763,10 @@
                     <label>Model Number</label>
                     <input type="text" id="am-model" placeholder="Latitude 5440">
                 </div>
+            </div>
+
+            <!-- Row 3: Serial, Purchase Date, Purchase Value, Warranty (4 columns) -->
+            <div class="form-grid" style="margin-top: 16px; grid-template-columns: repeat(4, 1fr);">
                 <div class="field">
                     <label>Serial Number</label>
                     <input type="text" id="am-serial" placeholder="SN-1234">
@@ -781,9 +816,40 @@
                 </div>
             </div>
 
-            <div class="field" style="margin-top: 18px;">
-                <label>Additional Notes</label>
-                <textarea id="am-notes" rows="3" placeholder="Accessories, condition, remarks…"></textarea>
+            <div style="margin-top: 18px; display: flex; gap: 16px; align-items: flex-start;">
+                <div class="field" style="flex: 1;">
+                    <label>Additional Notes</label>
+                    <textarea id="am-notes" rows="3" placeholder="Accessories, condition, remarks…"></textarea>
+                </div>
+                <div class="field" style="width: 220px; flex-shrink: 0;">
+                    <label>Asset Image</label>
+                    <!-- Preview box — clicking it opens the file picker -->
+                    <div id="am-image-preview-wrap"
+                         onclick="document.getElementById('am-image').click()"
+                         style="position:relative; width:100%; min-height:90px; border-radius:14px; border:2px dashed var(--border); background:var(--input-bg); cursor:pointer; overflow:hidden; display:flex; align-items:center; justify-content:center; transition:border-color 0.2s;">
+                        <!-- Placeholder (shown when no image) -->
+                        <div id="am-image-placeholder" style="display:flex; flex-direction:column; align-items:center; gap:6px; color:var(--muted); pointer-events:none;">
+                            <i class="fas fa-image" style="font-size:26px; color:var(--accent);"></i>
+                            <span style="font-size:12px;">Click to upload</span>
+                        </div>
+                        <!-- Preview img (hidden until image chosen/loaded) -->
+                        <img id="am-image-preview" src="" alt="preview"
+                             style="display:none; width:100%; height:100%; object-fit:cover; position:absolute; inset:0;">
+                        <!-- "Change" overlay, appears on hover when image is set -->
+                        <div id="am-image-change-overlay"
+                             style="display:none; position:absolute; inset:0; background:rgba(0,0,0,0.45); align-items:center; justify-content:center; color:white; font-size:12px; font-weight:600; gap:6px;">
+                            <i class="fas fa-pen"></i> Change
+                        </div>
+                    </div>
+                    <input type="file" id="am-image" accept="image/*" style="display:none;" onchange="handleImageSelect(this)">
+                    <!-- Hidden flag: keep existing image if no new file chosen -->
+                    <input type="hidden" id="am-image-existing" value="">
+                    <button type="button" id="am-image-clear-btn"
+                            onclick="clearImagePreview()"
+                            style="display:none; margin-top:6px; width:100%; background:rgba(220,38,38,0.08); color:var(--red); border:1px solid rgba(220,38,38,0.2); border-radius:8px; padding:5px 0; font-size:12px; font-weight:600; cursor:pointer;">
+                        <i class="fas fa-times"></i> Remove image
+                    </button>
+                </div>
             </div>
 
             <div class="form-actions">
@@ -845,6 +911,24 @@
 //  API base URL  (resolved from Django's URL conf)
 // ─────────────────────────────────────────────────────────
 const API_BASE = "{% url 'asset_list' %}".replace(/\/$/, '');
+
+// ─────────────────────────────────────────────────────────
+//  Departments  (injected by Django view — no extra XHR needed)
+// ─────────────────────────────────────────────────────────
+const DEPARTMENTS = {{ departments_json|safe }};
+
+function populateDepartmentDropdowns() {
+    const opts = DEPARTMENTS.map(d => `<option value="${d.id}">${escapeHtml(d.name)}</option>`).join('');
+
+    // Form dropdown
+    const formSel = document.getElementById('am-department');
+    formSel.innerHTML = '<option value="">— Select Department —</option>' + opts;
+
+    // List filter dropdown
+    const filterSel = document.getElementById('dept-filter');
+    filterSel.innerHTML = '<option value="">All departments</option>' + opts;
+}
+populateDepartmentDropdowns();
 
 // ─────────────────────────────────────────────────────────
 //  CSRF helper  (reads Django's csrftoken cookie)
@@ -935,20 +1019,24 @@ async function loadAssets() {
 // ─────────────────────────────────────────────────────────
 function renderAssetTable() {
     const searchTerm   = (document.getElementById('global-search')?.value || '').toLowerCase();
-    const statusFilter = document.getElementById('status-filter')?.value || '';
+    const statusFilter = document.getElementById('status-filter')?.value   || '';
+    const deptFilter   = document.getElementById('dept-filter')?.value     || '';
+    const catFilter    = document.getElementById('category-filter')?.value || '';
 
     const filtered = assets.filter(a => {
         const matchSearch  = a.name.toLowerCase().includes(searchTerm)
                           || a.id.toLowerCase().includes(searchTerm)
                           || (a.serial || '').toLowerCase().includes(searchTerm);
         const matchStatus  = !statusFilter || a.status === statusFilter;
-        return matchSearch && matchStatus;
+        const matchDept    = !deptFilter   || String(a.departmentId) === deptFilter;
+        const matchCat     = !catFilter    || a.category === catFilter;
+        return matchSearch && matchStatus && matchDept && matchCat;
     });
 
     const tbody = document.getElementById('asset-table-body');
 
     if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><i class="fas fa-archive fa-2x"></i><p style="margin-top:10px">No assets found</p></div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><i class="fas fa-archive fa-2x"></i><p style="margin-top:10px">No assets found</p></div></td></tr>`;
         return;
     }
 
@@ -956,7 +1044,12 @@ function renderAssetTable() {
         <tr>
             <td>
                 <div class="asset-name">
-                    <div class="asset-icon"><i class="fas ${categoryIcons[a.category] || 'fa-box'}"></i></div>
+                    <div class="asset-icon" style="${a.image ? 'padding:0; overflow:hidden; background:transparent; border:1px solid var(--border);' : ''}">
+                        ${a.image
+                            ? `<img src="${a.image}" alt="${escapeHtml(a.name)}" style="width:34px;height:34px;object-fit:cover;display:block;border-radius:10px;">`
+                            : `<i class="fas ${categoryIcons[a.category] || 'fa-box'}"></i>`
+                        }
+                    </div>
                     <div>
                         <div>${escapeHtml(a.name)}</div>
                         <div class="mono">${escapeHtml(a.id)}</div>
@@ -964,6 +1057,7 @@ function renderAssetTable() {
                 </div>
             </td>
             <td>${escapeHtml(a.category)}</td>
+            <td>${a.departmentName ? escapeHtml(a.departmentName) : '<span style="color:var(--muted)">—</span>'}</td>
             <td class="mono">${escapeHtml(a.serial || '—')}</td>
             <td class="mono">${a.purchaseDate ? new Date(a.purchaseDate).toLocaleDateString('en-IN') : '—'}</td>
             <td class="mono">${a.value ? '₹' + Number(a.value).toLocaleString('en-IN') : '—'}</td>
@@ -990,10 +1084,12 @@ function resetFormFields() {
      'spec-cpu','spec-ram','spec-storage','spec-display','spec-os','spec-color']
         .forEach(id => document.getElementById(id).value = '');
 
-    document.getElementById('am-category').value    = '';
+    document.getElementById('am-category').value     = '';
+    document.getElementById('am-department').value   = '';
     document.getElementById('am-purchase-date').value = '';
-    document.getElementById('am-warranty').value    = '';
-    document.getElementById('am-value').value       = '';
+    document.getElementById('am-warranty').value     = '';
+    document.getElementById('am-value').value        = '';
+    clearImagePreview();
     editModeFlag   = false;
     editingAssetId = null;
 }
@@ -1002,6 +1098,7 @@ function fillFormForEdit(a) {
     document.getElementById('am-name').value          = a.name;
     document.getElementById('am-id').value            = a.id;
     document.getElementById('am-category').value      = a.category;
+    document.getElementById('am-department').value    = a.departmentId || '';
     document.getElementById('am-brand').value         = a.brand || '';
     document.getElementById('am-model').value         = a.model || '';
     document.getElementById('am-serial').value        = a.serial || '';
@@ -1015,6 +1112,13 @@ function fillFormForEdit(a) {
     document.getElementById('spec-os').value          = a.specs.os || '';
     document.getElementById('spec-color').value       = a.specs.color || '';
     document.getElementById('am-notes').value         = a.notes || '';
+
+    // Show existing image in the preview widget
+    if (a.image) {
+        setImagePreview(a.image, true);
+    } else {
+        clearImagePreview();
+    }
 }
 
 function buildPayload() {
@@ -1022,6 +1126,7 @@ function buildPayload() {
         id:           document.getElementById('am-id').value.trim(),
         name:         document.getElementById('am-name').value.trim(),
         category:     document.getElementById('am-category').value,
+        departmentId: document.getElementById('am-department').value || null,
         brand:        document.getElementById('am-brand').value.trim(),
         model:        document.getElementById('am-model').value.trim(),
         serial:       document.getElementById('am-serial').value.trim(),
@@ -1041,7 +1146,48 @@ function buildPayload() {
 }
 
 // ─────────────────────────────────────────────────────────
-//  Save  (create or update)
+//  Image preview helpers
+// ─────────────────────────────────────────────────────────
+function handleImageSelect(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => setImagePreview(e.target.result, false);
+    reader.readAsDataURL(file);
+}
+
+function setImagePreview(src, isExisting) {
+    const preview     = document.getElementById('am-image-preview');
+    const placeholder = document.getElementById('am-image-placeholder');
+    const clearBtn    = document.getElementById('am-image-clear-btn');
+    const overlay     = document.getElementById('am-image-change-overlay');
+
+    preview.src           = src;
+    preview.style.display = 'block';
+    placeholder.style.display = 'none';
+    clearBtn.style.display    = 'block';
+
+    if (isExisting) {
+        document.getElementById('am-image-existing').value = src;
+    }
+}
+
+function clearImagePreview() {
+    const preview     = document.getElementById('am-image-preview');
+    const placeholder = document.getElementById('am-image-placeholder');
+    const clearBtn    = document.getElementById('am-image-clear-btn');
+
+    preview.src           = '';
+    preview.style.display = 'none';
+    placeholder.style.display = 'flex';
+    clearBtn.style.display    = 'none';
+
+    document.getElementById('am-image').value          = '';
+    document.getElementById('am-image-existing').value = '';
+}
+
+// ─────────────────────────────────────────────────────────
+//  Save  (create or update) — uses FormData so image is sent
 // ─────────────────────────────────────────────────────────
 async function saveAssetHandler() {
     const payload = buildPayload();
@@ -1054,17 +1200,48 @@ async function saveAssetHandler() {
     setSaving(true);
 
     try {
-        let data;
-        if (editModeFlag && editingAssetId) {
-            // UPDATE existing asset
-            data = await apiPost(`${API_BASE}/${encodeURIComponent(editingAssetId)}/edit/`, payload);
-        } else {
-            // CREATE new asset
-            data = await apiPost(`${API_BASE}/add/`, payload);
+        // Build multipart FormData so the image file is included
+        const fd = new FormData();
+
+        // Append all scalar fields
+        fd.append('id',           payload.id);
+        fd.append('name',         payload.name);
+        fd.append('category',     payload.category);
+        fd.append('departmentId', payload.departmentId ?? '');
+        fd.append('brand',        payload.brand);
+        fd.append('model',        payload.model);
+        fd.append('serial',       payload.serial);
+        fd.append('purchaseDate', payload.purchaseDate);
+        fd.append('value',        payload.value);
+        fd.append('warranty',     payload.warranty);
+        fd.append('notes',        payload.notes);
+
+        // Specs as individual fields (Django view reads specs dict)
+        fd.append('spec_cpu',     payload.specs.cpu);
+        fd.append('spec_ram',     payload.specs.ram);
+        fd.append('spec_storage', payload.specs.storage);
+        fd.append('spec_display', payload.specs.display);
+        fd.append('spec_os',      payload.specs.os);
+        fd.append('spec_color',   payload.specs.color);
+
+        // Attach image file if one was chosen
+        const imageFile = document.getElementById('am-image').files[0];
+        if (imageFile) {
+            fd.append('image', imageFile);
         }
 
+        const url = (editModeFlag && editingAssetId)
+            ? `${API_BASE}/${encodeURIComponent(editingAssetId)}/edit/`
+            : `${API_BASE}/add/`;
+
+        const res  = await fetch(url, {
+            method:  'POST',
+            headers: { 'X-CSRFToken': CSRF_TOKEN },   // no Content-Type — browser sets multipart boundary
+            body:    fd,
+        });
+        const data = await res.json();
+
         if (data.success) {
-            // Refresh local cache from server
             await loadAssets();
             resetFormFields();
             showListScreen();
@@ -1136,13 +1313,21 @@ function viewAssetDetails(id) {
     const a = assets.find(x => x.id === id);
     if (!a) return;
 
-    // ── Header ──────────────────────────────────────────
+    // ── Header icon: asset image if available, else category icon ──
     const icon = categoryIcons[a.category] || 'fa-box';
-    document.getElementById('modal-header-icon').innerHTML = `<i class="fas ${icon}"></i>`;
-    document.getElementById('modal-title').textContent     = a.name;
-    document.getElementById('modal-subtitle').textContent  = a.id + (a.brand ? '  ·  ' + a.brand : '');
+    const headerIconEl = document.getElementById('modal-header-icon');
+    if (a.image) {
+        headerIconEl.style.cssText = 'width:52px;height:52px;border-radius:16px;overflow:hidden;padding:0;background:transparent;box-shadow:0 6px 14px rgba(0,0,0,0.15);flex-shrink:0;';
+        headerIconEl.innerHTML = `<img src="${a.image}" alt="${escapeHtml(a.name)}" style="width:52px;height:52px;object-fit:cover;display:block;">`;
+    } else {
+        headerIconEl.style.cssText = '';
+        headerIconEl.innerHTML = `<i class="fas ${icon}"></i>`;
+    }
 
-    // Status badge in header
+    document.getElementById('modal-title').textContent    = a.name;
+    document.getElementById('modal-subtitle').textContent = a.id + (a.brand ? '  ·  ' + a.brand : '');
+
+    // Status badge
     const statusColors = {
         available: { bg: 'rgba(240,165,0,0.12)', color: '#c97e00', border: 'rgba(240,165,0,0.25)', dot: '#f0a500' },
         assigned:  { bg: 'rgba(37,99,235,0.12)',  color: '#2563eb', border: 'rgba(37,99,235,0.25)',  dot: '#2563eb' },
@@ -1150,89 +1335,106 @@ function viewAssetDetails(id) {
     };
     const sc = statusColors[a.status] || statusColors.available;
     document.getElementById('modal-status-wrap').innerHTML = `
-        <span class="modal-status-badge" style="background:${sc.bg}; color:${sc.color}; border:1px solid ${sc.border};">
-            <i class="fas fa-circle" style="font-size:7px; color:${sc.dot};"></i>
+        <span class="modal-status-badge" style="background:${sc.bg};color:${sc.color};border:1px solid ${sc.border};">
+            <i class="fas fa-circle" style="font-size:7px;color:${sc.dot};"></i>
             ${a.status.charAt(0).toUpperCase() + a.status.slice(1)}
         </span>`;
 
     // Wire up Edit button
     document.getElementById('modal-edit-btn').onclick = () => { closeModal(); editAssetById(a.id); };
 
-    // ── Body sections ────────────────────────────────────
-    function cell(label, value, mono = false) {
+    // ── Helper: single detail cell ───────────────────────
+    function cell(label, value, mono = false, spanFull = false) {
         const isEmpty = !value || value === '—';
         return `
-            <div class="detail-cell">
+            <div class="detail-cell${spanFull ? ' span-full' : ''}">
                 <label>${label}</label>
                 <div class="cell-value ${mono ? 'mono' : ''} ${isEmpty ? 'muted' : ''}">${isEmpty ? '—' : escapeHtml(String(value))}</div>
             </div>`;
     }
 
-    // Section 1 — Identification
-    const identHtml = `
+    // ── SECTION 1 — Asset Image (full-width, only if present) ──
+    const imageHtml = a.image ? `
+        <div class="detail-section" style="margin-bottom:4px;">
+            <div class="detail-section-title"><i class="fas fa-image" style="color:var(--accent)"></i> Asset Image</div>
+            <div style="width:100%;border-radius:16px;overflow:hidden;border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;max-height:220px;">
+                <img src="${a.image}" alt="${escapeHtml(a.name)}"
+                     style="width:100%;max-height:220px;object-fit:contain;display:block;">
+            </div>
+        </div>` : '';
+
+    // ── SECTION 2 — Department & Category (matches Row 1 of form) ──
+    const deptCatHtml = `
         <div class="detail-section">
-            <div class="detail-section-title"><i class="fas fa-id-card" style="color:var(--accent)"></i> Identification</div>
-            <div class="detail-grid">
-                ${cell('Asset ID', a.id, true)}
-                ${cell('Asset Name', a.name)}
-                ${cell('Category', a.category)}
-                ${cell('Brand / Make', a.brand)}
-                ${cell('Model Number', a.model, true)}
-                ${cell('Serial Number', a.serial, true)}
+            <div class="detail-section-title"><i class="fas fa-building" style="color:var(--accent)"></i> Department & Category</div>
+            <div class="detail-grid" style="grid-template-columns:repeat(2,1fr);">
+                ${cell('Department', a.departmentName)}
+                ${cell('Category',   a.category)}
             </div>
         </div>`;
 
-    // Section 2 — Purchase Info
+    // ── SECTION 3 — Identification (matches Row 2 of form) ──
+    const identHtml = `
+        <div class="detail-section">
+            <div class="detail-section-title"><i class="fas fa-id-card" style="color:var(--accent)"></i> Identification</div>
+            <div class="detail-grid" style="grid-template-columns:repeat(4,1fr);">
+                ${cell('Asset ID',     a.id,    true)}
+                ${cell('Asset Name',   a.name)}
+                ${cell('Brand / Make', a.brand)}
+                ${cell('Model Number', a.model, true)}
+            </div>
+        </div>`;
+
+    // ── SECTION 4 — Purchase Info (matches Row 3 of form) ──
     const purchaseDate  = a.purchaseDate ? new Date(a.purchaseDate).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : '';
     const warrantyDate  = a.warranty     ? new Date(a.warranty).toLocaleDateString('en-IN',     { day:'2-digit', month:'short', year:'numeric' }) : '';
-    const purchaseValue = a.value        ? '₹ ' + Number(a.value).toLocaleString('en-IN')       : '';
+    const purchaseValue = a.value        ? '₹ ' + Number(a.value).toLocaleString('en-IN') : '';
 
-    // Warranty status highlight
     let warrantyDisplay = warrantyDate || '';
     if (a.warranty) {
-        const today   = new Date();
-        const expDate = new Date(a.warranty);
-        const daysLeft = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
-        if (daysLeft < 0)        warrantyDisplay += '  (Expired)';
-        else if (daysLeft < 90)  warrantyDisplay += `  (${daysLeft}d left)`;
+        const daysLeft = Math.ceil((new Date(a.warranty) - new Date()) / (1000 * 60 * 60 * 24));
+        if (daysLeft < 0)       warrantyDisplay += '  (Expired)';
+        else if (daysLeft < 90) warrantyDisplay += `  (${daysLeft}d left)`;
     }
 
     const purchaseHtml = `
         <div class="detail-section">
             <div class="detail-section-title"><i class="fas fa-receipt" style="color:var(--accent)"></i> Purchase Info</div>
-            <div class="detail-grid">
-                ${cell('Purchase Date', purchaseDate)}
+            <div class="detail-grid" style="grid-template-columns:repeat(4,1fr);">
+                ${cell('Serial Number',  a.serial,          true)}
+                ${cell('Purchase Date',  purchaseDate)}
                 ${cell('Purchase Value', purchaseValue)}
-                ${cell('Warranty Expiry', warrantyDisplay)}
+                ${cell('Warranty Expiry',warrantyDisplay)}
             </div>
         </div>`;
 
-    // Section 3 — Technical Specs
+    // ── SECTION 5 — Technical Specs ──
     const specEntries = [
-        ['Processor / CPU', a.specs.cpu],
-        ['RAM',             a.specs.ram],
-        ['Storage',         a.specs.storage],
-        ['Display / Screen',a.specs.display],
-        ['OS / Software',   a.specs.os],
-        ['Color / Finish',  a.specs.color],
+        ['Processor / CPU',  a.specs?.cpu],
+        ['RAM',              a.specs?.ram],
+        ['Storage',          a.specs?.storage],
+        ['Display / Screen', a.specs?.display],
+        ['OS / Software',    a.specs?.os],
+        ['Color / Finish',   a.specs?.color],
     ];
     const hasAnySpec = specEntries.some(([, v]) => v && v.trim());
     const specsHtml = hasAnySpec ? `
         <div class="detail-section">
             <div class="detail-section-title"><i class="fas fa-microchip" style="color:var(--accent)"></i> Technical Specifications</div>
-            <div class="detail-grid">
+            <div class="detail-grid" style="grid-template-columns:repeat(3,1fr);">
                 ${specEntries.map(([label, val]) => cell(label, val, true)).join('')}
             </div>
         </div>` : '';
 
-    // Section 4 — Notes
+    // ── SECTION 6 — Notes ──
     const notesHtml = a.notes ? `
         <div class="detail-section">
             <div class="detail-section-title"><i class="fas fa-sticky-note" style="color:var(--accent)"></i> Notes</div>
             <div class="notes-box">${escapeHtml(a.notes)}</div>
         </div>` : '';
 
-    document.getElementById('modal-content').innerHTML = identHtml + purchaseHtml + specsHtml + notesHtml;
+    document.getElementById('modal-content').innerHTML =
+        imageHtml + deptCatHtml + identHtml + purchaseHtml + specsHtml + notesHtml;
     document.getElementById('view-modal').classList.add('open');
 }
 
@@ -1265,6 +1467,8 @@ function escapeHtml(str) {
 // ─────────────────────────────────────────────────────────
 document.getElementById('global-search').addEventListener('input', renderAssetTable);
 document.getElementById('status-filter').addEventListener('change', renderAssetTable);
+document.getElementById('dept-filter').addEventListener('change', renderAssetTable);
+document.getElementById('category-filter').addEventListener('change', renderAssetTable);
 
 addNewBtn.addEventListener('click', () => {
     resetFormFields();
@@ -1288,6 +1492,8 @@ window.closeModal       = closeModal;
 window.viewAssetDetails = viewAssetDetails;
 window.editAssetById    = editAssetById;
 window.deleteAssetById  = deleteAssetById;
+window.handleImageSelect = handleImageSelect;
+window.clearImagePreview = clearImagePreview;
 
 // ─────────────────────────────────────────────────────────
 //  Bootstrap

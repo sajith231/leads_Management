@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Return Asset{% endblock %}
 {% block content %}
-<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Mono&display=swap" rel="stylesheet"/>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -23,7 +22,7 @@
   }
 
   .return-page {
-    font-family: 'Google Sans', sans-serif;
+    font-family: inherit;
     background: var(--bg);
     color: var(--text);
     display: flex;
@@ -41,7 +40,6 @@
 
   .breadcrumb {
     display: flex; align-items: center; gap: 8px;
-    font-family: 'Google Sans Mono', monospace;
     font-size: 11.5px; color: var(--muted); margin-bottom: 12px;
   }
   .breadcrumb a { color: var(--accent); text-decoration: none; }
@@ -97,7 +95,6 @@
   }
 
   .step-badge {
-    font-family: 'Google Sans Mono', monospace;
     font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
     color: var(--ret);
     background: rgba(217,119,6,0.08);
@@ -109,7 +106,6 @@
 
   .assignment-pill {
     margin-left: auto;
-    font-family: 'Google Sans Mono', monospace;
     font-size: 11px; color: var(--muted);
     background: var(--surface); border: 1px solid var(--border);
     border-radius: 20px; padding: 4px 12px;
@@ -122,7 +118,6 @@
 
   /* Section label */
   .section-label {
-    font-family: 'Google Sans Mono', monospace;
     font-size: 14px; letter-spacing: 0.18em; text-transform: capitalize;
     color: black; font-weight: bold;
     margin-bottom: 16px; margin-top: 28px;
@@ -155,7 +150,6 @@
   .form-group label.ret-lbl { color:black; }
 
   .form-group .hint {
-    font-family: 'Google Sans Mono', monospace;
     font-size: 11px; color: var(--muted); margin-top: -3px;
   }
 
@@ -165,7 +159,6 @@
   .form-group textarea {
     background: #fff; border: 1.5px solid var(--border);
     border-radius: 10px; color: var(--text);
-    font-family: 'Google Sans Mono', monospace;
     font-size: 13px; padding: 12px 16px; outline: none;
     transition: border-color 0.2s, box-shadow 0.2s; width: 100%;
   }
@@ -188,7 +181,6 @@
   .ret-input:focus { border-color: var(--ret) !important; box-shadow: 0 0 0 3px rgba(217,119,6,0.13) !important; }
 
   .error-msg {
-    font-family: 'Google Sans Mono', monospace;
     font-size: 11px; color: var(--danger);
     display: none; align-items: center; gap: 4px;
   }
@@ -215,14 +207,13 @@
     display: flex; flex-direction: column; gap: 4px;
     background: var(--surface2); border: 1px solid var(--border);
     border-radius: 8px; padding: 8px 12px;
-    font-family: 'Google Sans Mono', monospace;
   }
   .spec-tag .spec-label {
     font-size: 9.5px; font-weight: 700; letter-spacing: 0.12em;
     text-transform: uppercase; color: var(--accent); line-height: 1;
   }
   .spec-tag .spec-value { font-size: 12.5px; color: var(--text); font-weight: 600; line-height: 1.2; }
-  .spec-empty { font-family: 'Google Sans Mono', monospace; font-size: 12px; color: #b0b5c0; }
+  .spec-empty { font-size: 12px; color: #b0b5c0; }
 
   /* Return fields highlighted box */
   .return-fields-box {
@@ -253,7 +244,93 @@
   .file-upload-icon { margin-bottom: 8px; color: var(--muted); }
   .file-upload p { font-size: 13px; color: var(--muted); }
   .file-upload span { color: var(--ret); font-weight: 600; }
-  .file-name { font-family: 'Google Sans Mono', monospace; font-size: 12px; color: var(--success); margin-top: 6px; }
+  .file-name { font-size: 12px; color: var(--success); margin-top: 6px; }
+
+  /* ── Multi-image upload zone ─────────────────────────── */
+  .multi-upload-zone {
+    border: 1.5px dashed rgba(217,119,6,0.45);
+    border-radius: 12px;
+    background: #fffbf5;
+    padding: 22px 20px 18px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+  }
+  .multi-upload-zone:hover,
+  .multi-upload-zone.drag-over {
+    border-color: var(--ret);
+    background: rgba(217,119,6,0.06);
+  }
+  .multi-upload-zone input[type="file"] {
+    position: absolute; inset: 0; opacity: 0;
+    cursor: pointer; width: 100%; height: 100%;
+  }
+  .multi-upload-prompt {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 8px; pointer-events: none;
+  }
+  .multi-upload-prompt svg { color: var(--ret); opacity: 0.75; }
+  .multi-upload-prompt p { font-size: 13px; color: var(--muted); }
+  .multi-upload-prompt p span { color: var(--ret); font-weight: 600; }
+  .multi-upload-prompt small {
+    font-size: 11px; color: #b0b5c0;
+  }
+
+  /* Image preview grid */
+  .img-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .img-preview-item {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1.5px solid var(--border);
+    background: var(--surface2);
+    aspect-ratio: 1;
+  }
+  .img-preview-item img {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+  }
+  .img-preview-item .img-remove-btn {
+    position: absolute; top: 4px; right: 4px;
+    width: 22px; height: 22px;
+    background: rgba(220,38,38,0.85);
+    border: none; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: #fff;
+    opacity: 0; transition: opacity 0.15s;
+  }
+  .img-preview-item:hover .img-remove-btn { opacity: 1; }
+  .img-preview-item .img-name-badge {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,0.52);
+    font-size: 9.5px; color: #fff;
+    padding: 3px 6px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  /* Non-image file tile */
+  .img-preview-item.file-tile {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 6px;
+    padding: 10px;
+  }
+  .img-preview-item.file-tile svg { color: var(--accent); }
+  .img-preview-item.file-tile .file-tile-name {
+    font-size: 10px; color: var(--text);
+    text-align: center; word-break: break-all; line-height: 1.3;
+  }
+  .upload-count-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(217,119,6,0.10);
+    border: 1px solid rgba(217,119,6,0.25);
+    border-radius: 20px; padding: 3px 10px;
+    font-size: 11px; color: var(--ret2);
+    margin-bottom: 10px;
+  }
 
   /* Attachment split layout */
   .attachment-row {
@@ -275,7 +352,6 @@
   .asset-img-panel-header {
     padding: 8px 14px;
     border-bottom: 1px solid var(--border);
-    font-family: 'Google Sans Mono', monospace;
     font-size: 10px;
     letter-spacing: 0.13em;
     text-transform: uppercase;
@@ -287,16 +363,43 @@
   }
   .asset-img-panel-header svg { color: var(--accent); }
   .asset-img-preview {
-    width: 20%;
-   
-    object-fit: contain;
-    background: #fff;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
     display: block;
-    padding: 12px;
     cursor: zoom-in;
     transition: opacity 0.15s;
   }
   .asset-img-preview:hover { opacity: 0.88; }
+
+  /* Multi-image grid for asset entry images */
+  .asset-entry-img-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 10px;
+    padding: 14px;
+  }
+  .asset-entry-img-item {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1.5px solid var(--border);
+    background: var(--surface2);
+    aspect-ratio: 1;
+    cursor: zoom-in;
+  }
+  .asset-entry-img-item img {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+    transition: opacity 0.15s;
+  }
+  .asset-entry-img-item img:hover { opacity: 0.85; }
+  .asset-entry-img-item .img-index-badge {
+    position: absolute; bottom: 4px; right: 6px;
+    background: rgba(0,0,0,0.50);
+    font-size: 9px; color: #fff;
+    border-radius: 10px; padding: 2px 6px;
+  }
   .asset-img-placeholder {
     width: 100%;
     aspect-ratio: 16/9;
@@ -307,7 +410,6 @@
     gap: 8px;
     background: #fff;
     color: #b0b5c0;
-    font-family: 'Google Sans Mono', monospace;
     font-size: 12px;
   }
   .asset-img-placeholder svg { opacity: 0.35; }
@@ -315,7 +417,6 @@
   /* Click-to-zoom hint */
   .img-zoom-hint {
     padding: 5px 14px 7px;
-    font-family: 'Google Sans Mono', monospace;
     font-size: 10px;
     color: var(--muted);
     display: flex;
@@ -379,7 +480,6 @@
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    font-family: 'Google Sans Mono', monospace;
     font-size: 12px;
     color: rgba(255,255,255,0.6);
     background: rgba(0,0,0,0.4);
@@ -413,7 +513,7 @@
     display: flex; align-items: center; justify-content: space-between;
   }
   .asset-modal-header h3 { font-size: 15px; font-weight: 700; }
-  .asset-modal-id { font-family: 'Google Sans Mono', monospace; font-size: 11px; color: var(--accent); margin-top: 2px; }
+  .asset-modal-id { font-size: 11px; color: var(--accent); margin-top: 2px; }
   .btn-modal-close {
     background: none; border: none; cursor: pointer; color: var(--muted);
     padding: 4px; border-radius: 6px; display: flex;
@@ -423,7 +523,7 @@
   .asset-modal-body { padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 14px; }
   .modal-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .modal-field label {
-    font-family: 'Google Sans Mono', monospace; font-size: 10px;
+    font-size: 10px;
     letter-spacing: 0.1em; text-transform: uppercase;
     color: var(--muted); display: block; margin-bottom: 3px;
   }
@@ -434,7 +534,7 @@
   .modal-spec-tag {
     display: flex; flex-direction: column; gap: 3px;
     background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 8px; padding: 8px 10px; font-family: 'Google Sans Mono', monospace;
+    border-radius: 8px; padding: 8px 10px;
   }
   .modal-spec-tag .msl { font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); line-height: 1; }
   .modal-spec-tag .msv { font-size: 12px; font-weight: 600; color: var(--text); line-height: 1.2; }
@@ -451,7 +551,7 @@
   .btn-cancel {
     padding: 12px 26px; border-radius: 10px;
     border: 1.5px solid var(--border); background: transparent;
-    color: var(--muted); font-family: 'Google Sans', sans-serif;
+    color: var(--muted);
     font-size: 14px; font-weight: 600; cursor: pointer;
     transition: all 0.15s; letter-spacing: 0.01em;
   }
@@ -460,7 +560,7 @@
   .btn-submit {
     padding: 12px 32px; border-radius: 10px; border: none;
     background: linear-gradient(135deg, var(--accent), var(--accent2));
-    color: #fff; font-family: 'Google Sans', sans-serif;
+    color: #fff;
     font-size: 14px; font-weight: 700; cursor: pointer;
     transition: opacity 0.15s, transform 0.15s, box-shadow 0.15s;
     box-shadow: 0 4px 18px rgba(217,119,6,0.30);
@@ -495,7 +595,7 @@
   .btn-back {
     padding: 12px 28px; border-radius: 10px; border: none;
     background: linear-gradient(135deg, var(--ret), var(--ret2));
-    color: #fff; font-family: 'Google Sans', sans-serif;
+    color: #fff;
     font-size: 14px; font-weight: 700; cursor: pointer;
     box-shadow: 0 4px 16px rgba(217,119,6,0.28);
   }
@@ -620,22 +720,25 @@
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
               Recorded at time of asset entry
             </div>
-            {% if assignment.asset.image %}
-              <img id="assetImgPreview"
-                   src="{{ assignment.asset.image.url }}"
-                   alt="{{ assignment.asset.name }}"
-                   class="asset-img-preview"
-                   onclick="openLightbox(this.src, this.alt)" />
-              <div class="img-zoom-hint">
-                
-                
-              </div>
-            {% else %}
-              <div class="asset-img-placeholder" id="assetImgPlaceholder">
-                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                No image on record
-              </div>
-            {% endif %}
+            {% with asset_imgs=assignment.assignment_images.all %}
+              {% if asset_imgs %}
+                <div class="asset-entry-img-grid">
+                  {% for img in asset_imgs %}
+                    <div class="asset-entry-img-item">
+                      <img src="{{ img.image.url }}"
+                           alt="Assignment image {{ forloop.counter }}"
+                           onclick="openLightbox(this.src, this.alt)" />
+                      <span class="img-index-badge">{{ forloop.counter }}</span>
+                    </div>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <div class="asset-img-placeholder">
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                  No image on record
+                </div>
+              {% endif %}
+            {% endwith %}
           </div>
         </div>
       </div>
@@ -688,21 +791,37 @@
                     placeholder="e.g. Good condition, minor scratches on lid, charger included…"></textarea>
         </div>
 
-        <!-- Upload Return Document (full width) -->
+        <!-- Upload Return Images (multi, full width) -->
         <div class="form-group full">
           <label class="ret-lbl">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            Return Document
-            <span style="color:var(--muted);font-weight:400;font-size:12px;">(optional)</span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            Return Images
+            <span style="color:var(--muted);font-weight:400;font-size:12px;">(optional — multiple allowed)</span>
           </label>
-          <div class="file-upload ret-file-upload">
-            <input type="file" id="fFile" accept=".pdf,.jpg,.png,.docx" onchange="handleFile(this)" />
-            <div class="file-upload-icon">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+
+          <!-- Drop zone -->
+          <div class="multi-upload-zone" id="multiUploadZone"
+               ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+            <input type="file" id="fFiles" accept="image/*,.pdf,.docx"
+                   multiple onchange="onFilesChosen(this)" />
+            <div class="multi-upload-prompt" id="uploadPrompt">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <p><span>Click to upload</span> or drag &amp; drop</p>
+              <small>JPG, PNG, PDF — up to 10 MB each</small>
             </div>
-            <p><span>Click to upload</span> or drag and drop</p>
-            <p style="font-size:11px;margin-top:4px;">PDF, JPG, PNG, DOCX up to 10MB</p>
-            <div class="file-name" id="fileName"></div>
+          </div>
+
+          <!-- Previews appear here -->
+          <div id="previewArea" style="display:none;">
+            <div class="upload-count-badge" id="uploadCountBadge">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <span id="uploadCountText">0 images selected</span>
+            </div>
+            <div class="img-preview-grid" id="imgPreviewGrid"></div>
           </div>
         </div>
       </div>
@@ -783,7 +902,7 @@
       </div>
       <div class="modal-divider"></div>
       <div>
-        <div style="font-family:'Google Sans Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Specifications</div>
+        <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Specifications</div>
         <div class="modal-spec-tags" id="mSpecTags"></div>
       </div>
       <div class="modal-divider"></div>
@@ -823,13 +942,100 @@
     { key:'color',   label:'Color'   },
   ];
 
-  // ── File handler ──────────────────────────────────────────────────────────────
-  function handleFile(input) {
-    const fn = input.files[0]?.name;
-    document.getElementById('fileName').textContent = fn ? `📎 ${fn}` : '';
+  // ── Multi-image upload ────────────────────────────────────────────────────
+  let selectedFiles = [];   // array of File objects
+
+  function renderPreviews() {
+    const grid  = document.getElementById('imgPreviewGrid');
+    const area  = document.getElementById('previewArea');
+    const badge = document.getElementById('uploadCountText');
+    const prompt = document.getElementById('uploadPrompt');
+
+    grid.innerHTML = '';
+
+    if (!selectedFiles.length) {
+      area.style.display = 'none';
+      prompt.style.display = '';
+      return;
+    }
+
+    area.style.display = '';
+    prompt.style.display = 'none';
+    badge.textContent = selectedFiles.length + ' file' + (selectedFiles.length > 1 ? 's' : '') + ' selected';
+
+    selectedFiles.forEach(function(file, idx) {
+      const item = document.createElement('div');
+      const isImage = file.type.startsWith('image/');
+      item.className = 'img-preview-item' + (isImage ? '' : ' file-tile');
+
+      if (isImage) {
+        const img = document.createElement('img');
+        const url = URL.createObjectURL(file);
+        img.src = url;
+        img.onload = function() { URL.revokeObjectURL(url); };
+        item.appendChild(img);
+
+        const badge = document.createElement('div');
+        badge.className = 'img-name-badge';
+        badge.textContent = file.name;
+        item.appendChild(badge);
+      } else {
+        // Non-image file tile
+        item.innerHTML = `
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <div class="file-tile-name">${file.name}</div>
+        `;
+      }
+
+      // Remove button
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'img-remove-btn';
+      btn.title = 'Remove';
+      btn.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        selectedFiles.splice(idx, 1);
+        renderPreviews();
+      });
+      item.appendChild(btn);
+      grid.appendChild(item);
+    });
   }
 
-  // ── Error helpers ─────────────────────────────────────────────────────────────
+  function addFiles(fileList) {
+    const MAX = 10 * 1024 * 1024;   // 10 MB per file
+    const allowed = ['image/jpeg','image/png','image/gif','image/webp','application/pdf',
+                     'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    Array.from(fileList).forEach(function(f) {
+      if (f.size > MAX) { alert(f.name + ' exceeds 10 MB and was skipped.'); return; }
+      // Avoid duplicates by name+size
+      const dup = selectedFiles.some(function(x) { return x.name === f.name && x.size === f.size; });
+      if (!dup) selectedFiles.push(f);
+    });
+    renderPreviews();
+  }
+
+  function onFilesChosen(input) {
+    addFiles(input.files);
+    // Reset input so the same file can be re-added after removal
+    input.value = '';
+  }
+
+  function onDragOver(e) {
+    e.preventDefault();
+    document.getElementById('multiUploadZone').classList.add('drag-over');
+  }
+  function onDragLeave(e) {
+    document.getElementById('multiUploadZone').classList.remove('drag-over');
+  }
+  function onDrop(e) {
+    e.preventDefault();
+    document.getElementById('multiUploadZone').classList.remove('drag-over');
+    if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
+  }
+
+  // ── Error helpers ─────────────────────────────────────────────────────────
   function clearError(el) {
     el.classList.remove('error');
     const key = el.id.replace('f','').toLowerCase();
@@ -867,10 +1073,10 @@
     formData.append('return_condition',  condition);
     formData.append('notes',             general);
 
-    const fileInput = document.getElementById('fFile');
-    if (fileInput.files[0]) {
-      formData.append('return_document', fileInput.files[0]);
-    }
+    // Append all selected files under the same field name 'return_images'
+    selectedFiles.forEach(function(file) {
+      formData.append('return_images', file);
+    });
 
     fetch('/asset_management/api/assignments/{{ assignment.pk }}/edit/', {
       method: 'POST',

@@ -1,8 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Add Asset{% endblock %}
 {% block content %}
-<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Mono&display=swap" rel="stylesheet"/>
-  <style>
+<style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
@@ -23,7 +22,7 @@
     }
 
     .add-asset-page {
-      font-family: 'Google Sans', sans-serif;
+      font-family: inherit;
       background: var(--bg);
       color: var(--text);
       display: flex;
@@ -44,7 +43,6 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      font-family: 'Google Sans Mono', monospace;
       font-size: 11.5px;
       color: var(--muted);
       margin-bottom: 12px;
@@ -114,7 +112,6 @@
     }
 
     .form-card-header .step-badge {
-      font-family: 'Google Sans Mono', monospace;
       font-size: 10px;
       letter-spacing: 0.14em;
       text-transform: uppercase;
@@ -141,7 +138,6 @@
 
     /* Section divider */
     .section-label {
-      font-family: 'Google Sans Mono', monospace;
       font-size: 14px;
       letter-spacing: 0.18em;
       text-transform: capitalize;
@@ -201,7 +197,6 @@
     }
 
     .form-group .hint {
-      font-family: 'Google Sans Mono', monospace;
       font-size: 11px;
       color: var(--muted);
       margin-top: -3px;
@@ -215,7 +210,6 @@
       border: 1.5px solid var(--border);
       border-radius: 10px;
       color: var(--text);
-      font-family: 'Google Sans Mono', monospace;
       font-size: 13px;
       padding: 12px 16px;
       outline: none;
@@ -241,7 +235,6 @@
     }
 
     .error-msg {
-      font-family: 'Google Sans Mono', monospace;
       font-size: 11px;
       color: var(--danger);
       display: none;
@@ -294,7 +287,6 @@
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 8px 12px;
-      font-family: 'Google Sans Mono', monospace;
     }
 
     .spec-tag .spec-label {
@@ -313,7 +305,7 @@
       line-height: 1.2;
     }
 
-    .spec-empty { font-family: 'Google Sans Mono', monospace; font-size: 12px; color: #b0b5c0; }
+    .spec-empty { font-size: 12px; color: #b0b5c0; }
 
    
 
@@ -349,7 +341,7 @@
       display: flex; align-items: center; justify-content: space-between;
     }
     .asset-modal-header h3 { font-size: 15px; font-weight: 700; }
-    .asset-modal-id { font-family: 'Google Sans Mono', monospace; font-size: 11px; color: var(--accent); margin-top: 2px; }
+    .asset-modal-id { font-size: 11px; color: var(--accent); margin-top: 2px; }
 
     .btn-modal-close {
       background: none; border: none; cursor: pointer; color: var(--muted);
@@ -363,7 +355,6 @@
     .modal-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
     .modal-field label {
-      font-family: 'Google Sans Mono', monospace;
       font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
       color: var(--muted); display: block; margin-bottom: 3px;
     }
@@ -377,7 +368,6 @@
       display: flex; flex-direction: column; gap: 3px;
       background: var(--surface2); border: 1px solid var(--border);
       border-radius: 8px; padding: 8px 10px;
-      font-family: 'Google Sans Mono', monospace;
     }
     .modal-spec-tag .msl {
       font-size: 9px; font-weight: 700; letter-spacing: 0.12em;
@@ -387,23 +377,22 @@
 
 
 
-    /* File upload */
-    .file-upload {
+    /* Multi-image upload */
+    .img-upload-zone {
       border: 1.5px dashed var(--border);
-      border-radius: 10px;
-      padding: 20px;
+      border-radius: 12px;
+      padding: 22px 20px 16px;
       text-align: center;
       cursor: pointer;
       transition: border-color 0.2s, background 0.2s;
       position: relative;
+      background: #fafbff;
     }
-
-    .file-upload:hover {
+    .img-upload-zone:hover {
       border-color: var(--accent);
       background: rgba(37,99,235,0.03);
     }
-
-    .file-upload input[type="file"] {
+    .img-upload-zone input[type="file"] {
       position: absolute;
       inset: 0;
       opacity: 0;
@@ -411,11 +400,72 @@
       width: 100%;
       height: 100%;
     }
+    .img-upload-icon { margin-bottom: 8px; color: var(--muted); }
+    .img-upload-zone p { font-size: 13px; color: var(--muted); }
+    .img-upload-zone span { color: var(--accent); font-weight: 600; }
 
-    .file-upload-icon { margin-bottom: 8px; color: var(--muted); }
-    .file-upload p { font-size: 13px; color: var(--muted); }
-    .file-upload span { color: var(--accent); font-weight: 600; }
-    .file-name { font-family: 'Google Sans Mono', monospace; font-size: 12px; color: var(--success); margin-top: 6px; }
+    /* Image preview grid */
+    .img-preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .img-preview-item {
+      position: relative;
+      border-radius: 9px;
+      overflow: hidden;
+      border: 1.5px solid var(--border);
+      background: var(--surface2);
+      aspect-ratio: 1;
+    }
+    .img-preview-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: opacity 0.15s;
+    }
+    .img-preview-item:hover img { opacity: 0.82; }
+    .img-preview-remove {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(220,38,38,0.88);
+      border: none;
+      color: #fff;
+      font-size: 13px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .img-preview-item:hover .img-preview-remove { opacity: 1; }
+    .img-preview-name {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(0,0,0,0.55);
+      color: #fff;
+      font-size: 9px;
+      padding: 3px 5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .img-upload-count {
+      font-size: 11px;
+      color: var(--success);
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
 
     /* Form footer */
     .form-footer {
@@ -430,7 +480,6 @@
     }
 
     .footer-note {
-      font-family: 'Google Sans Mono', monospace;
       font-size: 11px;
       color: var(--muted);
       display: flex;
@@ -448,7 +497,6 @@
       border: 1.5px solid var(--border);
       background: transparent;
       color: var(--muted);
-      font-family: 'Google Sans', sans-serif;
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
@@ -468,7 +516,6 @@
       border: none;
       background: linear-gradient(135deg, var(--accent), var(--accent2));
       color: #fff;
-      font-family: 'Google Sans', sans-serif;
       font-size: 14px;
       font-weight: 700;
       cursor: pointer;
@@ -540,7 +587,6 @@
       border: none;
       background: linear-gradient(135deg, var(--accent), var(--accent2));
       color: #fff;
-      font-family: 'Google Sans', sans-serif;
       font-size: 14px;
       font-weight: 700;
       cursor: pointer;
@@ -584,7 +630,7 @@
         </svg>
       </div>
       <div class="page-title-text">
-        <h1>Add New Asset</h1>
+        <h1>Assign Asset</h1>
         <p>Assign an asset to an employee and log all relevant details.</p>
       </div>
     </div>
@@ -659,17 +705,18 @@
         <div class="form-group full">
           <label>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            Attachment <span style="color:var(--muted);font-weight:400;font-size:12px;">(optional)</span>
+            Attachments <span style="color:var(--muted);font-weight:400;font-size:12px;">(optional — multiple images)</span>
           </label>
-          <div class="file-upload" id="fileUploadBox">
-            <input type="file" id="fFile" accept=".pdf,.jpg,.png,.docx" onchange="handleFile(this)"/>
-            <div class="file-upload-icon">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <div class="img-upload-zone" id="imgUploadZone">
+            <input type="file" id="fFile" accept="image/*,.pdf,.docx" multiple onchange="handleFiles(this)"/>
+            <div class="img-upload-icon">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
             </div>
             <p><span>Click to upload</span> or drag and drop</p>
-            <p style="font-size:11px;margin-top:4px;">PDF, JPG, PNG, DOCX up to 10MB</p>
-            <div class="file-name" id="fileName"></div>
+            <p style="font-size:11px;margin-top:4px;">JPG, PNG, PDF, DOCX — multiple files allowed</p>
           </div>
+          <div class="img-preview-grid" id="imgPreviewGrid" style="display:none;"></div>
+          <div class="img-upload-count" id="imgUploadCount" style="display:none;"></div>
         </div>
       </div>
 
@@ -737,7 +784,7 @@
       </div>
       <div class="modal-divider"></div>
       <div>
-        <div style="font-family:'Google Sans Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Specifications</div>
+        <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Specifications</div>
         <div class="modal-spec-tags" id="mSpecTags"></div>
       </div>
       <div class="modal-divider"></div>
@@ -751,9 +798,51 @@
 </div>
 
 <script>
-  function handleFile(input) {
-    const fn = input.files[0]?.name;
-    document.getElementById('fileName').textContent = fn ? `📎 ${fn}` : '';
+  // ── Multi-image handling ───────────────────────────────────────────────────
+  let selectedFiles = [];   // DataTransfer-based file list mirror
+
+  function handleFiles(input) {
+    const newFiles = Array.from(input.files);
+    newFiles.forEach(f => {
+      if (!selectedFiles.find(x => x.name === f.name && x.size === f.size)) {
+        selectedFiles.push(f);
+      }
+    });
+    // Reset the input so the same file can be re-added after removal
+    input.value = '';
+    renderPreviews();
+  }
+
+  function renderPreviews() {
+    const grid  = document.getElementById('imgPreviewGrid');
+    const count = document.getElementById('imgUploadCount');
+    if (!selectedFiles.length) {
+      grid.style.display  = 'none';
+      count.style.display = 'none';
+      return;
+    }
+    grid.style.display  = 'grid';
+    count.style.display = 'flex';
+    count.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''} selected`;
+
+    grid.innerHTML = selectedFiles.map((f, i) => {
+      const isImg = f.type.startsWith('image/');
+      const thumb = isImg ? `<img src="${URL.createObjectURL(f)}" alt="${f.name}"/>` :
+        `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:4px;padding:8px;">
+           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted);opacity:0.6;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+           <span style="font-size:9px;color:var(--muted);font-family:monospace;text-align:center;word-break:break-all;">${f.name.split('.').pop().toUpperCase()}</span>
+         </div>`;
+      return `<div class="img-preview-item">
+        ${thumb}
+        <div class="img-preview-name">${f.name}</div>
+        <button class="img-preview-remove" onclick="removeFile(${i})" title="Remove">✕</button>
+      </div>`;
+    }).join('');
+  }
+
+  function removeFile(idx) {
+    selectedFiles.splice(idx, 1);
+    renderPreviews();
   }
 
   function clearError(el) {
@@ -781,10 +870,8 @@
     formData.append('spec_details', document.getElementById('fSpec').value);
     formData.append('notes',        document.getElementById('fNotes').value);
 
-    const fileInput = document.getElementById('fFile');
-    if (fileInput.files[0]) {
-      formData.append('image', fileInput.files[0]);
-    }
+    // Append all files under the same key so Django sees request.FILES.getlist('images')
+    selectedFiles.forEach(f => formData.append('images', f));
 
     fetch('/asset_management/api/assignments/add/', {
       method: 'POST',
@@ -808,6 +895,24 @@
     if (confirm('Discard this form and go back to the asset list?'))
       window.location.href = '{% url "asset_management" %}';
   }
+
+  // Drag-and-drop support on upload zone
+  document.addEventListener('DOMContentLoaded', function() {
+    const zone = document.getElementById('imgUploadZone');
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = 'var(--accent)'; });
+    zone.addEventListener('dragleave', () => { zone.style.borderColor = ''; });
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.style.borderColor = '';
+      const dt = e.dataTransfer;
+      if (dt.files.length) {
+        Array.from(dt.files).forEach(f => {
+          if (!selectedFiles.find(x => x.name === f.name && x.size === f.size)) selectedFiles.push(f);
+        });
+        renderPreviews();
+      }
+    });
+  });
 
   // ── Asset data ─────────────────────────────────────────────────────────────
   const ASSET_DATA = {
@@ -836,12 +941,10 @@
 
   function fillAssetSpecs(assetId) {
     const wrapper = document.getElementById('specTagsWrapper');
-    const btn = document.getElementById('btnViewSpec');
     wrapper.innerHTML = '';
     if (!assetId || !ASSET_DATA[assetId]) {
       wrapper.innerHTML = '<span class="spec-empty">Select an asset to view specs</span>';
       document.getElementById('fSpec').value = '';
-      btn.disabled = true;
       return;
     }
     const d = ASSET_DATA[assetId];
@@ -860,7 +963,6 @@
       wrapper.innerHTML = '<span class="spec-empty">No specs recorded for this asset</span>';
     }
     document.getElementById('fSpec').value = parts.join(',');
-    btn.disabled = !parts.length;
   }
 
   // ── Asset detail modal ─────────────────────────────────────────────────────

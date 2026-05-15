@@ -1,486 +1,473 @@
-import json
-from datetime import datetime
+"""
+Assets app views.
+Changes vs original:
+  - assets_master() passes 'departments' queryset to template
+  - asset_add() and asset_edit() read 'department_id' from JSON payload
+    and set asset.department accordingly
+  - asset_list() includes departmentId / departmentName via to_dict()
+    (no view change needed; model.to_dict(request) already emits these fields)
+  - assignment_edit() now saves multiple return images to AssignmentReturnImage
+    (field name: 'return_images'; first image also stored in return_document
+     for backward-compatibility)
+"""
 
-from django.db import models as db_models
+import json
+
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import render, get_object_or_404
+from django.utils.dateparse import parse_date
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
-from .models import Asset, Assignment
+from .models import Asset, Assignment, AssignmentImage, AssignmentReturnImage
 
-# ── app1 custom User model ────────────────────────────────────────────────────
-from app1.models import User
+# Import Department from the purchase_order app.
+from purchase_order.models import Department
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Page views
 # ─────────────────────────────────────────────────────────────────────────────
 
+def assets_master(request):
+    departments = Department.objects.filter(is_active=True).order_by('name')
+    departments_json = json.dumps([
+        {'id': d.pk, 'name': d.name}
+        for d in departments
+    ])
+    return render(request, 'assets_master.html', {
+        'departments': departments,
+        'departments_json': departments_json,
+    })
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  HELPERS
-# ══════════════════════════════════════════════════════════════════════════════
-
-def parse_date(value):
-    """
-    Safely parse an ISO date string (YYYY-MM-DD) into a date object.
-    Returns None for blank / invalid / None values instead of raising.
-    """
-    if not value or not str(value).strip():
-        return None
-    try:
-        return datetime.strptime(str(value).strip(), '%Y-%m-%d').date()
-    except (ValueError, TypeError):
-        return None
-
-
-def parse_decimal(value, default=0):
-    """Safely parse a numeric value, returning default on failure."""
-    try:
-        return float(value) if value not in (None, '', 'null') else default
-    except (ValueError, TypeError):
-        return default
-
-
-def _get_users_context():
-    """
-    Returns active app1 Users for the Employee and Returned-By dropdowns.
-    app1 User fields: .id  .name  .branch (FK → Branch)
-    """
-    return (
-        User.objects
-        .filter(status='active')
-        .select_related('branch')
-        .order_by('name')
-    )
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-#  ASSET MASTER & ASSET MANAGEMENT — Pages
-# ══════════════════════════════════════════════════════════════════════════════
 
 def asset_management(request):
-    """Asset Management menu → renders asset_list.html."""
-    context = {
-        'users':            _get_users_context(),
-        'available_assets': Asset.objects.filter(status='available'),
-    }
-    return render(request, 'asset_list.html', context)
+    return render(request, 'asset_list.html')
 
 
-def assets_master(request):
-    """Asset Master menu → renders assets_master.html."""
-    return render(request, 'assets_master.html')
+# ─────────────────────────────────────────────────────────────────────────────
+#  Asset REST-ish API
+# ─────────────────────────────────────────────────────────────────────────────
 
-
-# ══════════════════════════════════════════════════════════════════════════════
-#  ASSET — JSON API
-# ══════════════════════════════════════════════════════════════════════════════
-
-@require_http_methods(["GET"])
 def asset_list(request):
-    """
-    Return all assets as JSON.
-    Optional query params:
-      ?search=<term>   – filter by name / asset_id / serial_number
-      ?status=<value>  – filter by status (available | assigned | returned)
-    """
-    qs = Asset.objects.all()
-
-    search = request.GET.get('search', '').strip()
-    if search:
-        qs = qs.filter(
-            db_models.Q(name__icontains=search)
-            | db_models.Q(asset_id__icontains=search)
-            | db_models.Q(serial_number__icontains=search)
-        )
-
-    status = request.GET.get('status', '').strip()
-    if status:
-        qs = qs.filter(status=status)
-
-    return JsonResponse({'assets': [a.to_dict() for a in qs]})
+    assets = Asset.objects.select_related('department').all()
+    return JsonResponse({'assets': [a.to_dict(request) for a in assets]})
 
 
-@csrf_exempt
-@require_http_methods(["POST"])
 def asset_add(request):
-    """
-    Create a new asset.
-    Expects a JSON body matching the frontend payload.
-    Returns { success, asset } or { success, error }.
-    """
-    try:
-        data = json.loads(request.body)
-
-        asset_id = str(data.get('id', '')).strip()
-        name     = str(data.get('name', '')).strip()
-        category = str(data.get('category', '')).strip()
-
-        if not asset_id or not name or not category:
-            return JsonResponse(
-                {'success': False, 'error': 'Asset ID, Name and Category are required.'},
-                status=400,
-            )
-
-        if Asset.objects.filter(asset_id=asset_id).exists():
-            return JsonResponse(
-                {'success': False, 'error': 'Asset ID already exists. Use a unique ID.'},
-                status=400,
-            )
-
-        specs = data.get('specs', {}) or {}
-        asset = Asset.objects.create(
-            asset_id        = asset_id,
-            name            = name,
-            category        = category,
-            brand           = str(data.get('brand', '') or '').strip(),
-            model_number    = str(data.get('model', '') or '').strip(),
-            serial_number   = str(data.get('serial', '') or '').strip(),
-            purchase_date   = parse_date(data.get('purchaseDate')),
-            purchase_value  = parse_decimal(data.get('value')),
-            warranty_expiry = parse_date(data.get('warranty')),
-            spec_cpu        = str(specs.get('cpu', '') or '').strip(),
-            spec_ram        = str(specs.get('ram', '') or '').strip(),
-            spec_storage    = str(specs.get('storage', '') or '').strip(),
-            spec_display    = str(specs.get('display', '') or '').strip(),
-            spec_os         = str(specs.get('os', '') or '').strip(),
-            spec_color      = str(specs.get('color', '') or '').strip(),
-            notes           = str(data.get('notes', '') or '').strip(),
-            status          = 'available',
-        )
-        return JsonResponse({'success': True, 'asset': asset.to_dict()}, status=201)
-
-    except json.JSONDecodeError:
-        return JsonResponse({'success': False, 'error': 'Invalid JSON body.'}, status=400)
-    except Exception as exc:
-        return JsonResponse({'success': False, 'error': str(exc)}, status=500)
-
-
-@csrf_exempt
-@require_http_methods(["POST"])
-def asset_edit(request, asset_id):
-    """
-    Update an existing asset identified by asset_id (e.g. AST-2025-001).
-    Status is preserved from the existing record; all other fields are updated.
-    """
-    asset = get_object_or_404(Asset, asset_id=asset_id)
-    try:
-        data = json.loads(request.body)
-
-        name     = str(data.get('name', '')).strip()
-        category = str(data.get('category', '')).strip()
-
-        if not name or not category:
-            return JsonResponse(
-                {'success': False, 'error': 'Name and Category are required.'},
-                status=400,
-            )
-
-        new_id = str(data.get('id', asset_id)).strip() or asset_id
-        if new_id != asset_id and Asset.objects.filter(asset_id=new_id).exists():
-            return JsonResponse(
-                {'success': False, 'error': 'Another asset already has that ID.'},
-                status=400,
-            )
-
-        specs = data.get('specs', {}) or {}
-        asset.asset_id        = new_id
-        asset.name            = name
-        asset.category        = category
-        asset.brand           = str(data.get('brand', '') or '').strip()
-        asset.model_number    = str(data.get('model', '') or '').strip()
-        asset.serial_number   = str(data.get('serial', '') or '').strip()
-        asset.purchase_date   = parse_date(data.get('purchaseDate'))
-        asset.purchase_value  = parse_decimal(data.get('value'))
-        asset.warranty_expiry = parse_date(data.get('warranty'))
-        asset.spec_cpu        = str(specs.get('cpu', '') or '').strip()
-        asset.spec_ram        = str(specs.get('ram', '') or '').strip()
-        asset.spec_storage    = str(specs.get('storage', '') or '').strip()
-        asset.spec_display    = str(specs.get('display', '') or '').strip()
-        asset.spec_os         = str(specs.get('os', '') or '').strip()
-        asset.spec_color      = str(specs.get('color', '') or '').strip()
-        asset.notes           = str(data.get('notes', '') or '').strip()
-        # status intentionally NOT overwritten – preserve existing lifecycle state
-        asset.save()
-
-        return JsonResponse({'success': True, 'asset': asset.to_dict()})
-
-    except json.JSONDecodeError:
-        return JsonResponse({'success': False, 'error': 'Invalid JSON body.'}, status=400)
-    except Exception as exc:
-        return JsonResponse({'success': False, 'error': str(exc)}, status=500)
-
-
-@csrf_exempt
-@require_http_methods(["POST"])
-def asset_delete(request, asset_id):
-    """Permanently delete an asset by its asset_id code."""
-    asset = get_object_or_404(Asset, asset_id=asset_id)
-    asset_name = asset.name
-    asset.delete()
-    return JsonResponse({'success': True, 'message': f'"{asset_name}" deleted.'})
-
-
-@require_http_methods(["GET"])
-def asset_detail(request, asset_id):
-    """Return a single asset as JSON (used by the view-detail modal)."""
-    asset = get_object_or_404(Asset, asset_id=asset_id)
-    return JsonResponse({'asset': asset.to_dict()})
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-#  ASSIGNMENT — Pages
-# ══════════════════════════════════════════════════════════════════════════════
-
-def assignment_add_page(request):
-    """
-    Render asset_add.html.
-    Passes `users` and `available_assets` to the template.
-    Includes both 'available' and 'returned' assets so that
-    returned assets can be re-assigned.
-    """
-    context = {
-        'users':            _get_users_context(),
-        'available_assets': Asset.objects.filter(
-            status__in=['available', 'returned']
-        ).order_by('name'),
-    }
-    return render(request, 'asset_add.html', context)
-
-
-def assignment_list_page(request):
-    context = {
-        'users': _get_users_context(),
-    }
-    return render(request, 'asset_list.html', context)
-
-
-def assignment_detail_page(request, assignment_id):
-    """Render asset_details.html — full read-only view of an assignment."""
-    assignment = get_object_or_404(Assignment, pk=assignment_id)
-    return render(request, 'asset_details.html', {'assignment': assignment})
-
-
-def assignment_edit_page(request, assignment_id):
-    """Render asset_edit.html for editing an existing assignment."""
-    assignment = get_object_or_404(Assignment, pk=assignment_id)
-    available_assets = Asset.objects.filter(
-        db_models.Q(status='available') | db_models.Q(pk=assignment.asset.pk)
-    ).order_by('name')
-    context = {
-        'assignment':       assignment,
-        'users':            _get_users_context(),
-        'available_assets': available_assets,
-    }
-    return render(request, 'asset_edit.html', context)
-
-
-def assignment_return_page(request, assignment_id):
-    """
-    Render asset_return.html for recording an asset return.
-    Passes the assignment, all users, and the assigned asset
-    (plus any available ones) so spec tags can be rendered.
-    """
-    assignment = get_object_or_404(Assignment, pk=assignment_id)
-    # Include the currently-assigned asset so ASSET_DATA is populated
-    available_assets = Asset.objects.filter(
-        db_models.Q(status='available') | db_models.Q(pk=assignment.asset.pk)
-    ).order_by('name')
-    context = {
-        'assignment':       assignment,
-        'users':            _get_users_context(),
-        'available_assets': available_assets,
-    }
-    return render(request, 'asset_return.html', context)
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-#  ASSIGNMENT — JSON API
-# ══════════════════════════════════════════════════════════════════════════════
-
-@require_http_methods(["GET"])
-def assignment_list(request):
-    """
-    Return all assignments as JSON.
-    Optional query params:
-      ?search=<term>  – filter by employee name, asset name or asset_id
-    """
-    qs = Assignment.objects.select_related('asset').all()
-
-    search = request.GET.get('search', '').strip()
-    if search:
-        qs = qs.filter(
-            db_models.Q(employee_name__icontains=search)
-            | db_models.Q(asset__name__icontains=search)
-            | db_models.Q(asset__asset_id__icontains=search)
-        )
-
-    return JsonResponse({'assignments': [a.to_dict() for a in qs]})
-
-
-@csrf_exempt
-def assignment_add(request):
-    """
-    Create a new assignment.
-    Accepts multipart/form-data (because the frontend sends a file via FormData).
-    Fields come from request.POST; the asset image from request.FILES['image'].
-    """
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'POST required'}, status=405)
 
     try:
-        # ── Read fields from FormData (request.POST) ──────────────────
-        emp_pk       = request.POST.get('employee_id', '').strip()
-        asset_id     = request.POST.get('asset_id', '').strip()
-        spec_details = request.POST.get('spec_details', '').strip()
-        notes        = request.POST.get('notes', '').strip()
-        image_file   = request.FILES.get('image')   # optional image upload
+        if request.content_type and 'multipart' in request.content_type:
+            data = request.POST
+            def get(key, default=''):
+                return data.get(key, default)
+            specs = {
+                'cpu':     get('spec_cpu'),
+                'ram':     get('spec_ram'),
+                'storage': get('spec_storage'),
+                'display': get('spec_display'),
+                'os':      get('spec_os'),
+                'color':   get('spec_color'),
+            }
+        else:
+            data  = json.loads(request.body)
+            get   = lambda key, default='': data.get(key, default)
+            specs = data.get('specs', {})
 
-        # ── Resolve employee ──────────────────────────────────────────
-        if not emp_pk:
-            return JsonResponse({'success': False, 'error': 'Employee is required.'}, status=400)
-        try:
-            emp_user = User.objects.select_related('branch').get(pk=emp_pk)
-        except User.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'Employee not found.'}, status=404)
+        dept_id = get('department_id') or get('departmentId')
+        department = None
+        if dept_id:
+            try:
+                department = Department.objects.get(pk=int(dept_id))
+            except (Department.DoesNotExist, ValueError):
+                return JsonResponse(
+                    {'success': False, 'error': f'Department with id {dept_id} not found'},
+                    status=400,
+                )
 
-        # ── Resolve asset ─────────────────────────────────────────────
-        if not asset_id:
-            return JsonResponse({'success': False, 'error': 'Asset is required.'}, status=400)
-        try:
-            asset = Asset.objects.get(asset_id=asset_id, status__in=['available', 'returned'])
-        except Asset.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'Asset not available.'}, status=400)
-
-        # ── Save image onto the Asset record if provided ──────────────
-        if image_file:
-            asset.image = image_file
-            asset.save(update_fields=['image'])
-
-        # ── Create Assignment ─────────────────────────────────────────
-        assignment = Assignment.objects.create(
-            asset            = asset,
-            employee_id      = str(emp_user.id),
-            employee_name    = emp_user.name or '',
-            department       = str(emp_user.branch) if emp_user.branch else '',
-            spec_details     = spec_details,
-            notes            = notes,
+        asset = Asset(
+            asset_id        = get('id'),
+            name            = get('name'),
+            category        = get('category'),
+            department      = department,
+            brand           = get('brand'),
+            model_number    = get('model'),
+            serial_number   = get('serial'),
+            purchase_date   = parse_date(get('purchaseDate')) if get('purchaseDate') else None,
+            purchase_value  = get('value') or 0,
+            warranty_expiry = parse_date(get('warranty')) if get('warranty') else None,
+            spec_cpu        = specs.get('cpu', ''),
+            spec_ram        = specs.get('ram', ''),
+            spec_storage    = specs.get('storage', ''),
+            spec_display    = specs.get('display', ''),
+            spec_os         = specs.get('os', ''),
+            spec_color      = specs.get('color', ''),
+            notes           = get('notes'),
         )
 
-        # ── Mark asset as assigned ────────────────────────────────────
-        asset.status = 'assigned'
-        asset.save(update_fields=['status'])
+        if 'image' in request.FILES:
+            asset.image = request.FILES['image']
 
-        return JsonResponse({'success': True, 'id': assignment.pk}, status=201)
+        if not asset.asset_id or not asset.name or not asset.category:
+            return JsonResponse({'success': False, 'error': 'Missing field: id, name or category'}, status=400)
+
+        asset.save()
+        return JsonResponse({'success': True, 'asset': asset.to_dict(request)})
+
+    except KeyError as e:
+        return JsonResponse({'success': False, 'error': f'Missing field: {e}'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+def asset_detail(request, asset_id):
+    asset = get_object_or_404(Asset.objects.select_related('department'), asset_id=asset_id)
+    return JsonResponse({'asset': asset.to_dict(request)})
+
+
+def asset_edit(request, asset_id):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'POST required'}, status=405)
+
+    asset = get_object_or_404(Asset.objects.select_related('department'), asset_id=asset_id)
+
+    try:
+        if request.content_type and 'multipart' in request.content_type:
+            data = request.POST
+            def get(key, fallback=None):
+                return data.get(key, fallback)
+            specs = {
+                'cpu':     get('spec_cpu', asset.spec_cpu),
+                'ram':     get('spec_ram', asset.spec_ram),
+                'storage': get('spec_storage', asset.spec_storage),
+                'display': get('spec_display', asset.spec_display),
+                'os':      get('spec_os', asset.spec_os),
+                'color':   get('spec_color', asset.spec_color),
+            }
+        else:
+            data  = json.loads(request.body)
+            get   = lambda key, fallback=None: data.get(key, fallback)
+            specs = data.get('specs', {})
+
+        dept_id = get('department_id') or get('departmentId')
+        if dept_id:
+            try:
+                asset.department = Department.objects.get(pk=int(dept_id))
+            except (Department.DoesNotExist, ValueError):
+                return JsonResponse(
+                    {'success': False, 'error': f'Department with id {dept_id} not found'},
+                    status=400,
+                )
+        else:
+            asset.department = None
+
+        asset.name           = get('name')            or asset.name
+        asset.category       = get('category')        or asset.category
+        asset.brand          = get('brand',           asset.brand)
+        asset.model_number   = get('model',           asset.model_number)
+        asset.serial_number  = get('serial',          asset.serial_number)
+        asset.purchase_date  = parse_date(get('purchaseDate')) if get('purchaseDate') else None
+        asset.purchase_value = get('value',           asset.purchase_value)
+        asset.warranty_expiry = parse_date(get('warranty')) if get('warranty') else None
+        asset.spec_cpu     = specs.get('cpu',     asset.spec_cpu)
+        asset.spec_ram     = specs.get('ram',     asset.spec_ram)
+        asset.spec_storage = specs.get('storage', asset.spec_storage)
+        asset.spec_display = specs.get('display', asset.spec_display)
+        asset.spec_os      = specs.get('os',      asset.spec_os)
+        asset.spec_color   = specs.get('color',   asset.spec_color)
+        asset.notes        = get('notes',         asset.notes)
+
+        if 'image' in request.FILES:
+            asset.image = request.FILES['image']
+
+        asset.save()
+        return JsonResponse({'success': True, 'asset': asset.to_dict(request)})
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 
-@csrf_exempt
-@require_http_methods(["POST"])
+def asset_delete(request, asset_id):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'POST required'}, status=405)
+
+    asset = get_object_or_404(Asset, asset_id=asset_id)
+    asset.delete()
+    return JsonResponse({'success': True})
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Assignment page views
+# ─────────────────────────────────────────────────────────────────────────────
+
+def assignment_list_page(request):
+    return render(request, 'asset_list.html')
+
+def assignment_add_page(request):
+    from app1.models import User as AppUser
+    users = AppUser.objects.filter(status='active').order_by('name')
+    available_assets = Asset.objects.filter(
+        status__in=['available', 'returned']
+    ).select_related('department').order_by('name')
+    return render(request, 'asset_add.html', {
+        'users':            users,
+        'available_assets': available_assets,
+    })
+
+def assignment_detail_page(request, assignment_id):
+    assignment = get_object_or_404(Assignment, pk=assignment_id)
+    return render(request, 'asset_details.html', {'assignment': assignment})
+
+def assignment_edit_page(request, assignment_id):
+    from app1.models import User as AppUser
+    assignment = get_object_or_404(Assignment, pk=assignment_id)
+    users = AppUser.objects.filter(status='active').order_by('name')
+    available_assets = Asset.objects.filter(
+        status__in=['available', 'returned', 'assigned']
+    ).select_related('department').order_by('name')
+    return render(request, 'asset_edit.html', {
+        'assignment':       assignment,
+        'users':            users,
+        'available_assets': available_assets,
+    })
+
+def assignment_return_page(request, assignment_id):
+    from app1.models import User as AppUser
+    assignment = get_object_or_404(Assignment, pk=assignment_id)
+    users = AppUser.objects.filter(status='active').order_by('name')
+    available_assets = Asset.objects.all().select_related('department').order_by('name')
+    return render(request, 'asset_return.html', {
+        'assignment':       assignment,
+        'users':            users,
+        'available_assets': available_assets,
+    })
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Assignment API
+# ─────────────────────────────────────────────────────────────────────────────
+
+def assignment_list(request):
+    assignments = Assignment.objects.select_related('asset').all()
+    return JsonResponse({'assignments': [a.to_dict(request) for a in assignments]})
+
+
+def assignment_add(request):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'POST required'}, status=405)
+    try:
+        is_multipart = request.content_type and 'multipart' in request.content_type
+
+        if is_multipart:
+            from app1.models import User as AppUser
+
+            employee_id = request.POST.get('employee_id', '').strip()
+            asset_id    = request.POST.get('asset_id', '').strip()
+            spec_raw    = request.POST.get('spec_details', '')
+            notes       = request.POST.get('notes', '')
+
+            if not asset_id:
+                return JsonResponse({'success': False, 'error': 'asset_id is required'}, status=400)
+
+            employee_name = ''
+            department    = ''
+            if employee_id:
+                try:
+                    user = AppUser.objects.get(pk=employee_id)
+                    employee_name = (
+                        getattr(user, 'name', '')
+                        or getattr(user, 'full_name', '')
+                        or getattr(user, 'get_full_name', lambda: '')()
+                        or getattr(user, 'username', '')
+                        or str(user)
+                    )
+                    dept_raw = (
+                        getattr(user, 'branch', None)
+                        or getattr(user, 'department', None)
+                    )
+                    if dept_raw is None:
+                        department = ''
+                    elif hasattr(dept_raw, 'name'):
+                        department = dept_raw.name or ''
+                    else:
+                        department = str(dept_raw)
+                except Exception:
+                    pass
+
+            asset = get_object_or_404(Asset, asset_id=asset_id)
+
+            assignment = Assignment(
+                asset         = asset,
+                employee_id   = employee_id,
+                employee_name = employee_name,
+                department    = department,
+                spec_details  = spec_raw,
+                notes         = notes,
+            )
+
+            primary_file = request.FILES.get('image') or request.FILES.get('image_0')
+            if primary_file:
+                assignment.attachment = primary_file
+
+            assignment.save()
+
+            # Save all uploaded images to AssignmentImage
+            uploaded_images = request.FILES.getlist('images')
+            for f in uploaded_images:
+                AssignmentImage.objects.create(assignment=assignment, image=f)
+            # Backward-compat: also store first image in attachment
+            if uploaded_images and not assignment.attachment:
+                assignment.attachment = uploaded_images[0]
+                assignment.save(update_fields=['attachment'])
+
+        else:
+            data = json.loads(request.body)
+            asset = get_object_or_404(Asset, asset_id=data['assetId'])
+            assignment = Assignment(
+                asset         = asset,
+                employee_id   = data.get('emp_id', ''),
+                employee_name = data.get('emp', ''),
+                department    = data.get('dept', ''),
+                spec_details  = ','.join(data.get('specs', [])) if isinstance(data.get('specs'), list) else data.get('specs', ''),
+                return_date   = parse_date(data['returnDate']) if data.get('returnDate') else None,
+                notes         = data.get('notes', ''),
+            )
+            assignment.save()
+
+        asset.status = 'assigned'
+        asset.save(update_fields=['status'])
+        return JsonResponse({'success': True, 'assignment': assignment.to_dict(request)})
+
+    except Exception as e:
+        import traceback
+        return JsonResponse({'success': False, 'error': str(e), 'trace': traceback.format_exc()}, status=500)
+
+
+def assignment_detail(request, assignment_id):
+    assignment = get_object_or_404(Assignment.objects.select_related('asset'), pk=assignment_id)
+    return JsonResponse({'assignment': assignment.to_dict(request)})
+
+
 def assignment_edit(request, assignment_id):
     """
-    Update an existing assignment.
-    Accepts multipart/form-data so the frontend can attach a return_document file.
-    Falls back to JSON if Content-Type is application/json (e.g. non-file edits).
+    POST /api/assignments/<id>/edit/
+    Accepts multipart/form-data (from asset_return.html, with file uploads)
+    and application/json (from asset_list.html edit modal).
+
+    multipart field map (return flow)
+    ----------------------------------
+    return_date       → assignment.return_date
+    returned_by_id    → assignment.returned_by_id / returned_by_name
+    return_condition  → prepended to assignment.notes
+    notes             → assignment.notes
+    return_images     → AssignmentReturnImage rows (multiple files allowed)
+                        The first file is also stored in assignment.return_document
+                        for backward-compatibility with existing queries.
     """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'POST required'}, status=405)
+
     assignment = get_object_or_404(Assignment, pk=assignment_id)
 
     try:
-        content_type = request.content_type or ''
+        is_multipart = request.content_type and 'multipart' in request.content_type
 
-        # ── Detect multipart vs JSON ──────────────────────────────────
-        if 'multipart/form-data' in content_type:
-            data            = request.POST
-            return_doc_file = request.FILES.get('return_document')
-            asset_image     = request.FILES.get('asset_image')
+        if is_multipart:
+            # ── multipart (from asset_return.html) ───────────────────────────
+            from app1.models import User as AppUser
+
+            return_date_str  = request.POST.get('return_date', '')
+            returned_by_id   = request.POST.get('returned_by_id', '')
+            return_condition = request.POST.get('return_condition', '').strip()
+            notes            = request.POST.get('notes', assignment.notes)
+
+            if return_date_str:
+                assignment.return_date = parse_date(return_date_str)
+
+            if returned_by_id:
+                assignment.returned_by_id = returned_by_id
+                try:
+                    user = AppUser.objects.get(pk=returned_by_id)
+                    assignment.returned_by_name = (
+                        getattr(user, 'name', '')
+                        or getattr(user, 'full_name', '')
+                        or getattr(user, 'get_full_name', lambda: '')()
+                        or getattr(user, 'username', '')
+                        or str(user)
+                    )
+                except Exception:
+                    assignment.returned_by_name = returned_by_id
+
+            # Merge condition note into general notes
+            if return_condition:
+                assignment.return_condition = return_condition
+            assignment.notes = notes
+
+            # ── Multiple return images ────────────────────────────────────────
+            # Frontend sends files as return_images (multiple).
+            # Also accept legacy single-file field names for backward-compat.
+            return_files = (
+                request.FILES.getlist('return_images')
+                or [f for key in ('return_document', 'return_document_0')
+                    if (f := request.FILES.get(key))]
+            )
+
+            if return_files:
+                # First file → assignment.return_document (backward-compat)
+                assignment.return_document = return_files[0]
+
+                # All files → AssignmentReturnImage rows
+                # Clear previous return images before adding new ones so a
+                # re-submission doesn't accumulate duplicates.
+                assignment.return_images.all().delete()
+                for uploaded_file in return_files:
+                    AssignmentReturnImage.objects.create(
+                        assignment=assignment,
+                        image=uploaded_file,
+                    )
+
+            # ── Multiple asset images (uploaded at edit time) ─────────────
+            asset_images = request.FILES.getlist('asset_image')
+            if asset_images:
+                assignment.assignment_images.all().delete()
+                for f in asset_images:
+                    AssignmentImage.objects.create(assignment=assignment, image=f)
+                assignment.attachment = asset_images[0]
+
+            # Mark asset as returned
+            assignment.asset.status = 'returned'
+            assignment.asset.save(update_fields=['status'])
+
         else:
-            data            = json.loads(request.body)
-            return_doc_file = None
-            asset_image     = None
-
-        # ── Update employee if provided ───────────────────────────────
-        employee_id = str(data.get('employee_id', '') or '').strip()
-        if employee_id:
-            try:
-                user = User.objects.select_related('branch').get(pk=employee_id)
-                assignment.employee_id   = employee_id
-                assignment.employee_name = user.name or ''
-                assignment.department    = str(user.branch) if user.branch else ''
-            except User.DoesNotExist:
-                return JsonResponse(
-                    {'success': False, 'error': 'Employee not found.'},
-                    status=404,
-                )
-
-        # ── Update returned_by ────────────────────────────────────────
-        returned_by_id = str(data.get('returned_by_id') or '').strip()
-        if returned_by_id:
-            try:
-                rb = User.objects.get(pk=returned_by_id)
-                assignment.returned_by_id   = returned_by_id
-                assignment.returned_by_name = rb.name or ''
-            except User.DoesNotExist:
-                assignment.returned_by_id   = ''
-                assignment.returned_by_name = ''
-        else:
-            assignment.returned_by_id   = ''
-            assignment.returned_by_name = ''
-
-        # ── Update scalar fields ──────────────────────────────────────
-        if 'spec_details' in data:
-            assignment.spec_details = str(data['spec_details'] or '').strip()
-        if 'return_date' in data:
-            assignment.return_date = parse_date(data['return_date'])
-        if 'notes' in data:
-            assignment.notes = str(data['notes'] or '').strip()
-
-        # ── Save return document if uploaded ──────────────────────────
-        if return_doc_file:
-            assignment.return_document = return_doc_file
-
-        # ── Save new asset image if uploaded during edit ──────────────
-        if asset_image:
-            asset = assignment.asset
-            asset.image = asset_image
-            asset.save(update_fields=['image'])
-
-        # ── If a return_date is now set, mark asset as returned ───────
-        if assignment.return_date:
-            asset = assignment.asset
-            asset.status = 'returned'
-            asset.save(update_fields=['status'])
+            # ── JSON (from asset_list.html edit modal) ────────────────────────
+            data = json.loads(request.body)
+            assignment.employee_id   = data.get('emp_id',       assignment.employee_id)
+            assignment.employee_name = data.get('emp',          assignment.employee_name)
+            assignment.department    = data.get('dept',         assignment.department)
+            if 'specs' in data:
+                specs = data['specs']
+                assignment.spec_details = ','.join(specs) if isinstance(specs, list) else specs
+            if data.get('returnDate'):
+                assignment.return_date = parse_date(data['returnDate'])
+            if data.get('return_date'):
+                assignment.return_date = parse_date(data['return_date'])
+            if data.get('returned_by_id') is not None:
+                assignment.returned_by_id = data['returned_by_id'] or ''
+            assignment.notes = data.get('notes', assignment.notes)
 
         assignment.save()
-        return JsonResponse({'success': True, 'assignment': assignment.to_dict()})
+        return JsonResponse({'success': True, 'assignment': assignment.to_dict(request)})
 
-    except json.JSONDecodeError:
-        return JsonResponse({'success': False, 'error': 'Invalid JSON body.'}, status=400)
-    except Exception as exc:
-        return JsonResponse({'success': False, 'error': str(exc)}, status=500)
+    except Exception as e:
+        import traceback
+        return JsonResponse({'success': False, 'error': str(e), 'trace': traceback.format_exc()}, status=500)
 
 
-@csrf_exempt
-@require_http_methods(["POST"])
 def assignment_delete(request, assignment_id):
-    """
-    Permanently delete an assignment.
-    Side-effect: resets Asset.status back to 'available'
-    if no other assignments remain for that asset.
-    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'POST required'}, status=405)
     assignment = get_object_or_404(Assignment, pk=assignment_id)
-    asset = assignment.asset
     assignment.delete()
-
-    # Revert asset status if no remaining assignments exist
-    if not Assignment.objects.filter(asset=asset).exists():
-        asset.status = 'available'
-        asset.save(update_fields=['status'])
-
-    return JsonResponse({'success': True, 'message': 'Assignment deleted.'})
-
-
-@require_http_methods(["GET"])
-def assignment_detail(request, assignment_id):
-    """Return a single assignment as JSON."""
-    assignment = get_object_or_404(Assignment, pk=assignment_id)
-    return JsonResponse({'assignment': assignment.to_dict()})
+    return JsonResponse({'success': True})

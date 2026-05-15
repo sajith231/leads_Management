@@ -1,8 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Edit Assignment{% endblock %}
 {% block content %}
-<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Mono&display=swap" rel="stylesheet"/>
-  <style>
+<style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
@@ -24,7 +23,7 @@
     }
 
     .edit-asset-page {
-      font-family: 'Google Sans', sans-serif;
+      font-family: inherit;
       background: var(--bg);
       color: var(--text);
       display: flex;
@@ -44,7 +43,6 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      font-family: 'Google Sans Mono', monospace;
       font-size: 11.5px;
       color: var(--muted);
       margin-bottom: 12px;
@@ -102,7 +100,6 @@
     }
 
     .step-badge {
-      font-family: 'Google Sans Mono', monospace;
       font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
       color: var(--edit-accent);
       background: rgba(8,145,178,0.08);
@@ -114,7 +111,6 @@
 
     .assignment-id-pill {
       margin-left: auto;
-      font-family: 'Google Sans Mono', monospace;
       font-size: 11px; color: var(--muted);
       background: var(--surface); border: 1px solid var(--border);
       border-radius: 20px; padding: 4px 12px;
@@ -128,7 +124,6 @@
     }
 
     .section-label {
-      font-family: 'Google Sans Mono', monospace;
       font-size: 14px; letter-spacing: 0.18em; text-transform: capitalize;
       color: black; font-weight: bold;
       margin-bottom: 16px; margin-top: 28px;
@@ -169,7 +164,6 @@
       background: #fff;
       border: 1.5px solid var(--border);
       border-radius: 10px; color: var(--text);
-      font-family: 'Google Sans Mono', monospace;
       font-size: 13px; padding: 12px 16px;
       outline: none;
       transition: border-color 0.2s, box-shadow 0.2s;
@@ -190,7 +184,6 @@
     .form-group textarea.modified { border-color: var(--warn); background: rgba(217,119,6,0.03); }
 
     .error-msg {
-      font-family: 'Google Sans Mono', monospace;
       font-size: 11px; color: var(--danger);
       display: none; align-items: center; gap: 4px;
     }
@@ -218,14 +211,13 @@
       display: flex; flex-direction: column; gap: 4px;
       background: var(--surface2); border: 1px solid var(--border);
       border-radius: 8px; padding: 8px 12px;
-      font-family: 'Google Sans Mono', monospace;
     }
     .spec-tag .spec-label {
       font-size: 9.5px; font-weight: 700; letter-spacing: 0.12em;
       text-transform: uppercase; color: var(--edit-accent); line-height: 1;
     }
     .spec-tag .spec-value { font-size: 12.5px; color: var(--text); font-weight: 600; line-height: 1.2; }
-    .spec-empty { font-family: 'Google Sans Mono', monospace; font-size: 12px; color: #b0b5c0; }
+    .spec-empty { font-size: 12px; color: #b0b5c0; }
 
     /* Asset image upload */
     .img-upload-zone {
@@ -249,19 +241,50 @@
     .img-upload-zone p { font-size: 13px; color: var(--muted); }
     .img-upload-zone span.hl { color: var(--edit-accent); font-weight: 600; }
     .img-upload-zone .file-name-display {
-      font-family: 'Google Sans Mono', monospace;
       font-size: 11.5px; color: var(--success);
       margin-top: 6px; display: none;
     }
     .img-upload-zone.has-file .file-name-display { display: block; }
-    .img-new-preview {
-      max-height: 90px; max-width: 140px;
-      object-fit: contain; border-radius: 8px;
-      border: 1px solid var(--border);
-      display: none; margin: 8px auto 0;
-      cursor: zoom-in;
+    /* Multi-image upload (asset_add style) */
+    .img-preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 10px;
+      margin-top: 14px;
     }
-    .img-new-preview.show { display: block; }
+    .img-preview-item {
+      position: relative;
+      border-radius: 9px;
+      overflow: hidden;
+      border: 1.5px solid var(--border);
+      background: var(--surface2);
+      aspect-ratio: 1;
+    }
+    .img-preview-item img {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+      transition: opacity 0.15s;
+    }
+    .img-preview-item:hover img { opacity: 0.82; }
+    .img-preview-remove {
+      position: absolute; top: 4px; right: 4px;
+      width: 20px; height: 20px; border-radius: 50%;
+      background: rgba(220,38,38,0.88); border: none;
+      color: #fff; font-size: 13px; line-height: 1;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.15s;
+    }
+    .img-preview-item:hover .img-preview-remove { opacity: 1; }
+    .img-preview-name {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: rgba(0,0,0,0.55); color: #fff;
+      font-size: 9px; padding: 3px 5px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .img-upload-count {
+      font-size: 11px; color: var(--success);
+      margin-top: 8px; display: flex; align-items: center; gap: 5px;
+    }
 
     /* Return date & returned-by fields */
     .form-group input[type="date"] { cursor: pointer; }
@@ -281,7 +304,6 @@
     }
 
     .footer-meta {
-      font-family: 'Google Sans Mono', monospace;
       font-size: 11px; color: var(--muted);
       display: flex; flex-direction: column; gap: 3px;
     }
@@ -292,7 +314,7 @@
     .btn-cancel {
       padding: 12px 26px; border-radius: 10px;
       border: 1.5px solid var(--border); background: transparent;
-      color: var(--muted); font-family: 'Google Sans', sans-serif;
+      color: var(--muted);
       font-size: 14px; font-weight: 600; cursor: pointer;
       transition: all 0.15s; letter-spacing: 0.01em;
     }
@@ -301,7 +323,7 @@
     .btn-submit {
       padding: 12px 32px; border-radius: 10px; border: none;
       background: linear-gradient(135deg, var(--accent), var(--accent2));
-      color: #fff; font-family: 'Google Sans', sans-serif;
+      color: #fff;
       font-size: 14px; font-weight: 700; cursor: pointer;
       transition: opacity 0.15s, transform 0.15s, box-shadow 0.15s;
       box-shadow: 0 4px 18px rgba(8,145,178,0.3);
@@ -338,7 +360,7 @@
     .btn-back {
       padding: 12px 28px; border-radius: 10px; border: none;
       background: linear-gradient(135deg, var(--edit-accent), var(--edit-accent2));
-      color: #fff; font-family: 'Google Sans', sans-serif;
+      color: #fff;
       font-size: 14px; font-weight: 700; cursor: pointer;
       box-shadow: 0 4px 16px rgba(8,145,178,0.28);
     }
@@ -354,7 +376,6 @@
     .asset-img-panel-header {
       padding: 8px 14px;
       
-      font-family: 'Google Sans Mono', monospace;
       font-size: 10px;
       letter-spacing: 0.13em;
       text-transform: uppercase;
@@ -387,13 +408,11 @@
       gap: 8px;
       background: #fff;
       color: #b0b5c0;
-      font-family: 'Google Sans Mono', monospace;
       font-size: 12px;
     }
     .asset-img-placeholder svg { opacity: 0.35; }
     .img-zoom-hint {
       padding: 5px 14px 7px;
-      font-family: 'Google Sans Mono', monospace;
       font-size: 10px;
       color: var(--muted);
       display: flex;
@@ -434,7 +453,6 @@
     .lightbox-close:hover { background: rgba(255,255,255,0.22); }
     .lightbox-caption {
       position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-      font-family: 'Google Sans Mono', monospace;
       font-size: 12px; color: rgba(255,255,255,0.6);
       background: rgba(0,0,0,0.4); border-radius: 20px;
       padding: 5px 16px; white-space: nowrap;
@@ -565,38 +583,46 @@
           </label>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:stretch;">
 
-            <!-- Current image -->
-            <div class="asset-img-panel" id="assetImgPanel" style="border:1.5px solid var(--border);">
-              <div class="asset-img-panel-header">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                Current Image
+            <!-- Previous images -->
+            <div style="border:1.5px solid var(--border);border-radius:10px;overflow:hidden;">
+              <div style="padding:7px 14px;border-bottom:1px solid var(--border);font-size:10px;letter-spacing:0.13em;text-transform:uppercase;color:var(--muted);font-weight:700;display:flex;align-items:center;gap:6px;">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--edit-accent);"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                Previous Images
               </div>
-              {% if assignment.asset.image %}
-                <img id="assetImgPreview"
-                     src="{{ assignment.asset.image.url }}"
-                     alt="{{ assignment.asset.name }}"
-                     class="asset-img-preview"
-                     style="max-width:100%;max-height:120px;margin:0 auto;display:block;"
-                     onclick="openLightbox(this.src, this.alt)" />
+              {% with imgs=assignment.assignment_images.all %}
+              {% if imgs %}
+                <div style="display:flex;flex-wrap:wrap;gap:8px;padding:10px;">
+                  {% for img in imgs %}
+                    <img src="{{ img.image.url }}" alt="Assignment image {{ forloop.counter }}"
+                         style="height:80px;width:auto;max-width:100%;object-fit:contain;border-radius:7px;border:1px solid var(--border);cursor:zoom-in;"
+                         onclick="openLightbox(this.src,'Assignment Image {{ forloop.counter }}')" />
+                  {% endfor %}
+                </div>
+              {% elif assignment.asset.image %}
+                <img src="{{ assignment.asset.image.url }}" alt="{{ assignment.asset.name }}"
+                     style="max-width:100%;max-height:120px;margin:8px auto;display:block;object-fit:contain;border-radius:7px;cursor:zoom-in;"
+                     onclick="openLightbox(this.src,'{{ assignment.asset.name }}')" />
               {% else %}
-                <div class="asset-img-placeholder" id="assetImgPlaceholder">
-                  <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                  No image on record
+                <div style="padding:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--muted);text-align:center;">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.35;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                  <span style="font-size:11.5px;">No images on record</span>
                 </div>
               {% endif %}
+              {% endwith %}
             </div>
 
-            <!-- Upload new image -->
-            <div class="img-upload-zone" id="imgUploadZone" style="margin-top:0;">
-              <input type="file" id="fAssetImage" accept="image/*" onchange="handleNewImage(this)" />
-              <div class="upload-icon">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <!-- Upload new images (asset_add style) -->
+            <div>
+              <div class="img-upload-zone" id="imgUploadZone" style="margin-top:0;">
+                <input type="file" id="fAssetImage" accept="image/*" multiple onchange="handleNewImages(this)" />
+                <div class="upload-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                </div>
+                <p><span class="hl">Click to upload</span> or drag and drop</p>
+                <p style="font-size:11px;margin-top:4px;">JPG, PNG, WEBP — multiple allowed</p>
+                <div id="newImgPreviews" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px;"></div>
+                <div class="file-name-display" id="newImgName"></div>
               </div>
-              <p><span class="hl">Click to upload</span> new image</p>
-              <p style="font-size:11px;margin-top:3px;">JPG, PNG, WEBP</p>
-              <img id="newImgPreview" class="img-new-preview" src="" alt="New image preview"
-                   onclick="openLightbox(this.src,'New Asset Image')" />
-              <div class="file-name-display" id="newImgName"></div>
             </div>
 
           </div>
@@ -604,7 +630,8 @@
 
       </div>
 
-      <!-- Section: Return Info -->
+      {% if assignment.return_date %}
+      <!-- Section: Return Info (only shown if asset has been returned) -->
       <div class="section-label">Return Info</div>
       <div class="form-grid">
 
@@ -612,24 +639,19 @@
         <div class="form-group">
           <label>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            Return Date <span style="color:var(--muted);font-weight:400;font-size:12px;">(optional)</span>
-            <span class="changed-dot" id="dot-returndate"></span>
+            Return Date
           </label>
-          <input type="date" id="fReturn"
-                 value="{{ assignment.return_date|date:'Y-m-d'|default:'' }}"
-                 oninput="trackChange(this, 'dot-returndate', ORIGINAL.returnDate)" />
+          <input type="date" id="fReturn" readonly class="locked"
+                 value="{{ assignment.return_date|date:'Y-m-d' }}" />
         </div>
 
         <!-- Returned By -->
         <div class="form-group">
           <label>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
-            Returned By <span style="color:var(--muted);font-weight:400;font-size:12px;">(optional)</span>
-            <span class="changed-dot" id="dot-returnedby"></span>
+            Returned By
           </label>
-          <select id="fReturnedBy"
-                  onchange="trackChange(this, 'dot-returnedby', ORIGINAL.returnedById)">
-            <option value="">— Not yet returned —</option>
+          <select disabled class="locked">
             {% for user in users %}
               <option value="{{ user.id }}"
                 {% if user.id|stringformat:"s" == assignment.returned_by_id %}selected{% endif %}>
@@ -639,88 +661,37 @@
           </select>
         </div>
 
-        <!-- Condition on Return -->
+        <!-- Return Images (read-only view) -->
+        {% with rimgs=assignment.return_images.all %}
+        {% if rimgs %}
         <div class="form-group full">
           <label>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-            Condition on Return
-            <span style="color:var(--muted);font-weight:400;font-size:12px;">(optional)</span>
-            <span class="changed-dot" id="dot-returncondition"></span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            Return Images
           </label>
-          <textarea id="fReturnCondition" class="ret-input"
-                    style="min-height:80px;"
-                    placeholder="e.g. Good condition, minor scratches on lid, charger included…"
-                    oninput="trackChange(this, 'dot-returncondition', ORIGINAL.returnCondition)">{{ assignment.return_condition }}</textarea>
-        </div>
-
-        <!-- Return Document / Image -->
-        <div class="form-group full">
-          <label>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            Return Document
-          </label>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:stretch;">
-
-            <!-- Current return document -->
-            {% if assignment.return_document %}
-              {% with doc_url=assignment.return_document.url doc_name=assignment.return_document.name %}
-              {% with ext=doc_name|lower %}
-              <div style="border:1.5px solid var(--border);border-radius:10px;overflow:hidden;background:transparent;">
-                <div style="padding:7px 14px;border-bottom:1px solid var(--border);font-family:'Google Sans Mono',monospace;font-size:10px;letter-spacing:0.13em;text-transform:uppercase;color:#111827;font-weight:700;display:flex;align-items:center;gap:6px;">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                  Uploaded at time of return
-                </div>
-                {% if ext|slice:"-4:" == ".jpg" or ext|slice:"-5:" == ".jpeg" or ext|slice:"-4:" == ".png" or ext|slice:"-5:" == ".webp" %}
-                  <div style="padding:12px;display:flex;flex-direction:column;align-items:center;gap:8px;">
-                    <img src="{{ doc_url }}"
-                         alt="Return document"
-                         onclick="openLightbox('{{ doc_url }}', 'Return Document — {{ assignment.asset.name }}')"
-                         style="max-height:100px;max-width:100%;object-fit:contain;border-radius:8px;cursor:zoom-in;transition:opacity 0.15s;"
-                         onmouseover="this.style.opacity='0.87'" onmouseout="this.style.opacity='1'" />
-                  </div>
-                {% else %}
-                  <div style="padding:14px 16px;display:flex;align-items:center;gap:12px;">
-                    <div style="width:36px;height:36px;border-radius:8px;background:rgba(217,119,6,0.10);border:1px solid rgba(217,119,6,0.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--warn)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                    </div>
-                    <div style="flex:1;min-width:0;">
-                      <div style="font-family:'Google Sans Mono',monospace;font-size:11.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ doc_name|slice:"24:" }}</div>
-                    </div>
-                    <a href="{{ doc_url }}" target="_blank" download
-                       style="flex-shrink:0;padding:6px 12px;border-radius:8px;border:1.5px solid rgba(217,119,6,0.35);background:transparent;color:var(--warn);font-family:'Google Sans',sans-serif;font-size:11px;font-weight:600;cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:4px;"
-                       onmouseover="this.style.background='rgba(217,119,6,0.07)'" onmouseout="this.style.background='transparent'">
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                      Download
-                    </a>
-                  </div>
-                {% endif %}
-              </div>
-              {% endwith %}
-              {% endwith %}
-            {% else %}
-              <div style="border:1.5px dashed var(--border);border-radius:10px;padding:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:var(--surface2);color:var(--muted);text-align:center;">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.35;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                <span style="font-family:'Google Sans Mono',monospace;font-size:11.5px;">No document uploaded</span>
-              </div>
-            {% endif %}
-
-            <!-- Upload new return document -->
-            <div class="img-upload-zone" style="margin-top:0;">
-              <input type="file" id="fReturnDoc" accept=".pdf,.jpg,.jpeg,.png,.webp,.docx" onchange="handleReturnDoc(this)" />
-              <div class="upload-icon" style="color:var(--warn);">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              </div>
-              <p><span style="color:var(--warn);font-weight:600;">Click to upload</span> new document</p>
-              <p style="font-size:11px;margin-top:3px;">PDF, JPG, PNG, DOCX</p>
-              <img id="retDocPreview" class="img-new-preview" src="" alt="Return doc preview"
-                   onclick="openLightbox(this.src,'New Return Document')" />
-              <div class="file-name-display" id="retDocName"></div>
+          <div style="border:1.5px solid var(--border);border-radius:10px;overflow:hidden;">
+            <div style="display:flex;flex-wrap:wrap;gap:8px;padding:10px;">
+              {% for img in rimgs %}
+                <img src="{{ img.image.url }}"
+                     alt="Return image {{ forloop.counter }}"
+                     style="height:80px;width:auto;max-width:100%;object-fit:contain;border-radius:7px;border:1px solid var(--border);cursor:zoom-in;"
+                     onclick="openLightbox(this.src,'Return Image {{ forloop.counter }}')" />
+              {% endfor %}
             </div>
-
           </div>
         </div>
+        {% endif %}
+        {% endwith %}
+
+        {% if assignment.return_condition %}
+        <div class="form-group full">
+          <label>Return Condition</label>
+          <textarea readonly class="locked" style="min-height:80px;">{{ assignment.return_condition }}</textarea>
+        </div>
+        {% endif %}
 
       </div>
+      {% endif %}
 
       <!-- Notes -->
       <div class="form-group full" style="margin-top:18px;">
@@ -769,15 +740,11 @@
 </div><!-- /edit-asset-page -->
 
 <script>
-  // ── Original values for change-tracking ──────────────────────────────────────
+  // Original values for change-tracking
   const ORIGINAL = {
-    employee:    '{{ assignment.employee_id }}',
-    asset:       '{{ assignment.asset.asset_id }}',
-    specNotes:   `{{ assignment.spec_details|escapejs }}`,
-    returnDate:  '{{ assignment.return_date|date:"Y-m-d"|default:"" }}',
-    returnedById:'{{ assignment.returned_by_id }}',
-    notes:       `{{ assignment.notes|escapejs }}`,
-    returnCondition:  `{{ assignment.return_condition|escapejs }}`,
+    employee: '{{ assignment.employee_id }}',
+    asset:    '{{ assignment.asset.asset_id }}',
+    notes:    `{{ assignment.notes|escapejs }}`,
   };
 
   function trackChange(el, dotId, original) {
@@ -801,57 +768,32 @@
     return el;
   }
 
-  // ── New asset image handler ───────────────────────────────────────────────────
-  function handleNewImage(input) {
-    const file = input.files[0];
+  // ── New asset images handler (multiple) ──────────────────────────────────────
+  function handleNewImages(input) {
+    const files = Array.from(input.files);
     const zone = document.getElementById('imgUploadZone');
-    const preview = document.getElementById('newImgPreview');
-    const nameEl  = document.getElementById('newImgName');
-    if (!file) {
+    const previewsEl = document.getElementById('newImgPreviews');
+    const nameEl = document.getElementById('newImgName');
+    previewsEl.innerHTML = '';
+    if (!files.length) {
       zone.classList.remove('has-file');
-      preview.classList.remove('show');
-      preview.src = '';
-      nameEl.textContent = '';
-      updateAssetImage(null, null);
-      return;
-    }
-    zone.classList.add('has-file');
-    nameEl.textContent = '📎 ' + file.name;
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      preview.src = e.target.result;
-      preview.classList.add('show');
-      updateAssetImage(e.target.result, file.name);
-    };
-    reader.readAsDataURL(file);
-  }
-
-  // ── Return document handler ───────────────────────────────────────────────────
-  function handleReturnDoc(input) {
-    const file = input.files[0];
-    const preview = document.getElementById('retDocPreview');
-    const nameEl  = document.getElementById('retDocName');
-    const zone    = input.closest('.img-upload-zone');
-    if (!file) {
-      zone.classList.remove('has-file');
-      preview.classList.remove('show');
-      preview.src = '';
       nameEl.textContent = '';
       return;
     }
     zone.classList.add('has-file');
-    nameEl.textContent = '📎 ' + file.name;
-    if (file.type.startsWith('image/')) {
+    nameEl.textContent = '📎 ' + files.length + ' file(s) selected';
+    files.forEach(function(file) {
+      if (!file.type.startsWith('image/')) return;
       const reader = new FileReader();
       reader.onload = function(e) {
-        preview.src = e.target.result;
-        preview.classList.add('show');
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.style.cssText = 'height:70px;width:auto;object-fit:contain;border-radius:7px;border:1px solid var(--border);cursor:zoom-in;';
+        img.onclick = function() { openLightbox(this.src, 'New Asset Image'); };
+        previewsEl.appendChild(img);
       };
       reader.readAsDataURL(file);
-    } else {
-      preview.classList.remove('show');
-      preview.src = '';
-    }
+    });
   }
 
   // ── Submit ────────────────────────────────────────────────────────────────────
@@ -865,21 +807,14 @@
     }
     if (!valid) { firstError?.scrollIntoView({behavior:'smooth',block:'center'}); return; }
 
-    const imageFile   = document.getElementById('fAssetImage').files[0];
-    const retDocFile  = document.getElementById('fReturnDoc').files[0];
+    const imageFiles = Array.from(document.getElementById('fAssetImage').files);
 
-    // Use FormData when any file is attached, JSON otherwise
-    if (imageFile || retDocFile) {
+    if (imageFiles.length) {
       const fd = new FormData();
-      fd.append('employee_id',    document.getElementById('fEmployee').value);
-      fd.append('spec_details',   document.getElementById('fSpec').value);
-      fd.append('return_date',    document.getElementById('fReturn').value || '');
-      fd.append('returned_by_id', document.getElementById('fReturnedBy').value || '');
-      fd.append('notes',          document.getElementById('fNotes').value);
-      fd.append('return_condition', document.getElementById('fReturnCondition').value);
-      if (imageFile)  fd.append('asset_image',    imageFile);
-      if (retDocFile) fd.append('return_document', retDocFile);
-
+      fd.append('employee_id',  document.getElementById('fEmployee').value);
+      fd.append('spec_details', document.getElementById('fSpec').value);
+      fd.append('notes',        document.getElementById('fNotes').value);
+      imageFiles.forEach(function(f) { fd.append('asset_image', f); });
       fetch('/asset_management/api/assignments/{{ assignment.pk }}/edit/', {
         method: 'POST',
         headers: { 'X-CSRFToken': getCookie('csrftoken') },
@@ -893,12 +828,9 @@
       .catch(() => alert('Network error. Please try again.'));
     } else {
       const payload = {
-        employee_id:    document.getElementById('fEmployee').value,
-        spec_details:   document.getElementById('fSpec').value,
-        return_date:    document.getElementById('fReturn').value || null,
-        returned_by_id: document.getElementById('fReturnedBy').value || null,
-        notes:          document.getElementById('fNotes').value,
-        return_condition: document.getElementById('fReturnCondition').value,
+        employee_id:  document.getElementById('fEmployee').value,
+        spec_details: document.getElementById('fSpec').value,
+        notes:        document.getElementById('fNotes').value,
       };
       fetch('/asset_management/api/assignments/{{ assignment.pk }}/edit/', {
         method: 'POST',
