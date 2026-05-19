@@ -32,6 +32,7 @@ class DistrictForm(forms.ModelForm):
 from django import forms
 from .models import User, Branch, CV  # Add CV to imports
 from django.contrib.auth.models import User as DjangoUser
+from purchase_order.models import Department
 
 class UserForm(forms.ModelForm):
     password = forms.CharField(
@@ -76,10 +77,20 @@ class UserForm(forms.ModelForm):
         })
     )
 
+    # Add departments field
+    departments = forms.ModelMultipleChoiceField(
+        queryset=Department.objects.all().order_by('name'),
+        required=False,
+        label="Departments",
+        widget=forms.CheckboxSelectMultiple(attrs={
+            'class': 'form-check-input'
+        })
+    )
+
 
     class Meta:
         model = User
-        fields = ['name', 'userid', 'password', 'branch', 'user_level', 'image','phone_number', 'status']
+        fields = ['name', 'userid', 'password', 'branch', 'user_level', 'image','phone_number', 'status', 'departments']
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',

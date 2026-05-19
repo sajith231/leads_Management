@@ -416,6 +416,11 @@ def add_user(request):
                     user.allowed_menus = json.dumps([])
                 
                 user.save()
+                
+                # Save departments after the user is created (for ManyToMany)
+                departments = form.cleaned_data.get('departments')
+                if departments:
+                    user.departments.set(departments)
 
                 messages.success(request, f"User '{user.name}' created successfully!")
                 return redirect("users_table")
@@ -469,6 +474,7 @@ def delete_user(request, user_id):
 @login_required
 def edit_user(request, user_id):
     user = get_object_or_404(User, id=user_id)
+    job_roles = JobRole.objects.all()  # Fetch all job roles for the dropdown
 
     if request.method == "POST":
         form = UserForm(request.POST, request.FILES, instance=user, edit_mode=True)
@@ -488,13 +494,20 @@ def edit_user(request, user_id):
                 user.password = password  # Directly saving password (ensure hashing if needed)
 
             user.save()
+            
+            # Save departments (for ManyToMany)
+            departments = form.cleaned_data.get('departments')
+            if departments:
+                user.departments.set(departments)
+            else:
+                user.departments.clear()
+            
             messages.success(request, f"User '{user.name}' updated successfully!")
             return redirect("users_table")
         else:
             messages.error(request, "Please correct the errors below.")
     else:
         form = UserForm(instance=user, edit_mode=True)
-        job_roles = JobRole.objects.all()  # Fetch all job roles for the dropdown
 
     return render(request, "edit_user.html", {"form": form, "user": user, "job_roles": job_roles})
 

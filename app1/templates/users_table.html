@@ -109,6 +109,7 @@
                                     <th>User Level</th>
                                     <th>Job Role</th>
                                     <th>Phone Number</th>
+                                    <th>Departments</th>
                                     <th>Status</th>       
                                     <th>Edit</th>
                                     <th>Delete</th>
@@ -160,6 +161,19 @@
                                         {% endif %}
                                     </td>
                                     <td>{{ user.phone_number|default:"-" }}</td>
+                                    <td>
+                                        {% if user.departments.all %}
+                                            <span class="badge bg-info" title="{{ user.departments.all|join:', ' }}">
+                                                {% if user.departments.count == 1 %}
+                                                    {{ user.departments.first.name }}
+                                                {% else %}
+                                                    {{ user.departments.count }} Depts
+                                                {% endif %}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">None</span>
+                                        {% endif %}
+                                    </td>
                                     <td>
                                         {% if user.status == 'active' %}
                                             <span class="badge bg-success">Active</span>
