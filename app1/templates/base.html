@@ -619,24 +619,9 @@
 </div>
 {% endif %}
 
-{% if 'Asset Management' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-<div class="mainmenu" onclick="toggleAssetMenu()">
-    <span>
-        <i class="fas fa-boxes"></i>
-        <span>Asset Management</span>
-    </span>
-</div>
-
-<div id="asset-menu" class="submenu">
-
-    {% if 'asset_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-    <a href="{% url 'asset_management' %}">
-        <i class="fas fa-list-alt"></i> Asset List
-    </a>
-    {% endif %}
-
-</div>
-{% endif %}
+<a href="{% url 'asset_management' %}">
+    <i class="fas fa-boxes"></i> Asset Management
+</a>
 
 
 <!-- Vehicle Management - Standalone Main Menu with Submenu -->
