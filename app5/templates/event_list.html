@@ -1701,6 +1701,7 @@
                 <!-- Hidden fields for current user context (branch-based ticket filtering) -->
                 <input type="hidden" id="currentUserLevel" value="{{ current_user_level }}">
                 <input type="hidden" id="currentUserBranchId" value="{{ current_user_branch_id }}">
+                <input type="hidden" id="currentUserDeptNames" value="{{ current_user_dept_names_json }}">
                 
                 <!-- Hidden field for follow-up ID (for edit mode) -->
                 <input type="hidden" id="followUpId" name="follow_up_id" value="">
@@ -1924,27 +1925,43 @@
 
         /**
          * BRANCH-BASED TICKET FILTERING
-         * - 3level (User): only their branch's active leads
-         * - 5level (Branch User): only their branch's active leads
+         * - 3level (User): only leads from their assigned departments
+         * - 5level (Branch User): only leads from their assigned departments
          * - normal (Admin) / admin_level (Super Admin) / 4level (Superuser): show all
+         *
+         * User.departments (M2M) = lead.requirement (stored as department name).
+         * currentUserDeptNames is a JSON list of those department names.
          */
         function filterTicketsByBranch() {
-            const userLevel = document.getElementById('currentUserLevel').value;
+            const userLevel    = document.getElementById('currentUserLevel').value;
             const userBranchId = document.getElementById('currentUserBranchId').value;
             const ticketSelect = document.getElementById('ticketNumber');
-            const options = ticketSelect.querySelectorAll('option');
+            const options      = ticketSelect.querySelectorAll('option');
 
-            // These levels see only their own branch's leads
+            // Parse the user's allowed department names from the hidden JSON field
+            let userDeptNames = [];
+            try {
+                const raw = document.getElementById('currentUserDeptNames').value;
+                userDeptNames = JSON.parse(raw || '[]');
+            } catch (e) {}
+            // Fallback: if parsing fails or list is empty, use the single branch name
+            if (!userDeptNames.length && userBranchId) {
+                userDeptNames = [userBranchId];
+            }
+
+            // Only these levels are restricted to their own departments
             const branchRestrictedLevels = ['3level', '5level'];
+            // admin_level / normal / 4level / empty / unknown → show all tickets
+            const isAdmin = !branchRestrictedLevels.includes(userLevel);
 
             options.forEach(function(option) {
                 if (!option.value) return; // skip placeholder option
-                if (branchRestrictedLevels.includes(userLevel)) {
-                    // Show only leads from the user's own branch
+                if (!isAdmin) {
                     const optBranch = option.getAttribute('data-branch') || '';
-                    option.hidden = (optBranch !== String(userBranchId));
+                    // Show only if this lead's branch is in the user's department list
+                    option.hidden = !userDeptNames.includes(optBranch);
                 } else {
-                    // Admin (normal) / Super Admin (admin_level) / Superuser (4level) → show all
+                    // Admin / Super Admin / Superuser / unknown → show all
                     option.hidden = false;
                 }
             });

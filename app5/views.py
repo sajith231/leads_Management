@@ -4983,18 +4983,27 @@ def lead_edit(request, lead_id):
             
         lead.Consultant = request.POST.get('Consultant')
         
-        # ========== FIXED: Handle requirement as NAME ==========
-        requirement_value = request.POST.get('requirement')
+        # ========== Handle requirement: form sends department.id, store department.name ==========
+        requirement_value = request.POST.get('requirement', '').strip()
         if requirement_value:
-            # Store the branch name directly
-            lead.requirement = requirement_value.strip()
-            # Also store the department ID if we can find it
             try:
-                department = Department.objects.filter(name=requirement_value.strip()).first()
+                # lead_form.html sends department.id — resolve to name for consistent filtering
+                if requirement_value.isdigit():
+                    department = Department.objects.filter(id=int(requirement_value)).first()
+                else:
+                    # Fallback: try matching by name (legacy data)
+                    department = Department.objects.filter(name=requirement_value).first()
+
                 if department:
+                    lead.requirement = department.name  # store name string for filtering
                     lead.department = department
+                else:
+                    lead.requirement = requirement_value  # keep raw if not found
+                    lead.department = None
             except (AttributeError, Exception) as e:
-                logger.debug(f"No department found for name '{requirement_value}': {e}")
+                logger.debug(f"Error resolving department '{requirement_value}': {e}")
+                lead.requirement = requirement_value
+                lead.department = None
         else:
             lead.requirement = None
             lead.department = None
@@ -14065,18 +14074,27 @@ def lead_edit(request, lead_id):
             
         lead.Consultant = request.POST.get('Consultant')
         
-        # ========== FIXED: Handle requirement as NAME ==========
-        requirement_value = request.POST.get('requirement')
+        # ========== Handle requirement: form sends department.id, store department.name ==========
+        requirement_value = request.POST.get('requirement', '').strip()
         if requirement_value:
-            # Store the branch name directly
-            lead.requirement = requirement_value.strip()
-            # Also store the department ID if we can find it
             try:
-                department = Department.objects.filter(name=requirement_value.strip()).first()
+                # lead_form.html sends department.id — resolve to name for consistent filtering
+                if requirement_value.isdigit():
+                    department = Department.objects.filter(id=int(requirement_value)).first()
+                else:
+                    # Fallback: try matching by name (legacy data)
+                    department = Department.objects.filter(name=requirement_value).first()
+
                 if department:
+                    lead.requirement = department.name  # store name string for filtering
                     lead.department = department
+                else:
+                    lead.requirement = requirement_value  # keep raw if not found
+                    lead.department = None
             except (AttributeError, Exception) as e:
-                logger.debug(f"No department found for name '{requirement_value}': {e}")
+                logger.debug(f"Error resolving department '{requirement_value}': {e}")
+                lead.requirement = requirement_value
+                lead.department = None
         else:
             lead.requirement = None
             lead.department = None
@@ -18571,17 +18589,22 @@ def event_list(request):
     user_level     = request.session.get('user_level', '')
     custom_user_id = request.session.get('custom_user_id')
 
-    current_user_name      = None
-    current_user_branch_id = ''   # will hold the branch NAME for comparison
+    current_user_name       = None
+    current_user_branch_id  = ''   # branch NAME (kept for JS hidden input compatibility)
+    current_user_dept_names = []   # department NAMES from User.departments M2M (matches lead.requirement)
 
     if custom_user_id:
         try:
-            cu = User.objects.select_related('branch').filter(id=custom_user_id).first()
+            cu = User.objects.select_related('branch').prefetch_related('departments').filter(id=custom_user_id).first()
             if cu:
                 current_user_name = cu.name
                 if cu.branch:
-                    # Use branch NAME so it matches lead.requirement directly
                     current_user_branch_id = cu.branch.name or ''
+                # Collect all department names assigned to this user
+                current_user_dept_names = list(cu.departments.values_list('name', flat=True))
+                # Fallback: if no departments assigned, use branch name
+                if not current_user_dept_names and current_user_branch_id:
+                    current_user_dept_names = [current_user_branch_id]
         except Exception:
             pass
 
@@ -18682,9 +18705,24 @@ def event_list(request):
             followup.branch_id = followup.lead.requirement
 
     # -- 4. Active leads for the create-form dropdown ------------------------
-    active_leads = Lead.objects.filter(
+    _admin_levels = ['normal', 'admin_level', '4level']
+    # Also treat Django superuser and any unrecognised/empty level as full admin
+    _is_admin = (
+        user_level in _admin_levels
+        or getattr(request.user, 'is_superuser', False)
+        or not user_level  # empty session → treat as admin (avoids blank screen)
+    )
+    _active_leads_qs = Lead.objects.filter(
         status__in=['Active', 'New', 'Follow-up Required', 'Not Attended', 'Proposal Sent', 'On Hold']
     ).select_related('created_by__branch').prefetch_related('requirements').order_by('-created_at')
+    if not _is_admin:
+        # Restrict to leads whose branch (requirement) matches any of the user's assigned departments
+        if current_user_dept_names:
+            _active_leads_qs = _active_leads_qs.filter(requirement__in=current_user_dept_names)
+        else:
+            # No departments assigned and not admin — show no leads
+            _active_leads_qs = _active_leads_qs.none()
+    active_leads = _active_leads_qs
 
     leads_data = []
     for lead in active_leads:
@@ -18809,12 +18847,13 @@ def event_list(request):
         'current_user_name':      current_user_name or '',
 
         # Branch-based ticket filtering in the dropdown:
-        # '3level' (User) + '5level' (Branch User) see only their branch's leads.
-        # current_user_branch_id is the branch NAME (e.g. "IMC BUSINESS SOLUTIONS")
-        # which matches lead.requirement stored on each lead.
-        'current_user_level':     user_level,
-        'current_user_branch_id': current_user_branch_id,
-        'selected_lead_id':       selected_lead_id,  # passed from lead_form follow-up button
+        # '3level' (User) + '5level' (Branch User) see only leads from their assigned departments.
+        # current_user_branch_id is the branch NAME for JS compatibility.
+        # current_user_dept_names_json is the JSON list of department names for JS multi-dept matching.
+        'current_user_level':            user_level,
+        'current_user_branch_id':        current_user_branch_id,
+        'current_user_dept_names_json':  json.dumps(current_user_dept_names),
+        'selected_lead_id':              selected_lead_id,  # passed from lead_form follow-up button
     }
 
     return render(request, 'event_list.html', context)
@@ -20369,17 +20408,22 @@ def event_list(request):
     user_level     = request.session.get('user_level', '')
     custom_user_id = request.session.get('custom_user_id')
 
-    current_user_name      = None
-    current_user_branch_id = ''   # will hold the branch NAME for comparison
+    current_user_name       = None
+    current_user_branch_id  = ''   # branch NAME (kept for JS hidden input compatibility)
+    current_user_dept_names = []   # department NAMES from User.departments M2M (matches lead.requirement)
 
     if custom_user_id:
         try:
-            cu = User.objects.select_related('branch').filter(id=custom_user_id).first()
+            cu = User.objects.select_related('branch').prefetch_related('departments').filter(id=custom_user_id).first()
             if cu:
                 current_user_name = cu.name
                 if cu.branch:
-                    # Use branch NAME so it matches lead.requirement directly
                     current_user_branch_id = cu.branch.name or ''
+                # Collect all department names assigned to this user
+                current_user_dept_names = list(cu.departments.values_list('name', flat=True))
+                # Fallback: if no departments assigned, use branch name
+                if not current_user_dept_names and current_user_branch_id:
+                    current_user_dept_names = [current_user_branch_id]
         except Exception:
             pass
 
@@ -20480,9 +20524,24 @@ def event_list(request):
             followup.branch_id = followup.lead.requirement
 
     # -- 4. Active leads for the create-form dropdown ------------------------
-    active_leads = Lead.objects.filter(
+    _admin_levels = ['normal', 'admin_level', '4level']
+    # Also treat Django superuser and any unrecognised/empty level as full admin
+    _is_admin = (
+        user_level in _admin_levels
+        or getattr(request.user, 'is_superuser', False)
+        or not user_level  # empty session → treat as admin (avoids blank screen)
+    )
+    _active_leads_qs = Lead.objects.filter(
         status__in=['Active', 'New', 'Follow-up Required', 'Not Attended', 'Proposal Sent', 'On Hold']
     ).select_related('created_by__branch').prefetch_related('requirements').order_by('-created_at')
+    if not _is_admin:
+        # Restrict to leads whose branch (requirement) matches any of the user's assigned departments
+        if current_user_dept_names:
+            _active_leads_qs = _active_leads_qs.filter(requirement__in=current_user_dept_names)
+        else:
+            # No departments assigned and not admin — show no leads
+            _active_leads_qs = _active_leads_qs.none()
+    active_leads = _active_leads_qs
 
     leads_data = []
     for lead in active_leads:
@@ -20607,12 +20666,13 @@ def event_list(request):
         'current_user_name':      current_user_name or '',
 
         # Branch-based ticket filtering in the dropdown:
-        # '3level' (User) + '5level' (Branch User) see only their branch's leads.
-        # current_user_branch_id is the branch NAME (e.g. "IMC BUSINESS SOLUTIONS")
-        # which matches lead.requirement stored on each lead.
-        'current_user_level':     user_level,
-        'current_user_branch_id': current_user_branch_id,
-        'selected_lead_id':       selected_lead_id,  # passed from lead_form follow-up button
+        # '3level' (User) + '5level' (Branch User) see only leads from their assigned departments.
+        # current_user_branch_id is the branch NAME for JS compatibility.
+        # current_user_dept_names_json is the JSON list of department names for JS multi-dept matching.
+        'current_user_level':            user_level,
+        'current_user_branch_id':        current_user_branch_id,
+        'current_user_dept_names_json':  json.dumps(current_user_dept_names),
+        'selected_lead_id':              selected_lead_id,  # passed from lead_form follow-up button
     }
 
     return render(request, 'event_list.html', context)

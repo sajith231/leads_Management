@@ -1,0 +1,161 @@
+﻿def event_list(request):
+    """
+    View to render the event list page with follow-ups.
+
+    Role-based visibility:
+      * '3level' (User)  -> only follow-ups they CREATED or are ASSIGNED to
+                            (excludes Accepted & Rejected)
+      * All other roles  -> all follow-ups EXCEPT Accepted & Rejected
+        (normal=Admin, admin_level=Super Admin, 4level=Superuser, 5level=Branch User)
+
+    Ticket dropdown (active leads):
+      * '3level' (User) + '5level' (Branch User) -> only their branch's active leads
+      * All other roles -> all active leads
+    """
+    from .models import FollowUp, Lead
+    import json
+    from django.utils import timezone
+    from django.db.models import Q
+    from app1.models import User
+    from purchase_order.models import Department
+
+    # -- 1. Resolve the current custom user ----------------------------------
+    user_level     = request.session.get('user_level', '')
+    custom_user_id = request.session.get('custom_user_id')
+
+    current_user_name      = None
+    current_user_branch_id = ''   # will hold the branch NAME for comparison
+
+    if custom_user_id:
+        try:
+            cu = User.objects.select_related('branch').filter(id=custom_user_id).first()
+            if cu:
+                current_user_name = cu.name
+                if cu.branch:
+                    # Use branch NAME so it matches lead.requirement directly
+                    current_user_branch_id = cu.branch.name or ''
+        except Exception:
+            pass
+
+    # -- 2. Base queryset filtered by role -----------------------------------
+    #
+    # created_by is a FK to Django's auth.User.
+    # request.user IS that Django user for the logged-in session.
+    # assigned_to is a plain-text CharField (stores a name string).
+    #
+    # Accepted & Rejected are loaded into the page but hidden by default via JS filtering.
+    # They only appear when explicitly selected in the status filter dropdown.
+
+    if user_level == '3level':
+        q_created  = Q(created_by=request.user) if request.user.is_authenticated else Q()
+        q_assigned = Q(assigned_to__iexact=current_user_name) if current_user_name else Q()
+
+        if request.user.is_authenticated or current_user_name:
+            followups = (
+                FollowUp.objects
+                .filter(q_created | q_assigned)
+                .select_related('lead', 'created_by')
+                .prefetch_related('lead__requirements')
+                .order_by('-follow_up_date', '-created_at')
+            )
+        else:
+            followups = FollowUp.objects.none()
+    else:
+        followups = (
+            FollowUp.objects
+            .select_related('lead', 'created_by')
+            .prefetch_related('lead__requirements')
+            .order_by('-follow_up_date', '-created_at')
+        )
+
+    # -- 2b. Build active_leads for the ticket dropdown ----------------------
+    # Admins (normal, admin_level, 4level) see ALL active leads.
+    # Regular users (3level, 5level) see only leads whose requirement field
+    # matches their branch name OR one of their assigned department names.
+    admin_levels = ['normal', 'admin_level', '4level']
+    active_leads_qs = Lead.objects.filter(status__iexact='Active').order_by('-created_at')
+
+    if user_level not in admin_levels and custom_user_id:
+        try:
+            cu = User.objects.prefetch_related('departments').select_related('branch').get(id=custom_user_id)
+            # Collect all branch/department names this user belongs to
+            user_dept_names = set()
+            if cu.branch:
+                user_dept_names.add(cu.branch.name.strip())
+            for dept in cu.departments.all():
+                user_dept_names.add(dept.name.strip())
+
+            if user_dept_names:
+                dept_q = Q()
+                for name in user_dept_names:
+                    dept_q |= Q(requirement__iexact=name)
+                active_leads_qs = active_leads_qs.filter(dept_q)
+            else:
+                active_leads_qs = active_leads_qs.none()
+        except Exception:
+            active_leads_qs = active_leads_qs.none()
+
+    # Annotate each lead with requirements JSON for the template
+    import json as _json
+    active_leads_list = []
+    for lead in active_leads_qs[:200]:
+        reqs = []
+        for req in lead.requirements.all():
+            reqs.append({
+                'id': req.id,
+                'item_id': req.item.id if getattr(req, 'item', None) else None,
+                'item_name': getattr(req, 'item_name', ''),
+                'section': getattr(req, 'section', 'GENERAL'),
+                'unit': getattr(req, 'unit', 'pcs'),
+                'price': float(req.price) if getattr(req, 'price', None) is not None else 0.0,
+                'quantity': int(req.quantity) if getattr(req, 'quantity', None) is not None else 1,
+            })
+        lead.requirements_json = _json.dumps(reqs)
+        lead.owner_name = lead.ownerName
+        lead.phone = lead.phoneNo
+        lead.branch_id = lead.requirement or ''
+        active_leads_list.append(lead)
+
+    # -- 3b. Filter by lead_id if passed from lead_form follow-up button -----
+    selected_lead_id = request.GET.get('lead_id', '').strip()
+    if selected_lead_id and selected_lead_id.isdigit():
+        followups = followups.filter(lead_id=int(selected_lead_id))
+
+    # -- 3. Annotate each followup -------------------------------------------
+    for followup in followups:
+
+        # parsed_selected_items
+        selected_items_list = []
+        if followup.selected_requirement_items:
+            try:
+                items_data = json.loads(followup.selected_requirement_items)
+
+                if isinstance(items_data, dict):
+                    if 'item_details' in items_data:
+                        for item in items_data['item_details']:
+                            if isinstance(item, dict) and 'name' in item:
+                                selected_items_list.append(item['name'])
+                    elif 'items' in items_data:
+                        for item in items_data['items']:
+                            if isinstance(item, dict) and 'name' in item:
+                                selected_items_list.append(item['name'])
+                elif isinstance(items_data, list):
+                    for item in items_data:
+                        if isinstance(item, dict):
+                            if 'name' in item:
+                                selected_items_list.append(item['name'])
+                            elif 'item_name' in item:
+                                selected_items_list.append(item['item_name'])
+                        elif isinstance(item, str):
+                            selected_items_list.append(item)
+
+            except (json.JSONDecodeError, TypeError, AttributeError) as e:
+                print(f"Error parsing selected items for followup {followup.id}: {e}")
+                raw = followup.selected_requirement_items
+                if raw and ',' in raw:
+                    selected_items_list = [i.strip() for i in raw.split(',') if i.strip()]
+
+        followup.parsed_selected_items = selected_items_list
+
+        # custom_user_name
+        if followup.created_by:
