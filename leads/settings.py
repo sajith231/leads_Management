@@ -89,6 +89,7 @@ INSTALLED_APPS = [
     'public_folder',
     'software_update',
     'asset_management',
+    "lead_form_api", 
 ]
 
 

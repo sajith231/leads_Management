@@ -900,7 +900,7 @@
                                         </td>
                                         <td>
                                             <div class="item-desc-wrapper">
-                                            <select class="item-desc" name="item_id[]" onchange="loadItemDetails(this)" required>
+                                            <select class="item-desc" name="item_id[]" onchange="loadItemDetails(this, false)" required>
                                                 <option value="">Select Item</option>
                                                 {% for item in items %}
                                                 <option value="{{ item.id }}" 
@@ -1353,7 +1353,9 @@
         }
         
         // Function to load item details when selected
-        function loadItemDetails(selectElement) {
+        // isInit=true  → called during page load to restore existing saved row (no reverse calc)
+        // isInit=false → called when user picks a NEW item from the dropdown (reverse calc allowed)
+        function loadItemDetails(selectElement, isInit) {
             const $select = $(selectElement);
             const selectedItemId = $select.val();
             
@@ -1375,32 +1377,74 @@
                     $select.val(selectedItemId);
                 }
                 
-                // Populate price fields (only if currently zero/empty)
-                const currentSalesPrice = parseFloat(row.find('.sales-price').val()) || 0;
-                const currentUnitPrice  = parseFloat(row.find('.unit-price').val())  || 0;
-                const currentTax        = parseFloat(row.find('.tax').val())          || 0;
-                
-                if (currentSalesPrice === 0) {
+                if (isInit) {
+                    // ── INIT MODE ──────────────────────────────────────────────
+                    // Existing saved values are already in the inputs; do NOT
+                    // overwrite them and do NOT run reverse calculation.
+                    // Only fill in truly missing (zero) values from item master.
+                    const currentUnitPrice = parseFloat(row.find('.unit-price').val()) || 0;
+                    const currentTax       = parseFloat(row.find('.tax').val())         || 0;
+
+                    if (currentUnitPrice === 0) {
+                        row.find('.unit-price').val(parseFloat(itemData.cost || 0).toFixed(2));
+                    }
+                    if (currentTax === 0 && itemData.tax_percentage) {
+                        row.find('.tax').val(itemData.tax_percentage);
+                    }
+                    if (itemData.unit_of_measure) {
+                        row.find('.item-qty').attr('placeholder', `Qty in ${itemData.unit_of_measure}`);
+                    }
+                    row.data('description', itemData.description || '');
+
+                    // Plain recalculation with NO reverse-calc side-effects
+                    calculateRowInit(row);
+
+                } else {
+                    // ── USER-CHANGED MODE ──────────────────────────────────────
+                    // User just selected a different item → load fresh prices from
+                    // item master and run the full calculateRow (reverse calc for HARDWARE).
                     row.find('.sales-price').val(parseFloat(itemData.mrp || 0).toFixed(2));
-                }
-                if (currentUnitPrice === 0) {
                     row.find('.unit-price').val(parseFloat(itemData.cost || 0).toFixed(2));
+                    if (itemData.tax_percentage) {
+                        row.find('.tax').val(itemData.tax_percentage);
+                    }
+                    if (itemData.unit_of_measure) {
+                        row.find('.item-qty').attr('placeholder', `Qty in ${itemData.unit_of_measure}`);
+                    }
+                    row.data('description', itemData.description || '');
+
+                    // Full calculateRow — includes HARDWARE reverse calculation
+                    calculateRow($select[0]);
                 }
-                if (currentTax === 0 && itemData.tax_percentage) {
-                    row.find('.tax').val(itemData.tax_percentage);
-                }
-                
-                // Set quantity placeholder
-                if (itemData.unit_of_measure) {
-                    row.find('.item-qty').attr('placeholder', `Qty in ${itemData.unit_of_measure}`);
-                }
-                
-                // Store item description on the row for submit
-                row.data('description', itemData.description || '');
-                
-                // Recalculate row total
-                calculateRow($select[0]);
             }
+        }
+
+        // Lightweight recalculation used during init — reads the already-correct
+        // sales_price from the input AS-IS (no reverse calculation applied).
+        function calculateRowInit(row) {
+            const qty        = parseFloat(row.find('.item-qty').val())    || 0;
+            const salesPrice = parseFloat(row.find('.sales-price').val()) || 0;
+            const unitPrice  = parseFloat(row.find('.unit-price').val())  || 0;
+            const discount   = parseFloat(row.find('.discount').val())    || 0;
+            const tax        = parseFloat(row.find('.tax').val())          || 0;
+            const section    = (row.find('.item-section').val() || '').toUpperCase();
+
+            let totalAfterTax;
+            if (section === 'HARDWARE') {
+                // sales_price stored in DB is already the ex-tax price.
+                // Total = qty × salesPrice × (1 + tax%)
+                totalAfterTax = qty * salesPrice * (1 + tax / 100);
+                // Keep hw-total in sync (tax-inclusive total) for later tax-change events
+                row.find('.hw-total').val((salesPrice * (1 + tax / 100) * qty).toFixed(2));
+            } else {
+                const basePrice      = salesPrice > 0 ? salesPrice : unitPrice;
+                const discountedPrice = basePrice * (1 - discount / 100);
+                totalAfterTax        = qty * discountedPrice * (1 + tax / 100);
+            }
+
+            row.find('.row-total').text(totalAfterTax.toFixed(2));
+            row.find('.row-total-value').val(totalAfterTax.toFixed(2));
+            updateTotals();
         }
         
         // Function to initialize existing rows
@@ -1441,9 +1485,14 @@
                         console.log(`Restored item: ${selectedItemId}`);
                     }
                 }
-                
-                // Recalculate the row totals
-                calculateRow(row.find('.item-qty')[0]);
+
+                // ✅ FIX: Use init-mode load so saved sales_price is NOT overwritten
+                //         and reverse calculation is NOT applied on page load.
+                if (selectedItemId) {
+                    loadItemDetails(itemSelect[0], true);  // isInit = true
+                } else {
+                    calculateRowInit(row);
+                }
             });
             
             // Update grand totals
@@ -1465,7 +1514,7 @@
                 <!-- ITEM DESCRIPTION SECOND -->
                 <td>
                     <div class="item-desc-wrapper">
-                        <select class="item-desc" name="item_id[]" onchange="loadItemDetails(this)" required disabled>
+                        <select class="item-desc" name="item_id[]" onchange="loadItemDetails(this, false)" required disabled>
                             <option value="">Select Item</option>
                         </select>
                         <button type="button" class="btn-view-notes" title="View / edit item notes" onclick="viewItemNotes(this)">

@@ -59,6 +59,7 @@ urlpatterns = [
     path('public_folder/', include('public_folder.urls')),
     path('software-update/', include('software_update.urls')),
      path('asset_management/', include('asset_management.urls')), 
+     path("api/", include("lead_form_api.urls")),
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
