@@ -90,6 +90,7 @@ INSTALLED_APPS = [
     'software_update',
     'asset_management',
     "lead_form_api", 
+    "lead_form_enquiry",
 ]
 
 

@@ -141,15 +141,16 @@
         }
 
         .status-select {
-            width: 100% !important;
-            padding: 10px 12px;
-            font-size: 14px;
+            width: auto !important;
+            padding: 5px 8px;
+            font-size: 12px;
             font-weight: 600;
             border: 2px solid #2575fc;
-            border-radius: 8px;
+            border-radius: 6px;
             background: #f9fcff;
             cursor: pointer;
             transition: 0.2s ease-in-out;
+            height: 32px;
         }
 
         .status-select:focus {
@@ -161,6 +162,141 @@
 
         .status-select:hover {
             background: #eef6ff;
+        }
+
+        /* Communication Details single-line header */
+        .comm-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            flex-wrap: nowrap;
+        }
+        .comm-header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 16px;
+            color: #14ad09;
+            font-weight: bold;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .comm-header-right {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: nowrap;
+            flex-shrink: 0;
+        }
+        .enquiry-lookup-label {
+            font-size: 13px;
+            color: #3a5bd9;
+            font-weight: 700;
+            margin-bottom: 0;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .fetch-btn {
+            padding: 5px 10px;
+            background: linear-gradient(135deg, #3a5bd9, #2575fc);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .fetch-btn:hover {
+            background: linear-gradient(135deg, #2d4ec4, #1a5edb);
+            transform: translateY(-1px);
+        }
+        .fetch-btn:disabled {
+            background: #aaa;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .enquiry-fetched-badge {
+            display: none;
+            align-items: center;
+            gap: 4px;
+            background: #e6f9ec;
+            border: 1px solid #4CAF50;
+            color: #2e7d32;
+            border-radius: 5px;
+            padding: 3px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .enquiry-fetched-badge.show { display: flex; }
+
+        /* Enquiry combobox */
+        .enquiry-combobox-wrapper {
+            position: relative;
+            width: 170px;
+            flex-shrink: 0;
+        }
+        .enquiry-combobox-wrapper input {
+            width: 100%;
+            padding: 5px 6px;
+            font-size: 12px;
+            border: 1.5px solid #a9bff8;
+            border-radius: 6px;
+            background: #f0f4ff;
+            height: 32px;
+            box-sizing: border-box;
+            margin-bottom: 0;
+        }
+        .enquiry-combobox-wrapper input:focus {
+            border-color: #3a5bd9;
+            outline: none;
+            background: white;
+        }
+        .enquiry-dropdown-list {
+            display: none;
+            position: absolute;
+            top: 34px;
+            left: 0;
+            width: 200px;
+            max-height: 200px;
+            overflow-y: auto;
+            background: white;
+            border: 1.5px solid #a9bff8;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(58,91,217,0.15);
+            z-index: 9999;
+        }
+        .enquiry-dropdown-list.open { display: block; }
+        .enquiry-dropdown-item {
+            padding: 7px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            color: #333;
+            border-bottom: 1px solid #eef0fb;
+        }
+        .enquiry-dropdown-item:last-child { border-bottom: none; }
+        .enquiry-dropdown-item:hover,
+        .enquiry-dropdown-item.active {
+            background: #eef2ff;
+            color: #3a5bd9;
+        }
+        .enquiry-dropdown-item.no-match {
+            color: #999;
+            cursor: default;
+            font-style: italic;
         }
         
         .form-group {
@@ -2217,7 +2353,7 @@
                         </div>
                         <div class="directory-search-container">
                             <div class="search-box">
-                                <i class="fas fa-search search-icon"></i>
+                                
                                 <input type="text" id="directorySearch" placeholder="Search leads...">
                             </div>
                         </div>
@@ -2378,24 +2514,37 @@
                             
                             <!-- Communication Details Section -->
                             <div class="form-section" id="communication-details">
-                                <div class="section-title">
-                                    <div>
+                                <!-- Communication Details single-line header: Enquiry lookup + Status + Priority -->
+                                <div class="comm-header-row">
+                                    <div class="comm-header-left">
                                         <i class="fas fa-phone-alt"></i>
                                         <span>Communication Details</span>
                                     </div>
-                                    <div class="status-inline">
+                                    <div class="comm-header-right">
+                                        <label for="enquiryPhoneInput" class="enquiry-lookup-label"></i></label>
+                                        <div class="enquiry-combobox-wrapper" id="enquiryComboboxWrapper">
+                                            <input type="text" id="enquiryPhoneInput" class="enquiry-phone-select" placeholder="— Enquiry phone —" autocomplete="off" />
+                                            <div class="enquiry-dropdown-list" id="enquiryDropdownList"></div>
+                                            <!-- hidden select keeps existing JS working -->
+                                            <select id="enquiryPhoneLookup" style="display:none"></select>
+                                        </div>
+                                        <button type="button" class="fetch-btn" id="fetchEnquiryBtn" disabled>
+                                            <i class="fas fa-download"></i> Fetch
+                                        </button>
+                                        <span class="enquiry-fetched-badge" id="enquiryFetchedBadge">
+                                            <i class="fas fa-check-circle"></i> Filled
+                                        </span>
                                         <select id="status" name="status" class="status-select" required>
                                             <option value="">Status</option>
-                                            <option value="Active">🟢Active</option>
-                                            <option value="Inactive">🔴Inactive</option>
+                                            <option value="Active">🟢 Active</option>
+                                            <option value="Inactive">🔴 Inactive</option>
                                             <option value="Installed">🟡 Installed</option>
                                         </select>
-
                                         <select id="priority" name="priority" class="status-select" required>
-                                        <option value="">Priority</option>
-                                        <option value="High">🔴 High</option>
-                                        <option value="Medium">🟡 Medium</option>
-                                        <option value="Low">🟢  Low</option>
+                                            <option value="">Priority</option>
+                                            <option value="High">🔴 High</option>
+                                            <option value="Medium">🟡 Medium</option>
+                                            <option value="Low">🟢 Low</option>
                                         </select>
                                     </div>
                                 </div>
@@ -2804,7 +2953,141 @@
     <!-- The JavaScript remains exactly the same -->
     <script>
 document.addEventListener('DOMContentLoaded', function() {
-    
+
+    // ── Enquiry Phone Lookup (combobox) ──────────────────────────────
+    (function() {
+        const phoneInput   = document.getElementById('enquiryPhoneInput');
+        const dropdownList = document.getElementById('enquiryDropdownList');
+        const phoneSelect  = document.getElementById('enquiryPhoneLookup'); // hidden, keeps value
+        const fetchBtn     = document.getElementById('fetchEnquiryBtn');
+        const fetchedBadge = document.getElementById('enquiryFetchedBadge');
+
+        let allOptions = []; // { value, label, enqData }
+
+        fetch('/enquiry/api/', { headers: { 'Content-Type': 'application/json' } })
+        .then(r => r.json())
+        .then(data => {
+            const seen = {};
+            data.forEach(enq => {
+                if (enq.phone_number) {
+                    const p = enq.phone_number.trim();
+                    if (!seen[p] || enq.id > seen[p].id) seen[p] = enq;
+                }
+            });
+            allOptions = Object.values(seen)
+                .sort((a, b) => (a.phone_number || '').localeCompare(b.phone_number || ''))
+                .map(enq => ({ value: enq.id, label: enq.phone_number, enqData: enq }));
+
+            // Also populate hidden select for any legacy code
+            allOptions.forEach(opt => {
+                const o = document.createElement('option');
+                o.value = opt.value;
+                o.textContent = opt.label;
+                o.dataset.enq = JSON.stringify(opt.enqData);
+                phoneSelect.appendChild(o);
+            });
+        })
+        .catch(() => {
+            allOptions = [];
+        });
+
+        function renderDropdown(filter) {
+            dropdownList.innerHTML = '';
+            const filtered = filter
+                ? allOptions.filter(o => o.label.includes(filter))
+                : allOptions;
+
+            if (filtered.length === 0) {
+                const li = document.createElement('div');
+                li.className = 'enquiry-dropdown-item no-match';
+                li.textContent = 'No matches';
+                dropdownList.appendChild(li);
+            } else {
+                filtered.forEach(opt => {
+                    const li = document.createElement('div');
+                    li.className = 'enquiry-dropdown-item';
+                    li.textContent = opt.label;
+                    li.dataset.value = opt.value;
+                    li.dataset.enq = JSON.stringify(opt.enqData);
+                    li.addEventListener('mousedown', function(e) {
+                        e.preventDefault(); // prevent blur before click
+                        selectOption(opt.label, opt.value, opt.enqData);
+                    });
+                    dropdownList.appendChild(li);
+                });
+            }
+        }
+
+        function selectOption(label, value, enqData) {
+            phoneInput.value = label;
+            phoneSelect.value = value;
+            fetchBtn.disabled = false;
+            fetchedBadge.classList.remove('show');
+            dropdownList.classList.remove('open');
+            // Store selected enqData on fetchBtn for retrieval
+            fetchBtn.dataset.selectedEnq = JSON.stringify(enqData);
+        }
+
+        phoneInput.addEventListener('focus', function() {
+            renderDropdown(this.value.trim());
+            dropdownList.classList.add('open');
+        });
+
+        phoneInput.addEventListener('input', function() {
+            const val = this.value.trim();
+            // Clear selection if user types something new
+            phoneSelect.value = '';
+            fetchBtn.disabled = true;
+            fetchedBadge.classList.remove('show');
+            renderDropdown(val);
+            dropdownList.classList.add('open');
+        });
+
+        phoneInput.addEventListener('blur', function() {
+            setTimeout(() => dropdownList.classList.remove('open'), 150);
+        });
+
+        // Close on outside click
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#enquiryComboboxWrapper')) {
+                dropdownList.classList.remove('open');
+            }
+        });
+
+        fetchBtn.addEventListener('click', function() {
+            // Try from dataset first, fallback to hidden select
+            let enq = null;
+            if (fetchBtn.dataset.selectedEnq) {
+                enq = JSON.parse(fetchBtn.dataset.selectedEnq);
+            } else {
+                const opt = phoneSelect.options[phoneSelect.selectedIndex];
+                if (opt && opt.dataset.enq) enq = JSON.parse(opt.dataset.enq);
+            }
+            if (!enq) return;
+
+            function fill(id, val) {
+                const el = document.getElementById(id);
+                if (el && val != null && val !== '') { el.value = val; el.classList.add('auto-filled'); }
+            }
+
+            fill('ownerName', enq.owner_name);
+            fill('phoneNo',   enq.phone_number);
+
+            if (enq.shop_name) {
+                const ns = document.getElementById('nameSearch');
+                const nh = document.getElementById('name');
+                if (ns) { ns.value = enq.shop_name; ns.classList.add('auto-filled'); }
+                if (nh)   nh.value = enq.shop_name;
+            }
+
+            fill('address', enq.location);
+            fill('details', enq.notes);
+
+            fetchedBadge.classList.add('show');
+        });
+    })();
+    // ── End Enquiry Phone Lookup ──────────────────────────────────────
+
     // Set today's date as default
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('date').value = today;

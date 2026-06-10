@@ -1,0 +1,986 @@
+{% extends "base.html" %}
+
+{% block title %}Enquiry List{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;700&family=Google+Sans+Display:wght@500;700&display=swap" rel="stylesheet"/>
+<style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #f0f4f8;
+      --surface:   #ffffff;
+      --border:    #dde3ea;
+      --accent:    #1a6fc4;
+      --accent-dk: #145499;
+      --accent-lt: #e8f0fb;
+      --text:      #1e2a38;
+      --muted:     #6b7a8d;
+      --shadow:    0 4px 24px rgba(30,42,56,.09), 0 1px 4px rgba(30,42,56,.06);
+    }
+
+    body {
+      background: var(--bg);
+      font-family: 'Google Sans', sans-serif;
+      color: var(--text);
+      min-height: 100vh;
+      padding: 1.2rem 1.5rem;
+    }
+
+    /* ── Page Header ── */
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: .75rem;
+      flex-wrap: wrap;
+      gap: .6rem;
+    }
+    .page-header-left h1 {
+      font-family: 'Google Sans Display', 'Google Sans', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.2;
+    }
+    .page-header-left p {
+      font-size: .82rem;
+      color: var(--muted);
+      margin-top: .25rem;
+      letter-spacing: .02em;
+    }
+
+    .btn-add {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: .68rem 1.3rem;
+      border-radius: 8px;
+      font-family: 'Google Sans', sans-serif;
+      font-size: .88rem;
+      font-weight: 600;
+      letter-spacing: .03em;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background .18s, box-shadow .18s, transform .12s;
+      box-shadow: 0 3px 12px rgba(26,111,196,.3);
+    }
+    .btn-add:hover { background: var(--accent-dk); box-shadow: 0 5px 18px rgba(26,111,196,.4); }
+    .btn-add:active { transform: scale(.98); }
+    .btn-add .plus { font-size: 1.1rem; line-height: 1; }
+
+    /* ── Toolbar ── */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: .85rem;
+      margin-bottom: .85rem;
+      flex-wrap: wrap;
+    }
+    .search-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 200px;
+      max-width: 340px;
+    }
+    .search-wrap svg {
+      position: absolute;
+      left: .75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+    }
+    .search-input {
+      width: 100%;
+      padding: .6rem .9rem .6rem 2.3rem;
+      border: 1.5px solid var(--border);
+      border-radius: 7px;
+      background: #fff;
+      font-family: 'Google Sans', sans-serif;
+      font-size: .88rem;
+      color: var(--text);
+      outline: none;
+      transition: border-color .18s, box-shadow .18s;
+    }
+    .search-input::placeholder { color: #b0bac6; }
+    .search-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(26,111,196,.12);
+    }
+
+    .filter-select {
+      padding: .6rem .9rem;
+      border: 1.5px solid var(--border);
+      border-radius: 7px;
+      background: #fff;
+      font-family: 'Google Sans', sans-serif;
+      font-size:12px;
+      color: var(--text);
+      outline: none;
+      cursor: pointer;
+      transition: border-color .18s, box-shadow .18s;
+    }
+    .filter-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(26,111,196,.12);
+    }
+
+    .date-range {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+    .date-label {
+      font-size: .8rem;
+      color: var(--muted);
+      white-space: nowrap;
+      
+    }
+    .date-input { min-width: 130px; }
+
+    .records-count {
+      margin-left: auto;
+      font-size: .8rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .btn-clear {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .58rem 1rem;
+      border: 1.5px solid var(--border);
+      border-radius: 7px;
+      background: #fff;
+      font-family: 'Google Sans', sans-serif;
+      font-size: .85rem;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      transition: border-color .18s, color .18s, background .18s;
+      white-space: nowrap;
+    }
+    .btn-clear:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-lt);
+    }
+    .btn-clear svg { width: 14px; height: 14px; }
+
+    /* ── Table Card ── */
+    .table-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      animation: rise .5s cubic-bezier(.22,1,.36,1) both;
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .875rem;
+    }
+    thead {
+      background: linear-gradient(90deg, var(--accent) 0%, var(--accent-dk) 100%);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    thead th {
+      padding: .5rem .9rem;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .07em;
+      text-transform: capitalize;
+      color: rgba(255,255,255,.92);
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background .12s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--accent-lt); }
+
+    tbody td {
+      padding: .38rem .9rem;
+      text-align: left;
+      color: var(--text);
+      vertical-align: middle;
+      max-width: 180px;
+    }
+
+    .td-sl   { white-space: nowrap; color: var(--muted); font-size: 11px; width: 40px; text-align: center; }
+    .td-date { white-space: nowrap; color: var(--text); font-size: 11px; font-weight: 500; }
+    .td-time { color: var(--muted); font-size: 10px; margin-top: .05rem; }
+    .td-creator { white-space: nowrap;font-size: 11px; color: var(--muted); }
+    .td-shop { font-weight: 500; font-size: 11px; color: var(--text); }
+    .owner-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: .03rem;
+    }
+    .shop-phone {
+      font-size: 10px;
+      color: var(--muted);
+      font-weight: 400;
+      margin-top: .04rem;
+    }
+    .td-location { color: var(--text); font-size: 11px; max-width: 160px; }
+    .map-pin-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .25rem;
+      margin-top: .25rem;
+      color: rgb(143, 142, 142);
+      border-radius: 5px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .03em;
+      text-decoration: none;
+      transition: color .15s;
+      white-space: nowrap;
+    }
+    .map-pin-btn:hover { color: var(--accent-dk); }
+    .td-notes {
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    /* Purpose badge */
+    .badge {
+      display: inline-block;
+      padding: .25rem .7rem;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: .03em;
+      white-space: nowrap;
+    }
+    .badge-product   { background: #ffffff; color: #131313; }
+    .badge-pricing   { background: #ffffff; color: #0a0a0a; }
+    .badge-partner   { background: #ffffff; color: #0a0a0a; }
+    .badge-complaint { background: #ffffff; color: #0e0d0d; }
+    .badge-service   { background: #ffffff; color: #0d0d0e; }
+    .badge-other     { background: #ffffff; color: #0d0d0e; }
+
+    /* Action buttons */
+    .actions-cell { white-space: nowrap; display: flex; gap: 6px; align-items: center; }
+    .action-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px; height: 26px;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      transition: opacity .15s, transform .1s;
+      flex-shrink: 0;
+    }
+    .action-btn:active { transform: scale(.92); }
+    .action-btn:hover  { opacity: .7; }
+    .action-view  svg { width: 18px; height: 18px; color: #0d9488; stroke: #9a9b9b; }
+    .action-edit  svg { width: 20px; height: 20px; color: #1a73e8; stroke: #9a9b9b; }
+    .action-delete svg { width: 18px; height: 18px; color: #d93025; stroke: #9a9b9b; }
+
+    .action-view   { background: transparent; }
+    .action-edit   { background: transparent; }
+    .action-delete { background: transparent; }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+    }
+    .empty-state svg { color: var(--border); margin-bottom: 1rem; }
+    .empty-state h3 {
+      font-family: 'Google Sans Display', 'Google Sans', sans-serif;
+      font-size: 1.1rem;
+      color: var(--muted);
+      margin-bottom: .4rem;
+    }
+    .empty-state p { font-size: .85rem; color: var(--muted); }
+
+    /* ── Pagination ── */
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: .9rem 1.2rem;
+      border-top: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: .6rem;
+    }
+    .pagination-info { font-size: .8rem; color: var(--muted); }
+    .pagination-btns { display: flex; gap: .4rem; }
+    .page-btn {
+      min-width: 32px; height: 32px;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      background: #fff;
+      font-family: 'Google Sans', sans-serif;
+      font-size: .82rem;
+      color: var(--text);
+      cursor: pointer;
+      transition: background .15s, border-color .15s, color .15s;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 .5rem;
+    }
+    .page-btn:hover { background: var(--accent-lt); border-color: var(--accent); color: var(--accent); }
+    .page-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .page-btn:disabled { opacity: .4; cursor: default; pointer-events: none; }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--surface);
+      border-radius: 10px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.25);
+      width: 100%;
+      max-width: 480px;
+      animation: rise .3s cubic-bezier(.22,1,.36,1) both;
+      overflow: hidden;
+    }
+    .modal-header {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dk) 100%);
+      padding: 1.2rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-header h2 {
+      font-family: 'Google Sans Display', 'Google Sans', sans-serif;
+      color: #fff;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,.7);
+      font-size: 1.3rem;
+      cursor: pointer;
+      line-height: 1;
+      transition: color .15s;
+    }
+    .modal-close:hover { color: #fff; }
+    .modal-body { padding: 1.5rem; }
+    .modal-row {
+      display: flex;
+      gap: .5rem;
+      margin-bottom: 1rem;
+      font-size: .88rem;
+    }
+    .modal-row:last-child { margin-bottom: 0; }
+    .modal-label {
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      color: var(--muted);
+      min-width: 100px;
+      padding-top: .1rem;
+    }
+    .modal-value { color: var(--text); flex: 1; }
+
+    /* Delete confirm */
+    .confirm-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 1100;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .confirm-overlay.open { display: flex; }
+    .confirm-box {
+      background: var(--surface);
+      border-radius: 10px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.25);
+      width: 100%;
+      max-width: 360px;
+      padding: 2rem 1.5rem;
+      text-align: center;
+      animation: rise .3s cubic-bezier(.22,1,.36,1) both;
+    }
+    .confirm-box .warn-icon {
+      width: 50px; height: 50px;
+      border-radius: 50%;
+      background: #fdecea;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1rem;
+      font-size: 1.4rem;
+    }
+    .confirm-box h3 {
+      font-family: 'Google Sans Display', 'Google Sans', sans-serif;
+      font-size: 1.1rem;
+      margin-bottom: .4rem;
+    }
+    .confirm-box p { font-size: .85rem; color: var(--muted); margin-bottom: 1.5rem; }
+    .confirm-actions { display: flex; gap: .7rem; justify-content: center; }
+    .btn-confirm-cancel {
+      padding: .65rem 1.2rem;
+      border: 1.5px solid var(--border);
+      border-radius: 7px;
+      background: #fff;
+      font-family: 'Google Sans', sans-serif;
+      font-size: .88rem;
+      color: var(--muted);
+      cursor: pointer;
+      transition: background .15s, color .15s;
+    }
+    .btn-confirm-cancel:hover { background: var(--bg); color: var(--text); }
+    .btn-confirm-delete {
+      padding: .65rem 1.2rem;
+      border: none;
+      border-radius: 7px;
+      background: #d93025;
+      color: #fff;
+      font-family: 'Google Sans', sans-serif;
+      font-size: .88rem;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-confirm-delete:hover { background: #b71c1c; }
+
+    @media (max-width: 600px) {
+      body { padding: 1rem .75rem; }
+      .page-header { flex-direction: column; align-items: flex-start; }
+      .records-count { margin-left: 0; }
+      tbody td { padding: .7rem .75rem; }
+      thead th { padding: .75rem .75rem; }
+    }
+  </style>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header-left">
+      <h1>Enquiry List</h1>
+     
+    </div>
+    <a href="{% url 'enquiry_form' %}" class="btn-add">
+      <span class="plus">＋</span> Add New
+    </a>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="search-wrap">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      <input type="text" class="search-input" id="searchInput" placeholder="Search by shop, location…" oninput="applyFilters()" />
+    </div>
+    <select class="filter-select" id="purposeFilter" onchange="applyFilters()">
+      <option value="">All Purposes</option>
+      <option value="Product Enquiry">Product Enquiry</option>
+      <option value="Quotation"> Quotation</option>
+      <option value="Pricing">Pricing</option>
+      <option value="Complaint">Complaint </option>
+      <option value="Service Request">Service Request</option>
+      <option value="Other">Other</option>
+    </select>
+    <select class="filter-select" id="userFilter" onchange="applyFilters()">
+      <option value="">All Users</option>
+    </select>
+    <div class="date-range">
+      <label class="date-label">From</label>
+      <input type="date" class="filter-select date-input" id="dateFrom" onchange="applyFilters()" />
+      <label class="date-label">To</label>
+      <input type="date" class="filter-select date-input" id="dateTo" onchange="applyFilters()" />
+    </div>
+    <button class="btn-clear" id="clearBtn" onclick="clearFilters()" style="display:none;">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+      Clear Filters
+    </button>
+    <span class="records-count" id="recordsCount"></span>
+  </div>
+
+  <!-- Table Card -->
+  <div class="table-card">
+    <div class="table-wrap">
+      <table id="enquiryTable">
+        <thead>
+          <tr>
+            <th style="text-align:center;font-size: 12px; text-transform: capitalize; width:40px;">Sl.No.</th>
+            <th>Date</th>
+            <th>Created By</th>
+            <th>Owner Detailes</th>
+            <th>Location</th>
+            <th>Purpose</th>
+            <th>Notes</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+      <div class="empty-state" id="emptyState" style="display:none;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-3-3v6M3 12a9 9 0 1 1 18 0 9 9 0 0 1-18 0z"/>
+        </svg>
+        <h3>No enquiries found</h3>
+        <p>Try adjusting your search or filter, or add a new enquiry.</p>
+      </div>
+    </div>
+    <div class="pagination" id="paginationBar">
+      <span class="pagination-info" id="pageInfo"></span>
+      <div class="pagination-btns" id="pageButtons"></div>
+    </div>
+  </div>
+
+  <!-- Hidden CSRF token for fetch requests -->
+  <input type="hidden" id="csrfToken" value="{{ csrf_token }}" />
+
+<script>
+  /* ── Data injected from Django ── */
+  let enquiries = [
+    {% for e in enquiries %}
+    {
+      id:       {{ e.id }},
+      date:     "{{ e.date|date:'Y-m-d H:i:s' }}",
+      creator:  "{{ e.creator|escapejs }}",
+      owner:    "{{ e.owner_name|escapejs }}",
+      shop:     "{{ e.shop_name|escapejs }}",
+      phone:    "{{ e.phone_number|escapejs }}",
+      location: "{{ e.location|escapejs }}",
+      purpose:  "{{ e.purpose|escapejs }}",
+      notes:    "{{ e.notes|escapejs }}",
+      lat:      "{{ e.latitude|default:'' }}",
+      lng:      "{{ e.longitude|default:'' }}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  const ROWS_PER_PAGE = 15;
+  let filtered = [...enquiries];
+  let currentPage = 1;
+  let deleteId = null;
+
+  /* ── Populate user filter from unique creator names ── */
+  (function populateUserFilter() {
+    const select = document.getElementById('userFilter');
+    const names = [...new Set(enquiries.map(e => e.creator).filter(Boolean))].sort();
+    names.forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      select.appendChild(opt);
+    });
+  })();
+
+  const purposeBadge = {
+    'Product Enquiry': 'badge-product',
+    'Quotation':       'badge-pricing',
+    'Pricing':         'badge-partner',
+    'Complaint':       'badge-complaint',
+    'Service Request': 'badge-service',
+    'Other':           'badge-other',
+  };
+
+  function formatDateTime(d) {
+    if (!d) return { date: '—', time: '' };
+    const dt = new Date(d);
+    const date = dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    const time = dt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+    return { date, time };
+  }
+
+  function clearFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('purposeFilter').value = '';
+    document.getElementById('userFilter').value = '';
+    document.getElementById('dateFrom').value = '';
+    document.getElementById('dateTo').value = '';
+    applyFilters();
+  }
+
+  function applyFilters() {
+    const q    = document.getElementById('searchInput').value.trim().toLowerCase();
+    const p    = document.getElementById('purposeFilter').value;
+    const u    = document.getElementById('userFilter').value;
+    const from = document.getElementById('dateFrom').value;
+    const to   = document.getElementById('dateTo').value;
+    filtered = enquiries.filter(e => {
+      const matchQ    = !q || e.shop.toLowerCase().includes(q) || e.location.toLowerCase().includes(q) || e.creator.toLowerCase().includes(q) || (e.phone || '').toLowerCase().includes(q) || (e.owner || '').toLowerCase().includes(q);
+      const matchP    = !p || e.purpose === p;
+      const matchU    = !u || e.creator === u;
+      const eDate     = e.date ? e.date.slice(0, 10) : '';
+      const matchFrom = !from || eDate >= from;
+      const matchTo   = !to   || eDate <= to;
+      return matchQ && matchP && matchU && matchFrom && matchTo;
+    });
+    currentPage = 1;
+    const hasFilters = q || p || u || from || to;
+    document.getElementById('clearBtn').style.display = hasFilters ? '' : 'none';
+    sortData();
+    render();
+  }
+
+  function sortData() {
+    filtered.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  }
+
+  function render() {
+    const tbody      = document.getElementById('tableBody');
+    const empty      = document.getElementById('emptyState');
+    const total      = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(total / ROWS_PER_PAGE));
+    if (currentPage > totalPages) currentPage = totalPages;
+
+    const start    = (currentPage - 1) * ROWS_PER_PAGE;
+    const pageData = filtered.slice(start, start + ROWS_PER_PAGE);
+
+    document.getElementById('recordsCount').textContent = `${total} record${total !== 1 ? 's' : ''}`;
+
+    if (pageData.length === 0) {
+      tbody.innerHTML = '';
+      empty.style.display = '';
+    } else {
+      empty.style.display = 'none';
+      tbody.innerHTML = pageData.map((e, i) => `
+        <tr>
+          <td class="td-sl">${start + i + 1}</td>
+          <td class="td-date"><div>${formatDateTime(e.date).date}</div><div class="td-time">${formatDateTime(e.date).time}</div></td>
+          <td class="td-creator">${e.creator}</td>
+          <td class="td-shop">
+            ${e.owner ? `<div class="owner-name">${e.owner}</div>` : ''}
+            <div>${e.shop}</div>
+            ${e.phone ? `<div class="shop-phone">${e.phone}</div>` : ''}
+          </td>
+          <td class="td-location">
+            <div>${e.location}</div>
+            ${e.lat && e.lng ? `<a href="https://www.google.com/maps?q=${e.lat},${e.lng}" target="_blank" rel="noopener" class="map-pin-btn"> ${parseFloat(e.lat).toFixed(4)}, ${parseFloat(e.lng).toFixed(4)}</a>` : ''}
+          </td>
+          <td><span class="badge ${purposeBadge[e.purpose] || 'badge-other'}">${e.purpose}</span></td>
+          <td class="td-notes" title="${e.notes}">${e.notes || '—'}</td>
+          <td class="actions-cell">
+            <button class="action-btn action-view" title="View" onclick="viewEnquiry(${e.id})">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#0d9488" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+              </svg>
+            </button>
+            <button class="action-btn action-edit" title="Edit" onclick="editEnquiry(${e.id})">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#1a6fc4" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 0 1 2.828 0l.172.172a2 2 0 0 1 0 2.828L12 16H9v-3z"/>
+              </svg>
+            </button>
+            <button class="action-btn action-delete" title="Delete" onclick="deleteEnquiry(${e.id})">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#d93025" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4h6v3M3 7h18"/>
+              </svg>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    renderPagination(total, totalPages);
+  }
+
+  function renderPagination(total, totalPages) {
+    const start = (currentPage - 1) * ROWS_PER_PAGE + 1;
+    const end   = Math.min(currentPage * ROWS_PER_PAGE, total);
+    document.getElementById('pageInfo').textContent = total ? `Showing ${start}–${end} of ${total}` : '';
+
+    const btns = document.getElementById('pageButtons');
+    let html = `<button class="page-btn" onclick="goPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>‹</button>`;
+    for (let p = 1; p <= totalPages; p++) {
+      html += `<button class="page-btn ${p === currentPage ? 'active' : ''}" onclick="goPage(${p})">${p}</button>`;
+    }
+    html += `<button class="page-btn" onclick="goPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>›</button>`;
+    btns.innerHTML = html;
+  }
+
+  function goPage(p) {
+    const totalPages = Math.ceil(filtered.length / ROWS_PER_PAGE);
+    if (p < 1 || p > totalPages) return;
+    currentPage = p;
+    render();
+  }
+
+  /* ── Inject modals into document.body to escape any overflow:hidden parent ── */
+  (function() {
+    const modalHTML = `
+      <style>
+        .eq-modal-overlay {
+          display: none;
+          position: fixed;
+          inset: 0;
+          background: rgba(0,0,0,.45);
+          z-index: 99999;
+          align-items: center;
+          justify-content: center;
+          padding: 1rem;
+        }
+        .eq-modal-overlay.open { display: flex !important; }
+        .eq-modal {
+          background: #fff;
+          border-radius: 10px;
+          box-shadow: 0 20px 60px rgba(0,0,0,.25);
+          width: 100%;
+          max-width: 560px;
+          overflow: hidden;
+          animation: eqRise .3s cubic-bezier(.22,1,.36,1) both;
+          font-family: 'Google Sans', sans-serif;
+          color: #1e2a38;
+        }
+        @keyframes eqRise {
+          from { opacity:0; transform:translateY(20px); }
+          to   { opacity:1; transform:translateY(0); }
+        }
+        .eq-modal-header {
+          background: linear-gradient(135deg, #1a6fc4 0%, #145499 100%);
+          padding: 1.2rem 1.5rem;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+        .eq-modal-header h2 {
+          color: #fff;
+          font-size: 1.1rem;
+          font-weight: 700;
+          margin: 0;
+        }
+        .eq-modal-close {
+          background: none;
+          border: none;
+          color: rgba(255,255,255,.7);
+          font-size: 1.3rem;
+          cursor: pointer;
+          line-height: 1;
+          transition: color .15s;
+        }
+        .eq-modal-close:hover { color: #fff; }
+        .eq-modal-body { padding: 1.5rem; }
+        .eq-modal-row {
+          display: flex;
+          gap: .5rem;
+          margin-bottom: 1rem;
+          font-size: .88rem;
+        }
+        .eq-modal-row:last-child { margin-bottom: 0; }
+        .eq-modal-label {
+          font-size: .72rem;
+          font-weight: 600;
+          letter-spacing: .07em;
+          text-transform: uppercase;
+          color: #6b7a8d;
+          min-width: 100px;
+          padding-top: .1rem;
+        }
+        .eq-modal-value { color: #1e2a38; flex: 1; }
+
+        /* confirm box */
+        .eq-confirm-box {
+          background: #fff;
+          border-radius: 10px;
+          box-shadow: 0 20px 60px rgba(0,0,0,.25);
+          width: 100%;
+          max-width: 360px;
+          padding: 2rem 1.5rem;
+          text-align: center;
+          animation: eqRise .3s cubic-bezier(.22,1,.36,1) both;
+          font-family: 'Google Sans', sans-serif;
+          color: #1e2a38;
+        }
+        .eq-warn-icon {
+          width:50px; height:50px; border-radius:50%;
+          background:#fdecea;
+          display:flex; align-items:center; justify-content:center;
+          margin:0 auto 1rem; font-size:1.4rem;
+        }
+        .eq-confirm-box h3 { font-size:1.1rem; margin-bottom:.4rem; }
+        .eq-confirm-box p  { font-size:.85rem; color:#6b7a8d; margin-bottom:1.5rem; }
+        .eq-confirm-actions { display:flex; gap:.7rem; justify-content:center; }
+        .eq-btn-cancel {
+          padding:.65rem 1.2rem; border:1.5px solid #dde3ea;
+          border-radius:7px; background:#fff;
+          font-family:'Google Sans',sans-serif; font-size:.88rem; color:#6b7a8d; cursor:pointer;
+          transition: background .15s, color .15s;
+        }
+        .eq-btn-cancel:hover { background:#f0f4f8; color:#1e2a38; }
+        .eq-btn-delete {
+          padding:.65rem 1.2rem; border:none; border-radius:7px;
+          background:#d93025; color:#fff;
+          font-family:'Google Sans',sans-serif; font-size:.88rem; cursor:pointer;
+          transition: background .15s;
+        }
+        .eq-btn-delete:hover { background:#b71c1c; }
+      </style>
+
+      <!-- View Modal -->
+      <div class="eq-modal-overlay" id="viewModal">
+        <div class="eq-modal">
+          <div class="eq-modal-header">
+            <h2>Enquiry Details</h2>
+            <button class="eq-modal-close" id="viewModalClose">✕</button>
+          </div>
+          <div class="eq-modal-body" id="viewBody"></div>
+        </div>
+      </div>
+
+      <!-- Delete Confirm -->
+      <div class="eq-modal-overlay" id="confirmOverlay">
+        <div class="eq-confirm-box">
+          <div class="eq-warn-icon">🗑</div>
+          <h3>Delete Enquiry?</h3>
+          <p>This action cannot be undone. The enquiry will be permanently removed.</p>
+          <div class="eq-confirm-actions">
+            <button class="eq-btn-cancel" id="confirmCancelBtn">Cancel</button>
+            <button class="eq-btn-delete" id="confirmDeleteBtn">Delete</button>
+          </div>
+        </div>
+      </div>
+    `;
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = modalHTML;
+    document.body.appendChild(wrapper);
+
+    /* wire up close buttons after DOM insertion */
+    document.getElementById('viewModalClose').addEventListener('click', closeView);
+    document.getElementById('confirmCancelBtn').addEventListener('click', closeConfirm);
+    document.getElementById('confirmDeleteBtn').addEventListener('click', confirmDelete);
+
+    document.getElementById('viewModal').addEventListener('click', function(ev) {
+      if (ev.target === this) closeView();
+    });
+    document.getElementById('confirmOverlay').addEventListener('click', function(ev) {
+      if (ev.target === this) closeConfirm();
+    });
+  })();
+
+  /* ── View Modal ── */
+  function viewEnquiry(id) {
+    const e = enquiries.find(x => x.id === id);
+    if (!e) return;
+    const safeNotes = e.notes ? e.notes.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
+    const badgeClass = purposeBadge[e.purpose] || 'badge-other';
+    document.getElementById('viewBody').innerHTML = `
+      <div class="eq-modal-row">
+        <span class="eq-modal-label">Date</span>
+        <span class="eq-modal-value">${formatDateTime(e.date).date} &nbsp;<span style="color:#6b7a8d;font-size:.82rem;">${formatDateTime(e.date).time}</span></span>
+      </div>
+      <div class="eq-modal-row">
+        <span class="eq-modal-label">Created By</span>
+        <span class="eq-modal-value">${e.creator}</span>
+      </div>
+      <div class="eq-modal-row">
+        <span class="eq-modal-label">Owner Name</span>
+        <span class="eq-modal-value" style="font-weight:500;">${e.owner || '—'}</span>
+      </div>
+      <div class="eq-modal-row">
+        <span class="eq-modal-label">Shop Name</span>
+        <span class="eq-modal-value" style="font-weight:500;">${e.shop}</span>
+      </div>
+      <div class="eq-modal-row">
+        <span class="eq-modal-label">Phone</span>
+        <span class="eq-modal-value">${e.phone || '—'}</span>
+      </div>
+      <div class="eq-modal-row">
+        <span class="eq-modal-label">Location</span>
+        <span class="eq-modal-value">
+          ${e.location}
+          ${e.lat && e.lng ? `
+            <a href="https://www.google.com/maps?q=${e.lat},${e.lng}" target="_blank" rel="noopener" class="map-pin-btn" style="margin-top:.4rem;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+              Open in Google Maps
+            </a>` : '—'}
+        </span>
+      </div>
+      <div class="eq-modal-row">
+        <span class="eq-modal-label">Purpose</span>
+        <span class="eq-modal-value"><span class="badge ${badgeClass}">${e.purpose}</span></span>
+      </div>
+      <div class="eq-modal-row" style="align-items:flex-start;">
+        <span class="eq-modal-label" style="padding-top:.15rem;">Notes</span>
+        <span class="eq-modal-value" style="white-space:pre-wrap;line-height:1.6;">${safeNotes || '—'}</span>
+      </div>
+    `;
+    document.getElementById('viewModal').classList.add('open');
+  }
+  function closeView() { document.getElementById('viewModal').classList.remove('open'); }
+
+  /* ── Edit: navigate to Django edit page ── */
+  function editEnquiry(id) {
+    window.location.href = `/enquiry/edit/${id}/`;
+  }
+
+  /* ── Delete: show confirm dialog ── */
+  function deleteEnquiry(id) {
+    deleteId = id;
+    document.getElementById('confirmOverlay').classList.add('open');
+  }
+  function closeConfirm() {
+    deleteId = null;
+    document.getElementById('confirmOverlay').classList.remove('open');
+  }
+
+  /* ── Confirmed delete: POST to Django, then remove from local array ── */
+  function confirmDelete() {
+    const csrf = document.getElementById('csrfToken').value;
+    fetch(`/enquiry/delete/${deleteId}/`, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrf, 'Content-Type': 'application/json' }
+    })
+    .then(response => {
+      if (response.ok || response.redirected) {
+        enquiries = enquiries.filter(e => e.id !== deleteId);
+        closeConfirm();
+        applyFilters();
+      } else {
+        alert('Delete failed. Please try again.');
+        closeConfirm();
+      }
+    })
+    .catch(() => {
+      alert('Network error. Please try again.');
+      closeConfirm();
+    });
+  }
+
+  /* Init */
+  sortData();
+  render();
+</script>
+{% endblock %}
