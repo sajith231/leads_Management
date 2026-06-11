@@ -32,15 +32,10 @@
 
 <div class="p-4 border rounded shadow-sm" style="background-color: #fdfdfd; border: 1px solid #dee2e6;">
 
-    <h2 class="mb-4">SYSMAC COMPUTERS-1</h2>
-
-    {% if error_message %}
-        <div class="alert alert-danger">{{ error_message }}</div>
-    {% endif %}
-
-    <!-- 🔷 Tabs -->
-    <div class="d-flex justify-content-end mb-3">
-        <ul class="nav nav-tabs custom-tabs" role="tablist">
+    <!-- 🔷 Title + Tabs -->
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">SYSMAC COMPUTERS-1</h2>
+        <ul class="nav custom-tabs" role="tablist">
             <li class="nav-item">
                 <a class="nav-link {% if request.resolver_match.url_name == 'debtors1_list' %}active{% endif %}" href="{% url 'debtors1_list' %}">
                     <i class="fas fa-user-friends me-1"></i> Debtors
@@ -54,76 +49,52 @@
         </ul>
     </div>
 
+    {% if error_message %}
+        <div class="alert alert-danger">{{ error_message }}</div>
+    {% endif %}
+
     <!-- 🔍 Search Form -->
-    <form method="get" class="form-inline mb-3 d-flex flex-wrap gap-2 align-items-center">
-        <div class="input-group">
-            <input type="text" name="q" class="form-control" placeholder="Search by Name, code, place, phone, Department..." value="{{ query }}">
-            <div class="input-group-append">
+    <form method="get" class="mb-3">
+        <div class="d-flex flex-nowrap align-items-center gap-2">
+            <div class="input-group flex-grow-1">
+                <input type="text" name="q" class="form-control" placeholder="Search by Name, code, place, phone, Department..." value="{{ query }}">
                 <button type="submit" class="btn btn-primary">Search</button>
             </div>
+            <div style="min-width:130px;">
+                <input type="number" name="min_balance" class="form-control" placeholder="Min Balance" value="{{ min_balance|default:'1' }}">
+            </div>
+            <div style="min-width:120px;">
+                <select name="department" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">All Dept</option>
+                    {% for dept in department_list %}
+                        <option value="{{ dept }}" {% if selected_department == dept %}selected{% endif %}>{{ dept }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="min-width:120px;">
+                <select name="rows" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="" {% if not selected_rows or selected_rows == 15 %}selected{% endif %}>Rows Count</option>
+                    {% for count in rows_options %}
+                        <option value="{{ count }}" {% if selected_rows == count %}selected{% endif %}>{{ count }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <a href="{% url 'debtors1_list' %}" class="btn btn-outline-secondary btn-sm text-nowrap">
+                <i class="fas fa-redo-alt me-1"></i> Reset
+            </a>
         </div>
-        <div class="input-group ml-3" style="max-width: 200px;">
-            <input type="number" name="min_balance" class="form-control" placeholder="Min Balance" value="{{ min_balance }}">
-        </div>
-        <div class="input-group ml-2" style="max-width: 150px;">
-            <select name="department" class="form-control form-select form-select-sm" onchange="this.form.submit()">
-                <option value="">All Dept</option>
-                {% for dept in department_list %}
-                    <option value="{{ dept }}" {% if selected_department == dept %}selected{% endif %}>{{ dept }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-       <!-- Rows Count + Reset -->
-    <div class="input-group" style="max-width: 320px;">
-        <select name="rows" class="form-control form-select form-select-sm" onchange="this.form.submit()" style="max-width: 150px;">
-            <option value="" {% if not selected_rows or selected_rows == 15 %}selected{% endif %}>Rows Count</option>
-            {% for count in rows_options %}
-                <option value="{{ count }}" {% if selected_rows == count %}selected{% endif %}>{{ count }}</option>
-            {% endfor %}
-        </select>
-        <a href="{% url 'debtors1_list' %}" class="btn btn-outline-secondary btn-sm ms-2">
-            <i class="fas fa-redo-alt me-1"></i> Reset Filters
-        </a>
-    </div>
     </form>
 
-    <!-- Toggle Column Button -->
-    <button id="toggleColumnsBtn" class="btn btn-sm btn-outline-primary mb-3">
-        Show OB/Debit/Credit
-    </button>
-
-    <!-- Pagination -->
-    <nav>
-        <ul class="pagination">
-            {% if page_obj.has_previous %}
-                <li class="page-item">
-                    <a class="page-link" href="?page=1&q={{ query }}&min_balance={{ min_balance }}&department={{ selected_department }}&rows={{ selected_rows }}">First</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&min_balance={{ min_balance }}&department={{ selected_department }}&rows={{ selected_rows }}">Previous</a>
-                </li>
-            {% endif %}
-            <li class="page-item">
-                <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-            </li>
-            {% if page_obj.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&min_balance={{ min_balance }}&department={{ selected_department }}&rows={{ selected_rows }}">Next</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&q={{ query }}&min_balance={{ min_balance }}&department={{ selected_department }}&rows={{ selected_rows }}">Last</a>
-                </li>
-            {% endif %}
-        </ul>
-    </nav>
-
-<div class="p-3 mb-3 rounded" style="background-color: #eaf4fc; border-left: 5px solid #007bff;">
-    <strong>Total Balance:</strong> <span style="color:#f41616;">₹{{ total_balance|floatformat:2 }}</span>
-</div>
-<div class="mb-3">
-    <strong>Total Clients:</strong> {{ page_obj.paginator.count }}
-</div>
+    <!-- Stats + Toggle Row -->
+    <div class="d-flex align-items-center justify-content-between mb-3 p-3 rounded" style="background-color: #eaf4fc; border-left: 5px solid #007bff;">
+        <div class="d-flex align-items-center gap-4">
+            <span><strong>Total Balance:</strong> <span style="color:#f41616;">&#8377;{{ total_balance|floatformat:2 }}</span></span>
+            <span><strong>Total Clients:</strong> {{ page_obj.paginator.count }}</span>
+        </div>
+        <button id="toggleColumnsBtn" class="btn btn-sm btn-outline-primary">
+            Show OB/Debit/Credit
+        </button>
+    </div>
 
 
     <!-- Table -->
@@ -134,8 +105,7 @@
                     <th class="text-center">S.No</th>
                     <th class="text-center">Code</th>
                     <th class="text-center">Name</th>
-                    <th class="text-center">View Ledger</th>
-                    <th class="text-center">View Bills</th>
+                   
                     <th class="text-center toggle-col d-none">OB</th>
                     <th class="text-center toggle-col d-none">Debit</th>
                     <th class="text-center toggle-col d-none">Credit</th>
@@ -151,20 +121,6 @@
                     <td class="text-center">{{ forloop.counter0|add:page_obj.start_index }}</td>
                     <td class="text-center">{{ item.code }}</td>
                     <td>{{ item.name|linebreaksbr }}</td>
-                    <td class="text-center">
-                        <button class="btn btn-sm btn-outline-dark ledger-link" 
-                                data-code="{{ item.code }}" 
-                                data-name="{{ item.name }}">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </td>
-                    <td class="text-center">
-                    <button class="btn btn-sm btn-outline-dark view-bills-btn"
-                        data-code="{{ item.code }}"
-                        data-name="{{ item.name }}">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                </td>
                     <td class="text-end toggle-col d-none">{{ item.opening_balance|floatformat:2 }}</td>
                     <td class="text-end toggle-col d-none">{{ item.debit|floatformat:2 }}</td>
                     <td class="text-end toggle-col d-none">{{ item.credit|floatformat:2 }}</td>
@@ -174,13 +130,13 @@
                     <td>{{ item.openingdepartment }}</td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="12" class="text-center">No data available</td></tr>
+                <tr><td colspan="10" class="text-center">No data available</td></tr>
                 {% endfor %}
             </tbody>
             {% if page_obj.number == page_obj.paginator.num_pages %}
             <tfoot>
                 <tr class="table-info fw-bold text-end">
-                    <td colspan="4" class="text-center">Grand Totals</td>
+                    <td colspan="2" class="text-center">Grand Totals</td>
                     <td class="toggle-col d-none"></td>
                     <td class="toggle-col d-none">₹{{ total_debit|floatformat:2 }}</td>
                     <td class="toggle-col d-none">₹{{ total_credit|floatformat:2 }}</td>
@@ -191,6 +147,31 @@
             {% endif %}
         </table>
     </div>
+
+    <!-- Pagination (bottom) -->
+    <nav class="mt-3">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1&q={{ query }}&min_balance={{ min_balance }}&department={{ selected_department }}&rows={{ selected_rows }}">First</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&min_balance={{ min_balance }}&department={{ selected_department }}&rows={{ selected_rows }}">Previous</a>
+                </li>
+            {% endif %}
+            <li class="page-item disabled">
+                <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            </li>
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&min_balance={{ min_balance }}&department={{ selected_department }}&rows={{ selected_rows }}">Next</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&q={{ query }}&min_balance={{ min_balance }}&department={{ selected_department }}&rows={{ selected_rows }}">Last</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
 </div>
 
 <!-- Ledger Modal -->

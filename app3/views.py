@@ -1157,19 +1157,12 @@ def edit_experience_certificate(request, employee_id):
 
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.shortcuts import render
-from django.http import JsonResponse
 import requests
 import traceback
-import json
 
-
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.shortcuts import render
-import requests
-import traceback
 
 def debtors1_list(request):
-    api_url = "https://accmaster.imcbs.com/api/sync/sysmac/"
+    api_url = "https://accmaster.imcbs.com/api/sync/acc-master/"
     data = []
     error_message = None
 
@@ -1178,15 +1171,28 @@ def debtors1_list(request):
         response.raise_for_status()
         json_data = response.json()
 
-        if isinstance(json_data, dict):
-            data = json_data.get('data', [])
-        elif isinstance(json_data, list):
-            data = json_data
+        # API returns a plain list or dict
+        if isinstance(json_data, list):
+            raw_data = json_data
+        elif isinstance(json_data, dict):
+            raw_data = json_data.get('data', [])
         else:
+            raw_data = []
             error_message = "Unexpected JSON structure."
 
-        for item in data:
+        for item in raw_data:
+            # ✅ Only include records for this client
+            if str(item.get('client_id', '')) != 'GW9Q6NQQ5ONRU':
+                continue
+            # ✅ Only include super_code == DEBTO
+            if str(item.get('super_code', '')) != 'DEBTO':
+                continue
             item['name'] = item.get('name', '').strip()
+            # Calculate balance = debit - credit
+            debit  = float(item.get('debit')  or 0)
+            credit = float(item.get('credit') or 0)
+            item['balance'] = debit - credit
+            data.append(item)
 
     except requests.exceptions.Timeout:
         error_message = "API request timed out"
@@ -1199,16 +1205,19 @@ def debtors1_list(request):
         error_message = f"Unexpected error: {str(e)}"
 
     # Query parameters
-    query = request.GET.get('q', '').strip()
-    min_balance = request.GET.get('min_balance', '1')
+    query               = request.GET.get('q', '').strip()
+    min_balance         = request.GET.get('min_balance', '1')
     selected_department = request.GET.get('department', '')
-    selected_rows = request.GET.get('rows', '15')
+    selected_rows       = request.GET.get('rows', '15')
 
-    # Original Count
     original_count = len(data)
 
-    # Department List (unique)
-    department_list = sorted(set(item.get('openingdepartment', '').strip() for item in data if item.get('openingdepartment')))
+    # Department list (unique, sorted) — from full dataset before filters
+    department_list = sorted(set(
+        item.get('openingdepartment', '').strip()
+        for item in data
+        if item.get('openingdepartment')
+    ))
 
     # Search filter
     if query:
@@ -1246,12 +1255,12 @@ def debtors1_list(request):
 
     # Totals
     total_balance = sum(float(item.get('balance') or 0) for item in data)
-    total_debit = sum(float(item.get('debit') or 0) for item in data)
-    total_credit = sum(float(item.get('credit') or 0) for item in data)
+    total_debit   = sum(float(item.get('debit')   or 0) for item in data)
+    total_credit  = sum(float(item.get('credit')  or 0) for item in data)
 
     data.sort(key=lambda x: x.get('name', '').lower())
 
-    # Pagination rows handling
+    # Rows per page
     try:
         selected_rows_int = int(selected_rows)
         if selected_rows_int not in [10, 20, 50, 100]:
@@ -1271,75 +1280,74 @@ def debtors1_list(request):
     rows_options = [10, 20, 50, 100]
 
     return render(request, 'debtors1_list.html', {
-        'page_obj': page_obj,
-        'error_message': error_message,
-        'total_records': original_count,
-        'filtered_count': len(data),
-        'query': query,
-        'min_balance': min_balance,
-        'total_balance': total_balance,
-        'total_debit': total_debit,
-        'total_credit': total_credit,
-        'department_list': department_list,
+        'page_obj':            page_obj,
+        'error_message':       error_message,
+        'total_records':       original_count,
+        'filtered_count':      len(data),
+        'query':               query,
+        'min_balance':         min_balance,
+        'total_balance':       total_balance,
+        'total_debit':         total_debit,
+        'total_credit':        total_credit,
+        'department_list':     department_list,
         'selected_department': selected_department,
-        'selected_rows': selected_rows_int,
-        'rows_options': rows_options,  
+        'selected_rows':       selected_rows_int,
+        'rows_options':        rows_options,
     })
 
+# from django.http import JsonResponse
+# import requests
 
-from django.http import JsonResponse
-import requests
 
+# def get_sysmac_ledger(request):
+#     code = request.GET.get('code')
+#     if not code:
+#         return JsonResponse({'error': 'Missing code'}, status=400)
 
-def get_sysmac_ledger(request):
-    code = request.GET.get('code')
-    if not code:
-        return JsonResponse({'error': 'Missing code'}, status=400)
+#     try:
+#         url = "https://accmaster.imcbs.com/api/sync/sysmac-ledgers/" 
+#         headers = {
+#             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+#                           '(KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+#             'Accept': 'application/json',
+#         }
 
-    try:
-        url = "https://accmaster.imcbs.com/api/sync/sysmac-ledgers/" 
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-                          '(KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
-            'Accept': 'application/json',
-        }
+#         print("Fetching URL:", url)
+#         r = requests.get(url, headers=headers, timeout=10)
+#         r.raise_for_status()
 
-        print("Fetching URL:", url)
-        r = requests.get(url, headers=headers, timeout=10)
-        r.raise_for_status()
+#         full_data = r.json()
 
-        full_data = r.json()
+#         # ✅ Filter only the entries matching the requested code
+#         filtered = [entry for entry in full_data if str(entry.get('code')) == str(code)]
 
-        # ✅ Filter only the entries matching the requested code
-        filtered = [entry for entry in full_data if str(entry.get('code')) == str(code)]
+#         return JsonResponse(filtered, safe=False)
 
-        return JsonResponse(filtered, safe=False)
+#     except Exception as e:
+#         print("External API fetch failed:", e)
+#         return JsonResponse({'error': 'Failed to fetch ledger'}, status=500)
 
-    except Exception as e:
-        print("External API fetch failed:", e)
-        return JsonResponse({'error': 'Failed to fetch ledger'}, status=500)
+# from django.http import JsonResponse
+# import requests
 
-from django.http import JsonResponse
-import requests
+# def sysmac_invmast_bills(request):
+#     code = request.GET.get('code')
+#     if not code:
+#         return JsonResponse({'error': 'Missing code'}, status=400)
 
-def sysmac_invmast_bills(request):
-    code = request.GET.get('code')
-    if not code:
-        return JsonResponse({'error': 'Missing code'}, status=400)
+#     try:
+#         # Step 1: Fetch all bills (no filter)
+#         url = 'https://accmaster.imcbs.com/api/sync/sysmac-invmast/'
+#         response = requests.get(url, timeout=10)
+#         response.raise_for_status()
+#         all_bills = response.json()
 
-    try:
-        # Step 1: Fetch all bills (no filter)
-        url = 'https://accmaster.imcbs.com/api/sync/sysmac-invmast/'
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        all_bills = response.json()
+#         # Step 2: Filter bills for the given customerid
+#         filtered_bills = [bill for bill in all_bills if str(bill.get("customerid")) == str(code)]
 
-        # Step 2: Filter bills for the given customerid
-        filtered_bills = [bill for bill in all_bills if str(bill.get("customerid")) == str(code)]
-
-        return JsonResponse(filtered_bills, safe=False)
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+#         return JsonResponse(filtered_bills, safe=False)
+#     except Exception as e:
+#         return JsonResponse({'error': str(e)}, status=500)
 
 
 
@@ -1352,21 +1360,35 @@ import requests
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.shortcuts import render
 
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.shortcuts import render
-import requests
 
 def imc1_list(request):
-    api_url = "https://accmaster.imcbs.com/api/sync/imc1/"
+    api_url = "https://accmaster.imcbs.com/api/sync/acc-master/"
     data = []
     error_message = None
 
     try:
         response = requests.get(api_url, timeout=30)
         response.raise_for_status()
-        data = response.json()
-        for item in data:
+        raw_data = response.json()
+
+        for item in raw_data:
+            # ✅ Only include client_id == G9SYCSM54HR3E
+            if str(item.get('client_id', '')) != 'G9SYCSM54HR3E':
+                continue
+
+            # ✅ Only include super_code == DEBTO
+            if str(item.get('super_code', '')) != 'DEBTO':
+                continue
+
             item['name'] = item.get('name', '').strip()
+
+            # ✅ Calculate balance = debit - credit
+            debit = float(item.get('debit') or 0)
+            credit = float(item.get('credit') or 0)
+            item['balance'] = debit - credit
+
+            data.append(item)
+
     except requests.exceptions.Timeout:
         error_message = "API request timed out"
     except requests.exceptions.ConnectionError:
@@ -1380,11 +1402,11 @@ def imc1_list(request):
     query = request.GET.get('q', '').strip()
     min_balance = request.GET.get('min_balance', '1')
     selected_department = request.GET.get('department', '').strip()
-    selected_rows = request.GET.get('rows', '15')  # ✅ new
+    selected_rows = request.GET.get('rows', '15')
 
     original_count = len(data)
 
-    # Filtering by search
+    # Filter by search
     if query:
         search_terms = query.lower().split()
         filtered_data = []
@@ -1405,7 +1427,7 @@ def imc1_list(request):
                 filtered_data.append(item)
         data = filtered_data
 
-    # Filtering by min balance
+    # Filter by min balance
     if min_balance:
         try:
             min_balance_value = float(min_balance)
@@ -1417,18 +1439,22 @@ def imc1_list(request):
     if selected_department:
         data = [item for item in data if item.get('openingdepartment', '') == selected_department]
 
-    # Sort data
+    # Sort by name
     data.sort(key=lambda x: x.get('name', '').lower())
 
-    # Distinct department list for dropdown
-    department_list = sorted(set(item.get('openingdepartment', '') for item in data if item.get('openingdepartment', '')))
+    # Distinct department list
+    department_list = sorted(set(
+        item.get('openingdepartment', '')
+        for item in data
+        if item.get('openingdepartment', '')
+    ))
 
-    # Totals
+    # Totals (computed from filtered data)
     total_balance = sum(float(item.get('balance') or 0) for item in data)
     total_debit = sum(float(item.get('debit') or 0) for item in data)
     total_credit = sum(float(item.get('credit') or 0) for item in data)
 
-    # ✅ Convert selected_rows to int safely
+    # Rows per page
     try:
         selected_rows_int = int(selected_rows)
         if selected_rows_int not in [10, 20, 50, 100]:
@@ -1445,7 +1471,7 @@ def imc1_list(request):
     except EmptyPage:
         page_obj = paginator.page(paginator.num_pages)
 
-    rows_options = [10, 20, 50, 100]  # ✅ dropdown options
+    rows_options = [10, 20, 50, 100]
 
     return render(request, 'imc1_list.html', {
         'page_obj': page_obj,
@@ -1460,59 +1486,58 @@ def imc1_list(request):
         'total_balance': total_balance,
         'total_debit': total_debit,
         'total_credit': total_credit,
-        'selected_rows': selected_rows_int,  # ✅ for dropdown
-        'rows_options': rows_options,        # ✅ for dropdown loop
+        'selected_rows': selected_rows_int,
+        'rows_options': rows_options,
     })
+# from django.http import JsonResponse
+# import requests
 
-from django.http import JsonResponse
-import requests
+# def get_imc1_ledger(request):
+#     code = request.GET.get('code')
+#     if not code:
+#         return JsonResponse({'error': 'Missing code'}, status=400)
 
-def get_imc1_ledger(request):
-    code = request.GET.get('code')
-    if not code:
-        return JsonResponse({'error': 'Missing code'}, status=400)
+#     try:
+#         url = "https://accmaster.imcbs.com/api/sync/imc1-ledgers/" 
+#         headers = {
+#             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+#                           '(KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+#             'Accept': 'application/json',
+#         }
 
-    try:
-        url = "https://accmaster.imcbs.com/api/sync/imc1-ledgers/" 
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-                          '(KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
-            'Accept': 'application/json',
-        }
+#         print("Fetching URL:", url)
+#         r = requests.get(url, headers=headers, timeout=10)
+#         r.raise_for_status()
 
-        print("Fetching URL:", url)
-        r = requests.get(url, headers=headers, timeout=10)
-        r.raise_for_status()
+#         full_data = r.json()
 
-        full_data = r.json()
+#         # ✅ Filter only the entries matching the requested code
+#         filtered = [entry for entry in full_data if str(entry.get('code')) == str(code)]
 
-        # ✅ Filter only the entries matching the requested code
-        filtered = [entry for entry in full_data if str(entry.get('code')) == str(code)]
+#         return JsonResponse(filtered, safe=False)
 
-        return JsonResponse(filtered, safe=False)
-
-    except Exception as e:
-        print("External API fetch failed:", e)
-        return JsonResponse({'error': 'Failed to fetch ledger'}, status=500)
+#     except Exception as e:
+#         print("External API fetch failed:", e)
+#         return JsonResponse({'error': 'Failed to fetch ledger'}, status=500)
         
-def imc1_invmast_bills(request):
-    code = request.GET.get('code')
-    if not code:
-        return JsonResponse({'error': 'Missing code'}, status=400)
+# def imc1_invmast_bills(request):
+#     code = request.GET.get('code')
+#     if not code:
+#         return JsonResponse({'error': 'Missing code'}, status=400)
 
-    try:
-        # Fetch all bills from the IMC1 API
-        url = 'https://accmaster.imcbs.com/api/sync/imc1-invmast/'
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        all_bills = response.json()
+#     try:
+#         # Fetch all bills from the IMC1 API
+#         url = 'https://accmaster.imcbs.com/api/sync/imc1-invmast/'
+#         response = requests.get(url, timeout=10)
+#         response.raise_for_status()
+#         all_bills = response.json()
 
-        # Filter only bills for the matching customerid
-        filtered_bills = [bill for bill in all_bills if str(bill.get("customerid")) == str(code)]
+#         # Filter only bills for the matching customerid
+#         filtered_bills = [bill for bill in all_bills if str(bill.get("customerid")) == str(code)]
 
-        return JsonResponse(filtered_bills, safe=False)
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+#         return JsonResponse(filtered_bills, safe=False)
+#     except Exception as e:
+#         return JsonResponse({'error': str(e)}, status=500)
     
 #--------------------------------------------- IMC2----------------------------------------
 
@@ -1681,16 +1706,30 @@ import requests
 
 
 def sysmac_info_list(request):
-    api_url = "https://accmaster.imcbs.com/api/sync/sysmac-info/"
+    api_url = "https://accmaster.imcbs.com/api/sync/acc-master/"
     data = []
     error_message = None
 
     try:
         response = requests.get(api_url, timeout=30)
         response.raise_for_status()
-        data = response.json()
-        for item in data:
+        raw_data = response.json()
+
+        for item in raw_data:
+            # ✅ Only include client_id == "69ZHSXOIMFA6T"
+            if str(item.get('client_id', '')) != '69ZHSXOIMFA6T':
+                continue
+            # ✅ Only include super_code == DEBTO
+            if str(item.get('super_code', '')) != 'DEBTO':
+                continue
+
             item['name'] = item.get('name', '').strip()
+            # ✅ Calculate balance = debit - credit
+            debit = float(item.get('debit') or 0)
+            credit = float(item.get('credit') or 0)
+            item['balance'] = debit - credit
+            data.append(item)
+
     except requests.exceptions.Timeout:
         error_message = "API request timed out"
     except requests.exceptions.ConnectionError:
@@ -1704,7 +1743,7 @@ def sysmac_info_list(request):
     query = request.GET.get('q', '').strip()
     min_balance = request.GET.get('min_balance', '1')
     selected_department = request.GET.get('department', '')
-    selected_rows = request.GET.get('rows', '15')  # 👈 New
+    selected_rows = request.GET.get('rows', '15')
 
     original_count = len(data)
 
@@ -1750,7 +1789,7 @@ def sysmac_info_list(request):
     total_debit = sum(float(item.get('debit') or 0) for item in data)
     total_credit = sum(float(item.get('credit') or 0) for item in data)
 
-    # ✅ Handle row count
+    # Handle row count
     try:
         selected_rows_int = int(selected_rows)
         if selected_rows_int not in [10, 20, 50, 100]:
@@ -1767,7 +1806,6 @@ def sysmac_info_list(request):
     except EmptyPage:
         page_obj = paginator.page(paginator.num_pages)
 
-    # ✅ Define row options
     rows_options = [10, 20, 50, 100]
 
     return render(request, 'sysmac_info_list.html', {
@@ -1782,55 +1820,55 @@ def sysmac_info_list(request):
         'total_balance': total_balance,
         'total_debit': total_debit,
         'total_credit': total_credit,
-        'selected_rows': selected_rows_int,  # 👈 for template dropdown
-        'rows_options': rows_options,        # 👈 for loop in template
+        'selected_rows': selected_rows_int,
+        'rows_options': rows_options,
     })
 
-def get_sysmac_info_ledger(request):
-    code = request.GET.get('code')
-    if not code:
-        return JsonResponse({'error': 'Missing code'}, status=400)
+# def get_sysmac_info_ledger(request):
+#     code = request.GET.get('code')
+#     if not code:
+#         return JsonResponse({'error': 'Missing code'}, status=400)
 
-    try:
-        url = "https://accmaster.imcbs.com/api/sync/sysmac-info-ledgers/"
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-                          '(KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
-            'Accept': 'application/json',
-        }
+#     try:
+#         url = "https://accmaster.imcbs.com/api/sync/sysmac-info-ledgers/"
+#         headers = {
+#             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+#                           '(KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+#             'Accept': 'application/json',
+#         }
 
-        print("Fetching URL:", url)
-        r = requests.get(url, headers=headers, timeout=10)
-        r.raise_for_status()
+#         print("Fetching URL:", url)
+#         r = requests.get(url, headers=headers, timeout=10)
+#         r.raise_for_status()
 
-        full_data = r.json()
+#         full_data = r.json()
 
-        # ✅ Filter only the entries matching the requested code
-        filtered = [entry for entry in full_data if str(entry.get('code')) == str(code)]
+#         # ✅ Filter only the entries matching the requested code
+#         filtered = [entry for entry in full_data if str(entry.get('code')) == str(code)]
 
-        return JsonResponse(filtered, safe=False)
+#         return JsonResponse(filtered, safe=False)
 
-    except Exception as e:
-        print("External API fetch failed:", e)
-        return JsonResponse({'error': 'Failed to fetch ledger'}, status=500)
+#     except Exception as e:
+#         print("External API fetch failed:", e)
+#         return JsonResponse({'error': 'Failed to fetch ledger'}, status=500)
 
-def sysmac_info_invmast_bills(request):
-    code = request.GET.get('code')
-    if not code:
-        return JsonResponse({'error': 'Missing code'}, status=400)
+# def sysmac_info_invmast_bills(request):
+#     code = request.GET.get('code')
+#     if not code:
+#         return JsonResponse({'error': 'Missing code'}, status=400)
 
-    try:
-        url = 'https://accmaster.imcbs.com/api/sync/sysmac-info-invmast/'
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        all_bills = response.json()
+#     try:
+#         url = 'https://accmaster.imcbs.com/api/sync/sysmac-info-invmast/'
+#         response = requests.get(url, timeout=10)
+#         response.raise_for_status()
+#         all_bills = response.json()
 
-        # Filter for the matching customerid
-        filtered_bills = [bill for bill in all_bills if str(bill.get("customerid")) == str(code)]
+#         # Filter for the matching customerid
+#         filtered_bills = [bill for bill in all_bills if str(bill.get("customerid")) == str(code)]
 
-        return JsonResponse(filtered_bills, safe=False)
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+#         return JsonResponse(filtered_bills, safe=False)
+#     except Exception as e:
+#         return JsonResponse({'error': str(e)}, status=500)
 
 #-----------------------------------------------DQ--------------------------------------------------
 

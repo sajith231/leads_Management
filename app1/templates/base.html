@@ -753,7 +753,7 @@
 
 <div id="debters-menu" class="submenu">
         <a href="{% url 'debtors1_list' %}">
-    <i class="fas fa-file-invoice-dollar"></i> SYSMAC COMPUTERS-1
+    <i class="fas fa-file-invoice-dollar"></i> SYSMAC COMPUTERS
 </a>
  <a href="{% url 'sysmac_info_list'%}">
     <i class="fas fa-money-check"></i> SYSMAC-INFO
@@ -763,13 +763,7 @@
     <i class="fas fa-coins"></i> IMCB LLP
 </a> 
 
-<a href="{% url 'imc2_list'%}">
-    <i class="fas fa-hand-holding-usd"></i> IMC
-</a>
 
- <a href="{% url 'dq_list'%}">
-    <i class="	fas fa-credit-card"></i> DQ
-</a>
 
 </div>
 {% endif %}
@@ -1322,7 +1316,7 @@
     <div id="debters-menu" class="submenu">
         {% if 'debtors1_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
         <a href="{% url 'debtors1_list' %}">
-            <i class="fas fa-file-invoice-dollar"></i> SYSMAC COMPUTERS-1
+            <i class="fas fa-file-invoice-dollar"></i> SYSMAC COMPUTERS
         </a>
         {% endif %}
 
@@ -1338,17 +1332,7 @@
         </a>
         {% endif %}
 
-        {% if 'sysmac_info_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-        <a href="{% url 'sysmac_info_list' %}">
-            <i class="fas fa-money-check"></i> SYSMAC-INFO
-        </a>
-        {% endif %}
-
-        {% if 'dq_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-        <a href="{% url 'dq_list' %}">
-            <i class="fas fa-credit-card"></i> DQ
-        </a>
-        {% endif %}
+       
     </div>
 {% endif %}
 
