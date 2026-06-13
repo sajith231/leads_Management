@@ -762,8 +762,16 @@
     <a href="{% url 'imc1_list'%}">
     <i class="fas fa-coins"></i> IMCB LLP
 </a> 
+<a href="{% url 'collection_new:collection_list' %}">
+    <i class="fas fa-hand-holding-usd"></i> Collection
+</a>
+<!-- <a href="{% url 'imc2_list'%}">
+    <i class="fas fa-hand-holding-usd"></i> IMC
+</a>
 
-
+ <a href="{% url 'dq_list'%}">
+    <i class="	fas fa-credit-card"></i> DQ
+</a> -->
 
 </div>
 {% endif %}
@@ -1316,7 +1324,7 @@
     <div id="debters-menu" class="submenu">
         {% if 'debtors1_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
         <a href="{% url 'debtors1_list' %}">
-            <i class="fas fa-file-invoice-dollar"></i> SYSMAC COMPUTERS
+            <i class="fas fa-file-invoice-dollar"></i> SYSMAC COMPUTERS-
         </a>
         {% endif %}
 
@@ -1326,13 +1334,28 @@
         </a>
         {% endif %}
 
-        {% if 'imc2_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        <!-- {% if 'imc2_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
         <a href="{% url 'imc2_list' %}">
             <i class="fas fa-hand-holding-usd"></i> IMC
         </a>
+        {% endif %} -->
+      {% if 'sysmac_info_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<a href="{% url 'collection_new:collection_list' %}">
+    <i class="fas fa-money-check"></i> Collection
+</a>
+{% endif %}
+
+        {% if 'sysmac_info_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        <a href="{% url 'sysmac_info_list' %}">
+            <i class="fas fa-money-check"></i> SYSMAC-INFO
+        </a>
         {% endif %}
 
-       
+        <!-- {% if 'dq_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        <a href="{% url 'dq_list' %}">
+            <i class="fas fa-credit-card"></i> DQ
+        </a>
+        {% endif %} -->
     </div>
 {% endif %}
 

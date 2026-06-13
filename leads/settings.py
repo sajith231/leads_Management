@@ -91,6 +91,7 @@ INSTALLED_APPS = [
     'asset_management',
     "lead_form_api", 
     "lead_form_enquiry",
+    "collection_new",
 ]
 
 
@@ -98,6 +99,7 @@ INSTALLED_APPS = [
 
 
 REST_FRAMEWORK = {
+
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],

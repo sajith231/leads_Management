@@ -58,9 +58,10 @@ urlpatterns = [
     path('vehicle/', include('vehicle_challan.urls')),
     path('public_folder/', include('public_folder.urls')),
     path('software-update/', include('software_update.urls')),
-     path('asset_management/', include('asset_management.urls')), 
-     path("api/", include("lead_form_api.urls")),
-     path("enquiry/", include("lead_form_enquiry.urls")),
+    path('asset_management/', include('asset_management.urls')), 
+    path("api/", include("lead_form_api.urls")),
+    path("enquiry/", include("lead_form_enquiry.urls")),
+    path('collection/', include('collection_new.urls', namespace='collection_new')),
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

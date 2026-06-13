@@ -1,0 +1,967 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Collection List{% endblock %}
+
+{% block content %}
+<div class="cl-wrapper">
+
+  <!-- Page Header -->
+  <div class="cl-header">
+    <div class="cl-header-left">
+     
+      <div>
+        <h2 class="cl-title">Collections</h2>
+       
+      </div>
+    </div>
+    <a href="{% url 'collection_new:collection_add' %}" class="btn-add">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <path d="M12 5v14M5 12h14"/>
+      </svg>
+      Add Collection
+    </a>
+  </div>
+
+  <!-- Table Card -->
+  <div class="cl-card">
+
+    <!-- Search / Filter bar -->
+    <div class="cl-toolbar">
+      <div class="cl-filters">
+
+        <!-- Search -->
+        <div class="search-box">
+          <svg width="14" height="14" fill="none" stroke="#9ca3af" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+          </svg>
+          <input type="text" id="searchInput" placeholder="Search..." oninput="applyFilters()" />
+        </div>
+
+        <!-- Company -->
+        <select id="filterCompany" class="filter-select" onchange="applyFilters()">
+          <option value="">All Companies</option>
+          <option>Sysmac Computers</option>
+          <option>Sysmac Info</option>
+          <option>IMCB LLP</option>
+        </select>
+
+        <!-- Department -->
+        <select id="filterDept" class="filter-select" onchange="applyFilters()">
+          <option value="">All Departments</option>
+        </select>
+
+        <!-- Collection Type -->
+        <select id="filterType" class="filter-select" onchange="applyFilters()">
+          <option value="">All Types</option>
+          <option value="Cash">Cash</option>
+          <option value="Cheque">Cheque</option>
+          <option value="Bank Transfer">Bank Transfer</option>
+          <option value="UPI">UPI</option>
+          <option value="Other">Other</option>
+        </select>
+
+        <!-- Status -->
+        <select id="filterStatus" class="filter-select" onchange="applyFilters()">
+          <option value="">All Status</option>
+          <option value="pending">Pending</option>
+          <option value="verified">Verified</option>
+        </select>
+
+        <!-- Created By -->
+        <select id="filterUser" class="filter-select" onchange="applyFilters()">
+          <option value="">All Users</option>
+        </select>
+
+        <!-- From Date -->
+        <div class="date-field">
+          <label>From</label>
+          <input type="date" id="filterFrom" class="filter-date" onchange="applyFilters()" />
+        </div>
+
+        <!-- To Date -->
+        <div class="date-field">
+          <label>To</label>
+          <input type="date" id="filterTo" class="filter-date" onchange="applyFilters()" />
+        </div>
+
+        <!-- Clear -->
+        <button class="btn-clear" onclick="clearFilters()">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+          Clear
+        </button>
+
+      </div>
+      <div class="cl-count">
+        Total: <strong id="rowCount">{{ collections|length }}</strong>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-scroll">
+      <table class="cl-table" id="clTable">
+        <thead>
+          <tr>
+            <th class="col-sl">Sl No</th>
+            <th class="col-date">Created Date</th>
+            <th class="col-by">Created By</th>
+            <th class="col-company">Company</th>
+            <th class="col-dept">Department</th>
+            <th class="col-client">Client Name</th>
+            <th class="col-type">Collection Type</th>
+            <th class="col-amount">Amount</th>
+            <th class="col-paid">Paid For</th>
+            <th class="col-proof">Paid Proof</th>
+            <th class="col-notes">Notes</th>
+            <th class="col-status">Status</th>
+            <th class="col-action">Action</th>
+          </tr>
+        </thead>
+        <tbody id="clBody">
+          {% for col in collections %}
+          <tr
+            data-company="{{ col.company }}"
+            data-dept="{{ col.department }}"
+            data-type="{{ col.get_collection_type_display }}"
+            data-user="{% if col.created_by %}{{ col.created_by.get_full_name|default:col.created_by.username }}{% endif %}"
+            data-date="{{ col.created_at|date:'Y-m-d' }}"
+            data-status="{{ col.status }}"
+          >
+            <td class="col-sl center">{{ forloop.counter }}</td>
+            <td class="col-date">
+              <span class="date-main">{{ col.created_at|date:"d M Y" }}</span>
+              <span class="date-time">{{ col.created_at|date:"h:i A" }}</span>
+            </td>
+            <td class="col-by">{% if col.created_by %}{{ col.created_by.get_full_name|default:col.created_by.username }}{% else %}—{% endif %}</td>
+            <td class="col-company">{{ col.company }}</td>
+            <td class="col-dept">{{ col.department }}</td>
+            <td class="col-client">{{ col.client_name }}</td>
+            <td class="col-type">
+              <span class="badge badge-{{ col.collection_type }}">
+                {% if col.collection_type == "cash" %}Cash
+                {% elif col.collection_type == "cheque" %}Cheque
+                {% elif col.collection_type == "bank_transfer" %}Bank Transfer
+                {% elif col.collection_type == "upi" %}UPI
+                {% else %}Other{% endif %}
+              </span>
+            </td>
+            <td class="col-amount amount-cell">₹{{ col.amount|floatformat:2 }}</td>
+            <td class="col-paid">{{ col.paid_for }}</td>
+            <td class="col-proof center">
+              {% if col.payment_proof %}
+              <a href="javascript:void(0)"
+                 class="proof-link"
+                 title="View proof"
+                 onclick="openProof('{{ col.payment_proof.url }}', '{{ col.payment_proof.name }}')">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                
+              </a>
+              {% else %}
+              <span class="no-proof">—</span>
+              {% endif %}
+            </td>
+            <td class="col-notes">
+              {% if col.notes %}
+              <span class="notes-text" title="{{ col.notes }}">{{ col.notes|truncatechars:30 }}</span>
+              {% else %}—{% endif %}
+            </td>
+            <td class="col-status center">
+              <select
+                class="status-select status-{{ col.status }}"
+                data-id="{{ col.id }}"
+                data-csrf="{{ csrf_token }}"
+                onchange="changeStatus(this)">
+                <option value="pending"  {% if col.status == 'pending'  %}selected{% endif %}>Pending</option>
+                <option value="verified" {% if col.status == 'verified' %}selected{% endif %}>Verified</option>
+              </select>
+            </td>
+            <td class="col-action center">
+              <div class="action-btns">
+                <a href="{% url 'collection_new:collection_edit' col.id %}" class="btn-icon btn-edit" title="Edit">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </a>
+                <a href="{% url 'collection_new:collection_delete' col.id %}" class="btn-icon btn-delete" title="Delete"
+                   onclick="return confirm('Delete this collection?')">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+                    <path d="M10 11v6M14 11v6"/>
+                    <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+                  </svg>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="13" class="empty-row">
+              <div class="empty-state">
+                <svg width="40" height="40" fill="none" stroke="#d1d5db" stroke-width="1.5" viewBox="0 0 24 24">
+                  <rect x="2" y="5" width="20" height="14" rx="2"/>
+                  <path d="M2 10h20"/>
+                </svg>
+                <p>No collection records found.</p>
+                <a href="{% url 'collection_new:collection_add' %}" class="btn-add-sm">Add First Collection</a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="cl-pagination">
+      {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}" class="page-btn">&#8592; Prev</a>
+      {% endif %}
+      <span class="page-info">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}" class="page-btn">Next &#8594;</a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<!-- Proof Modal -->
+<div id="proofModal" class="proof-modal-overlay" onclick="closeProof(event)">
+  <div class="proof-modal-box">
+    <div class="proof-modal-header">
+      <span id="proofFileName" class="proof-modal-title">Payment Proof</span>
+      <div class="proof-modal-actions">
+        <a id="proofDownload" href="" download class="proof-dl-btn" title="Download">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Download
+        </a>
+        <button class="proof-close-btn" onclick="closeProof()" title="Close">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+          Close
+        </button>
+      </div>
+    </div>
+    <div class="proof-modal-body" id="proofBody"></div>
+  </div>
+</div>
+
+<style>
+  .cl-wrapper {
+    padding: 24px 20px;
+    background: #f1f5f9;
+    min-height: 100vh;
+  }
+
+  /* Page Header */
+  .cl-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .cl-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .cl-header-icon {
+    background: linear-gradient(135deg, #1565c0, #1976d2);
+    border-radius: 8px;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .cl-title {
+    margin: 0;
+    font-size: 25px;
+    font-weight: 700;
+    color: #1e293b;
+  }
+
+  .cl-sub {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  .btn-add {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 18px;
+    background: linear-gradient(135deg, #1565c0, #1976d2);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: opacity 0.2s, box-shadow 0.2s;
+  }
+
+  .btn-add:hover {
+    opacity: 0.9;
+    box-shadow: 0 4px 12px rgba(21,101,192,0.3);
+    color: #fff;
+  }
+
+  /* Card */
+  .cl-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(15,23,42,0.08);
+    overflow: hidden;
+  }
+
+  /* Toolbar */
+  .cl-toolbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid #f1f5f9;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .cl-filters {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    flex: 1;
+  }
+
+  .search-box {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f9fafb;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 7px;
+    padding: 6px 10px;
+    min-width: 160px;
+  }
+
+  .search-box input {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 12px;
+    color: #1e293b;
+    width: 100%;
+  }
+
+  .filter-select {
+    height: 32px;
+    padding: 0 8px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 7px;
+    background: #f9fafb;
+    font-size: 12px;
+    color: #374151;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+
+  .filter-select:focus {
+    border-color: #1976d2;
+    background: #fff;
+  }
+
+  .date-field {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: #f9fafb;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 7px;
+    padding: 0 8px;
+    height: 32px;
+  }
+
+  .date-field label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #6b7280;
+    white-space: nowrap;
+    margin: 0;
+  }
+
+  .filter-date {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 12px;
+    color: #374151;
+    cursor: pointer;
+  }
+
+  .btn-clear {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 32px;
+    padding: 0 12px;
+    border: 1.5px solid #fca5a5;
+    border-radius: 7px;
+    background: #fff5f5;
+    color: #ef4444;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-clear:hover {
+    background: #fee2e2;
+  }
+
+  .cl-count {
+    font-size: 13px;
+    color: #6b7280;
+    white-space: nowrap;
+  }
+
+  .cl-count strong {
+    color: #1e293b;
+  }
+
+  /* Table */
+  .table-scroll {
+    overflow-x: auto;
+  }
+
+  .cl-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    min-width: 1100px;
+  }
+
+  .cl-table thead tr {
+    background: #f8fafc;
+    border-bottom: 2px solid #e2e8f0;
+  }
+
+  .cl-table th {
+    padding: 11px 13px;
+    background: #4da4fc;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fdfcfc;
+    text-transform: capitalize;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+
+  .cl-table td {
+    font-size: 11px;
+    padding: 11px 13px;
+    color: #1e293b;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+  }
+
+  .cl-table tbody tr:hover {
+    background: #f8faff;
+  }
+
+  .cl-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .center { text-align: center; }
+
+  /* Column widths */
+  .col-sl     { width: 52px; }
+  .col-date   { width: 110px; }
+  .date-main  { display: block; font-size: 11px; font-weight: 600; color: #1e293b; white-space: nowrap; }
+  .date-time  { display: block; font-size: 9px; color: #6b7280; margin-top: 2px; white-space: nowrap; }
+  .col-by     { width: 110px; }
+  .col-company{ width: 110px; font-size: 11px; }
+  .col-dept   { width: 110px; font-size: 11px;}
+  .col-client { width: 120px; font-size: 11px;}
+  .col-type   { width: 110px; }
+  .col-amount { width: 90px; }
+  .col-paid   { width: 130px; }
+  .col-proof  { width: 80px; }
+  .col-notes  { width: 160px; }
+  .col-status { width: 90px; }
+  .col-action { width: 80px; }
+
+  /* Status dropdown */
+  .status-select {
+    appearance: none;
+    -webkit-appearance: none;
+    border: none;
+    border-radius:6px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 22px 4px 10px;
+    cursor: pointer;
+    outline: none;
+    background-repeat: no-repeat;
+    background-position: right 7px center;
+    background-size: 10px;
+    transition: opacity 0.2s, box-shadow 0.2s;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  }
+
+  .status-select:hover { opacity: 0.85; box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
+
+  .status-select.status-pending  { background-color: #ffaf04; color: #fcfcfc; }
+  .status-select.status-verified { background-color: #098534; color: #fbfcfb; }
+
+  /* Saving spinner state */
+  .status-select.saving { opacity: 0.5; pointer-events: none; }
+
+  .amount-cell {
+    font-weight: 700;
+    color: #1565c0;
+    white-space: nowrap;
+  }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .badge-cash          { background: #ffff; color: #0a0a0a; }
+  .badge-cheque        { background: #ffff; color: #070707; }
+  .badge-bank_transfer { background: #ffff; color: #0d0d0e; }
+  .badge-upi           { background: #ffff; color: #0f0f0f; }
+  .badge-other         { background: #ffff; color: #0d0d0e; }
+
+  /* Proof link */
+  .proof-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #1976d2;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 5px;
+    padding: 3px 8px;
+    transition: background 0.2s;
+  }
+
+  .proof-link:hover {
+    background: #dbeafe;
+    color: #1565c0;
+  }
+
+  .no-proof {
+    color: #d1d5db;
+  }
+
+  .notes-text {
+    display: block;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #6b7280;
+    font-size: 12px;
+  }
+
+  /* Action buttons */
+  .action-btns {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+  }
+
+  .btn-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: background 0.2s;
+  }
+
+  .btn-edit  { background: #eff6ff; color: #1976d2; }
+  .btn-edit:hover  { background: #dbeafe; color: #1565c0; }
+  .btn-delete { background: #fef2f2; color: #ef4444; }
+  .btn-delete:hover { background: #fee2e2; color: #dc2626; }
+
+  /* Empty state */
+  .empty-row td { padding: 40px 0 !important; }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    color: #9ca3af;
+    font-size: 14px;
+  }
+
+  .empty-state p { margin: 0; }
+
+  .btn-add-sm {
+    padding: 7px 16px;
+    background: linear-gradient(135deg, #1565c0, #1976d2);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 7px;
+    text-decoration: none;
+  }
+
+  /* Pagination */
+  .cl-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 14px;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  .page-btn {
+    padding: 6px 14px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    text-decoration: none;
+    transition: background 0.2s;
+  }
+
+  .page-btn:hover { background: #f1f5f9; color: #374151; }
+
+  .page-info {
+    font-size: 13px;
+    color: #6b7280;
+  }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .cl-wrapper { padding: 16px 12px; }
+    .cl-header  { flex-direction: column; align-items: flex-start; }
+    .btn-add    { width: 100%; justify-content: center; }
+  }
+  /* Proof Modal */
+  .proof-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.65);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .proof-modal-overlay.active {
+    display: flex;
+  }
+
+  .proof-modal-box {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.3);
+    width: 90%;
+    max-width: 780px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .proof-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+    gap: 12px;
+  }
+
+  .proof-modal-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .proof-modal-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .proof-dl-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 6px;
+    color: #1976d2;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.2s;
+  }
+
+  .proof-dl-btn:hover { background: #dbeafe; color: #1565c0; }
+
+  .proof-close-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    color: #ef4444;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .proof-close-btn:hover { background: #fee2e2; }
+
+  .proof-modal-body {
+    flex: 1;
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: #f1f5f9;
+    min-height: 200px;
+  }
+
+  .proof-modal-body img {
+    max-width: 100%;
+    max-height: 70vh;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(15,23,42,0.12);
+  }
+
+  .proof-modal-body iframe {
+    width: 100%;
+    height: 70vh;
+    border: none;
+    border-radius: 8px;
+  }
+
+</style>
+
+<script>
+  // ── Proof Modal ───────────────────────────────────────────────────────────
+  function openProof(url, filename) {
+    const modal    = document.getElementById('proofModal');
+    const body     = document.getElementById('proofBody');
+    const title    = document.getElementById('proofFileName');
+    const download = document.getElementById('proofDownload');
+
+    const isPdf = url.toLowerCase().includes('.pdf');
+    title.textContent    = filename || 'Payment Proof';
+    download.href        = url;
+
+    body.innerHTML = isPdf
+      ? `<iframe src="${url}"></iframe>`
+      : `<img src="${url}" alt="Payment Proof" />`;
+
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeProof(e) {
+    // Close on overlay click (not inner box click) or button click
+    if (e && e.target !== document.getElementById('proofModal')) return;
+    document.getElementById('proofModal').classList.remove('active');
+    document.getElementById('proofBody').innerHTML = '';
+    document.body.style.overflow = '';
+  }
+
+  // Close on Escape key
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeProof();
+  });
+
+  // ── Populate Department and User dropdowns from table data ─────────────────
+  window.addEventListener('DOMContentLoaded', function () {
+    const rows   = document.querySelectorAll('#clBody tr[data-company]');
+    const depts  = new Set();
+    const users  = new Set();
+
+    rows.forEach(function (row) {
+      if (row.dataset.dept) depts.add(row.dataset.dept);
+      if (row.dataset.user) users.add(row.dataset.user);
+    });
+
+    const deptSel = document.getElementById('filterDept');
+    [...depts].sort().forEach(function (d) {
+      deptSel.appendChild(new Option(d, d));
+    });
+
+    const userSel = document.getElementById('filterUser');
+    [...users].sort().forEach(function (u) {
+      userSel.appendChild(new Option(u, u));
+    });
+  });
+
+  // ── Main filter function ───────────────────────────────────────────────────
+  function applyFilters() {
+    const q       = document.getElementById('searchInput').value.toLowerCase();
+    const company = document.getElementById('filterCompany').value.toLowerCase();
+    const dept    = document.getElementById('filterDept').value.toLowerCase();
+    const type    = document.getElementById('filterType').value.toLowerCase();
+    const status  = document.getElementById('filterStatus').value.toLowerCase();
+    const user    = document.getElementById('filterUser').value.toLowerCase();
+    const from    = document.getElementById('filterFrom').value;   // YYYY-MM-DD
+    const to      = document.getElementById('filterTo').value;
+
+    const rows   = document.querySelectorAll('#clBody tr[data-company]');
+    let visible  = 0;
+
+    rows.forEach(function (row) {
+      const rCompany = (row.dataset.company || '').toLowerCase();
+      const rDept    = (row.dataset.dept    || '').toLowerCase();
+      const rType    = (row.dataset.type    || '').toLowerCase();
+      const rStatus  = (row.dataset.status  || '').toLowerCase();
+      const rUser    = (row.dataset.user    || '').toLowerCase();
+      const rDate    =  row.dataset.date    || '';   // YYYY-MM-DD
+      const text     =  row.textContent.toLowerCase();
+
+      const matchSearch  = !q       || text.includes(q);
+      const matchCompany = !company || rCompany.includes(company);
+      const matchDept    = !dept    || rDept === dept;
+      const matchType    = !type    || rType === type;
+      const matchStatus  = !status  || rStatus === status;
+      const matchUser    = !user    || rUser === user;
+      const matchFrom    = !from    || rDate >= from;
+      const matchTo      = !to      || rDate <= to;
+
+      const show = matchSearch && matchCompany && matchDept && matchType && matchStatus && matchUser && matchFrom && matchTo;
+      row.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+
+    document.getElementById('rowCount').textContent = visible;
+  }
+
+  // ── Clear all filters ─────────────────────────────────────────────────────
+  function clearFilters() {
+    document.getElementById('searchInput').value   = '';
+    document.getElementById('filterCompany').value = '';
+    document.getElementById('filterDept').value    = '';
+    document.getElementById('filterType').value    = '';
+    document.getElementById('filterUser').value    = '';
+    document.getElementById('filterFrom').value    = '';
+    document.getElementById('filterStatus').value    = '';
+    applyFilters();
+  }
+
+  // ── Status dropdown (inline AJAX toggle) ─────────────────────────────────
+  function changeStatus(sel) {
+    const id       = sel.dataset.id;
+    const csrf     = sel.dataset.csrf;
+    const newStatus = sel.value;
+
+    sel.classList.add('saving');
+
+    const body = new URLSearchParams({ status: newStatus, csrfmiddlewaretoken: csrf });
+
+    fetch(`/collection/collections/toggle-status/${id}/`, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrf, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString(),
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (data.status) {
+        sel.className = 'status-select status-' + data.status;
+        // keep data-* in sync for the filter
+        sel.closest('tr').dataset.status = data.status;
+      } else {
+        alert('Failed to update status.');
+        // revert
+        sel.value = newStatus === 'pending' ? 'verified' : 'pending';
+        sel.className = 'status-select status-' + sel.value;
+      }
+    })
+    .catch(function () {
+      alert('Network error. Could not update status.');
+      sel.value = newStatus === 'pending' ? 'verified' : 'pending';
+      sel.className = 'status-select status-' + sel.value;
+    })
+    .finally(function () {
+      sel.classList.remove('saving');
+    });
+  }
+
+
+  document.getElementById('filterCompany').addEventListener('change', function () {
+    const selected = this.value.toLowerCase();
+    const deptSel  = document.getElementById('filterDept');
+    const current  = deptSel.value;
+
+    // Rebuild dept options based on selected company
+    const rows  = document.querySelectorAll('#clBody tr[data-company]');
+    const depts = new Set();
+    rows.forEach(function (row) {
+      const rCompany = (row.dataset.company || '').toLowerCase();
+      if (!selected || rCompany.includes(selected)) {
+        if (row.dataset.dept) depts.add(row.dataset.dept);
+      }
+    });
+
+    deptSel.innerHTML = '<option value="">All Departments</option>';
+    [...depts].sort().forEach(function (d) {
+      const opt = new Option(d, d);
+      if (d === current) opt.selected = true;
+      deptSel.appendChild(opt);
+    });
+
+    applyFilters();
+  });
+</script>
+
+{% endblock %}
