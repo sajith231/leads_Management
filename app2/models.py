@@ -390,6 +390,12 @@ class Feeder(models.Model):
         ('Lab', 'Lab'),
     ]
 
+    ADM_STATUS_CHOICES = [
+        ('cancel', 'Cancel'),
+        ('verified', 'Verified'),
+    ]
+    adm_status = models.CharField(max_length=20, choices=ADM_STATUS_CHOICES, default='cancel')
+
     name = models.CharField(max_length=200)
     address = models.TextField()
     location = models.CharField(max_length=200)

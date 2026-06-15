@@ -3333,8 +3333,40 @@ def feeder_status_update(request, feeder_id):
         return JsonResponse({'success': False, 'error': f'Server error: {str(e)}'}, status=500)
 
 
+@csrf_exempt
+@require_POST
+def feeder_adm_status_update(request, feeder_id):
+    try:
+        data = json.loads(request.body)
+        new_status = data.get('adm_status')
 
+        if not new_status:
+            return JsonResponse({'success': False, 'error': 'Status not provided'}, status=400)
 
+        feeder = get_object_or_404(Feeder, id=feeder_id)
+
+        valid_statuses = [choice[0] for choice in Feeder.ADM_STATUS_CHOICES]
+        if new_status not in valid_statuses:
+            return JsonResponse({
+                'success': False,
+                'error': f'Invalid status. Valid options: {valid_statuses}'
+            }, status=400)
+
+        feeder.adm_status = new_status
+        feeder.save()
+
+        return JsonResponse({
+            'success': True,
+            'new_status': feeder.get_adm_status_display(),
+            'adm_status': feeder.adm_status,
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON data'}, status=400)
+    except Feeder.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Feeder not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Server error: {str(e)}'}, status=500)
 
 
 
@@ -5245,7 +5277,6 @@ def feeder(request):
         'is_branch_restricted': is_branch_restricted,
     })
 
-
 def feeder_list(request):
     query = request.GET.get('q', '').strip()
     selected_branch = request.GET.get('branch', '').strip()
@@ -5253,8 +5284,8 @@ def feeder_list(request):
 
     today = date.today().strftime('%Y-%m-%d')
 
-    date_from = request.GET.get('date_from', today).strip()
-    date_to = request.GET.get('date_to', today).strip()
+    date_from = request.GET.get('date_from', '').strip()
+    date_to = request.GET.get('date_to', '').strip()
     per_page = request.GET.get('per_page', '10').strip()
 
     feeders_list = Feeder.objects.select_related('branch').all().order_by('-id')
@@ -5320,7 +5351,7 @@ def feeder_list(request):
 
     return render(request, 'feeder_list.html', context)
 
-
+    
 def feeder_edit(request, feeder_id):
     from django.apps import apps
     AppUser = apps.get_model('app1', 'User')

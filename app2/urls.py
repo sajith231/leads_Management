@@ -125,6 +125,7 @@ path('get_project_details/', views.get_project_details, name='get_project_detail
     path('feeder_delete/<int:feeder_id>/', views.feeder_delete, name='feeder_delete'),
     path('feeder/<int:feeder_id>/status-update/', views.feeder_status_update, name='feeder_status_update'),
     path('feeder/<int:feeder_id>/status-update/', views.feeder_status_update, name='feeder_status_update'),
+    path('feeder/<int:feeder_id>/adm-status/', views.feeder_adm_status_update, name='feeder_adm_status_update'),
 
 
 
