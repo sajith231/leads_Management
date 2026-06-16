@@ -391,10 +391,11 @@ class Feeder(models.Model):
     ]
 
     ADM_STATUS_CHOICES = [
+        ('pending', 'Pending'),
         ('cancel', 'Cancel'),
         ('verified', 'Verified'),
     ]
-    adm_status = models.CharField(max_length=20, choices=ADM_STATUS_CHOICES, default='cancel')
+    adm_status = models.CharField(max_length=20, choices=ADM_STATUS_CHOICES, default='pending')
 
     name = models.CharField(max_length=200)
     address = models.TextField()

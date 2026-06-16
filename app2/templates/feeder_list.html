@@ -230,6 +230,11 @@ tbody tr:has(.status-dropdown .show) {
   color: #c62828;
 }
 
+.adm-status-pending {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
 .adm-status-verified {
   background-color: #e0f2f1;
   color: #00695c;
@@ -568,12 +573,21 @@ select {
             {% endif %}
           </td>
           <td>
-            <button type="button"
-                    class="adm-status-btn adm-status-{{ feeder.adm_status }}"
-                    data-feeder-id="{{ feeder.id }}"
-                    onclick="toggleAdmStatus(this)">
-              {{ feeder.get_adm_status_display }}
-            </button>
+            <div class="status-dropdown" id="adm-status-dropdown-{{ feeder.id }}">
+              <button type="button"
+                      class="adm-status-btn adm-status-{{ feeder.adm_status }}"
+                      id="adm-status-btn-{{ feeder.id }}"
+                      data-feeder-id="{{ feeder.id }}"
+                      data-current-status="{{ feeder.adm_status }}"
+                      onclick="toggleAdmStatusDropdown({{ feeder.id }}, event)">
+                {{ feeder.get_adm_status_display }}
+              </button>
+              <div class="status-dropdown-content">
+                <button type="button" onclick="updateAdmStatus({{ feeder.id }}, 'pending', event)">Pending</button>
+                <button type="button" onclick="updateAdmStatus({{ feeder.id }}, 'cancel', event)">Cancel</button>
+                <button type="button" onclick="updateAdmStatus({{ feeder.id }}, 'verified', event)">Verified</button>
+              </div>
+            </div>
           </td>
           <td class="actions">
             <a href="{% url 'feeder_edit' feeder.id %}" class="btn btn-edit">Edit</a>
@@ -633,12 +647,50 @@ const ADM_STATUS_URL_TEMPLATE = "{% url 'feeder_adm_status_update' 0 %}";
 const STATUS_URL_TEMPLATE = "{% url 'feeder_status_update' 0 %}";
 </script>
 <script>
-// Toggle Adm Status between Cancel and Verified
-function toggleAdmStatus(btn) {
-    const feederId = btn.getAttribute('data-feeder-id');
-    const isCancel = btn.classList.contains('adm-status-cancel');
-    const newStatus = isCancel ? 'verified' : 'cancel';
+// Toggle Adm Status dropdown
+function toggleAdmStatusDropdown(feederId, event) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+
+    const dropdown = document.querySelector(`#adm-status-dropdown-${feederId}`);
+    const dropdownContent = dropdown.querySelector('.status-dropdown-content');
+
+    if (!dropdownContent) return;
+
+    document.querySelectorAll('.status-dropdown-content').forEach(d => {
+        if (d !== dropdownContent) {
+            d.classList.remove('show');
+            const parentRow = d.closest('tr');
+            if (parentRow) parentRow.style.zIndex = '1';
+        }
+    });
+
+    const isShowing = dropdownContent.classList.toggle('show');
+    const parentRow = dropdown.closest('tr');
+    if (parentRow) parentRow.style.zIndex = isShowing ? '1001' : '1';
+}
+
+// Update Adm Status
+function updateAdmStatus(feederId, newStatus, event) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+
+    const dropdown = document.querySelector(`#adm-status-dropdown-${feederId}`);
+    const dropdownContent = dropdown.querySelector('.status-dropdown-content');
+    if (dropdownContent) {
+        dropdownContent.classList.remove('show');
+        const parentRow = dropdown.closest('tr');
+        if (parentRow) parentRow.style.zIndex = '1';
+    }
+
     const csrftoken = getCookie('csrftoken');
+    const btn = document.getElementById(`adm-status-btn-${feederId}`);
+
+    if (!btn) return;
 
     const originalText = btn.textContent;
     const originalClass = btn.className;
@@ -664,6 +716,7 @@ function toggleAdmStatus(btn) {
         if (data.success) {
             btn.textContent = data.new_status;
             btn.className = `adm-status-btn adm-status-${data.adm_status}`;
+            btn.setAttribute('data-current-status', data.adm_status);
         } else {
             throw new Error(data.error || 'Unknown error occurred');
         }
