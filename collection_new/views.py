@@ -6,6 +6,7 @@ from django.http import JsonResponse
 import urllib.request
 import urllib.parse
 import json
+import logging
 
 from rest_framework.decorators import api_view, parser_classes, authentication_classes
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
@@ -15,6 +16,9 @@ from rest_framework import status
 from .models import Collection
 from .forms import CollectionForm
 from .serializers import CollectionSerializer
+from .cloudflare_storage import upload_to_cloudflare, delete_from_cloudflare
+
+logger = logging.getLogger(__name__)
 
 
 # ── Acc-Master client IDs per company ────────────────────────────────────────
@@ -109,6 +113,20 @@ def collection_add(request):
         if form.is_valid():
             obj = form.save(commit=False)
             obj.created_by = request.user
+            
+            # Upload file to Cloudflare R2 if provided
+            if request.FILES.get('payment_proof'):
+                file_obj = request.FILES['payment_proof']
+                result = upload_to_cloudflare(file_obj)
+                if result['success']:
+                    obj.cloudflare_r2_url = result['r2_url']
+                    obj.cloudflare_r2_key = result['file_key']
+                    obj.payment_proof = None  # Don't save locally, only in R2
+                    logger.info(f"File uploaded to R2: {result['file_key']}")
+                else:
+                    logger.warning(f"Failed to upload to R2: {result['error']}")
+                    messages.warning(request, 'Failed to upload to Cloudflare R2.')
+            
             obj.save()
             messages.success(request, 'Collection added successfully.')
             return redirect('collection_new:collection_list')
@@ -130,6 +148,28 @@ def collection_edit(request, pk):
     if request.method == 'POST':
         form = CollectionForm(request.POST, request.FILES, instance=obj)
         if form.is_valid():
+            # Handle Cloudflare R2 file upload/replacement
+            if request.FILES.get('payment_proof'):
+                # Delete old R2 file if exists
+                if obj.cloudflare_r2_key:
+                    delete_result = delete_from_cloudflare(obj.cloudflare_r2_key)
+                    if delete_result['success']:
+                        logger.info(f"Old R2 file deleted: {obj.cloudflare_r2_key}")
+                    else:
+                        logger.warning(f"Failed to delete old R2 file: {delete_result['message']}")
+                
+                # Upload new file to Cloudflare R2
+                file_obj = request.FILES['payment_proof']
+                result = upload_to_cloudflare(file_obj)
+                if result['success']:
+                    obj.cloudflare_r2_url = result['r2_url']
+                    obj.cloudflare_r2_key = result['file_key']
+                    obj.payment_proof = None  # Don't save locally, only in R2
+                    logger.info(f"New file uploaded to R2: {result['file_key']}")
+                else:
+                    logger.warning(f"Failed to upload new file to R2: {result['error']}")
+                    messages.warning(request, 'Failed to upload to Cloudflare R2.')
+            
             form.save()
             messages.success(request, 'Collection updated successfully.')
             return redirect('collection_new:collection_list')
