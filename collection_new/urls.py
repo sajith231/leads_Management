@@ -30,6 +30,10 @@ urlpatterns = [
          views.acc_master_proxy,
          name='acc_master_proxy'),
 
+    path('acc-dept-proxy/',
+         views.acc_departments_proxy,
+         name='acc_departments_proxy'),
+
     # ── REST API (mobile app) ─────────────────────────────────────────────────
     path('collections/api/list/',
          views.api_collection_list,

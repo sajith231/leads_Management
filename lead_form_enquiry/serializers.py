@@ -8,4 +8,4 @@ class EnquirySerializer(serializers.ModelSerializer):
             'id', 'date', 'creator', 'owner_name', 'shop_name', 'location',
             'phone_number', 'purpose', 'notes', 'latitude', 'longitude'
         ]
-        read_only_fields = ['id', 'date', 'creator']
+        read_only_fields = ['id', 'date']

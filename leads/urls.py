@@ -62,6 +62,7 @@ urlpatterns = [
     path("api/", include("lead_form_api.urls")),
     path("enquiry/", include("lead_form_enquiry.urls")),
     path('collection/', include('collection_new.urls', namespace='collection_new')),
+    path('rrc_clients_new/', include('rrc_clients_new.urls', namespace='rrc_clients_new')),
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

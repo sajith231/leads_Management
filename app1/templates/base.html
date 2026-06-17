@@ -763,7 +763,10 @@
     <i class="fas fa-coins"></i> IMCB LLP
 </a> 
 <a href="{% url 'collection_new:collection_list' %}">
-    <i class="fas fa-hand-holding-usd"></i> Collection
+    <i class="fas fa-hand-holding-usd"></i> COLLECTION
+</a>
+<a href="{% url 'rrc_clients_new:rrc_clients2_list' %}">
+    <i class="fas fa-users"></i> RRC Clients2
 </a>
 <!-- <a href="{% url 'imc2_list'%}">
     <i class="fas fa-hand-holding-usd"></i> IMC
@@ -1340,14 +1343,19 @@
         </a>
         {% endif %} -->
       {% if 'sysmac_info_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-<a href="{% url 'collection_new:collection_list' %}">
-    <i class="fas fa-money-check"></i> Collection
-</a>
-{% endif %}
+      <a href="{% url 'collection_new:collection_list' %}">
+      <i class="fas fa-money-check"></i> COLLECTION
+      </a>
+      {% endif %}
 
         {% if 'sysmac_info_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
         <a href="{% url 'sysmac_info_list' %}">
             <i class="fas fa-money-check"></i> SYSMAC-INFO
+        </a>
+        {% endif %}
+        {% if 'RRC_Clients2' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        <a href="{% url 'collection_new:collection_list' %}">
+        <i class="fas fa-hand-holding-usd"></i> RRC Clients2
         </a>
         {% endif %}
 

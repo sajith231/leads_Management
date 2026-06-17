@@ -19,6 +19,7 @@ from .serializers import CollectionSerializer
 
 # ── Acc-Master client IDs per company ────────────────────────────────────────
 ACC_API_URL = 'https://accmaster.imcbs.com/api/sync/acc-master/'
+ACC_DEPT_API_URL = 'https://accmaster.imcbs.com/api/sync/acc-departments/'
 
 COMPANY_CLIENT_IDS = {
     'Sysmac Computers': 'GW9Q6NQQ5ONRU',
@@ -43,6 +44,31 @@ def acc_master_proxy(request):
     try:
         with urllib.request.urlopen(url, timeout=10) as resp:
             data = json.loads(resp.read().decode())
+        return JsonResponse(data, safe=False)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=502)
+
+
+@login_required
+def acc_departments_proxy(request):
+    """
+    Server-side proxy for the Acc-Departments API — avoids CORS.
+    Usage: /collection/acc-dept-proxy/?company=Sysmac+Computers
+    Returns departments filtered to the company's client_id.
+    """
+    company = request.GET.get('company', '')
+    client_id = COMPANY_CLIENT_IDS.get(company)
+
+    if not client_id:
+        return JsonResponse({'error': 'Unknown company'}, status=400)
+
+    url = f'{ACC_DEPT_API_URL}?client_id={urllib.parse.quote(client_id)}'
+    try:
+        with urllib.request.urlopen(url, timeout=10) as resp:
+            data = json.loads(resp.read().decode())
+        # Filter to only departments matching this company's client_id
+        if isinstance(data, list):
+            data = [d for d in data if d.get('client_id') == client_id]
         return JsonResponse(data, safe=False)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=502)
