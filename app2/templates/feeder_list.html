@@ -213,6 +213,33 @@ tbody tr:has(.status-dropdown .show) {
   color: #4a148c;
 }
 
+.adm-status-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+  min-width: 100px;
+  text-align: center;
+  display: inline-block;
+}
+
+.adm-status-cancel {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.adm-status-pending {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.adm-status-verified {
+  background-color: #e0f2f1;
+  color: #00695c;
+}
+
 .status-dropdown-content {
   display: none;
   position: absolute;
@@ -352,6 +379,10 @@ select {
   background: #5a6268;
 }
 
+#apply-filters:hover {
+  background: #3d5af1 !important;
+}
+
 .date-filter-group {
   display: flex;
   align-items: center;
@@ -457,12 +488,17 @@ select {
         </select>
       </div>
 
+      <button type="button" id="apply-filters" class="clear-btn" style="background:#4d6bf9;">
+        Filter
+      </button>
+
       <button type="button" id="clear-filters" class="clear-btn">
         Clear All
       </button>
     </form>
   </div>
 
+  <div id="results-container">
   <div class="total-count">
     Total Records: {{ page_obj.paginator.count }}
   </div>
@@ -481,6 +517,7 @@ select {
           <th>Software Amount</th>
           <th>More Modules</th>
           <th>Status</th>
+          <th>Adm Status</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -535,6 +572,23 @@ select {
             </span>
             {% endif %}
           </td>
+          <td>
+            <div class="status-dropdown" id="adm-status-dropdown-{{ feeder.id }}">
+              <button type="button"
+                      class="adm-status-btn adm-status-{{ feeder.adm_status }}"
+                      id="adm-status-btn-{{ feeder.id }}"
+                      data-feeder-id="{{ feeder.id }}"
+                      data-current-status="{{ feeder.adm_status }}"
+                      onclick="toggleAdmStatusDropdown({{ feeder.id }}, event)">
+                {{ feeder.get_adm_status_display }}
+              </button>
+              <div class="status-dropdown-content">
+                <button type="button" onclick="updateAdmStatus({{ feeder.id }}, 'pending', event)">Pending</button>
+                <button type="button" onclick="updateAdmStatus({{ feeder.id }}, 'cancel', event)">Cancel</button>
+                <button type="button" onclick="updateAdmStatus({{ feeder.id }}, 'verified', event)">Verified</button>
+              </div>
+            </div>
+          </td>
           <td class="actions">
             <a href="{% url 'feeder_edit' feeder.id %}" class="btn btn-edit">Edit</a>
             <form method="post" action="{% url 'feeder_delete' feeder.id %}" style="display:inline; margin: 0;" onsubmit="return confirm('Are you sure you want to delete this feeder?')">
@@ -586,9 +640,97 @@ select {
     </div>
     {% endif %}
   </div>
+  </div>
 </div>
-
 <script>
+const ADM_STATUS_URL_TEMPLATE = "{% url 'feeder_adm_status_update' 0 %}";
+const STATUS_URL_TEMPLATE = "{% url 'feeder_status_update' 0 %}";
+</script>
+<script>
+// Toggle Adm Status dropdown
+function toggleAdmStatusDropdown(feederId, event) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+
+    const dropdown = document.querySelector(`#adm-status-dropdown-${feederId}`);
+    const dropdownContent = dropdown.querySelector('.status-dropdown-content');
+
+    if (!dropdownContent) return;
+
+    document.querySelectorAll('.status-dropdown-content').forEach(d => {
+        if (d !== dropdownContent) {
+            d.classList.remove('show');
+            const parentRow = d.closest('tr');
+            if (parentRow) parentRow.style.zIndex = '1';
+        }
+    });
+
+    const isShowing = dropdownContent.classList.toggle('show');
+    const parentRow = dropdown.closest('tr');
+    if (parentRow) parentRow.style.zIndex = isShowing ? '1001' : '1';
+}
+
+// Update Adm Status
+function updateAdmStatus(feederId, newStatus, event) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+
+    const dropdown = document.querySelector(`#adm-status-dropdown-${feederId}`);
+    const dropdownContent = dropdown.querySelector('.status-dropdown-content');
+    if (dropdownContent) {
+        dropdownContent.classList.remove('show');
+        const parentRow = dropdown.closest('tr');
+        if (parentRow) parentRow.style.zIndex = '1';
+    }
+
+    const csrftoken = getCookie('csrftoken');
+    const btn = document.getElementById(`adm-status-btn-${feederId}`);
+
+    if (!btn) return;
+
+    const originalText = btn.textContent;
+    const originalClass = btn.className;
+
+    btn.textContent = 'Updating...';
+    btn.disabled = true;
+
+    const url = ADM_STATUS_URL_TEMPLATE.replace('/0/', `/${feederId}/`);
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({ adm_status: newStatus })
+    })
+    .then(response => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            btn.textContent = data.new_status;
+            btn.className = `adm-status-btn adm-status-${data.adm_status}`;
+            btn.setAttribute('data-current-status', data.adm_status);
+        } else {
+            throw new Error(data.error || 'Unknown error occurred');
+        }
+    })
+    .catch(error => {
+        btn.textContent = originalText;
+        btn.className = originalClass;
+        alert(`Error updating Adm Status: ${error.message}`);
+    })
+    .finally(() => {
+        btn.disabled = false;
+    });
+}
+
 // Get CSRF token
 function getCookie(name) {
     let cookieValue = null;
@@ -698,7 +840,7 @@ function updateStatus(feederId, newStatus, event) {
     });
 }
 
-// Filter form functionality
+// Filter form functionality - AJAX based (no page refresh), filters apply only on Filter button click
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('search-input');
     const branchSelect = document.getElementById('branch-select');
@@ -706,50 +848,121 @@ document.addEventListener('DOMContentLoaded', function() {
     const dateFrom = document.getElementById('date-from');
     const dateTo = document.getElementById('date-to');
     const perPageSelect = document.getElementById('per-page-select');
+    const applyButton = document.getElementById('apply-filters');
     const clearButton = document.getElementById('clear-filters');
     const filterForm = document.getElementById('filter-form');
+    const resultsContainer = document.getElementById('results-container');
 
-    // Set today's date as default and max for both date inputs
+    // On a normal page refresh (not an AJAX-driven navigation), reset filters
+    // and show the full unfiltered list — old default behavior.
+    if (window.location.search && !sessionStorage.getItem('feeder_ajax_nav')) {
+        window.location.replace(window.location.pathname);
+        return;
+    }
+    sessionStorage.removeItem('feeder_ajax_nav');
+
+    // Force date fields blank by default (ignore any pre-filled value from server)
     const today = new Date().toISOString().split('T')[0];
     if (dateFrom) {
         dateFrom.max = today;
-        if (!dateFrom.value) dateFrom.value = today;
+        dateFrom.value = '';
     }
     if (dateTo) {
         dateTo.max = today;
-        if (!dateTo.value) dateTo.value = today;
+        dateTo.value = '';
     }
 
-    let searchTimeout;
-    let lastSearchValue = searchInput ? searchInput.value : '';
+    let activeRequestController = null;
 
-    function debounceSearch() {
-        clearTimeout(searchTimeout);
-        const currentValue = searchInput.value;
-        if (currentValue !== lastSearchValue) {
-            searchTimeout = setTimeout(() => {
-                lastSearchValue = currentValue;
-                filterForm.submit();
-            }, 500);
+    // Load results via AJAX and swap into results container, without reloading the page
+    function loadResults(pushUrl) {
+        const params = new URLSearchParams(new FormData(filterForm));
+        for (const key of Array.from(params.keys())) {
+            if (!params.get(key)) params.delete(key);
         }
+        const queryString = params.toString();
+        const url = window.location.pathname + (queryString ? '?' + queryString : '');
+
+        // Cancel any in-flight request so older responses can't overwrite newer results
+        if (activeRequestController) activeRequestController.abort();
+        activeRequestController = new AbortController();
+
+        if (resultsContainer) resultsContainer.style.opacity = '0.6';
+
+        fetch(url, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            signal: activeRequestController.signal
+        })
+        .then(response => {
+            if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            return response.text();
+        })
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newResults = doc.getElementById('results-container');
+            if (newResults && resultsContainer) {
+                resultsContainer.innerHTML = newResults.innerHTML;
+                bindPaginationLinks();
+            }
+            if (resultsContainer) resultsContainer.style.opacity = '1';
+
+            if (pushUrl) {
+                sessionStorage.setItem('feeder_ajax_nav', '1');
+                window.history.pushState({}, '', url);
+            }
+        })
+        .catch(error => {
+            if (error.name === 'AbortError') return;
+            if (resultsContainer) resultsContainer.style.opacity = '1';
+            console.error('Error loading results:', error);
+        });
     }
 
+    // Intercept pagination links inside the results container so they also use AJAX
+    function bindPaginationLinks() {
+        if (!resultsContainer) return;
+        resultsContainer.querySelectorAll('.pagination a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const href = this.getAttribute('href');
+                if (!href) return;
+                const params = new URLSearchParams(href.split('?')[1] || '');
+                let pageInput = filterForm.querySelector('input[name="page"]');
+                if (!pageInput) {
+                    pageInput = document.createElement('input');
+                    pageInput.type = 'hidden';
+                    pageInput.name = 'page';
+                    filterForm.appendChild(pageInput);
+                }
+                pageInput.value = params.get('page') || '1';
+                loadResults(true);
+            });
+        });
+    }
+
+    function resetPage() {
+        const pageInput = filterForm.querySelector('input[name="page"]');
+        if (pageInput) pageInput.value = '1';
+    }
+
+    function applyFilters() {
+        resetPage();
+        loadResults(true);
+    }
+
+    // Search box: only filter on Enter key (typing alone does nothing)
     if (searchInput) {
-        searchInput.addEventListener('input', debounceSearch);
         searchInput.addEventListener('keyup', function(e) {
             if (e.key === 'Enter') {
-                clearTimeout(searchTimeout);
-                lastSearchValue = searchInput.value;
-                filterForm.submit();
+                e.preventDefault();
+                applyFilters();
             }
         });
     }
 
-    if (branchSelect) branchSelect.addEventListener('change', () => filterForm.submit());
-    if (statusSelect) statusSelect.addEventListener('change', () => filterForm.submit());
-    if (dateFrom) dateFrom.addEventListener('change', () => filterForm.submit());
-    if (dateTo) dateTo.addEventListener('change', () => filterForm.submit());
-    if (perPageSelect) perPageSelect.addEventListener('change', () => filterForm.submit());
+    // Filter button applies all current filter values
+    if (applyButton) applyButton.addEventListener('click', applyFilters);
 
     if (clearButton) {
         clearButton.addEventListener('click', function() {
@@ -759,13 +972,23 @@ document.addEventListener('DOMContentLoaded', function() {
             if (dateFrom) dateFrom.value = '';
             if (dateTo) dateTo.value = '';
             if (perPageSelect) perPageSelect.value = '10';
-            window.location.href = window.location.pathname;
+            resetPage();
+            loadResults(true);
         });
     }
 
-    filterForm.addEventListener('submit', function() {
-        document.body.style.cursor = 'wait';
+    // Prevent normal form submission (Enter key on date inputs etc.) from reloading the page
+    filterForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        applyFilters();
     });
+
+    // Support browser back/forward navigation
+    window.addEventListener('popstate', function() {
+        loadResults(false);
+    });
+
+    bindPaginationLinks();
 
     const csrfToken = getCookie('csrftoken');
     if (!csrfToken) console.warn('CSRF token not found. Status updates may fail.');

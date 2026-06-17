@@ -1,6 +1,6 @@
 from django.db import models
 
-# Create your models here.
+# Create your models heree.
 class SIM(models.Model):
     sim_no = models.CharField(max_length=50, unique=True)
     provider = models.CharField(max_length=100)
