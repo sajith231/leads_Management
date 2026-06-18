@@ -1,5 +1,5 @@
 """
-Cloudflare R2 Storage utility for collection_new app.
+Cloudflare R2 Storage utility - Shared across all apps.
 Handles upload and deletion of files to/from Cloudflare R2 bucket.
 """
 
@@ -23,13 +23,13 @@ def get_cloudflare_client():
     return s3_client
 
 
-def upload_to_cloudflare(file_obj, folder_name='collection_proofs'):
+def upload_to_cloudflare(file_obj, folder_name='files'):
     """
     Upload a file to Cloudflare R2 bucket.
     
     Args:
         file_obj: Django UploadedFile object
-        folder_name: Subfolder in R2 bucket (default: 'collection_proofs')
+        folder_name: Subfolder in R2 bucket (default: 'files')
     
     Returns:
         dict: {
@@ -100,15 +100,9 @@ def delete_from_cloudflare(file_key):
         file_key: S3 object key (path to file in bucket)
     
     Returns:
-        dict: {
-            'success': bool,
-            'message': str
-        }
+        dict: {'success': bool, 'message': str}
     """
     try:
-        if not file_key:
-            return {'success': False, 'message': 'No file key provided'}
-        
         bucket_name = os.getenv('CLOUDFLARE_R2_BUCKET')
         
         if not bucket_name:
@@ -122,44 +116,43 @@ def delete_from_cloudflare(file_key):
         
         return {
             'success': True,
-            'message': f'File {file_key} deleted from R2'
+            'message': f'Successfully deleted {file_key}'
         }
     
     except Exception as e:
         return {
             'success': False,
-            'message': f'Error deleting from R2: {str(e)}'
+            'message': str(e)
         }
 
 
 def extract_file_key_from_url(r2_url):
     """
-    Extract the S3 file key from a Cloudflare R2 public URL.
-    
-    Example:
-        Input: 'https://pub-c6ea6704a0934283858ca72635398d92.r2.dev/collection_proofs/file.pdf'
-        Output: 'collection_proofs/file.pdf'
+    Extract the S3 object key (file path) from a Cloudflare R2 public URL.
     
     Args:
-        r2_url: Cloudflare R2 public URL
+        r2_url: The public URL from Cloudflare R2
+        Example: https://cdn.example.com/collection_proofs/document.pdf
     
     Returns:
-        str: File key, or None if URL format is invalid
+        str: The S3 object key (e.g., 'collection_proofs/document.pdf')
     """
     try:
-        if not r2_url:
-            return None
-        
         public_url_base = os.getenv('CLOUDFLARE_R2_PUBLIC_URL')
+        
         if not public_url_base:
             return None
         
-        # Remove base URL to get file key
+        # Remove trailing slash from public URL base if present
+        public_url_base = public_url_base.rstrip('/')
+        
+        # Check if URL starts with public URL base
         if r2_url.startswith(public_url_base):
+            # Extract the file key by removing the public URL base and leading slash
             file_key = r2_url[len(public_url_base):].lstrip('/')
             return file_key
         
         return None
     
-    except Exception:
+    except Exception as e:
         return None

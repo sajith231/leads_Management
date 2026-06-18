@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Collection
-from .cloudflare_storage import upload_to_cloudflare, extract_file_key_from_url
+from common.cloudflare_storage import upload_to_cloudflare, extract_file_key_from_url
 
 
 class CollectionSerializer(serializers.ModelSerializer):
@@ -98,7 +98,7 @@ class CollectionSerializer(serializers.ModelSerializer):
         if payment_proof:
             # Delete old R2 file if exists
             if instance.cloudflare_r2_key:
-                from .cloudflare_storage import delete_from_cloudflare
+                from common.cloudflare_storage import delete_from_cloudflare
                 delete_from_cloudflare(instance.cloudflare_r2_key)
             
             self._upload_to_cloudflare(instance, payment_proof)
@@ -110,7 +110,7 @@ class CollectionSerializer(serializers.ModelSerializer):
 
     def _upload_to_cloudflare(self, instance, file_obj):
         """Helper method to upload file to Cloudflare R2."""
-        result = upload_to_cloudflare(file_obj)
+        result = upload_to_cloudflare(file_obj, folder_name='collection_proofs')
         
         if result['success']:
             instance.cloudflare_r2_url = result['r2_url']

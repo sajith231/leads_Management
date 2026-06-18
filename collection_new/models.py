@@ -62,7 +62,7 @@ def delete_cloudflare_file(sender, instance, **kwargs):
     """
     if instance.cloudflare_r2_key:
         try:
-            from .cloudflare_storage import delete_from_cloudflare
+            from common.cloudflare_storage import delete_from_cloudflare
             result = delete_from_cloudflare(instance.cloudflare_r2_key)
             if result['success']:
                 logger.info(f"Deleted R2 file: {instance.cloudflare_r2_key}")

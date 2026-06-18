@@ -16,7 +16,7 @@ from rest_framework import status
 from .models import Collection
 from .forms import CollectionForm
 from .serializers import CollectionSerializer
-from .cloudflare_storage import upload_to_cloudflare, delete_from_cloudflare
+from common.cloudflare_storage import upload_to_cloudflare, delete_from_cloudflare
 
 logger = logging.getLogger(__name__)
 
@@ -179,7 +179,7 @@ def collection_add(request):
             # Upload file to Cloudflare R2 if provided
             if request.FILES.get('payment_proof'):
                 file_obj = request.FILES['payment_proof']
-                result = upload_to_cloudflare(file_obj)
+                result = upload_to_cloudflare(file_obj, folder_name='collection_proofs')
                 if result['success']:
                     obj.cloudflare_r2_url = result['r2_url']
                     obj.cloudflare_r2_key = result['file_key']
@@ -222,7 +222,7 @@ def collection_edit(request, pk):
                 
                 # Upload new file to Cloudflare R2
                 file_obj = request.FILES['payment_proof']
-                result = upload_to_cloudflare(file_obj)
+                result = upload_to_cloudflare(file_obj, folder_name='collection_proofs')
                 if result['success']:
                     obj.cloudflare_r2_url = result['r2_url']
                     obj.cloudflare_r2_key = result['file_key']
