@@ -6,6 +6,7 @@ class EnquirySerializer(serializers.ModelSerializer):
         model  = Enquiry
         fields = [
             'id', 'date', 'creator', 'owner_name', 'shop_name', 'location',
-            'phone_number', 'purpose', 'notes', 'latitude', 'longitude'
+            'phone_number', 'purpose', 'notes', 'latitude', 'longitude',
+            'image', 'audio',
         ]
         read_only_fields = ['id', 'date']

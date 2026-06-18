@@ -21,6 +21,9 @@ def enquiry_add(request):
         latitude     = request.POST.get('latitude', '').strip() or None
         longitude    = request.POST.get('longitude', '').strip() or None
 
+        image = request.FILES.get('image') or None
+        audio = request.FILES.get('audio') or None
+
         if shop_name and location and purpose:
             Enquiry.objects.create(
                 owner_name=owner_name,
@@ -32,6 +35,8 @@ def enquiry_add(request):
                 latitude=latitude,
                 longitude=longitude,
                 creator=request.user.username,
+                image=image,
+                audio=audio,
             )
             return redirect('enquiry_list')
 
@@ -53,6 +58,12 @@ def enquiry_edit(request, pk):
         lng = request.POST.get('longitude', '').strip()
         enquiry.latitude     = lat or None
         enquiry.longitude    = lng or None
+
+        if request.FILES.get('image'):
+            enquiry.image = request.FILES['image']
+        if request.FILES.get('audio'):
+            enquiry.audio = request.FILES['audio']
+
         enquiry.save()
         return redirect('enquiry_list')
 

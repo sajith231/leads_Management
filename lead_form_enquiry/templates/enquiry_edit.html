@@ -258,6 +258,141 @@
       pointer-events: none;
     }
 
+    /* ── Media upload section ─────────────────────────────── */
+    .media-section {
+      display: flex;
+      gap: .6rem;
+      margin-bottom: .9rem;
+    }
+    .media-box {
+      flex: 1;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      background: #fafbfc;
+      padding: .4rem;
+      display: flex;
+      flex-direction: column;
+      gap: .25rem;
+    }
+    .media-box-title {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .04em;
+      text-transform: capitalize;
+      color: #303133;
+      display: flex;
+      align-items: center;
+      gap: .3rem;
+    }
+    .media-box-title svg { flex-shrink: 0; }
+
+    /* Image preview */
+    #imagePreview {
+      width: 100%;
+      height: 60px;
+      border-radius: 5px;
+      object-fit: cover;
+      border: 1px solid var(--border);
+      background: #eef1f5;
+      display: none;
+    }
+    #imagePreview.visible { display: block; }
+    .img-placeholder {
+      width: 100%;
+      height: 60px;
+      border-radius: 5px;
+      border: 1.5px dashed var(--border);
+      background: #f4f6f9;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: .4rem;
+      color: var(--muted);
+      font-size: .68rem;
+    }
+    .img-placeholder.hidden { display: none; }
+
+    /* Audio visualiser */
+    .audio-vis {
+      width: 100%;
+      height: 22px;
+      border-radius: 5px;
+      background: #f0f4f8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      overflow: hidden;
+    }
+    .audio-vis .bar {
+      width: 3px;
+      border-radius: 2px;
+      background: var(--accent);
+      height: 4px;
+      transition: height .1s;
+    }
+    audio#audioPlayback {
+      width: 100%;
+      height: 22px;
+      display: none;
+      border-radius: 5px;
+      outline: none;
+    }
+    audio#audioPlayback.visible { display: block; }
+
+    /* Shared media buttons */
+    .media-btn-row {
+      display: flex;
+      gap: .3rem;
+      flex-wrap: wrap;
+    }
+    .media-btn {
+      flex: 1;
+      min-width: 56px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: .22rem;
+      padding: .3rem .4rem;
+      border-radius: 6px;
+      border: 1.5px solid var(--border);
+      background: #fff;
+      font-family: 'Google Sans', sans-serif;
+      font-size: .68rem;
+      font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background .15s, border-color .15s, color .15s;
+    }
+    .media-btn:hover { background: var(--accent-lt); border-color: var(--accent); color: var(--accent); }
+    .media-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .media-btn.danger { border-color: #e0d0d0; color: var(--error); }
+    .media-btn.danger:hover { background: #fdf0ef; border-color: var(--error); }
+    .media-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+    .media-status {
+      font-size: .68rem;
+      color: var(--muted);
+      min-height: .9em;
+      line-height: 1.2;
+    }
+    .media-status.ok    { color: var(--success); }
+    .media-status.error { color: var(--error); }
+    .media-status.rec   { color: #c0392b; display: flex; align-items: center; gap: .3rem; }
+    .rec-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #c0392b;
+      animation: blink 1s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+
+    /* hidden real file input */
+    #imageFileInput { display: none; }
+
     .actions {
       display: flex;
       gap: .75rem;
@@ -384,6 +519,7 @@
       .field-row .field { margin-bottom: 1.25rem; }
       .inline-fields { flex-direction: column; gap: 0; }
       .inline-fields .field { margin-bottom: 1.25rem; }
+      .media-section { flex-direction: column; }
     }
   </style>
 </head>
@@ -404,7 +540,7 @@
       </div>
       {% endif %}
 
-      <form method="POST" action="{% url 'enquiry_edit' enquiry.pk %}">
+      <form method="POST" action="{% url 'enquiry_edit' enquiry.pk %}" enctype="multipart/form-data">
         {% csrf_token %}
 
         <div class="inline-fields" style="margin-bottom:1.25rem;">
@@ -481,6 +617,122 @@
             <span class="combo-chevron" id="comboChevron">▼</span>
           </div>
         </div>
+
+        <!-- ── Media Uploads ─────────────────────────────── -->
+        <div class="media-section">
+
+          <!-- IMAGE BOX -->
+          <div class="media-box">
+            <div class="media-box-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              Photo
+            </div>
+
+            <!-- placeholder shown before capture -->
+            <div class="img-placeholder {% if enquiry.image %}hidden{% endif %}" id="imgPlaceholder">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#b0bac6" stroke-width="1.5">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <span>No photo yet</span>
+            </div>
+
+            <!-- preview after capture / file pick (or existing saved image) -->
+            <img id="imagePreview" alt="Image preview" {% if enquiry.image %}src="{{ enquiry.image.url }}" class="visible"{% endif %} />
+
+            <!-- hidden canvas used for camera capture -->
+            <canvas id="captureCanvas" style="display:none;"></canvas>
+
+            <!-- hidden video element for live camera -->
+            <video id="cameraStream" style="display:none; width:100%; border-radius:6px; background:#000;" autoplay playsinline muted></video>
+
+            <!-- hidden real file input (for pick-from-gallery) -->
+            <input type="file" id="imageFileInput" name="image" accept="image/*" />
+
+            <div class="media-btn-row">
+              <button type="button" class="media-btn" id="btnCameraOpen">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                  <circle cx="12" cy="13" r="4"/>
+                </svg>
+                Camera
+              </button>
+              <button type="button" class="media-btn" id="btnCapture" style="display:none;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4" fill="currentColor"/>
+                </svg>
+                Capture
+              </button>
+              <button type="button" class="media-btn" id="btnGallery">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+                Gallery
+              </button>
+              <button type="button" class="media-btn danger" id="btnImgClear" style="{% if not enquiry.image %}display:none;{% endif %}">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/>
+                </svg>
+                Remove
+              </button>
+            </div>
+            <div class="media-status" id="imgStatus">{% if enquiry.image %}✔ Existing photo{% endif %}</div>
+          </div>
+
+          <!-- AUDIO BOX -->
+          <div class="media-box">
+            <div class="media-box-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
+              </svg>
+              Audio Note
+            </div>
+
+            <!-- waveform bars (animated during recording) -->
+            <div class="audio-vis" id="audioVis" {% if enquiry.audio %}style="display:none;"{% endif %}>
+              <div class="bar" id="b1"></div><div class="bar" id="b2"></div>
+              <div class="bar" id="b3"></div><div class="bar" id="b4"></div>
+              <div class="bar" id="b5"></div><div class="bar" id="b6"></div>
+              <div class="bar" id="b7"></div><div class="bar" id="b8"></div>
+              <div class="bar" id="b9"></div><div class="bar" id="b10"></div>
+              <div class="bar" id="b11"></div><div class="bar" id="b12"></div>
+            </div>
+
+            <!-- playback element shown after recording (or existing saved audio) -->
+            <audio id="audioPlayback" controls {% if enquiry.audio %}src="{{ enquiry.audio.url }}" class="visible"{% endif %}></audio>
+
+            <!-- hidden file input that holds the recorded blob for form submission -->
+            <input type="file" id="audioFileInput" name="audio" accept="audio/*" style="display:none;" />
+
+            <div class="media-btn-row">
+              <button type="button" class="media-btn" id="btnRecord">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="6" fill="currentColor"/>
+                </svg>
+                Record
+              </button>
+              <button type="button" class="media-btn" id="btnStopRecord" disabled>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="4" y="4" width="16" height="16" rx="2" fill="currentColor"/>
+                </svg>
+                Stop
+              </button>
+              <button type="button" class="media-btn danger" id="btnAudioClear" style="{% if not enquiry.audio %}display:none;{% endif %}">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+                </svg>
+                Discard
+              </button>
+            </div>
+            <div class="media-status" id="audioStatus">{% if enquiry.audio %}✔ Existing recording{% endif %}</div>
+          </div>
+
+        </div><!-- /media-section -->
 
         <div class="field">
           <label for="notes">Notes</label>
@@ -673,6 +925,204 @@
       },
       { timeout: 10000, maximumAge: 60000 }
     );
+  });
+
+  /* ── IMAGE capture / gallery ──────────────────────────────── */
+  const btnCameraOpen  = document.getElementById('btnCameraOpen');
+  const btnCapture     = document.getElementById('btnCapture');
+  const btnGallery     = document.getElementById('btnGallery');
+  const btnImgClear    = document.getElementById('btnImgClear');
+  const imagePreview   = document.getElementById('imagePreview');
+  const imgPlaceholder = document.getElementById('imgPlaceholder');
+  const captureCanvas  = document.getElementById('captureCanvas');
+  const cameraStream   = document.getElementById('cameraStream');
+  const imageFileInput = document.getElementById('imageFileInput');
+  const imgStatus      = document.getElementById('imgStatus');
+  let cameraActive     = false;
+  let activeCamStream  = null;
+
+  function showImagePreview(src) {
+    imagePreview.src = src;
+    imagePreview.classList.add('visible');
+    imgPlaceholder.classList.add('hidden');
+    btnImgClear.style.display = '';
+    imgStatus.textContent = '✔ Photo ready';
+    imgStatus.className = 'media-status ok';
+  }
+
+  function clearImage() {
+    imagePreview.src = '';
+    imagePreview.classList.remove('visible');
+    imgPlaceholder.classList.remove('hidden');
+    btnImgClear.style.display = 'none';
+    imgStatus.textContent = '';
+    imgStatus.className = 'media-status';
+    // reset file input so the server gets no file
+    imageFileInput.value = '';
+  }
+
+  btnGallery.addEventListener('click', () => {
+    stopCamera();
+    imageFileInput.click();
+  });
+
+  imageFileInput.addEventListener('change', () => {
+    const file = imageFileInput.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => showImagePreview(e.target.result);
+    reader.readAsDataURL(file);
+  });
+
+  btnCameraOpen.addEventListener('click', async () => {
+    if (cameraActive) { stopCamera(); return; }
+    try {
+      activeCamStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+      cameraStream.srcObject = activeCamStream;
+      cameraStream.style.display = 'block';
+      imgPlaceholder.classList.add('hidden');
+      imagePreview.classList.remove('visible');
+      btnCameraOpen.textContent = 'Close';
+      btnCameraOpen.classList.add('active');
+      btnCapture.style.display = '';
+      cameraActive = true;
+      imgStatus.textContent = 'Camera active — point and capture';
+      imgStatus.className = 'media-status';
+    } catch(e) {
+      imgStatus.textContent = 'Camera access denied or unavailable.';
+      imgStatus.className = 'media-status error';
+    }
+  });
+
+  function stopCamera() {
+    if (!cameraActive) return;
+    if (activeCamStream) activeCamStream.getTracks().forEach(t => t.stop());
+    cameraStream.style.display = 'none';
+    cameraStream.srcObject = null;
+    activeCamStream = null;
+    cameraActive = false;
+    btnCameraOpen.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Camera`;
+    btnCameraOpen.classList.remove('active');
+    btnCapture.style.display = 'none';
+    // if no image captured, restore placeholder
+    if (!imagePreview.src || imagePreview.src === window.location.href) {
+      imgPlaceholder.classList.remove('hidden');
+    } else {
+      imagePreview.classList.add('visible');
+    }
+  }
+
+  btnCapture.addEventListener('click', () => {
+    if (!cameraActive) return;
+    captureCanvas.width  = cameraStream.videoWidth;
+    captureCanvas.height = cameraStream.videoHeight;
+    captureCanvas.getContext('2d').drawImage(cameraStream, 0, 0);
+    const dataUrl = captureCanvas.toDataURL('image/jpeg', 0.88);
+
+    // Convert dataURL → File → attach to hidden file input
+    captureCanvas.toBlob(blob => {
+      const file = new File([blob], 'capture.jpg', { type: 'image/jpeg' });
+      const dt   = new DataTransfer();
+      dt.items.add(file);
+      imageFileInput.files = dt.files;
+    }, 'image/jpeg', 0.88);
+
+    showImagePreview(dataUrl);
+    stopCamera();
+  });
+
+  btnImgClear.addEventListener('click', clearImage);
+
+  /* ── AUDIO recording ──────────────────────────────────────── */
+  const btnRecord      = document.getElementById('btnRecord');
+  const btnStopRecord  = document.getElementById('btnStopRecord');
+  const btnAudioClear  = document.getElementById('btnAudioClear');
+  const audioPlayback  = document.getElementById('audioPlayback');
+  const audioFileInput = document.getElementById('audioFileInput');
+  const audioStatus    = document.getElementById('audioStatus');
+  const audioVis       = document.getElementById('audioVis');
+  const bars           = document.querySelectorAll('.audio-vis .bar');
+
+  let mediaRecorder, audioChunks = [], analyser, animFrame;
+
+  function stopBarsAnim() {
+    cancelAnimationFrame(animFrame);
+    bars.forEach(b => b.style.height = '6px');
+  }
+
+  btnRecord.addEventListener('click', async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      audioChunks = [];
+
+      audioVis.style.display = 'flex';
+      audioPlayback.classList.remove('visible');
+
+      // Audio visualisation via AnalyserNode
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = ctx.createAnalyser();
+      analyser.fftSize = 32;
+      ctx.createMediaStreamSource(stream).connect(analyser);
+      const data = new Uint8Array(analyser.frequencyBinCount);
+      function tick() {
+        analyser.getByteFrequencyData(data);
+        const avg = data.reduce((a,b)=>a+b,0) / data.length / 255;
+        bars.forEach(b => {
+          b.style.height = (6 + Math.random() * avg * 40) + 'px';
+        });
+        animFrame = requestAnimationFrame(tick);
+      }
+      tick();
+
+      mediaRecorder.ondataavailable = e => { if (e.data.size) audioChunks.push(e.data); };
+      mediaRecorder.onstop = () => {
+        stopBarsAnim();
+        stream.getTracks().forEach(t => t.stop());
+        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+        const url  = URL.createObjectURL(blob);
+        audioPlayback.src = url;
+        audioVis.style.display = 'none';
+        audioPlayback.classList.add('visible');
+        btnAudioClear.style.display = '';
+        audioStatus.innerHTML = '✔ Recording saved';
+        audioStatus.className = 'media-status ok';
+
+        // Attach blob to hidden file input so it's submitted with the form
+        const file = new File([blob], 'recording.webm', { type: 'audio/webm' });
+        const dt   = new DataTransfer();
+        dt.items.add(file);
+        audioFileInput.files = dt.files;
+      };
+
+      mediaRecorder.start();
+      btnRecord.disabled     = true;
+      btnStopRecord.disabled = false;
+      audioStatus.innerHTML  = '<span class="rec-dot"></span> Recording…';
+      audioStatus.className  = 'media-status rec';
+
+    } catch(e) {
+      audioStatus.textContent = 'Microphone access denied or unavailable.';
+      audioStatus.className   = 'media-status error';
+    }
+  });
+
+  btnStopRecord.addEventListener('click', () => {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+    btnRecord.disabled     = false;
+    btnStopRecord.disabled = true;
+    stopBarsAnim();
+  });
+
+  btnAudioClear.addEventListener('click', () => {
+    audioPlayback.src = '';
+    audioPlayback.classList.remove('visible');
+    audioVis.style.display = 'flex';
+    btnAudioClear.style.display = 'none';
+    audioFileInput.value = '';
+    audioStatus.textContent = '';
+    audioStatus.className = 'media-status';
+    stopBarsAnim();
   });
 </script>
 </body>

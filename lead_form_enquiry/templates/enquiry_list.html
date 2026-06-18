@@ -285,6 +285,58 @@
     .badge-service   { background: #ffffff; color: #0d0d0e; }
     .badge-other     { background: #ffffff; color: #0d0d0e; }
 
+    /* ── Media columns ── */
+    .td-media { text-align: center; vertical-align: middle; width: 80px; }
+    .media-thumb {
+      width: 48px;
+      height: 48px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1.5px solid var(--border);
+      cursor: pointer;
+      transition: transform .15s, box-shadow .15s;
+      display: block;
+      margin: 0 auto;
+    }
+    .media-thumb:hover { transform: scale(1.08); box-shadow: 0 4px 12px rgba(0,0,0,.18); }
+    .media-none { color: var(--muted); font-size: 12px; }
+    .audio-player { width: 120px; height: 28px; }
+
+    /* Image lightbox */
+    #imgLightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.82);
+      z-index: 200000;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    #imgLightbox.open { display: flex; }
+    #imgLightbox img {
+      max-width: 92vw;
+      max-height: 88vh;
+      border-radius: 8px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.5);
+    }
+    #imgLightboxClose {
+      position: fixed;
+      top: 1rem;
+      right: 1.2rem;
+      background: rgba(255,255,255,.15);
+      border: none;
+      color: #fff;
+      font-size: 1.6rem;
+      line-height: 1;
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s;
+    }
+    #imgLightboxClose:hover { background: rgba(255,255,255,.3); }
+
     /* Action buttons */
     .actions-cell { white-space: nowrap; display: flex; gap: 6px; align-items: center; }
     .action-btn {
@@ -549,6 +601,8 @@
             <th>Location</th>
             <th>Purpose</th>
             <th>Notes</th>
+            <th>Image</th>
+            <th>Audio</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -586,7 +640,9 @@
       purpose:  "{{ e.purpose|escapejs }}",
       notes:    "{{ e.notes|escapejs }}",
       lat:      "{{ e.latitude|default:'' }}",
-      lng:      "{{ e.longitude|default:'' }}"
+      lng:      "{{ e.longitude|default:'' }}",
+      image:    "{% if e.image %}{{ e.image.url }}{% endif %}",
+      audio:    "{% if e.audio %}{{ e.audio.url }}{% endif %}"
     }{% if not forloop.last %},{% endif %}
     {% endfor %}
   ];
@@ -693,6 +749,16 @@
           </td>
           <td><span class="badge ${purposeBadge[e.purpose] || 'badge-other'}">${e.purpose}</span></td>
           <td class="td-notes" title="${e.notes}">${e.notes || '—'}</td>
+          <td class="td-media">
+            ${e.image
+              ? `<img src="${e.image}" class="media-thumb" onclick="openImageViewer('${e.image}')" title="Click to view" />`
+              : '<span class="media-none">—</span>'}
+          </td>
+          <td class="td-media">
+            ${e.audio
+              ? `<audio controls class="audio-player"><source src="${e.audio}"></audio>`
+              : '<span class="media-none">—</span>'}
+          </td>
           <td class="actions-cell">
             <button class="action-btn action-view" title="View" onclick="viewEnquiry(${e.id})">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#0d9488" stroke-width="2">
@@ -936,6 +1002,21 @@
         <span class="eq-modal-label" style="padding-top:.15rem;">Notes</span>
         <span class="eq-modal-value" style="white-space:pre-wrap;line-height:1.6;">${safeNotes || '—'}</span>
       </div>
+      ${e.image ? `
+      <div class="eq-modal-row" style="align-items:flex-start;">
+        <span class="eq-modal-label" style="padding-top:.15rem;">Image</span>
+        <span class="eq-modal-value">
+          <img src="${e.image}" onclick="openImageViewer('${e.image}')"
+            style="max-width:200px;max-height:160px;border-radius:7px;border:1.5px solid #dde3ea;cursor:pointer;display:block;" title="Click to enlarge"/>
+        </span>
+      </div>` : ''}
+      ${e.audio ? `
+      <div class="eq-modal-row" style="align-items:flex-start;">
+        <span class="eq-modal-label" style="padding-top:.15rem;">Audio</span>
+        <span class="eq-modal-value">
+          <audio controls style="width:100%;max-width:280px;"><source src="${e.audio}"></audio>
+        </span>
+      </div>` : ''}
     `;
     document.getElementById('viewModal').classList.add('open');
   }
@@ -977,6 +1058,21 @@
       alert('Network error. Please try again.');
       closeConfirm();
     });
+  }
+
+  /* ── Image Lightbox ── */
+  (function() {
+    const lb = document.createElement('div');
+    lb.id = 'imgLightbox';
+    lb.innerHTML = `<button id="imgLightboxClose" title="Close">✕</button><img id="imgLightboxImg" src="" alt="Enquiry Image"/>`;
+    document.body.appendChild(lb);
+    document.getElementById('imgLightboxClose').addEventListener('click', () => lb.classList.remove('open'));
+    lb.addEventListener('click', function(ev) { if (ev.target === lb) lb.classList.remove('open'); });
+  })();
+
+  function openImageViewer(src) {
+    document.getElementById('imgLightboxImg').src = src;
+    document.getElementById('imgLightbox').classList.add('open');
   }
 
   /* Init */

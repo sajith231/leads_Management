@@ -699,13 +699,19 @@
     }
   });
 
-  // ── Acc-Master API config ──────────────────────────────────────────────────
-  // Calls our Django proxy — avoids CORS entirely
-  const ACC_PROXY_URL = "{% url 'collection_new:acc_master_proxy' %}";
+  // ── Proxy URLs ────────────────────────────────────────────────────────────
+  // Dept proxy  → returns [{id, name}, …]  for the Department dropdown
+  // Client proxy → returns [{name, openingdepartment (dept name), …}, …]
+  const DEPT_PROXY_URL   = "{% url 'collection_new:acc_departments_proxy' %}";
+  const CLIENT_PROXY_URL = "{% url 'collection_new:acc_master_proxy' %}";
+
+  // In-memory cache so we don't re-fetch clients when only dept changes
+  let _clientCache = {};
 
   // ── Company → Department ──────────────────────────────────────────────────
   document.getElementById('id_company').addEventListener('change', function() {
     const company = this.value;
+    _clientCache = {};                               // clear client cache on company change
     resetSelect('id_department', 'Select Department');
     resetSelect('id_client_name', 'Select Department first');
     if (company) fetchDepartments(company, '');
@@ -716,21 +722,28 @@
     setLoading(deptSel, 'Loading departments…');
 
     try {
-      const res  = await fetch(`${ACC_PROXY_URL}?company=${encodeURIComponent(company)}`);
-      const data = await res.json();
+      // Use the dedicated dept proxy — returns [{id, name}, …]
+      const res  = await fetch(`${DEPT_PROXY_URL}?company=${encodeURIComponent(company)}`);
+      const depts = await res.json();   // [{id:'DF', name:'IMC HO'}, …]
 
-      // API returns array of groups/departments — normalise to unique names
-      const depts = extractDepartments(data);
+      if (!Array.isArray(depts) || depts.error) {
+        deptSel.innerHTML = '<option value="">Failed to load</option>';
+        return;
+      }
 
       deptSel.innerHTML = '<option value="">Select Department</option>';
-      depts.forEach(dept => {
-        const opt = new Option(dept, dept);
-        if (dept === preselect) opt.selected = true;
+      depts.forEach(d => {
+        // value = department name (what gets saved to DB)
+        const opt = new Option(d.name, d.name);
+        if (d.name === preselect) opt.selected = true;
         deptSel.appendChild(opt);
       });
 
-      // If restoring after POST error, also reload clients
-      if (preselect) fetchClients(company, preselect, '{{ form.client_name.value|default:"" }}');
+      // Pre-warm client cache and restore client dropdown on POST-error re-render
+      if (preselect) {
+        await ensureClientsLoaded(company);
+        renderClients(preselect, '{{ form.client_name.value|default:"" }}');
+      }
     } catch (err) {
       console.error('Department fetch error:', err);
       deptSel.innerHTML = '<option value="">Failed to load</option>';
@@ -738,69 +751,60 @@
   }
 
   // ── Department → Client ───────────────────────────────────────────────────
-  document.getElementById('id_department').addEventListener('change', function() {
+  document.getElementById('id_department').addEventListener('change', async function() {
     const company = document.getElementById('id_company').value;
     const dept    = this.value;
-    resetSelect('id_client_name', 'Loading clients…');
-    if (company && dept) fetchClients(company, dept, '');
+    resetSelect('id_client_name', dept ? 'Loading clients…' : 'Select Department first');
+    if (!company || !dept) return;
+
+    await ensureClientsLoaded(company);
+    renderClients(dept, '');
   });
 
-  async function fetchClients(company, dept, preselect) {
-    const clientSel = document.getElementById('id_client_name');
-    setLoading(clientSel, 'Loading clients…');
+  // Fetch all clients for company once, cache in _clientCache[company]
+  async function ensureClientsLoaded(company) {
+    if (_clientCache[company]) return;           // already loaded
 
     try {
-      const res  = await fetch(`${ACC_PROXY_URL}?company=${encodeURIComponent(company)}`);
+      const res  = await fetch(`${CLIENT_PROXY_URL}?company=${encodeURIComponent(company)}`);
       const data = await res.json();
-
-      const clients = extractClients(data, dept);
-
-      clientSel.innerHTML = '<option value="">Select Client</option>';
-      clients.forEach(name => {
-        const opt = new Option(name, name);
-        if (name === preselect) opt.selected = true;
-        clientSel.appendChild(opt);
-      });
-
-      if (!clients.length) {
-        clientSel.innerHTML = '<option value="">No clients found</option>';
-      }
+      // data is [{name, openingdepartment (dept name after server-side substitution), …}]
+      _clientCache[company] = Array.isArray(data) ? data : (data.data || data.results || []);
     } catch (err) {
       console.error('Client fetch error:', err);
-      clientSel.innerHTML = '<option value="">Failed to load</option>';
+      _clientCache[company] = [];
     }
   }
 
-  // ── API response helpers ──────────────────────────────────────────────────
-  // Adapt these two functions to match the actual shape of your API response.
+  // Filter cached clients by dept name and populate the select
+  function renderClients(dept, preselect) {
+    const company   = document.getElementById('id_company').value;
+    const clientSel = document.getElementById('id_client_name');
+    const all       = _clientCache[company] || [];
 
-  function extractDepartments(data) {
-    const rows = Array.isArray(data) ? data : (data.data || data.results || []);
-    const seen = new Set();
-    rows.forEach(r => {
-      const val = (r.openingdepartment || '').trim();
-      if (val) seen.add(val);
-    });
-    return [...seen].sort();
-  }
+    const clients = [...new Set(
+      all
+        .filter(r => (r.openingdepartment || '').trim() === dept)
+        .map(r => (r.name || '').trim())
+        .filter(Boolean)
+    )].sort();
 
-  function extractClients(data, dept) {
-    const rows = Array.isArray(data) ? data : (data.data || data.results || []);
-    const seen = new Set();
-    rows.forEach(r => {
-      const rowDept = (r.openingdepartment || '').trim();
-      if (rowDept === dept) {
-        const name = (r.name || '').trim();
-        if (name) seen.add(name);
-      }
+    if (!clients.length) {
+      clientSel.innerHTML = '<option value="">No clients found</option>';
+      return;
+    }
+
+    clientSel.innerHTML = '<option value="">Select Client</option>';
+    clients.forEach(name => {
+      const opt = new Option(name, name);
+      if (name === preselect) opt.selected = true;
+      clientSel.appendChild(opt);
     });
-    return [...seen].sort();
   }
 
   // ── Utilities ─────────────────────────────────────────────────────────────
   function resetSelect(id, placeholder) {
-    const el = document.getElementById(id);
-    el.innerHTML = `<option value="">${placeholder}</option>`;
+    document.getElementById(id).innerHTML = `<option value="">${placeholder}</option>`;
   }
 
   function setLoading(el, msg) {

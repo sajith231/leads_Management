@@ -11,6 +11,8 @@ class Enquiry(models.Model):
     notes        = models.TextField(blank=True)
     latitude     = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude    = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    image        = models.ImageField(upload_to='enquiry/images/', null=True, blank=True)
+    audio        = models.FileField(upload_to='enquiry/audio/',  null=True, blank=True)
 
     def __str__(self):
         return f"{self.shop_name} – {self.purpose}"
