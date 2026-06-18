@@ -8,11 +8,42 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from .models import Enquiry
 from .serializers import EnquirySerializer
+from common.cloudflare_storage import upload_to_cloudflare
 
 
 class CsrfExemptSessionAuthentication(SessionAuthentication):
     def enforce_csrf(self, request):
         return
+
+
+def _handle_cloudflare_uploads(request, data):
+    """
+    Pulls 'image' / 'audio' out of request.FILES (if present), uploads them to
+    Cloudflare R2, and patches `data` so the serializer writes the R2 url/key
+    instead of saving the file locally. If the R2 upload fails, the original
+    file is left in `data` so DRF falls back to local FileField/ImageField
+    storage (matching the behaviour of the HTML views).
+    """
+    image = request.FILES.get('image')
+    audio = request.FILES.get('audio')
+
+    if image:
+        result = upload_to_cloudflare(image, folder_name='enquiry_files/images')
+        if result['success']:
+            data['cloudflare_image_url'] = result['r2_url']
+            data['cloudflare_image_key'] = result['file_key']
+            data.pop('image', None)  # don't also save locally
+        # else: leave 'image' in data so it saves locally as a fallback
+
+    if audio:
+        result = upload_to_cloudflare(audio, folder_name='enquiry_files/audio')
+        if result['success']:
+            data['cloudflare_audio_url'] = result['r2_url']
+            data['cloudflare_audio_key'] = result['file_key']
+            data.pop('audio', None)
+        # else: leave 'audio' in data so it saves locally as a fallback
+
+    return data
 
 
 def _resolve_creator(request):
@@ -82,14 +113,18 @@ class EnquiryListCreateAPIView(APIView):
             )
 
         data['creator'] = creator
+        data = _handle_cloudflare_uploads(request, data)
 
         serializer = EnquirySerializer(data=data)
         if serializer.is_valid():
-            serializer.save()
+            enquiry = serializer.save(
+                cloudflare_image_key=data.get('cloudflare_image_key'),
+                cloudflare_audio_key=data.get('cloudflare_audio_key'),
+            )
             return Response(
                 {
                     "message": "Enquiry submitted successfully.",
-                    "data": serializer.data
+                    "data": EnquirySerializer(enquiry).data
                 },
                 status=status.HTTP_201_CREATED
             )
@@ -113,10 +148,20 @@ class EnquiryDetailAPIView(APIView):
         return Response(serializer.data)
 
     def put(self, request, pk):
-        serializer = EnquirySerializer(self.get_object(pk), data=request.data, partial=True)
+        instance = self.get_object(pk)
+        data = request.data.copy()
+        data = _handle_cloudflare_uploads(request, data)
+
+        extra = {}
+        if 'cloudflare_image_key' in data:
+            extra['cloudflare_image_key'] = data.get('cloudflare_image_key')
+        if 'cloudflare_audio_key' in data:
+            extra['cloudflare_audio_key'] = data.get('cloudflare_audio_key')
+
+        serializer = EnquirySerializer(instance, data=data, partial=True)
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
+            updated = serializer.save(**extra)
+            return Response(EnquirySerializer(updated).data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
