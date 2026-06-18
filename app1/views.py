@@ -6117,6 +6117,14 @@ def configure_user_menu(request, user_id):
     ]
 },
 {
+    'name': 'Asset Management',
+    'icon': 'fas fa-boxes',
+    'submenus': [
+        {'id': 'asset_management', 'name': 'Asset List', 'icon': 'fas fa-list'},
+        {'id': 'assets_master', 'name': 'Asset Master', 'icon': 'fas fa-cube'},
+    ]
+},
+{
     'name': 'Social Media',
     'icon': 'fas fa-share-alt',
     'submenus': [
@@ -6373,6 +6381,14 @@ def default_menus(request):
         {'id': 'user_socialmedia_project_assignments', 'name': 'Your Assignments', 'icon': 'fas fa-user-check'}
     ]
 },
+        {
+            'name': 'Asset Management',
+            'icon': 'fas fa-boxes',
+            'submenus': [
+                {'id': 'asset_management', 'name': 'Asset List', 'icon': 'fas fa-list'},
+                {'id': 'assets_master', 'name': 'Asset Master', 'icon': 'fas fa-cube'},
+            ]
+        },
         {
             'name': 'ACCOUNTS',
             'icon': 'fas fa-money-bill-wave',

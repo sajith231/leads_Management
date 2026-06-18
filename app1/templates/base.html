@@ -432,9 +432,9 @@
                 {% if 'employee_management' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                 <a href="{% url 'employee_management' %}"><i class="fas fa-users"></i> Employee Management</a>
                 {% endif %}
-                {% if 'attendance' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <!-- {% if 'attendance' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                 <a href="{% url 'attendance' %}"><i class="fas fa-user-check"></i> Attendance</a>
-                {% endif %}
+                {% endif %} -->
                 {% if 'make_salary_certificate' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                 <a href="{% url 'make_salary_certificate' %}"><i class="fas fa-file-invoice-dollar"></i> Salary Certificate</a>
                 {% endif %}
@@ -624,12 +624,29 @@
 </div>
 {% endif %}
 
-<a href="{% url 'asset_management' %}">
-    <i class="fas fa-boxes"></i> Asset Management
-</a>
+{% if 'asset_management' in allowed_menus or 'assets_master' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<div class="mainmenu" onclick="toggleAssetMenu()">
+    <span>
+        <i class="fas fa-boxes"></i>
+        <span>Asset Management</span>
+    </span>
+</div>
+<div id="asset-menu" class="submenu">
+    {% if 'asset_management' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'asset_management' %}">
+        <i class="fas fa-list"></i> Asset List
+    </a>
+    {% endif %}
+    {% if 'assets_master' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'assets_master' %}">
+        <i class="fas fa-cube"></i> Asset Master
+    </a>
+    {% endif %}
+</div>
+{% endif %}
 
 
-<!-- Vehicle Management - Standalone Main Menu with Submenu -->
+<!-- Vehicle Management - Standalone Main Menu with Submenuu -->
 {% if 'fuel_management' in allowed_menus or 'vehicle_list' in allowed_menus or 'fuel_monitoring' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
 <div class="mainmenu" onclick="toggleVehicleMenu()">
     <span>
@@ -828,9 +845,7 @@
     </div>
     <div id="company-menu" class="submenu" style="margin-left: 20px;">
         <a href="{% url 'vehicle_list' %}"><i class="fas fa-list-alt"></i> Vehicle Master</a>
-<a href="{% url 'assets_master' %}">
-    <i class="fas fa-list-alt"></i> Asset Master
-</a>   <a href="{% url 'all_districts' %}"><i class="fas fa-map"></i> District</a>
+<a href="{% url 'all_districts' %}"><i class="fas fa-map"></i> District</a>
        <!-- Change this line to match the new URL name -->
        <a href="{% url 'app5:state_master_list' %}"><i class="fas fa-city"></i> State</a>
 
@@ -945,12 +960,12 @@
                 {% if 'employee_management' in allowed_menus %}
                 <a href="{% url 'employee_management' %}"><i class="fas fa-users"></i> Employee Management</a>
                 {% endif %}
-                {% if 'attendance' in allowed_menus %}
+                <!-- {% if 'attendance' in allowed_menus %}
                 <a href="{% url 'attendance' %}"><i class="fas fa-user-check"></i> Attendance</a>
-                {% endif %}
-                {% if 'attendance_user' in allowed_menus %}
+                {% endif %} -->
+                <!-- {% if 'attendance_user' in allowed_menus %}
                 <a href="{% url 'attendance_user' %}"><i class="fas fa-user-clock"></i> Punch in / Punch out</a>
-                {% endif %}
+                {% endif %} -->
                 {% if 'make_salary_certificate' in allowed_menus %}
                 <a href="{% url 'make_salary_certificate' %}"><i class="fas fa-file-invoice-dollar"></i> Salary Certificate</a>
                 {% endif %}
@@ -1174,9 +1189,26 @@
 </div>
 {% endif %}
 
-<a href="{% url 'asset_management' %}">
-    <i class="fas fa-boxes"></i> Asset Management
-</a>
+{% if 'asset_management' in allowed_menus or 'assets_master' in allowed_menus %}
+<div class="mainmenu" onclick="toggleAssetMenu()">
+    <span>
+        <i class="fas fa-boxes"></i>
+        <span>Asset Management</span>
+    </span>
+</div>
+<div id="asset-menu" class="submenu">
+    {% if 'asset_management' in allowed_menus %}
+    <a href="{% url 'asset_management' %}">
+        <i class="fas fa-list"></i> Asset List
+    </a>
+    {% endif %}
+    {% if 'assets_master' in allowed_menus %}
+    <a href="{% url 'assets_master' %}">
+        <i class="fas fa-cube"></i> Asset Master
+    </a>
+    {% endif %}
+</div>
+{% endif %}
 <!-- Vehicle Management - Standalone Main Menu for Regular Users with Submenu -->
 {% if 'fuel_management' in allowed_menus or 'vehicle_list' in allowed_menus or 'fuel_monitoring' in allowed_menus %}
 <div class="mainmenu" onclick="toggleVehicleMenu()">
@@ -1421,9 +1453,6 @@
         {% if 'vehicle_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
         <a href="{% url 'vehicle_list' %}"><i class="fas fa-list-alt"></i> Vehicle Master</a>
         {% endif %}
-<a href="{% url 'assets_master' %}">
-    <i class="fas fa-list-alt"></i> Asset Master
-</a>
         {% if 'all_districts' in allowed_menus %}
         <a href="{% url 'all_districts' %}"><i class="fas fa-map"></i> District</a>
         {% endif %}
@@ -1653,6 +1682,9 @@ function toggleSocialMediaMenu() {
 
 function toggleSysmacMenu() {
     toggleMenu('sysmac-menu');
+}
+function toggleAssetMenu() {
+    toggleMenu('asset-menu');
 }
 function toggleCompanyMenu() { toggleMenu('company-menu'); }
 function toggleBusinessMenu() { toggleMenu('business-menu'); }
