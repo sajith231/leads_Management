@@ -50,6 +50,30 @@ class CollectionSerializer(serializers.ModelSerializer):
             return obj.payment_proof.url
         return None
 
+    def to_internal_value(self, data):
+        """
+        If payment_proof is submitted as a multi-file field (e.g. from Postman
+        with 2 files selected), take only the first file so validation passes.
+
+        QueryDict.copy() returns an *immutable* copy by default; calling
+        setlist() on it is silently ignored (the change never sticks).
+        We must build a brand-new mutable MultiValueDict so setlist works.
+        """
+        if hasattr(data, 'getlist'):
+            files = data.getlist('payment_proof')
+            if len(files) > 1:
+                from django.utils.datastructures import MultiValueDict
+                # Rebuild as a fresh mutable MultiValueDict
+                new_data = MultiValueDict()
+                for key in data:
+                    if key == 'payment_proof':
+                        continue
+                    new_data.setlist(key, data.getlist(key))
+                # Keep only the first file
+                new_data.setlist('payment_proof', [files[0]])
+                data = new_data
+        return super().to_internal_value(data)
+
     def validate(self, attrs):
         """Mirror the form's proof-required logic."""
         PROOF_REQUIRED = ('cheque', 'upi', 'bank_transfer')

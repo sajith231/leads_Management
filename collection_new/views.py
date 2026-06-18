@@ -24,7 +24,7 @@ ACC_DEPT_API_URL = 'https://accmaster.imcbs.com/api/sync/acc-departments/'
 COMPANY_CLIENT_IDS = {
     'Sysmac Computers': 'GW9Q6NQQ5ONRU',
     'Sysmac Info':      '69ZHSXOIMFA6T',
-    'IMCB LLP':         'G9SYCSM54HR3E',
+    'IMCB LLP':         'G9SYCSM54HR3Ev',
 }
 
 # In-process cache — key '__all__' for dept map, company name for clients
@@ -33,14 +33,6 @@ _CLIENT_CACHE = {}
 
 
 def fetch_departments(force=False):
-    """
-    Fetch ALL departments from acc-departments API with NO params.
-    The API returns a fixed global list (client_id NTS04WC95G3U4 for all rows).
-
-    department_id  ↔  openingdepartment in client API  (e.g. "DF" -> "IMC HO")
-
-    Returns dict: {department_id: department_name}
-    """
     if not force and '__all__' in _DEPT_CACHE and _DEPT_CACHE['__all__']:
         return _DEPT_CACHE['__all__']
 
@@ -49,27 +41,16 @@ def fetch_departments(force=False):
             data = json.loads(resp.read().decode())
 
         items = data if isinstance(data, list) else data.get('results', data.get('data', []))
-        dept_map = {}
-        for d in items:
-            dept_id   = str(d.get('department_id', '')).strip()
-            dept_name = str(d.get('department',    '')).strip()
-            if dept_id and dept_name:
-                dept_map[dept_id] = dept_name
 
-        if dept_map:                          # only cache on success
-            _DEPT_CACHE['__all__'] = dept_map
-        return dept_map
+        if items:
+            _DEPT_CACHE['__all__'] = items
+        return items
     except Exception as e:
         print(f"Error fetching departments: {e}")
-        return _DEPT_CACHE.get('__all__', {})  # return last good cache if any
+        return _DEPT_CACHE.get('__all__', [])
 
 
 def fetch_raw_clients(company, force=False):
-    """
-    Fetch raw client list for a company using that company's client_id.
-    openingdepartment in each client = department_id in dept API.
-    Returns list of raw client dicts (openingdepartment still as ID e.g. "DF").
-    """
     if not force and company in _CLIENT_CACHE and _CLIENT_CACHE[company]:
         return _CLIENT_CACHE[company]
 
@@ -92,12 +73,6 @@ def fetch_raw_clients(company, force=False):
 
 @login_required
 def acc_departments_proxy(request):
-    """
-    GET /acc-dept-proxy/?company=Sysmac+Computers
-    Returns ALL departments from the dept API as [{id, name}, ...] sorted by name.
-    The dept API is a global list — all departments are valid for any company.
-    Client openingdepartment = department_id in dept API.
-    """
     company = request.GET.get('company', '').strip()
     if not company:
         return JsonResponse({'error': 'company param required'}, status=400)
@@ -105,30 +80,35 @@ def acc_departments_proxy(request):
     if company not in COMPANY_CLIENT_IDS:
         return JsonResponse({'error': 'Unknown company'}, status=400)
 
-    dept_map = fetch_departments()
+    company_client_id = COMPANY_CLIENT_IDS[company]
+    all_depts = fetch_departments()
 
     result = sorted(
-        [{'id': did, 'name': name} for did, name in dept_map.items()],
+        [
+            {'id': d['department_id'], 'name': d['department']}
+            for d in all_depts
+            if str(d.get('client_id', '')).strip() == company_client_id
+               and d.get('department_id') and d.get('department')
+        ],
         key=lambda x: x['name']
     )
     return JsonResponse(result, safe=False)
 
 
-
-
 @login_required
 def acc_master_proxy(request):
-    """
-    GET /acc-proxy/?company=Sysmac+Computers
-    Returns client list with openingdepartment replaced by department name.
-    Response: [{name, openingdepartment: "IMC HO", ...}, ...]
-    """
     company = request.GET.get('company', '').strip()
     if not company:
         return JsonResponse({'error': 'company param required'}, status=400)
 
-    dept_map = fetch_departments()
-    clients  = fetch_raw_clients(company)
+    all_depts = fetch_departments()
+    dept_map  = {
+        str(d.get('department_id', '')).strip(): str(d.get('department', '')).strip()
+        for d in all_depts
+        if d.get('department_id') and d.get('department')
+    }
+
+    clients = fetch_raw_clients(company)
 
     processed = []
     for c in clients:
@@ -140,7 +120,6 @@ def acc_master_proxy(request):
     return JsonResponse(processed, safe=False)
 
 
-# Simple data classes to pass company list to template
 class SimpleObj:
     def __init__(self, id, name):
         self.id   = id
