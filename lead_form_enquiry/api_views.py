@@ -18,30 +18,73 @@ class CsrfExemptSessionAuthentication(SessionAuthentication):
 
 def _handle_cloudflare_uploads(request, data):
     """
-    Pulls 'image' / 'audio' out of request.FILES (if present), uploads them to
-    Cloudflare R2, and patches `data` so the serializer writes the R2 url/key
-    instead of saving the file locally. If the R2 upload fails, the original
-    file is left in `data` so DRF falls back to local FileField/ImageField
-    storage (matching the behaviour of the HTML views).
+    Upload image/audio to Cloudflare R2 and save URLs.
+    Supports:
+    1. multipart/form-data (recommended)
+    2. file fields from mobile apps
     """
+
+    print("=" * 50)
+    print("REQUEST CONTENT TYPE:", request.content_type)
+    print("REQUEST DATA KEYS:", list(request.data.keys()))
+    print("REQUEST FILES KEYS:", list(request.FILES.keys()))
+    print("=" * 50)
+
     image = request.FILES.get('image')
     audio = request.FILES.get('audio')
 
-    if image:
-        result = upload_to_cloudflare(image, folder_name='enquiry_files/images')
-        if result['success']:
-            data['cloudflare_image_url'] = result['r2_url']
-            data['cloudflare_image_key'] = result['file_key']
-            data.pop('image', None)  # don't also save locally
-        # else: leave 'image' in data so it saves locally as a fallback
+    # Debugging
+    print("IMAGE FILE:", image)
+    print("AUDIO FILE:", audio)
 
+    # Upload Image
+    if image:
+        try:
+            result = upload_to_cloudflare(
+                image,
+                folder_name='enquiry_files/images'
+            )
+
+            print("IMAGE UPLOAD RESULT:", result)
+
+            if result.get('success'):
+                data['cloudflare_image_url'] = result.get('r2_url')
+                data['cloudflare_image_key'] = result.get('file_key')
+                data.pop('image', None)
+
+                print("IMAGE UPLOADED SUCCESSFULLY")
+                print("IMAGE URL:", result.get('r2_url'))
+            else:
+                print("IMAGE UPLOAD FAILED:", result)
+
+        except Exception as e:
+            print("IMAGE UPLOAD EXCEPTION:", str(e))
+
+    # Upload Audio
     if audio:
-        result = upload_to_cloudflare(audio, folder_name='enquiry_files/audio')
-        if result['success']:
-            data['cloudflare_audio_url'] = result['r2_url']
-            data['cloudflare_audio_key'] = result['file_key']
-            data.pop('audio', None)
-        # else: leave 'audio' in data so it saves locally as a fallback
+        try:
+            result = upload_to_cloudflare(
+                audio,
+                folder_name='enquiry_files/audio'
+            )
+
+            print("AUDIO UPLOAD RESULT:", result)
+
+            if result.get('success'):
+                data['cloudflare_audio_url'] = result.get('r2_url')
+                data['cloudflare_audio_key'] = result.get('file_key')
+                data.pop('audio', None)
+
+                print("AUDIO UPLOADED SUCCESSFULLY")
+                print("AUDIO URL:", result.get('r2_url'))
+            else:
+                print("AUDIO UPLOAD FAILED:", result)
+
+        except Exception as e:
+            print("AUDIO UPLOAD EXCEPTION:", str(e))
+
+    print("FINAL DATA:", data)
+    print("=" * 50)
 
     return data
 
@@ -116,11 +159,15 @@ class EnquiryListCreateAPIView(APIView):
         data = _handle_cloudflare_uploads(request, data)
 
         serializer = EnquirySerializer(data=data)
+
         if serializer.is_valid():
             enquiry = serializer.save(
+                cloudflare_image_url=data.get('cloudflare_image_url'),
                 cloudflare_image_key=data.get('cloudflare_image_key'),
+                cloudflare_audio_url=data.get('cloudflare_audio_url'),
                 cloudflare_audio_key=data.get('cloudflare_audio_key'),
             )
+
             return Response(
                 {
                     "message": "Enquiry submitted successfully.",
@@ -128,6 +175,8 @@ class EnquiryListCreateAPIView(APIView):
                 },
                 status=status.HTTP_201_CREATED
             )
+
+        print("SERIALIZER ERRORS:", serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -153,8 +202,16 @@ class EnquiryDetailAPIView(APIView):
         data = _handle_cloudflare_uploads(request, data)
 
         extra = {}
+
+        if 'cloudflare_image_url' in data:
+            extra['cloudflare_image_url'] = data.get('cloudflare_image_url')
+
         if 'cloudflare_image_key' in data:
             extra['cloudflare_image_key'] = data.get('cloudflare_image_key')
+
+        if 'cloudflare_audio_url' in data:
+            extra['cloudflare_audio_url'] = data.get('cloudflare_audio_url')
+
         if 'cloudflare_audio_key' in data:
             extra['cloudflare_audio_key'] = data.get('cloudflare_audio_key')
 
