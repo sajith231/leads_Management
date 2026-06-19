@@ -66,8 +66,8 @@
             <div style="min-width:120px;">
                 <select name="department" class="form-select form-select-sm" onchange="this.form.submit()">
                     <option value="">All Dept</option>
-                    {% for dept in department_list %}
-                        <option value="{{ dept }}" {% if selected_department == dept %}selected{% endif %}>{{ dept }}</option>
+                    {% for code, name in department_list %}
+                        <option value="{{ code }}" {% if selected_department == code %}selected{% endif %}>{{ name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -127,7 +127,7 @@
                     <td class="text-end text-danger">{{ item.balance|floatformat:2 }}</td>
                     <td>{{ item.place }}</td>
                     <td>{{ item.phone2 }}</td>
-                    <td>{{ item.openingdepartment }}</td>
+                    <td>{{ item.department_name }}</td>
                 </tr>
                 {% empty %}
                 <tr><td colspan="10" class="text-center">No data available</td></tr>

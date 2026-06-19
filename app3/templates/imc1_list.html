@@ -21,12 +21,12 @@
         color: white;
     }
     .text-muted.fst-italic.small {
-    white-space: normal;       /* Allow line breaks */
-    word-wrap: break-word;     /* Break long words if needed */
-    overflow-wrap: break-word; /* Modern equivalent */
-    max-width: 100%;           /* Keep within table cell width */
-    display: block;            /* Ensure it behaves as a separate line */
-}
+        white-space: normal;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        max-width: 100%;
+        display: block;
+    }
 </style>
 
 <div class="p-4 border rounded shadow-sm" style="background-color: #fdfdfd; border: 1px solid #dee2e6;">
@@ -55,7 +55,7 @@
             <button type="submit" class="btn btn-primary btn-sm">Search</button>
         </div>
         <input type="number" name="min_balance" class="form-control form-control-sm" placeholder="Min Balance" value="{{ min_balance|default:'1' }}" style="width:120px;flex-shrink:0;">
-        <select name="department" class="form-select form-select-sm" onchange="this.form.submit()" style="width:120px;flex-shrink:0;">
+        <select name="department" class="form-select form-select-sm" onchange="this.form.submit()" style="width:150px;flex-shrink:0;">
             <option value="">All Dept</option>
             {% for dept in department_list %}
                 <option value="{{ dept }}" {% if selected_department == dept %}selected{% endif %}>{{ dept }}</option>
@@ -110,7 +110,7 @@
                     <td class="text-end text-danger">{{ item.balance|floatformat:2 }}</td>
                     <td>{{ item.place }}</td>
                     <td>{{ item.phone2 }}</td>
-                    <td>{{ item.openingdepartment }}</td>
+                    <td>{{ item.department_name }}</td>
                 </tr>
                 {% endfor %}
                 {% if page_obj.number == page_obj.paginator.num_pages %}

@@ -1163,15 +1163,37 @@ import traceback
 
 def debtors1_list(request):
     api_url = "https://accmaster.imcbs.com/api/sync/acc-master/"
+    dept_api_url = "https://accmaster.imcbs.com/api/sync/acc-departments/"
     data = []
     error_message = None
+
+    # Fetch department name map {department_id: department_name} filtered by client
+    dept_map = {}
+    try:
+        dept_response = requests.get(dept_api_url, timeout=30)
+        dept_response.raise_for_status()
+        dept_json = dept_response.json()
+        if isinstance(dept_json, list):
+            dept_list = dept_json
+        elif isinstance(dept_json, dict):
+            dept_list = dept_json.get('data', [])
+        else:
+            dept_list = []
+        for dept in dept_list:
+            if str(dept.get('client_id', '')) != 'GW9Q6NQQ5ONRU':
+                continue
+            dept_id = str(dept.get('department_id', '')).strip()
+            name = str(dept.get('department', '')).strip()
+            if dept_id and name:
+                dept_map[dept_id] = name
+    except Exception:
+        pass  # dept_map stays empty; codes will show as-is
 
     try:
         response = requests.get(api_url, timeout=30)
         response.raise_for_status()
         json_data = response.json()
 
-        # API returns a plain list or dict
         if isinstance(json_data, list):
             raw_data = json_data
         elif isinstance(json_data, dict):
@@ -1181,17 +1203,19 @@ def debtors1_list(request):
             error_message = "Unexpected JSON structure."
 
         for item in raw_data:
-            # ✅ Only include records for this client
             if str(item.get('client_id', '')) != 'GW9Q6NQQ5ONRU':
                 continue
-            # ✅ Only include super_code == DEBTO
             if str(item.get('super_code', '')) != 'DEBTO':
                 continue
             item['name'] = item.get('name', '').strip()
-            # Calculate balance = debit - credit
             debit  = float(item.get('debit')  or 0)
             credit = float(item.get('credit') or 0)
             item['balance'] = debit - credit
+
+            # Resolve department name using openingdepartment as department_id
+            dept_id = str(item.get('openingdepartment', '') or '').strip()
+            item['department_name'] = dept_map.get(dept_id, dept_id)
+
             data.append(item)
 
     except requests.exceptions.Timeout:
@@ -1204,7 +1228,6 @@ def debtors1_list(request):
         traceback.print_exc()
         error_message = f"Unexpected error: {str(e)}"
 
-    # Query parameters
     query               = request.GET.get('q', '').strip()
     min_balance         = request.GET.get('min_balance', '1')
     selected_department = request.GET.get('department', '')
@@ -1212,12 +1235,11 @@ def debtors1_list(request):
 
     original_count = len(data)
 
-    # Department list (unique, sorted) — from full dataset before filters
-    department_list = sorted(set(
-        item.get('openingdepartment', '').strip()
-        for item in data
-        if item.get('openingdepartment')
-    ))
+    # Department dropdown: all departments for this client from dept API, sorted by name
+    department_list = sorted(
+        [(dept_id, name) for dept_id, name in dept_map.items()],
+        key=lambda x: x[1]
+    )
 
     # Search filter
     if query:
@@ -1235,6 +1257,7 @@ def debtors1_list(request):
                 str(item.get('place', '')),
                 str(item.get('phone2', '')),
                 str(item.get('openingdepartment', '')),
+                str(item.get('department_name', '')),
             ]
             combined_text = ' '.join(searchable_fields).lower()
             if all(term in combined_text for term in search_terms):
@@ -1362,9 +1385,25 @@ from django.shortcuts import render
 
 
 def imc1_list(request):
+    CLIENT_ID = 'G9SYCSM54HR3Ev'
     api_url = "https://accmaster.imcbs.com/api/sync/acc-master/"
+    dept_url = "https://accmaster.imcbs.com/api/sync/acc-departments/"
     data = []
     error_message = None
+
+    # ✅ Fetch department lookup: department_id → department name
+    dept_map = {}
+    try:
+        dept_response = requests.get(dept_url, timeout=30)
+        dept_response.raise_for_status()
+        for dept in dept_response.json():
+            if str(dept.get('client_id', '')) == CLIENT_ID:
+                dept_map[dept['department_id']] = dept['department']
+    except Exception:
+        pass
+
+    # ✅ Build department list directly from dept API — always shows ALL departments
+    department_list = sorted(dept_map.values())
 
     try:
         response = requests.get(api_url, timeout=30)
@@ -1372,20 +1411,20 @@ def imc1_list(request):
         raw_data = response.json()
 
         for item in raw_data:
-            # ✅ Only include client_id == G9SYCSM54HR3E
-            if str(item.get('client_id', '')) != 'G9SYCSM54HR3E':
+            if str(item.get('client_id', '')) != CLIENT_ID:
                 continue
-
-            # ✅ Only include super_code == DEBTO
             if str(item.get('super_code', '')) != 'DEBTO':
                 continue
 
             item['name'] = item.get('name', '').strip()
 
-            # ✅ Calculate balance = debit - credit
             debit = float(item.get('debit') or 0)
             credit = float(item.get('credit') or 0)
             item['balance'] = debit - credit
+
+            # ✅ Resolve department name from ID
+            dept_id = item.get('openingdepartment', '')
+            item['department_name'] = dept_map.get(dept_id, dept_id)
 
             data.append(item)
 
@@ -1420,7 +1459,7 @@ def imc1_list(request):
                 str(item.get('debit', '')),
                 str(item.get('credit', '')),
                 str(item.get('balance', '')),
-                str(item.get('openingdepartment', '')),
+                str(item.get('department_name', '')),
             ]
             combined_text = ' '.join(searchable_fields).lower()
             if all(term in combined_text for term in search_terms):
@@ -1435,26 +1474,16 @@ def imc1_list(request):
         except ValueError:
             pass
 
-    # Filter by department
+    # Filter by department name
     if selected_department:
-        data = [item for item in data if item.get('openingdepartment', '') == selected_department]
+        data = [item for item in data if item.get('department_name', '') == selected_department]
 
-    # Sort by name
     data.sort(key=lambda x: x.get('name', '').lower())
 
-    # Distinct department list
-    department_list = sorted(set(
-        item.get('openingdepartment', '')
-        for item in data
-        if item.get('openingdepartment', '')
-    ))
-
-    # Totals (computed from filtered data)
     total_balance = sum(float(item.get('balance') or 0) for item in data)
     total_debit = sum(float(item.get('debit') or 0) for item in data)
     total_credit = sum(float(item.get('credit') or 0) for item in data)
 
-    # Rows per page
     try:
         selected_rows_int = int(selected_rows)
         if selected_rows_int not in [10, 20, 50, 100]:
@@ -1706,9 +1735,25 @@ import requests
 
 
 def sysmac_info_list(request):
+    CLIENT_ID = '69ZHSXOIMFA6T'
     api_url = "https://accmaster.imcbs.com/api/sync/acc-master/"
+    dept_url = "https://accmaster.imcbs.com/api/sync/acc-departments/"
     data = []
     error_message = None
+
+    # ✅ Fetch department lookup: department_id → department name
+    dept_map = {}
+    try:
+        dept_response = requests.get(dept_url, timeout=30)
+        dept_response.raise_for_status()
+        for dept in dept_response.json():
+            if str(dept.get('client_id', '')) == CLIENT_ID:
+                dept_map[dept['department_id']] = dept['department']
+    except Exception:
+        pass
+
+    # ✅ Build department list directly from dept API — always all 9 departments
+    department_list = sorted(dept_map.values())
 
     try:
         response = requests.get(api_url, timeout=30)
@@ -1716,18 +1761,21 @@ def sysmac_info_list(request):
         raw_data = response.json()
 
         for item in raw_data:
-            # ✅ Only include client_id == "69ZHSXOIMFA6T"
-            if str(item.get('client_id', '')) != '69ZHSXOIMFA6T':
+            if str(item.get('client_id', '')) != CLIENT_ID:
                 continue
-            # ✅ Only include super_code == DEBTO
             if str(item.get('super_code', '')) != 'DEBTO':
                 continue
 
             item['name'] = item.get('name', '').strip()
-            # ✅ Calculate balance = debit - credit
+
             debit = float(item.get('debit') or 0)
             credit = float(item.get('credit') or 0)
             item['balance'] = debit - credit
+
+            # ✅ Resolve department name from ID
+            dept_id = item.get('openingdepartment', '')
+            item['department_name'] = dept_map.get(dept_id, dept_id)
+
             data.append(item)
 
     except requests.exceptions.Timeout:
@@ -1747,9 +1795,6 @@ def sysmac_info_list(request):
 
     original_count = len(data)
 
-    # Get department list
-    department_list = sorted(set(item.get('openingdepartment', '').strip() for item in data if item.get('openingdepartment')))
-
     # Search filter
     if query:
         search_terms = query.lower().split()
@@ -1764,7 +1809,7 @@ def sysmac_info_list(request):
                 str(item.get('debit', '')),
                 str(item.get('credit', '')),
                 str(item.get('balance', '')),
-                str(item.get('openingdepartment', '')),
+                str(item.get('department_name', '')),
             ]
             combined_text = ' '.join(searchable_fields).lower()
             if all(term in combined_text for term in search_terms):
@@ -1773,7 +1818,7 @@ def sysmac_info_list(request):
 
     # Department filter
     if selected_department:
-        data = [item for item in data if item.get('openingdepartment', '') == selected_department]
+        data = [item for item in data if item.get('department_name', '') == selected_department]
 
     # Minimum balance filter
     if min_balance:
