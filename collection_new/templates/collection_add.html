@@ -129,12 +129,12 @@
           <span class="proof-hint" id="proof-hint"></span>
         </label>
 
-        {% if edit_mode and object.payment_proof %}
-        <!-- Existing saved proof — shown in edit mode when a file already exists -->
+        {% if edit_mode and object.cloudflare_r2_url %}
+        <!-- Existing saved proof from Cloudflare R2 — shown in edit mode when a file already exists -->
         <div class="existing-proof">
           <div class="existing-proof-inner">
-            {% with object.payment_proof.name|lower as fname %}
-              {% if '.pdf' in fname %}
+            {% with object.cloudflare_r2_url|lower as url %}
+              {% if '.pdf' in url %}
                 <div class="existing-proof-icon">
                   <svg width="26" height="26" fill="none" stroke="#1976d2" stroke-width="1.5" viewBox="0 0 24 24">
                     <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
@@ -144,11 +144,11 @@
                   </svg>
                 </div>
               {% else %}
-                <img src="{{ object.payment_proof.url }}" alt="Existing proof" class="existing-proof-img" />
+                <img src="{{ object.cloudflare_r2_url }}" alt="Existing proof" class="existing-proof-img" />
               {% endif %}
-              <span class="existing-proof-name">{{ object.payment_proof.name|slice:"21:" }}</span>
+              <span class="existing-proof-name">{{ object.cloudflare_r2_key|slice:"21:" }}</span>
             {% endwith %}
-            <a href="{{ object.payment_proof.url }}" target="_blank" class="existing-proof-view">
+            <a href="{{ object.cloudflare_r2_url }}" target="_blank" class="existing-proof-view">
               <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                 <circle cx="12" cy="12" r="3"/>
@@ -180,7 +180,7 @@
               <polyline points="17 8 12 3 7 8"/>
               <line x1="12" y1="3" x2="12" y2="15"/>
             </svg>
-            <p class="upload-text">{% if edit_mode and object.payment_proof %}Replace file &mdash; {% endif %}Click to upload or drag &amp; drop</p>
+            <p class="upload-text">{% if edit_mode and object.cloudflare_r2_url %}Replace file &mdash; {% endif %}Click to upload or drag &amp; drop</p>
             <p class="upload-sub">PNG, JPG, PDF &mdash; max 5MB</p>
           </div>
           <div id="upload-preview" style="display:none;">
