@@ -2000,6 +2000,9 @@
                 row.style.display = show ? '' : 'none';
                 if (show) {
                     visibleCount++;
+                    // Re-number Sl.No based on visible position
+                    const slCell = row.querySelector('td:nth-child(1)');
+                    if (slCell) slCell.textContent = visibleCount;
                     const amt = parseFloat((row.querySelector('td:nth-child(7)')?.textContent || '').replace('₹','').replace(/,/g,'')) || 0;
                     totalAmount += amt;
                 }
@@ -2041,7 +2044,12 @@
             document.getElementById('dateTo').value = '';
             activeFilters = { branch: 'all', status: 'all', dateFrom: null, dateTo: null, lead: null };
             const rows = document.querySelectorAll('#quotations-body tr[data-quotation-id]');
-            rows.forEach(r => r.style.display = '');
+            rows.forEach((r, i) => {
+                r.style.display = '';
+                // Restore sequential Sl.No
+                const slCell = r.querySelector('td:nth-child(1)');
+                if (slCell) slCell.textContent = i + 1;
+            });
             const em = document.querySelector('.no-filter-results');
             if (em) em.remove();
             let totalAmount = 0;
@@ -2097,7 +2105,12 @@
             allQuotations.forEach(q => {
                 const show = String(q.leadId) === String(leadId) || q.leadTicket === leadTicket;
                 q.element.style.display = show ? '' : 'none';
-                if (show) { visibleCount++; totalAmount += q.amount; }
+                if (show) {
+                    visibleCount++;
+                    const slCell = q.element.querySelector('td:nth-child(1)');
+                    if (slCell) slCell.textContent = visibleCount;
+                    totalAmount += q.amount;
+                }
             });
             if (visibleCount === 0) showNoQuotationsMessage(leadId, leadName);
         }
@@ -2111,7 +2124,11 @@
         }
 
         function showAllQuotations() {
-            allQuotations.forEach(q => q.element.style.display = '');
+            allQuotations.forEach((q, i) => {
+                q.element.style.display = '';
+                const slCell = q.element.querySelector('td:nth-child(1)');
+                if (slCell) slCell.textContent = i + 1;
+            });
             const em = document.querySelector('.no-quotations-message');
             if (em) em.remove();
             document.getElementById('selectedLeadInfo').style.display = 'none';

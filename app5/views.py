@@ -1,6 +1,6 @@
 # views.py (updated)
 
-# At the top of views.py, add these imports
+# job card views for app5
 from .models import (
     JobCard, JobCardImage, Item, Supplier, 
     WarrantyTicket, WarrantyItemLog, StandbyIssuance,
@@ -1096,6 +1096,8 @@ def get_status_display(status):
         'rejected': 'Rejected'
     }
     return status_display_map.get(status, status.title())
+
+    # standby items
 
 
 @csrf_exempt

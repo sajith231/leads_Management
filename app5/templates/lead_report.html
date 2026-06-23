@@ -1180,6 +1180,7 @@
                             <option value="Active" {% if current_status_filter == 'Active' %}selected{% endif %}>🟢 Active</option>
                             <option value="Inactive" {% if current_status_filter == 'Inactive' %}selected{% endif %}>🔴 Inactive</option>
                             <option value="Installed" {% if current_status_filter == 'Installed' %}selected{% endif %}>🔧 Installed</option>
+                            <option value="Later" {% if current_status_filter == 'Later' %}selected{% endif %}>🔵 Later</option>
                         </select>
                     </div>
 
@@ -1211,12 +1212,12 @@
 
                     <div class="filter-group">
                        
-                        <input type="date" name="start_date" id="startDateFilter" value="{% if current_start_date %}{{ current_start_date }}{% else %}{{ default_start_date }}{% endif %}" class="date-input">
+                        <input type="date" name="start_date" id="startDateFilter" value="{{ current_start_date }}" class="date-input">
                     </div>
 
                     <div class="filter-group">
                        
-                        <input type="date" name="end_date" id="endDateFilter" value="{% if current_end_date %}{{ current_end_date }}{% else %}{{ default_end_date }}{% endif %}" class="date-input">
+                        <input type="date" name="end_date" id="endDateFilter" value="{{ current_end_date }}" class="date-input">
                     </div>
 
                     <div class="filter-group search-input">
@@ -1245,7 +1246,7 @@
                         <a href="{% url 'app5:lead' %}" class="btn btn-success">
                             <i class="fas fa-plus"></i> New Lead
                         </a>
-                        <a href="{% url 'app5:lead_report' %}" class="btn btn-secondary">
+                        <a href="{% url 'app5:lead_report' %}" class="btn btn-secondary" id="clearAllBtn" onclick="sessionStorage.removeItem('leadReportFilters');">
                             <i class="fas fa-redo"></i> Clear All
                         </a>
                     </div>
@@ -1981,6 +1982,9 @@
                     }, 1000);
                 }
                 
+                // Save filters to session before submitting
+                saveFiltersToSession();
+
                 // Submit the form
                 filterForm.submit();
             }
@@ -1996,7 +2000,7 @@
             const todayDateFilter = document.getElementById('todayDateFilter');
             const quickFilterBtns = document.querySelectorAll('.quick-filter-btn');
             
-            // Set today's date in hidden field
+            // Set today's date in hidden field and cap max date on inputs
             function setTodayDate() {
                 const today = new Date();
                 const todayFormatted = today.toISOString().split('T')[0]; // YYYY-MM-DD
@@ -2004,22 +2008,66 @@
                     todayDateFilter.value = todayFormatted;
                 }
                 
-                // Also update date inputs max date to today
+                // Only set max date limit — do NOT auto-fill empty date inputs
+                // so that "Clear All" truly clears the date fields
                 if (startDateFilter) startDateFilter.max = todayFormatted;
                 if (endDateFilter) endDateFilter.max = todayFormatted;
-                
-                // If no date is set, auto-set today's date
-                if (startDateFilter && !startDateFilter.value) {
-                    startDateFilter.value = todayFormatted;
-                }
-                if (endDateFilter && !endDateFilter.value) {
-                    endDateFilter.value = todayFormatted;
-                }
             }
             
             // Call on page load
             setTodayDate();
-            
+
+            // ========== SESSION STORAGE: SAVE & RESTORE FILTERS ==========
+            // Save current filters to sessionStorage whenever the form is submitted
+            function saveFiltersToSession() {
+                const filters = {
+                    status:     statusFilter     ? statusFilter.value     : '',
+                    campaign:   campaignFilter   ? campaignFilter.value   : '',
+                    branch:     branchFilter     ? branchFilter.value     : '',
+                    start_date: startDateFilter  ? startDateFilter.value  : '',
+                    end_date:   endDateFilter    ? endDateFilter.value    : '',
+                    search:     searchFilter     ? searchFilter.value     : '',
+                    row_count:  rowCountFilter   ? rowCountFilter.value   : '10',
+                };
+                sessionStorage.setItem('leadReportFilters', JSON.stringify(filters));
+            }
+
+            // Restore filters from sessionStorage when there are no URL params
+            // (i.e. came back from edit page, or navigated back via browser)
+            function restoreFiltersFromSession() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const hasUrlFilters = ['status','campaign','branch','start_date','end_date','search','row_count','page'].some(k => urlParams.has(k));
+
+                // If URL already has filter params, nothing to restore — save them instead
+                if (hasUrlFilters) {
+                    saveFiltersToSession();
+                    return;
+                }
+
+                // No URL params — check if we have saved filters
+                const saved = sessionStorage.getItem('leadReportFilters');
+                if (!saved) return;
+
+                let filters;
+                try { filters = JSON.parse(saved); } catch(e) { return; }
+
+                // If all saved values are empty, don't redirect (it was a real Clear All)
+                const hasAnyFilter = Object.values(filters).some(v => v && v !== '10' && v !== '');
+                if (!hasAnyFilter) return;
+
+                // Rebuild URL with saved filters and redirect once
+                const params = new URLSearchParams();
+                Object.entries(filters).forEach(([k, v]) => {
+                    if (v && v.trim() !== '') params.set(k, v);
+                });
+                const newUrl = window.location.pathname + '?' + params.toString();
+                window.location.replace(newUrl);
+            }
+
+            // Run restore on page load
+            restoreFiltersFromSession();
+            // ========== END SESSION STORAGE ==========
+
             // Auto-select quick filter based on current dates
             function updateQuickFilterStates() {
                 const startDate = startDateFilter ? startDateFilter.value : '';
