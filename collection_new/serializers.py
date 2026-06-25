@@ -144,3 +144,6 @@ class CollectionSerializer(serializers.ModelSerializer):
             import logging
             logger = logging.getLogger(__name__)
             logger.warning(f"Failed to upload file to Cloudflare R2: {result['error']}")
+
+
+#changed
