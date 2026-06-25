@@ -104,9 +104,9 @@ class CollectionSerializer(serializers.ModelSerializer):
         # Upload to Cloudflare R2 if file provided
         if payment_proof:
             self._upload_to_cloudflare(instance, payment_proof)
-            # Don't save payment_proof locally
+            # Don't save payment_proof locally; persist all R2 fields together
             instance.payment_proof = None
-            instance.save(update_fields=['payment_proof'])
+            instance.save(update_fields=['payment_proof', 'cloudflare_r2_url', 'cloudflare_r2_key'])
         
         return instance
 
@@ -133,12 +133,13 @@ class CollectionSerializer(serializers.ModelSerializer):
         return instance
 
     def _upload_to_cloudflare(self, instance, file_obj):
-        """Helper method to upload file to Cloudflare R2."""
+        """Helper method to upload file to Cloudflare R2 and persist the R2 fields."""
         result = upload_to_cloudflare(file_obj, folder_name='collection_proofs')
-        
+
         if result['success']:
             instance.cloudflare_r2_url = result['r2_url']
             instance.cloudflare_r2_key = result['file_key']
+            instance.save(update_fields=['cloudflare_r2_url', 'cloudflare_r2_key'])
         else:
             import logging
             logger = logging.getLogger(__name__)
