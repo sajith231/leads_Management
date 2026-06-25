@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from .models import Enquiry
+from common.cloudflare_storage import upload_to_cloudflare
 
 
 @login_required
@@ -23,6 +24,33 @@ def enquiry_add(request):
 
         image = request.FILES.get('image') or None
         audio = request.FILES.get('audio') or None
+        
+        cloudflare_image_url = None
+        cloudflare_image_key = None
+        cloudflare_audio_url = None
+        cloudflare_audio_key = None
+        
+        # Upload image to Cloudflare
+        if image:
+            result = upload_to_cloudflare(image, folder_name='enquiry_files/images')
+            if result['success']:
+                cloudflare_image_url = result['r2_url']
+                cloudflare_image_key = result['file_key']
+                image = None  # Clear local file since we have Cloudflare URL
+            else:
+                # If Cloudflare upload fails, keep local file
+                pass
+        
+        # Upload audio to Cloudflare
+        if audio:
+            result = upload_to_cloudflare(audio, folder_name='enquiry_files/audio')
+            if result['success']:
+                cloudflare_audio_url = result['r2_url']
+                cloudflare_audio_key = result['file_key']
+                audio = None  # Clear local file since we have Cloudflare URL
+            else:
+                # If Cloudflare upload fails, keep local file
+                pass
 
         if shop_name and location and purpose:
             Enquiry.objects.create(
@@ -37,6 +65,10 @@ def enquiry_add(request):
                 creator=request.user.username,
                 image=image,
                 audio=audio,
+                cloudflare_image_url=cloudflare_image_url,
+                cloudflare_image_key=cloudflare_image_key,
+                cloudflare_audio_url=cloudflare_audio_url,
+                cloudflare_audio_key=cloudflare_audio_key,
             )
             return redirect('enquiry_list')
 
@@ -59,10 +91,27 @@ def enquiry_edit(request, pk):
         enquiry.latitude     = lat or None
         enquiry.longitude    = lng or None
 
+        # Handle image update
         if request.FILES.get('image'):
-            enquiry.image = request.FILES['image']
+            image_file = request.FILES['image']
+            result = upload_to_cloudflare(image_file, folder_name='enquiry_files/images')
+            if result['success']:
+                enquiry.cloudflare_image_url = result['r2_url']
+                enquiry.cloudflare_image_key = result['file_key']
+                enquiry.image = None
+            else:
+                enquiry.image = image_file
+        
+        # Handle audio update
         if request.FILES.get('audio'):
-            enquiry.audio = request.FILES['audio']
+            audio_file = request.FILES['audio']
+            result = upload_to_cloudflare(audio_file, folder_name='enquiry_files/audio')
+            if result['success']:
+                enquiry.cloudflare_audio_url = result['r2_url']
+                enquiry.cloudflare_audio_key = result['file_key']
+                enquiry.audio = None
+            else:
+                enquiry.audio = audio_file
 
         enquiry.save()
         return redirect('enquiry_list')

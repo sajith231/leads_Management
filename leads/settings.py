@@ -90,6 +90,7 @@ INSTALLED_APPS = [
     'software_update',
     'asset_management',
     "lead_form_api", 
+    'common',
     "lead_form_enquiry",
     "collection_new",
     "rrc_clients_new",
@@ -175,10 +176,10 @@ CKEDITOR_CONFIGS = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'marketing',
+        'NAME': 'leading_management',
         'USER': 'postgres',
-        'PASSWORD':'12345',
-        'HOST': 'localhost',
+        'PASSWORD':'info@imc',
+        'HOST': '88.222.212.14',
         'PORT': '5432',
     }
 }
