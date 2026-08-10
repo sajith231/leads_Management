@@ -30,7 +30,7 @@ SECRET_KEY = 'django-insecure-kh@!%_jbcfj5i8=%6unm-vr7a5es9leoui!d%iqayweh-7zg#)
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 CSRF_TRUSTED_ORIGINS = [
-    'https://myimc.in',
+    'https://my.myimc.in',
     
 ]
 
@@ -47,7 +47,7 @@ WHATSAPP_API_ACCOUNT = os.getenv("WHATSAPP_API_ACCOUNT")
 WHATSAPP_API_BASE_URL = os.getenv("WHATSAPP_API_BASE_URL")
 
 
-ALLOWED_HOSTS = ['88.222.215.20','myimc.in','www.myimc.in','127.0.0.1','localhost','192.168.1.70']
+ALLOWED_HOSTS = ['88.222.215.20','my.myimc.in','www.my.myimc.in','127.0.0.1','localhost','192.168.1.70']
 
 LOGIN_REDIRECT_URL = 'admin_dashboard'
 LOGIN_URL = 'login'
@@ -266,5 +266,5 @@ DXING_API = os.getenv("WA_API")
 if DEBUG:
     BASE_URL = "http://127.0.0.1:8000"
 else:
-    BASE_URL = "https://myimc.in"
+    BASE_URL = "https://my.myimc.in"
 
